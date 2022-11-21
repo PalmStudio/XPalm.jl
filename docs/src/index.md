@@ -2,7 +2,7 @@
 CurrentModule = XPalm
 ```
 
-# PlantMeteo
+# XPalm
 
 Documentation for [XPalm](https://github.com/PalmStudio/XPalm.jl).
 

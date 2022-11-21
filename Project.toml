@@ -1,6 +1,6 @@
 name = "XPalm"
-uuid = "51a6e443-b901-485e-a1da-69e6f72337f1"
-authors = ["remi.vezy <VEZY@users.noreply.github.com> and contributors"]
+uuid = "6b523e1e-d512-416c-8e51-a8fbef0064e7"
+authors = ["Rémi Vezy <VEZY@users.noreply.github.com> and contributors"]
 version = "0.1.0"
 
 [compat]

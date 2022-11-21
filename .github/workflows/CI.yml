@@ -3,7 +3,7 @@ on:
   push:
     branches:
       - main
-    tags: "*"
+    tags: ['*']
   pull_request:
 concurrency:
   # Skip intermediate builds: always.
@@ -18,9 +18,9 @@ jobs:
       fail-fast: false
       matrix:
         version:
-          - "1.0"
-          - "1.7"
-          - "nightly"
+          - '1.0'
+          - '1.8'
+          - 'nightly'
         os:
           - ubuntu-latest
         arch:
@@ -41,19 +41,20 @@ jobs:
   docs:
     name: Documentation
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v2
       - uses: julia-actions/setup-julia@v1
         with:
-          version: "1"
+          version: '1'
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-docdeploy@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          DOCUMENTER_KEY: ${{ secrets.DOCUMENTER_KEY }}
       - run: |
           julia --project=docs -e '
             using Documenter: DocMeta, doctest
-            using PlantMeteo
+            using XPalm
             DocMeta.setdocmeta!(XPalm, :DocTestSetup, :(using XPalm); recursive=true)
             doctest(XPalm)'

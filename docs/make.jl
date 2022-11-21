@@ -5,20 +5,21 @@ DocMeta.setdocmeta!(XPalm, :DocTestSetup, :(using XPalm); recursive=true)
 
 makedocs(;
     modules=[XPalm],
-    authors="remi.vezy <VEZY@users.noreply.github.com> and contributors",
-    repo="https://github.com/PalmStudio/PlantMeteo.jl/blob/{commit}{path}#{line}",
-    sitename="PlantMeteo.jl",
+    authors="Rémi Vezy <VEZY@users.noreply.github.com> and contributors",
+    repo="https://github.com/PalmStudio/XPalm.jl/blob/{commit}{path}#{line}",
+    sitename="XPalm.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
-        canonical="https://PalmStudio.github.io/PlantMeteo.jl",
-        assets=String[]
+        canonical="https://PalmStudio.github.io/XPalm.jl",
+        edit_link="main",
+        assets=String[],
     ),
     pages=[
         "Home" => "index.md",
-    ]
+    ],
 )
 
 deploydocs(;
     repo="github.com/PalmStudio/XPalm.jl",
-    devbranch="main"
+    devbranch="main",
 )
