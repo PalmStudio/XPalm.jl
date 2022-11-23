@@ -3,6 +3,10 @@ uuid = "6b523e1e-d512-416c-8e51-a8fbef0064e7"
 authors = ["Rémi Vezy <VEZY@users.noreply.github.com> and contributors"]
 version = "0.1.0"
 
+[deps]
+Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
+MultiScaleTreeGraph = "dd4a991b-8a45-4075-bede-262ee62d5583"
+
 [compat]
 julia = "1"
 
