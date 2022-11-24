@@ -1,11 +1,12 @@
 
 # Everything is computed at organ scale, and then aggregated to the phytomer scale,
 # then to the palm scale.
-function init_palm(palm::Palm, meteo, parameter)
+function init_palm!(palm::Palm, meteo, parameter)
 
 end
 
 function XPalm()
+
     PlantBiophysics.ModelList(
         photosynthesis=FcVB(),
         # stomatal_conductance=BallBerry(),
@@ -30,12 +31,9 @@ function XPalm()
         reserves=Reserves(),
         status=Status(), # Initialisations
     )
-end
 
-function run(palm::Palm, meteo, parameters)
-    CarbonOffer_Phytomer()
+    init_palm!(palm, meteo, parameter)
 end
-
 
 function CarbonOffer_Pool()
     kldhfdfqdofijofimud

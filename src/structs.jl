@@ -1,8 +1,11 @@
 """
     Palm(mtg, phytomer_count, max_rank, node_count)
+    Palm()
 
 Create a new Palm. The maximum rank is used to determine how many living phytomers (i.e. leaves) are there
 on the Palm.
+
+`Palm()` (without arguments) creates a new Palm with a single phytomer, one leaf, and a Root system.
 
 # Arguments
 - `mtg`: a MTG object
@@ -16,12 +19,65 @@ mutable struct Palm
     mtg_node_count::Int
 end
 
-Palm() = Palm(
-    MultiScaleTreeGraph.Node(1, MultiScaleTreeGraph.NodeMTG("/", "Palm", 1, 1), Dict{Symbol,Any}()),
-    0,
-)
+abstract type InitState end
+
+function Palm(initiation_date=Dates.Date(Dates.now()))
+    mtg = MultiScaleTreeGraph.Node(
+        1,
+        NodeMTG("/", "Palm", 1, 1),
+        Dict{Symbol,Any}()
+    )
+
+    roots = MultiScaleTreeGraph.Node(
+        mtg,
+        NodeMTG("+", "RootSystem", 1, 2),
+        Dict{Symbol,Any}(
+            :organ => RootSystem(),
+            :initiation_date => initiation_date,
+        )
+    )
+
+    addchild!(mtg, roots, force=true)
+
+    stem = MultiScaleTreeGraph.Node(mtg, NodeMTG("+", "Stem", 1, 2),
+        Dict{Symbol,Any}(
+            :organ => Stem(),
+            :initiation_date => initiation_date, # date of initiation / creation
+        )
+    )
+    addchild!(mtg, stem, force=true)
+
+    phyto = MultiScaleTreeGraph.Node(stem, NodeMTG("/", "Phytomer", 1, 3),
+        Dict{Symbol,Any}(
+            :organ => Phytomer(),
+            :initiation_date => initiation_date, # date of initiation / creation
+        )
+    )
+    addchild!(stem, phyto, force=true)
+
+    internode = MultiScaleTreeGraph.Node(phyto, NodeMTG("/", "Internode", 1, 4),
+        Dict{Symbol,Any}(
+            :organ => Internode(),
+            :initiation_date => initiation_date, # date of initiation / creation
+        )
+    )
+    addchild!(phyto, internode, force=true)
+
+    leaf = MultiScaleTreeGraph.Node(internode, NodeMTG("+", "Leaf", 1, 4),
+        Dict{Symbol,Any}(
+            :organ => Leaf(),
+            :initiation_date => initiation_date, # date of initiation / creation
+        )
+    )
+    addchild!(internode, leaf, force=true)
+
+    return Palm(mtg, initiation_date, 1, 6)
+end
 
 abstract type Organ end
+
+struct RootSystem <: Organ end
+struct Stem <: Organ end
 
 """
     Phytomer(state)
@@ -31,34 +87,53 @@ A phytomer
 struct Phytomer <: Organ end
 
 """
+    InternodeState
+
+Defines the physiological state of the internode.
+"""
+abstract type InternodeState end
+
+struct Growing <: InternodeState end
+struct Snag <: InternodeState end
+
+"""
     Internode(state)
 
-An internode, which has a state that can be either:
+An internode, which has a state of type [`InternodeState`](@ref) that can be either:
 
-- `:growing`: has both growth and maintenance respiration
-- `:active`: has maintenance demand only, and bears a lead and/or 
-a reproductive organ
-- `:snag`: has maintenance respiration only, and no leaf 
+- `Growing`: has both growth and maintenance respiration
+- `Snag`: has maintenance respiration only, and no leaf 
 or reproductive organs
 """
-struct Internode <: Organ
-    state::String
+struct Internode{S} <: Organ where {S<:InternodeState}
+    state::S
 end
+
+Internode() = Internode(Growing)
+
+abstract type LeafState end
+
+struct Initiation <: LeafState end
+struct Spear <: LeafState end
+struct Opened <: LeafState end
+struct Pruned <: LeafState end
+struct Scenescent <: LeafState end
 
 """
     Leaf(state)
 
-A leaf, which has a state that can be either:
+A leaf, which has a state of type [`LeafState`](@ref) that can be either:
 
-- `:initiation`: in initiation phase (cell division until begining of elongation)
-- `:spear`: spear phase, almost fully developped, but leaflets are not yet deployed
-- `:opened`: deployed and photosynthetically active
-- `:pruned`: dead and removed from the plant
-- `:scenescent`: dead but still on the plant
+- `Initiation`: in initiation phase (cell division until begining of elongation)
+- `Spear`: spear phase, almost fully developped, but leaflets are not yet deployed
+- `Opened`: deployed and photosynthetically active
+- `Pruned`: dead and removed from the plant
+- `Scenescent`: dead but still on the plant
 """
-struct Leaf <: Organ
-    state::String
+struct Leaf{S} <: Organ where {S<:LeafState}
+    state::S
 end
+Leaf() = Leaf(Initiation)
 
 abstract type ReproductiveOrgan <: Organ end
 

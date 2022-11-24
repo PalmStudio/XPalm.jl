@@ -16,10 +16,10 @@ function add_phytomer!(palm::Palm, initiation_date::Dates.Date)
     palm.mtg_node_count += 1
 
     # Create the new phytomer as a child of the last one (younger one):
-    MultiScaleTreeGraph.addchild!(
+    addchild!(
         last_phytomer, # parent
         palm.phytomer_count, # unique ID
-        MultiScaleTreeGraph.MutableNodeMTG("<", "Phytomer", palm.phytomer_count, 2), # MTG
+        MutableNodeMTG("<", "Phytomer", palm.phytomer_count, 2), # MTG
         Dict{Symbol,Any}(
             :organ => Phytomer(),
             :initiation_date => initiation_date, # date of initiation / creation
@@ -29,10 +29,10 @@ function add_phytomer!(palm::Palm, initiation_date::Dates.Date)
 
     # Add a Internode as its child:
     palm.mtg_node_count += 1
-    MultiScaleTreeGraph.addchild!(
+    addchild!(
         last_phytomer[1], # parent
         palm.mtg_node_count, # unique ID
-        MultiScaleTreeGraph.MutableNodeMTG("/", "Internode", palm.phytomer_count, 3), # MTG
+        MutableNodeMTG("/", "Internode", palm.phytomer_count, 3), # MTG
         Dict{Symbol,Any}(
             :organ => Internode()
         ) # Attributes
@@ -40,11 +40,11 @@ function add_phytomer!(palm::Palm, initiation_date::Dates.Date)
 
     # Add a Internode as its child:
     palm.mtg_node_count += 1
-    MultiScaleTreeGraph.addchild!(
+    addchild!(
         #! Pass the Internode here, not the phytomer: 
         last_phytomer[1], # parent
         palm.mtg_node_count, # unique ID
-        MultiScaleTreeGraph.MutableNodeMTG("+", "Leaf", palm.phytomer_count, 3), # MTG
+        MutableNodeMTG("+", "Leaf", palm.phytomer_count, 3), # MTG
         Dict{Symbol,Any}(
             :organ => Phytomer()
         ) # Attributes

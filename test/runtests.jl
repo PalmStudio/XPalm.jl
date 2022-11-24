@@ -1,6 +1,11 @@
 using XPalm
 using Test
+using Dates
+using MultiScaleTreeGraph
 
-@testset "XPalm.jl" begin
-    # Write your tests here.
+@testset "Palm" begin
+    include("test-palm.jl")
 end
+
+
+
