@@ -37,15 +37,14 @@ function Palm(initiation_date=Dates.Date(Dates.now()))
         )
     )
 
-    addchild!(mtg, roots, force=true)
-
-    stem = MultiScaleTreeGraph.Node(mtg, NodeMTG("+", "Stem", 1, 2),
+    stem = MultiScaleTreeGraph.Node(
+        mtg,
+        NodeMTG("+", "Stem", 1, 2),
         Dict{Symbol,Any}(
             :organ => Stem(),
             :initiation_date => initiation_date, # date of initiation / creation
         )
     )
-    addchild!(mtg, stem, force=true)
 
     phyto = MultiScaleTreeGraph.Node(stem, NodeMTG("/", "Phytomer", 1, 3),
         Dict{Symbol,Any}(
@@ -53,7 +52,6 @@ function Palm(initiation_date=Dates.Date(Dates.now()))
             :initiation_date => initiation_date, # date of initiation / creation
         )
     )
-    addchild!(stem, phyto, force=true)
 
     internode = MultiScaleTreeGraph.Node(phyto, NodeMTG("/", "Internode", 1, 4),
         Dict{Symbol,Any}(
@@ -61,7 +59,6 @@ function Palm(initiation_date=Dates.Date(Dates.now()))
             :initiation_date => initiation_date, # date of initiation / creation
         )
     )
-    addchild!(phyto, internode, force=true)
 
     leaf = MultiScaleTreeGraph.Node(internode, NodeMTG("+", "Leaf", 1, 4),
         Dict{Symbol,Any}(
@@ -69,7 +66,6 @@ function Palm(initiation_date=Dates.Date(Dates.now()))
             :initiation_date => initiation_date, # date of initiation / creation
         )
     )
-    addchild!(internode, leaf, force=true)
 
     return Palm(mtg, initiation_date, 1, 6)
 end
