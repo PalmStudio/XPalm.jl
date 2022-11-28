@@ -107,13 +107,17 @@ end
 
 Internode() = Internode(Growing)
 
-abstract type LeafState end
+abstract type OrganState end
 
-struct Initiation <: LeafState end
-struct Spear <: LeafState end
-struct Opened <: LeafState end
-struct Pruned <: LeafState end
-struct Scenescent <: LeafState end
+struct Initiation <: OrganState end
+struct Spear <: OrganState end
+struct Opened <: OrganState end
+struct Pruned <: OrganState end
+struct Scenescent <: OrganState end
+struct Abortion <: OrganState end
+struct Flowering <: OrganState end
+struct Bunch <: OrganState end
+struct OleoSynthesis <: OrganState end
 
 """
     Leaf(state)
@@ -138,11 +142,11 @@ abstract type ReproductiveOrgan <: Organ end
 
 A male inflorescence, which has a state that can be either:
 
-- `:initiated`: in initiation phase (cell division)
-- `:aborted`
-- `:flowering`
-- `:scenescent`: dead but still on the plant
-- `:pruned`: removed from the plant
+- `Initiation`: in initiation phase (cell division)
+- `Abortion`
+- `Flowering`
+- `Scenescent`: dead but still on the plant
+- `Pruned`: removed from the plant
 """
 struct Male <: ReproductiveOrgan
     state::String
@@ -153,13 +157,13 @@ end
 
 A female inflorescence, which has a state that can be either:
 
-- `:initiated`: in initiation phase (cell division)
-- `:aborted`
-- `:flowering`
-- `:bunch`: the bunch of fruits is developping
-- `:oleosynthesis`: the inflorescence is in the process of oleosynthesis
-- `:scenescent`: dead but still on the plant
-- `:pruned`: removed from the plant (*e.g.* harvested)
+- `Initiation`: in initiation phase (cell division)
+- `Abortion`
+- `Flowering`
+- `Bunch`: the bunch of fruits is developping
+- `OleoSynthesis`: the inflorescence is in the process of oleosynthesis
+- `Scenescent`: dead but still on the plant
+- `Pruned`: removed from the plant (*e.g.* harvested)
 """
 struct Female <: ReproductiveOrgan
     state::String
