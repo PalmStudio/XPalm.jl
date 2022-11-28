@@ -1,3 +1,17 @@
+abstract type OrganState end
+
+struct Initiation <: OrganState end
+struct Spear <: OrganState end
+struct Opened <: OrganState end
+struct Pruned <: OrganState end
+struct Scenescent <: OrganState end
+struct Abortion <: OrganState end
+struct Flowering <: OrganState end
+struct Bunch <: OrganState end
+struct OleoSynthesis <: OrganState end
+struct Growing <: OrganState end
+struct Snag <: OrganState end
+
 """
     Palm(mtg, phytomer_count, max_rank, node_count)
     Palm()
@@ -83,16 +97,6 @@ A phytomer
 struct Phytomer <: Organ end
 
 """
-    InternodeState
-
-Defines the physiological state of the internode.
-"""
-abstract type InternodeState end
-
-struct Growing <: InternodeState end
-struct Snag <: InternodeState end
-
-"""
     Internode(state)
 
 An internode, which has a state of type [`InternodeState`](@ref) that can be either:
@@ -101,23 +105,11 @@ An internode, which has a state of type [`InternodeState`](@ref) that can be eit
 - `Snag`: has maintenance respiration only, and no leaf 
 or reproductive organs
 """
-struct Internode{S} <: Organ where {S<:InternodeState}
+struct Internode{S} <: Organ where {S<:OrganState}
     state::S
 end
 
 Internode() = Internode(Growing)
-
-abstract type OrganState end
-
-struct Initiation <: OrganState end
-struct Spear <: OrganState end
-struct Opened <: OrganState end
-struct Pruned <: OrganState end
-struct Scenescent <: OrganState end
-struct Abortion <: OrganState end
-struct Flowering <: OrganState end
-struct Bunch <: OrganState end
-struct OleoSynthesis <: OrganState end
 
 """
     Leaf(state)
@@ -130,7 +122,7 @@ A leaf, which has a state of type [`LeafState`](@ref) that can be either:
 - `Pruned`: dead and removed from the plant
 - `Scenescent`: dead but still on the plant
 """
-struct Leaf{S} <: Organ where {S<:LeafState}
+struct Leaf{S} <: Organ where {S<:OrganState}
     state::S
 end
 Leaf() = Leaf(Initiation)
@@ -148,7 +140,7 @@ A male inflorescence, which has a state that can be either:
 - `Scenescent`: dead but still on the plant
 - `Pruned`: removed from the plant
 """
-struct Male <: ReproductiveOrgan
+struct Male{S} <: ReproductiveOrgan where {S<:OrganState}
     state::String
 end
 
@@ -165,7 +157,7 @@ A female inflorescence, which has a state that can be either:
 - `Scenescent`: dead but still on the plant
 - `Pruned`: removed from the plant (*e.g.* harvested)
 """
-struct Female <: ReproductiveOrgan
+struct Female{S} <: ReproductiveOrgan where {S<:OrganState}
     state::String
 end
 
