@@ -12,6 +12,10 @@ struct OleoSynthesis <: OrganState end
 struct Growing <: OrganState end
 struct Snag <: OrganState end
 
+abstract type Organ end
+
+struct Plant end
+
 """
     Palm(mtg, phytomer_count, max_rank, node_count)
     Palm()
@@ -26,65 +30,83 @@ on the Palm.
 - `phytomer_count`: total number of phytomers emitted by the Palm since germination, *i.e.* physiological age
 - `mtg_node_count`: total number of nodes in the MTG (used to determine the unique ID)
 """
-mutable struct Palm
+mutable struct Palm{T} <: Organ
     mtg::MultiScaleTreeGraph.Node
     initiation_date::Dates.Date
     phytomer_count::Int
     mtg_node_count::Int
+    parameters::T
 end
 
 abstract type InitState end
 
-function Palm(initiation_date=Dates.Date(Dates.now()))
+const Palm_Default_Parameters = (
+    SRL=0.4, # Specific Root Length (m g-1)
+    RL0=5.0, # Root length at emergence (m)
+)
+
+function Palm(
+    initiation_date=Dates.Date(Dates.now()),
+    parameters=Palm_Default_Parameters,
+    model_list=main_models_definition()
+)
     mtg = MultiScaleTreeGraph.Node(
         1,
-        NodeMTG("/", "Palm", 1, 1),
-        Dict{Symbol,Any}()
+        NodeMTG("/", "Plant", 1, 1),
+        Dict{Symbol,Any}(),
+        type=Plant()
+    )
+
+    mtg[:models] = PlantSimEngine.ModelList(
+        model_list["Palm"].models...,
+        (model_list["Palm"].status..., mtg)
     )
 
     roots = MultiScaleTreeGraph.Node(
         mtg,
         NodeMTG("+", "RootSystem", 1, 2),
         Dict{Symbol,Any}(
-            :organ => RootSystem(),
             :initiation_date => initiation_date,
-        )
+            :depth => parameters.RL0, # total exploration depth m
+            :biomass_dry => parameters.RL0 / parameters.SRL, # g
+        ),
+        type=RootSystem()
     )
 
     stem = MultiScaleTreeGraph.Node(
         mtg,
         NodeMTG("+", "Stem", 1, 2),
         Dict{Symbol,Any}(
-            :organ => Stem(),
             :initiation_date => initiation_date, # date of initiation / creation
-        )
+        ),
+        type=Stem()
     )
 
     phyto = MultiScaleTreeGraph.Node(stem, NodeMTG("/", "Phytomer", 1, 3),
         Dict{Symbol,Any}(
-            :organ => Phytomer(),
             :initiation_date => initiation_date, # date of initiation / creation
-        )
+        ),
+        type=Phytomer(),
     )
 
     internode = MultiScaleTreeGraph.Node(phyto, NodeMTG("/", "Internode", 1, 4),
         Dict{Symbol,Any}(
-            :organ => Internode(),
             :initiation_date => initiation_date, # date of initiation / creation
-        )
+            :biomass_dry => 2.0 #! to update, do we have data ?
+        ),
+        type=Internode(),
     )
 
     leaf = MultiScaleTreeGraph.Node(internode, NodeMTG("+", "Leaf", 1, 4),
         Dict{Symbol,Any}(
-            :organ => Leaf(),
             :initiation_date => initiation_date, # date of initiation / creation
-        )
+            :biomass_dry => 2.0 #! to update, do we have data ?
+        ),
+        type=Leaf(),
     )
 
-    return Palm(mtg, initiation_date, 1, 6)
+    return Palm(mtg, initiation_date, 1, 6, parameters)
 end
-
-abstract type Organ end
 
 struct RootSystem <: Organ end
 struct Stem <: Organ end
