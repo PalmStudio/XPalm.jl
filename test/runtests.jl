@@ -1,7 +1,7 @@
 using XPalm
 using Test
 using Dates
-using MultiScaleTreeGraph
+using MultiScaleTreeGraph, PlantMeteo, PlantSimEngine
 
 @testset "Palm" begin
     include("test-palm.jl")
