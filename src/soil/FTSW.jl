@@ -16,48 +16,73 @@ soil = FTSW(
 )
 ``` 
 """
-struct FTSW{T} <: SoilModel
-    layers::Vector{FTSWLayer{T}}
-end
+# struct FTSW{T} <: SoilModel
+#     layers::Vector{FTSWLayer{T}}
+# end
 
-struct FTSWLayer{T}
-    thk::T # Thickness of the evaporative layer (m)
-    h_0::T # Initial soil humidity (m3[H20] m-3[Soil])
-    h_fc::T # Humidity at field capacity (m3[H20] m-3[Soil])
-    h_wp::T # Humidity at wilting point (m3[H20] m-3[Soil])
-    KC::T # cultural cefficient
-    TRESH_EVAP::T  
-    TRESH_FTSW_TRANSPI::T
-
-end
+# struct FTSWLayer{T}
+#     thk::T # Thickness of the evaporative layer (m)
+#     h_0::T # Initial soil humidity (m3[H20] m-3[Soil])
+#     h_fc::T # Humidity at field capacity (m3[H20] m-3[Soil])
+#     h_wp::T # Humidity at wilting point (m3[H20] m-3[Soil])
+#     KC::T # cultural cefficient
+#     TRESH_EVAP::T
+#     TRESH_FTSW_TRANSPI::T
+# end
 
 # Method for instantiating an FTSW with vectors:
-function FTSW(thk::T, h_0::T, h_fc::T, h_wp::T, KC::T) where {T<:Vector}
-    length(thk) == length(h_0) == length(h_fc) == length(h_wp) == length(KC) ||
-        throw(DimensionMismatch("All input vectors must have the same length"))
+# function FTSW(thk::T, h_0::T, h_fc::T, h_wp::T, KC::T) where {T<:Vector}
+#     length(thk) == length(h_0) == length(h_fc) == length(h_wp) == length(KC) ||
+#         throw(DimensionMismatch("All input vectors must have the same length"))
 
-    layers = [FTSWLayer(thk[i], h_0[i], h_fc[i], h_wp[i], KC[i]) for i in eachindex(thk)]
-    return FTSW(layers)
+#     layers = [FTSWLayer(thk[i], h_0[i], h_fc[i], h_wp[i], KC[i]) for i in eachindex(thk)]
+#     return FTSW(layers)
+# end
+
+"""
+    FTSW(;H_FC=0.23, H_WP_Z1=0.05, Z1=200, H_WP=0.1, Z2=2000, H_0=0.15, KC=1, TRESH_EVAP, TRESH_FTSW_TRANSPI)
+
+Fraction of Transpirable Soil Water model.
+
+# Arguments
+
+- `H_FC`: Humidity at field capacity (g[H20] g[Soil])
+- `H_WP_Z1`: Humidity at wilting point (g[H20] g[Soil]) for the first layer
+- `Z1`: Thickness of the first layer (mm)
+- `H_WP`: Humidity at wilting point (g[H20] g[Soil]) for the second layer
+- `Z2`: Thickness of the second layer (mm)
+- `H_0`: Initial soil humidity (g[H20] g[Soil])
+- `KC`: cultural coefficient (unitless)
+- `TRESH_EVAP`: fraction of water content in the evaporative layer below which evaporation is reduced (g[H20] g[Soil])
+- `TRESH_FTSW_TRANSPI`: FTSW treshold below which transpiration is reduced (g[H20] g[Soil])
+"""
+struct FTSW{T} <: SoilModel
+    H_FC
+    H_WP_Z1
+    Z1
+    H_WP
+    Z2
+    H_0
+    KC
+    TRESH_EVAP
+    TRESH_FTSW_TRANSPI
 end
 
-#' Coefficient of stress
-#'
-#' @param fillRate fill level of the compartment
-#' @param tresh filling treshold of the  compartment below which there is a reduction in the flow
-#'
-#' @return
-#' @export
-#'
-#' @examples
-#' 
-#### revision du code à faire par Rémi
-function KS(fillRate,tresh)
-    {
-      ks=ifelse(test = fillRate >= tresh ,yes =  1,no=1/(tresh) * fillRate)
-      return(ks)
-    }
+function FTSW(;
+    H_FC=0.23,
+    H_WP_Z1=0.05,
+    Z1=200,
+    H_WP=0.1,
+    Z2=2000,
+    H_0=0.15,
+    KC=1,
+    TRESH_EVAP=0.5,
+    TRESH_FTSW_TRANSPI=0.5
+)
+    FTSW(H_FC, H_WP_Z1, Z1, H_WP, Z2, H_0, KC, TRESH_EVAP, TRESH_FTSW_TRANSPI)
+end
 
-inputs_(::FTSW) = (
+PlantSimEngine.inputs_(::FTSW) = (
     depth=-Inf,
     ET0=-Inf, #potential evapotranspiration
     tree_ei=-Inf, #! light interception efficiency 
@@ -65,24 +90,123 @@ inputs_(::FTSW) = (
     qte_H2O_Vap=-Inf, #! Ask Raph what is this variable
 )
 
-outputs_(::FTSW) =
+PlantSimEngine.outputs_(::FTSW) =
     (
         qte_H2O_C1=-Inf,
         qte_H2O_Vap=-Inf,
     )
 # dep(::FTSW) = (test_prev=AbstractTestPrevModel,)
 
-function soil_model!_(::FTSW, models, status, meteo::PlantMeteo.AbstractAtmosphere, constants=Constants())
+"""
+    KS(fillRate, tresh)
+
+Coefficient of stress. 
+
+# Arguments
+
+- `fillRate`: fill level of the compartment
+- `tresh`: filling treshold of the  compartment below which there is a reduction in the flow
+"""
+KS(fillRate, tresh) = fillRate >= tresh ? 1 : 1 / (tresh) * fillRate
+
+"""
+    compute_compartment_size(m, root_depth)
+
+Compute the size of the layers of the FTSW model.
+
+# Arguments
+
+- `m`: FTSW model
+- `root_depth`: depth of the root system
+
+# Returns
+
+- `TailleC1`: size of the evapotranspirable water layer in the first soil layer (mm)
+- `TailleVap`: size of the evaporative layer within the first layer (mm)
+- `TailleC1moinsVap`: size of the transpirable layer within the first layer (TailleC1-TailleVap)
+- `TailleC2`: size of the transpirable water layer in the first soil layer (mm)
+- `TailleC`: size of transpirable soil water (mm) (TailleC2 + TailleC1moinsVap)
+"""
+function compute_compartment_size(m, root_depth)
+
+    Taille_WP = m.H_WP * m.Z1
+    # Size of the evaporative component of the first layer:
+    TailleVap = 0.5 * Taille_WP
+    # NB: the 0.5 is because water can still evaporate below the wilting point
+    # in the first layer, considered at 0.5 * H_WP. 
+    #! replace 0.5 * m.H_WP by a parameter
+
+    # Size of the evapotranspirable water layer in the first soil layer:
+    if (root_depth > m.Z1)
+        TailleC1 = m.H_FC * m.Z1 - (Taille_WP - TailleVap)
+        # m.H_FC * m.Z1 -> size of the first layer at field capacity
+        # (Taille_WP - TailleVap) -> size of the first layer that will never evapotranspirate
+        # TailleC1 -> size of the first layer that can evapotranspirate
+    else
+        TailleC1 = m.H_FC * root_depth - TailleVap
+    end
+    TailleC1moinsVap = TailleC1 - TailleVap
+    #! continue reviewing here
+
+    if (root_depth > m.Z2 + m.Z1)
+        TailleC2 = (m.H_FC - m.H_WP) * m.Z2
+    else
+        TailleC2 = max(0.0, (m.H_FC - m.H_WP) * (root_depth - m.Z1))
+        TailleC = TailleC2 + TailleC1moinsVap
+    end
+
+    return TailleC1, TailleVap, TailleC1moinsVap, TailleC2, TailleC
+end
+
+function soil_init_default(m::FTSW, root_depth)
+    TailleC1, TailleVap, TailleC1moinsVap, TailleC2, TailleC = compute_compartment_size(m, root_depth)
+
+    TailleC1 = (m.H_FC - m.H_WP_Z1) * m.Z1
+    TailleVap = m.H_WP_Z1 * m.Z1
+    TailleC1moinsVap = TailleC1 - TailleVap
+    TailleC2 = (m.H_FC - m.H_WP) * m.Z2
+    TailleC = TailleC2 + TailleC1 - TailleVap
+    a_C1 = min(TailleC1, (m.H_0 - m.H_WP_Z1) * m.Z1)
+    qte_H2O_C1 = max(0.0, a_C1)
+    a_vap = min(TailleVap, (m.H_0 - m.H_WP_Z1) * m.Z1)
+    qte_H2O_Vap = max(0.0, a_vap)
+    a_C2 = min(TailleC2, (m.H_0 - m.H_WP) * m.Z2)
+    qte_H2O_C2 = max(0.0, a_C2)
+    a_C = qte_H2O_C1 + qte_H2O_C2 - qte_H2O_Vap
+    qte_H2O_C = max(0.0, a_C)
+    a_C1moinsV = qte_H2O_C1 - qte_H2O_Vap
+    qte_H2O_C1moinsVap = max(0.0, a_C1moinsV)
+    qte_H2O_C1_Racines = max(0.0, qte_H2O_C1 * racines_TailleC1 / TailleC1)
+    qte_H2O_Vap_Racines = max(0.0, qte_H2O_Vap * racines_TailleVap / TailleVap)
+    qte_H2O_C2_Racines = max(0.0, qte_H2O_C2 * racines_TailleC2 / TailleC2)
+    qte_H2O_C_Racines = max(0.0, qte_H2O_C * racines_TailleC / TailleC)
+    qte_H2O_C1moinsVap_Racines = max(0.0, qte_H2O_C1moinsVap * racines_TailleC1moinsVap / TailleC1moinsVap)
+    FractionC1 = 0
+    FractionC2 = 0
+    FractionC = 0
+    FractionC1Racine = 0
+    FractionC2Racine = 0
+    ftsw = 0.5
+    FractionC1moinsVapRacine = 0
+    compute_fraction()
+    EvapMax = 0
+    Transp_Max = 0
+    pluie_efficace = 0
+    Evap = 0
+    EvapC1moinsVap = 0
+    EvapVap = 0
+    Transpi = 0
+    TranspiC2 = 0
+    TranspiC1moinsVap = 0
+    a_C1moinsVap_Racines = 0
+    a_Vap_Racines = 0
+end
+
+function soil_model!_(::FTSW, models, status, meteo, constants, extra=nothing)
     rain = meteo.Precipitations
-    
 
-
-   
     EvapMax = (1 - status.tree_ei) * status.ET0 * models.soil_model.KC
     Transp_Max = status.tree_ei * status.ET0 * models.soil_model.KC
-
-
-    
 
     if (0.916 * rain - 0.589) < 0
         rain_soil = 0
@@ -100,6 +224,7 @@ function soil_model!_(::FTSW, models, status, meteo::PlantMeteo.AbstractAtmosphe
 
     mem_qte_H2O_C1 = status.qte_H2O_C1
     mem_qte_H2O_Vap = status.qte_H2O_Vap
+
     if (status.qte_H2O_Vap + rain_effective) >= TailleVap
         status.qte_H2O_Vap = TailleVap
         if (qte_H2O_C1moinsVap + (rain_effective - TailleVap + mem_qte_H2O_Vap)) >= TailleC1moinsVap
@@ -144,10 +269,8 @@ function soil_model!_(::FTSW, models, status, meteo::PlantMeteo.AbstractAtmosphe
 
     compute_fraction!(status)
 
-    
-
     #Evap = EvapMax * (FractionC1 > models.soil_model.TRESH_EVAP ? 1 : FractionC1 / models.soil_model.TRESH_EVAP)
-    Evap = EvapMax * KS(FractionC1,models.soil_model.TRESH_EVAP )
+    Evap = EvapMax * KS(FractionC1, models.soil_model.TRESH_EVAP)
     if qte_H2O_C1moinsVap - Evap >= 0
         qte_H2O_C1moinsVap += -Evap
         EvapC1moinsVap = Evap
@@ -170,9 +293,9 @@ function soil_model!_(::FTSW, models, status, meteo::PlantMeteo.AbstractAtmosphe
 
     compute_fraction!(status)
 
-   # Transpi = Transp_Max * (ftsw > models.soil_model.TRESH_FTSW_TRANSPI ? 1 : ftsw / models.soil_model.TRESH_FTSW_TRANSPI)
-   Transpi = Transp_Max * KS(models.soil_model.TRESH_FTSW_TRANSPI ,ftsw)
-   
+    # Transpi = Transp_Max * (ftsw > models.soil_model.TRESH_FTSW_TRANSPI ? 1 : ftsw / models.soil_model.TRESH_FTSW_TRANSPI)
+    Transpi = Transp_Max * KS(models.soil_model.TRESH_FTSW_TRANSPI, ftsw)
+
     if qte_H2O_C2_Racines > 0
         TranspiC2 = min(Transpi * (qte_H2O_C2_Racines / (qte_H2O_C2_Racines + qte_H2O_C1moinsVap_Racines)), qte_H2O_C2_Racines)
     else
