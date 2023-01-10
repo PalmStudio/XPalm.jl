@@ -40,26 +40,46 @@ end
 
 abstract type InitState end
 
-const Palm_Default_Parameters = (
-    SRL=0.4, # Specific Root Length (m g-1)
-    RL0=5.0, # Root length at emergence (m)
-)
+function default_parameters()
+    p = Dict(
+        :SRL => 0.4, # Specific Root Length (m g-1)
+        :RL0 => 5.0, # Root length at emergence (m)
+        :Q10 => 2.1,
+        :Rm_base => 0.06,
+        :T_ref => 25.0,
+        :nitrogen_content => Dict(
+            :Stem => 0.005,
+            :Internode => 0.005,
+            :Leaf => 0.03,
+            :Female => 0.01,
+            :RootSystem => 0.01,
+        )
+    )
+
+    push!(p,
+        :biomass_dry => Dict(
+            :Stem => 0.1,
+            :Internode => 2.0,
+            :Leaf => 2.0,
+            :RootSystem => p[:RL0] / p[:SRL]
+        )
+    )
+
+    return p
+end
 
 function Palm(
     initiation_date=Dates.Date(Dates.now()),
-    parameters=Palm_Default_Parameters,
-    model_list=main_models_definition()
+    parameters=default_parameters(),
+    model_list=main_models_definition(parameters)
 )
     mtg = MultiScaleTreeGraph.Node(
         1,
         NodeMTG("/", "Plant", 1, 1),
-        Dict{Symbol,Any}(),
+        Dict{Symbol,Any}(
+            :models => model_list["Palm"],
+        ),
         type=Plant()
-    )
-
-    mtg[:models] = PlantSimEngine.ModelList(
-        model_list["Palm"].models...,
-        (model_list["Palm"].status..., mtg)
     )
 
     roots = MultiScaleTreeGraph.Node(
@@ -67,8 +87,8 @@ function Palm(
         NodeMTG("+", "RootSystem", 1, 2),
         Dict{Symbol,Any}(
             :initiation_date => initiation_date,
-            :depth => parameters.RL0, # total exploration depth m
-            :biomass_dry => parameters.RL0 / parameters.SRL, # g
+            :depth => parameters[:RL0], # total exploration depth m
+            :models => model_list[:RootSystem],
         ),
         type=RootSystem()
     )
@@ -78,6 +98,7 @@ function Palm(
         NodeMTG("+", "Stem", 1, 2),
         Dict{Symbol,Any}(
             :initiation_date => initiation_date, # date of initiation / creation
+            :models => model_list[:Stem],
         ),
         type=Stem()
     )
@@ -85,6 +106,7 @@ function Palm(
     phyto = MultiScaleTreeGraph.Node(stem, NodeMTG("/", "Phytomer", 1, 3),
         Dict{Symbol,Any}(
             :initiation_date => initiation_date, # date of initiation / creation
+            :models => model_list["Phytomer"],
         ),
         type=Phytomer(),
     )
@@ -92,7 +114,7 @@ function Palm(
     internode = MultiScaleTreeGraph.Node(phyto, NodeMTG("/", "Internode", 1, 4),
         Dict{Symbol,Any}(
             :initiation_date => initiation_date, # date of initiation / creation
-            :biomass_dry => 2.0 #! to update, do we have data ?
+            :models => model_list[:Internode],
         ),
         type=Internode(),
     )
@@ -100,7 +122,7 @@ function Palm(
     leaf = MultiScaleTreeGraph.Node(internode, NodeMTG("+", "Leaf", 1, 4),
         Dict{Symbol,Any}(
             :initiation_date => initiation_date, # date of initiation / creation
-            :biomass_dry => 2.0 #! to update, do we have data ?
+            :models => model_list[:Leaf],
         ),
         type=Leaf(),
     )
