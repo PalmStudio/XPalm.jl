@@ -85,9 +85,9 @@ end
 PlantSimEngine.inputs_(::FTSW) = (
     depth=-Inf,
     ET0=-Inf, #potential evapotranspiration
-    tree_ei=-Inf, #! light interception efficiency 
-    qte_H2O_C1=-Inf, #! Ask Raph what is this variable
-    qte_H2O_Vap=-Inf, #! Ask Raph what is this variable
+    tree_ei=-Inf, # light interception efficiency (ei=1-exp(-kLAI))
+    qte_H2O_C1=-Inf, # quantity of water in C1 compartment
+    qte_H2O_Vap=-Inf, # quantity of water in evaporative compartment
 )
 
 PlantSimEngine.outputs_(::FTSW) =
@@ -146,7 +146,7 @@ function compute_compartment_size(m, root_depth)
         TailleC1 = m.H_FC * root_depth - TailleVap
     end
     TailleC1moinsVap = TailleC1 - TailleVap
-    #! continue reviewing here
+
 
     if (root_depth > m.Z2 + m.Z1)
         TailleC2 = (m.H_FC - m.H_WP) * m.Z2
@@ -208,6 +208,7 @@ function soil_model!_(::FTSW, models, status, meteo, constants, extra=nothing)
     EvapMax = (1 - status.tree_ei) * status.ET0 * models.soil_model.KC
     Transp_Max = status.tree_ei * status.ET0 * models.soil_model.KC
 
+    # estim effective rain
     if (0.916 * rain - 0.589) < 0
         rain_soil = 0
     else
@@ -222,31 +223,45 @@ function soil_model!_(::FTSW, models, status, meteo, constants, extra=nothing)
 
     rain_effective = rain_soil + stemflow
 
+    # fill compartment with rain
     mem_qte_H2O_C1 = status.qte_H2O_C1
     mem_qte_H2O_Vap = status.qte_H2O_Vap
 
     if (status.qte_H2O_Vap + rain_effective) >= TailleVap
         status.qte_H2O_Vap = TailleVap
-        if (qte_H2O_C1moinsVap + (rain_effective - TailleVap + mem_qte_H2O_Vap)) >= TailleC1moinsVap
+        rain_remain = rain_effective - TailleVap
+        if (qte_H2O_C1moinsVap + (rain_remain + mem_qte_H2O_Vap)) >= TailleC1moinsVap
             qte_H2O_C1moinsVap = TailleC1moinsVap
             qte_H2O_C1 = qte_H2O_C1moinsVap + qte_H2O_Vap
-            if (status.qte_H2O_C2 + mem_qte_H2O_C1 + rain_effective - TailleC1) >= TailleC2
+            rain_remain = rain_effective - TailleC1
+            if (status.qte_H2O_C2 + mem_qte_H2O_C1 + rain_remain) >= TailleC2
                 status.qte_H2O_C2 = TailleC2
+                rain_remain = rain_effective - TailleC1 - TailleC2
             else
-                qte_H2O_C2 += mem_qte_H2O_C1 + rain_effective - TailleC1
+                qte_H2O_C2 += mem_qte_H2O_C1 + rain_remain
+                rain_remain = 0
             end
         else
-            qte_H2O_C1moinsVap += rain_effective - TailleVap + mem_qte_H2O_Vap
+            qte_H2O_C1moinsVap += rain_remain + mem_qte_H2O_Vap
             qte_H2O_C1 = qte_H2O_C1moinsVap + qte_H2O_Vap
+            rain_remain = 0
         end
     else
         qte_H2O_Vap += rain_effective
         qte_H2O_C1 = qte_H2O_Vap + qte_H2O_C1moinsVap
+        rain_remain = 0
     end
     qte_H2O_C = qte_H2O_C1moinsVap + qte_H2O_C2
 
+    ## RP: this part of the code is incomprehensible, exactly the same calculation as above 
+    # above, again using the rains that have already been used...
+    # moreover the size of the compartments is already defined by the root depth...
+    ## I take back and simplify the code, cf FTSW raph
+
+
     mem_qte_H2O_C1_Racines = qte_H2O_C1_Racines
     mem_qte_H2O_Vap_Racines = qte_H2O_Vap_Racines
+
     if ((qte_H2O_Vap_Racines + rain_effective) >= racines_TailleVap)
         qte_H2O_Vap_Racines = racines_TailleVap
         if ((qte_H2O_C1moinsVap_Racines + (rain_effective - racines_TailleVap + mem_qte_H2O_Vap_Racines)) >= racines_TailleC1moinsVap)
