@@ -39,6 +39,9 @@ soil = FTSW(
 #     return FTSW(layers)
 # end
 
+@process Soil
+
+
 """
     FTSW(;H_FC=0.23, H_WP_Z1=0.05, Z1=200, H_WP=0.1, Z2=2000, H_0=0.15, KC=1, TRESH_EVAP, TRESH_FTSW_TRANSPI)
 
@@ -56,7 +59,7 @@ Fraction of Transpirable Soil Water model.
 - `TRESH_EVAP`: fraction of water content in the evaporative layer below which evaporation is reduced (g[H20] g[Soil])
 - `TRESH_FTSW_TRANSPI`: FTSW treshold below which transpiration is reduced (g[H20] g[Soil])
 """
-struct FTSW{T} <: SoilModel
+struct FTSW{T} <: AbstractSoilModel
     H_FC
     H_WP_Z1
     Z1
@@ -86,14 +89,20 @@ PlantSimEngine.inputs_(::FTSW) = (
     depth=-Inf,
     ET0=-Inf, #potential evapotranspiration
     tree_ei=-Inf, # light interception efficiency (ei=1-exp(-kLAI))
-    qte_H2O_C1=-Inf, # quantity of water in C1 compartment
-    qte_H2O_Vap=-Inf, # quantity of water in evaporative compartment
+    qty_H2O_Vap=-Inf, # quantity of water in evaporative compartment
+    qty_H2O_C1=-Inf, # quantity of water in C1 compartment
+    qty_H2O_C2=-Inf, # quantity of water in C2 compartment
+    qty_H2O_C=-Inf, # quantity of water in C compartment
+    ftsw=-Inf, # fraction of transpirable soil water
 )
 
 PlantSimEngine.outputs_(::FTSW) =
     (
-        qte_H2O_C1=-Inf,
-        qte_H2O_Vap=-Inf,
+        qty_H2O_Vap=-Inf,
+        qty_H2O_C1=-Inf,
+        qty_H2O_C2=-Inf,
+        qty_H2O_C=-Inf,
+        ftsw=-Inf,
     )
 # dep(::FTSW) = (test_prev=AbstractTestPrevModel,)
 
@@ -121,85 +130,68 @@ Compute the size of the layers of the FTSW model.
 
 # Returns
 
-- `TailleC1`: size of the evapotranspirable water layer in the first soil layer (mm)
-- `TailleVap`: size of the evaporative layer within the first layer (mm)
-- `TailleC1moinsVap`: size of the transpirable layer within the first layer (TailleC1-TailleVap)
-- `TailleC2`: size of the transpirable water layer in the first soil layer (mm)
-- `TailleC`: size of transpirable soil water (mm) (TailleC2 + TailleC1moinsVap)
+- `SizeC1`: size of the evapotranspirable water layer in the first soil layer (mm)
+- `SizeVap`: size of the evaporative layer within the first layer (mm)
+- `SizeC1minusVap`: size of the transpirable layer within the first layer (SizeC1-SizeVap)
+- `SizeC2`: size of the transpirable water layer in the first soil layer (mm)
+- `SizeC`: size of transpirable soil water (mm) (SizeC2 + SizeC1minusVap)
 """
 function compute_compartment_size(m, root_depth)
 
     Taille_WP = m.H_WP * m.Z1
     # Size of the evaporative component of the first layer:
-    TailleVap = 0.5 * Taille_WP
+    SizeVap = 0.5 * Taille_WP
     # NB: the 0.5 is because water can still evaporate below the wilting point
     # in the first layer, considered at 0.5 * H_WP. 
     #! replace 0.5 * m.H_WP by a parameter
 
     # Size of the evapotranspirable water layer in the first soil layer:
     if (root_depth > m.Z1)
-        TailleC1 = m.H_FC * m.Z1 - (Taille_WP - TailleVap)
+        SizeC1 = m.H_FC * m.Z1 - (Taille_WP - SizeVap)
         # m.H_FC * m.Z1 -> size of the first layer at field capacity
-        # (Taille_WP - TailleVap) -> size of the first layer that will never evapotranspirate
-        # TailleC1 -> size of the first layer that can evapotranspirate
+        # (Taille_WP - SizeVap) -> size of the first layer that will never evapotranspirate
+        # SizeC1 -> size of the first layer that can evapotranspirate
     else
-        TailleC1 = m.H_FC * root_depth - TailleVap
+        SizeC1 = m.H_FC * root_depth - SizeVap
     end
-    TailleC1moinsVap = TailleC1 - TailleVap
+    SizeC1minusVap = SizeC1 - SizeVap
 
 
     if (root_depth > m.Z2 + m.Z1)
-        TailleC2 = (m.H_FC - m.H_WP) * m.Z2
+        SizeC2 = (m.H_FC - m.H_WP) * m.Z2
     else
-        TailleC2 = max(0.0, (m.H_FC - m.H_WP) * (root_depth - m.Z1))
-        TailleC = TailleC2 + TailleC1moinsVap
+        SizeC2 = max(0.0, (m.H_FC - m.H_WP) * (root_depth - m.Z1))
+        SizeC = SizeC2 + SizeC1minusVap
     end
 
-    return TailleC1, TailleVap, TailleC1moinsVap, TailleC2, TailleC
+    return SizeC1, SizeVap, SizeC1minusVap, SizeC2, SizeC
 end
 
 function soil_init_default(m::FTSW, root_depth)
-    TailleC1, TailleVap, TailleC1moinsVap, TailleC2, TailleC = compute_compartment_size(m, root_depth)
+    SizeC1, SizeVap, SizeC1minusVap, SizeC2, SizeC = compute_compartment_size(m, root_depth)
 
-    TailleC1 = (m.H_FC - m.H_WP_Z1) * m.Z1
-    TailleVap = m.H_WP_Z1 * m.Z1
-    TailleC1moinsVap = TailleC1 - TailleVap
-    TailleC2 = (m.H_FC - m.H_WP) * m.Z2
-    TailleC = TailleC2 + TailleC1 - TailleVap
-    a_C1 = min(TailleC1, (m.H_0 - m.H_WP_Z1) * m.Z1)
-    qte_H2O_C1 = max(0.0, a_C1)
-    a_vap = min(TailleVap, (m.H_0 - m.H_WP_Z1) * m.Z1)
-    qte_H2O_Vap = max(0.0, a_vap)
-    a_C2 = min(TailleC2, (m.H_0 - m.H_WP) * m.Z2)
-    qte_H2O_C2 = max(0.0, a_C2)
-    a_C = qte_H2O_C1 + qte_H2O_C2 - qte_H2O_Vap
-    qte_H2O_C = max(0.0, a_C)
-    a_C1moinsV = qte_H2O_C1 - qte_H2O_Vap
-    qte_H2O_C1moinsVap = max(0.0, a_C1moinsV)
-    qte_H2O_C1_Racines = max(0.0, qte_H2O_C1 * racines_TailleC1 / TailleC1)
-    qte_H2O_Vap_Racines = max(0.0, qte_H2O_Vap * racines_TailleVap / TailleVap)
-    qte_H2O_C2_Racines = max(0.0, qte_H2O_C2 * racines_TailleC2 / TailleC2)
-    qte_H2O_C_Racines = max(0.0, qte_H2O_C * racines_TailleC / TailleC)
-    qte_H2O_C1moinsVap_Racines = max(0.0, qte_H2O_C1moinsVap * racines_TailleC1moinsVap / TailleC1moinsVap)
-    FractionC1 = 0
-    FractionC2 = 0
-    FractionC = 0
-    FractionC1Racine = 0
-    FractionC2Racine = 0
-    ftsw = 0.5
-    FractionC1moinsVapRacine = 0
-    compute_fraction()
-    EvapMax = 0
-    Transp_Max = 0
-    pluie_efficace = 0
-    Evap = 0
-    EvapC1moinsVap = 0
-    EvapVap = 0
-    Transpi = 0
-    TranspiC2 = 0
-    TranspiC1moinsVap = 0
-    a_C1moinsVap_Racines = 0
-    a_Vap_Racines = 0
+    # SizeC1 = (m.H_FC - m.H_WP_Z1) * m.Z1
+    # SizeVap = m.H_WP_Z1 * m.Z1
+    # SizeC1minusVap = SizeC1 - SizeVap
+    # SizeC2 = (m.H_FC - m.H_WP) * m.Z2
+    # SizeC = SizeC2 + SizeC1 - SizeVap
+
+    a_vap = min(SizeVap, (m.H_0 - m.H_WP_Z1) * m.Z1)
+    qty_H2O_Vap = max(0.0, a_vap)
+
+    a_C1moinsV = qty_H2O_C1 - qty_H2O_Vap
+    qty_H2O_C1minusVap = max(0.0, a_C1moinsV)
+
+    a_C1 = min(SizeC1, (m.H_0 - m.H_WP_Z1) * m.Z1)
+    qty_H2O_C1 = max(0.0, a_C1)
+
+    a_C2 = min(SizeC2, (m.H_0 - m.H_WP) * m.Z2)
+    qty_H2O_C2 = max(0.0, a_C2)
+
+    a_C = qty_H2O_C1 + qty_H2O_C2 - qty_H2O_Vap
+    qty_H2O_C = max(0.0, a_C)
+
+    compute_fraction!(status)
 end
 
 function soil_model!_(::FTSW, models, status, meteo, constants, extra=nothing)
@@ -223,115 +215,76 @@ function soil_model!_(::FTSW, models, status, meteo, constants, extra=nothing)
 
     rain_effective = rain_soil + stemflow
 
-    # fill compartment with rain
-    mem_qte_H2O_C1 = status.qte_H2O_C1
-    mem_qte_H2O_Vap = status.qte_H2O_Vap
+    # balance after rain
+    mem_qty_H2O_C1 = status.qty_H2O_C1
+    mem_qty_H2O_Vap = status.qty_H2O_Vap
 
-    if (status.qte_H2O_Vap + rain_effective) >= TailleVap
-        status.qte_H2O_Vap = TailleVap
-        rain_remain = rain_effective - TailleVap
-        if (qte_H2O_C1moinsVap + (rain_remain + mem_qte_H2O_Vap)) >= TailleC1moinsVap
-            qte_H2O_C1moinsVap = TailleC1moinsVap
-            qte_H2O_C1 = qte_H2O_C1moinsVap + qte_H2O_Vap
-            rain_remain = rain_effective - TailleC1
-            if (status.qte_H2O_C2 + mem_qte_H2O_C1 + rain_remain) >= TailleC2
-                status.qte_H2O_C2 = TailleC2
-                rain_remain = rain_effective - TailleC1 - TailleC2
+    if (status.qty_H2O_Vap + rain_effective) >= SizeVap
+        status.qty_H2O_Vap = SizeVap # evaporative compartment is full
+        rain_remain = rain_effective - SizeVap
+        if (status.qty_H2O_C1minusVap + (rain_remain + mem_qty_H2O_Vap)) >= SizeC1minusVap
+            status.qty_H2O_C1minusVap = SizeC1minusVap # Transpirative compartment in the first layer is full
+            status.qty_H2O_C1 = status.qty_H2O_C1minusVap + status.qty_H2O_Vap
+            rain_remain = rain_effective - SizeC1
+            if (status.qty_H2O_C2 + mem_qty_H2O_C1 + rain_remain) >= SizeC2
+                status.qty_H2O_C2 = SizeC2 # Transpirative compartment in the second layer is full
+                rain_remain = rain_effective - SizeC1 - SizeC2
             else
-                qte_H2O_C2 += mem_qte_H2O_C1 + rain_remain
+                qty_H2O_C2 += mem_qty_H2O_C1 + rain_remain - SizeC1
                 rain_remain = 0
             end
         else
-            qte_H2O_C1moinsVap += rain_remain + mem_qte_H2O_Vap
-            qte_H2O_C1 = qte_H2O_C1moinsVap + qte_H2O_Vap
+            qty_H2O_C1minusVap += rain_remain + mem_qty_H2O_Vap
+            qty_H2O_C1 = qty_H2O_C1minusVap + qty_H2O_Vap
             rain_remain = 0
         end
     else
-        qte_H2O_Vap += rain_effective
-        qte_H2O_C1 = qte_H2O_Vap + qte_H2O_C1moinsVap
+        qty_H2O_Vap += rain_effective
+        qty_H2O_C1 = qty_H2O_Vap + qty_H2O_C1minusVap
         rain_remain = 0
     end
-    qte_H2O_C = qte_H2O_C1moinsVap + qte_H2O_C2
-
-    ## RP: this part of the code is incomprehensible, exactly the same calculation as above 
-    # above, again using the rains that have already been used...
-    # moreover the size of the compartments is already defined by the root depth...
-    ## I take back and simplify the code, cf FTSW raph
-
-
-    mem_qte_H2O_C1_Racines = qte_H2O_C1_Racines
-    mem_qte_H2O_Vap_Racines = qte_H2O_Vap_Racines
-
-    if ((qte_H2O_Vap_Racines + rain_effective) >= racines_TailleVap)
-        qte_H2O_Vap_Racines = racines_TailleVap
-        if ((qte_H2O_C1moinsVap_Racines + (rain_effective - racines_TailleVap + mem_qte_H2O_Vap_Racines)) >= racines_TailleC1moinsVap)
-            qte_H2O_C1moinsVap_Racines = racines_TailleC1moinsVap
-            qte_H2O_C1_Racines = qte_H2O_C1moinsVap_Racines + qte_H2O_Vap_Racines
-            if ((qte_H2O_C2_Racines + mem_qte_H2O_C1_Racines + rain_effective - racines_TailleC1) >= racines_TailleC2)
-                qte_H2O_C2_Racines = racines_TailleC2
-            else
-                qte_H2O_C2_Racines += mem_qte_H2O_C1_Racines + rain_effective - racines_TailleC1
-            end
-        else
-            qte_H2O_C1moinsVap_Racines += rain_effective - racines_TailleVap + mem_qte_H2O_Vap_Racines
-            qte_H2O_C1_Racines = qte_H2O_C1moinsVap_Racines + qte_H2O_Vap_Racines
-        end
-    else
-        qte_H2O_Vap_Racines += rain_effective
-        qte_H2O_C1_Racines = qte_H2O_C1moinsVap_Racines + qte_H2O_Vap_Racines
-    end
-    qte_H2O_C_Racines = qte_H2O_C1moinsVap_Racines + qte_H2O_C2_Racines
+    qty_H2O_C = qty_H2O_C1minusVap + qty_H2O_C2
 
     compute_fraction!(status)
 
-    #Evap = EvapMax * (FractionC1 > models.soil_model.TRESH_EVAP ? 1 : FractionC1 / models.soil_model.TRESH_EVAP)
+    # balance after evaporation
     Evap = EvapMax * KS(FractionC1, models.soil_model.TRESH_EVAP)
-    if qte_H2O_C1moinsVap - Evap >= 0
-        qte_H2O_C1moinsVap += -Evap
-        EvapC1moinsVap = Evap
+
+    if qty_H2O_C1minusVap - Evap >= 0 # first evaporation on the evapotranspirative compartment
+        qty_H2O_C1minusVap += -Evap
+        EvapC1minusVap = Evap
         EvapVap = 0
     else
-        EvapC1moinsVap = qte_H2O_C1moinsVap
-        qte_H2O_C1moinsVap = 0
-        EvapVap = Evap - EvapC1moinsVap
-        qte_H2O_Vap += -EvapVap
+        EvapC1minusVap = qty_H2O_C1minusVap # then evaporation only on the evaporative compartment
+        qty_H2O_C1minusVap = 0
+        EvapVap = Evap - EvapC1minusVap
+        qty_H2O_Vap += -EvapVap
     end
-    qte_H2O_C1 = qte_H2O_C1moinsVap + qte_H2O_Vap
-    qte_H2O_C = qte_H2O_C1 + qte_H2O_C2 - qte_H2O_Vap
+    qty_H2O_C1 = qty_H2O_C1minusVap + qty_H2O_Vap
+    qty_H2O_C = qty_H2O_C1 + qty_H2O_C2 - qty_H2O_Vap
 
-    a_C1moinsVap_Racines = qte_H2O_C1moinsVap_Racines - EvapC1moinsVap * racines_TailleC1moinsVap / TailleC1moinsVap
-    qte_H2O_C1moinsVap_Racines = max(0.0, a_C1moinsVap_Racines)
-    a_Vap_Racines = qte_H2O_Vap_Racines - EvapVap * racines_TailleVap / TailleVap
-    qte_H2O_Vap_Racines = max(0.0, a_Vap_Racines)
-    qte_H2O_C1_Racines = qte_H2O_Vap_Racines + qte_H2O_C1moinsVap_Racines
-    qte_H2O_C_Racines = qte_H2O_C2_Racines + qte_H2O_C1moinsVap_Racines
 
     compute_fraction!(status)
 
-    # Transpi = Transp_Max * (ftsw > models.soil_model.TRESH_FTSW_TRANSPI ? 1 : ftsw / models.soil_model.TRESH_FTSW_TRANSPI)
+    # balance after transpiration
     Transpi = Transp_Max * KS(models.soil_model.TRESH_FTSW_TRANSPI, ftsw)
 
-    if qte_H2O_C2_Racines > 0
-        TranspiC2 = min(Transpi * (qte_H2O_C2_Racines / (qte_H2O_C2_Racines + qte_H2O_C1moinsVap_Racines)), qte_H2O_C2_Racines)
+    if qty_H2O_C2 > 0
+        TranspiC2 = min(Transpi * (qty_H2O_C2 / (qty_H2O_C2 + qty_H2O_C1minusVap)), qty_H2O_C2)
     else
         TranspiC2 = 0
     end
 
-    if qte_H2O_C1moinsVap_Racines > 0
-        TranspiC1moinsVap = min(Transpi * (qte_H2O_C1moinsVap_Racines / (qte_H2O_C2_Racines + qte_H2O_C1moinsVap_Racines)), qte_H2O_C1moinsVap_Racines)
+    if qty_H2O_C1minusVap > 0
+        TranspiC1minusVap = min(Transpi * (qty_H2O_C1minusVap / (qty_H2O_C2 + qty_H2O_C1minusVap)), qty_H2O_C1minusVap)
     else
-        TranspiC1moinsVap = 0
+        TranspiC1minusVap = 0
     end
 
-    qte_H2O_C1moinsVap_Racines += -TranspiC1moinsVap
-    qte_H2O_C2_Racines += -TranspiC2
-    qte_H2O_C_Racines = qte_H2O_C2_Racines + qte_H2O_C1moinsVap_Racines
-    qte_H2O_C1_Racines = qte_H2O_Vap_Racines + qte_H2O_C1moinsVap_Racines
-
-    qte_H2O_C1moinsVap += -TranspiC1moinsVap
-    qte_H2O_C2 += -TranspiC2
-    qte_H2O_C = qte_H2O_C2 + qte_H2O_C1moinsVap
-    qte_H2O_C1 = qte_H2O_Vap + qte_H2O_C1moinsVap
+    qty_H2O_C1minusVap += -TranspiC1minusVap
+    qty_H2O_C2 += -TranspiC2
+    qty_H2O_C = qty_H2O_C2 + qty_H2O_C1minusVap
+    qty_H2O_C1 = qty_H2O_Vap + qty_H2O_C1minusVap
 
     compute_fraction!(status)
 end
@@ -339,19 +292,12 @@ end
 
 
 function compute_fraction!(status)
-    FractionC1 = status.qte_H2O_C1 / TailleC1
-    if TailleC2 > 0
-        FractionC2 = status.qte_H2O_C2 / TailleC2
+    FractionC1 = status.qty_H2O_C1 / SizeC1
+    if SizeC2 > 0
+        FractionC2 = status.qty_H2O_C2 / SizeC2
     else
         FractionC2 = 0
     end
-    FractionC = status.qte_H2O_C / TailleC
-    FractionC1Racine = status.qte_H2O_C1_Racines / racines_TailleC1
-    if racines_TailleC2 > 0
-        FractionC2Racine = status.qte_H2O_C2_Racines / racines_TailleC2
-    else
-        FractionC2Racine = 0
-    end
-    status.ftsw = status.qte_H2O_C_Racines / racines_TailleC
-    FractionC1moinsVapRacine = qte_H2O_C1moinsVap_Racines / racines_TailleC1moinsVap
+    ftsw = status.qty_H2O_C / SizeC
+    return FractionC1, FractionC2, ftsw
 end
