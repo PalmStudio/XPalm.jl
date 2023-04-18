@@ -86,7 +86,7 @@ function FTSW(;
 end
 
 PlantSimEngine.inputs_(::FTSW) = (
-    depth=-Inf,
+    root_depth=-Inf,
     ET0=-Inf, #potential evapotranspiration
     tree_ei=-Inf, # light interception efficiency (ei=1-exp(-kLAI))
     qty_H2O_Vap=-Inf, # quantity of water in evaporative compartment
@@ -136,6 +136,7 @@ Compute the size of the layers of the FTSW model.
 - `SizeC2`: size of the transpirable water layer in the first soil layer (mm)
 - `SizeC`: size of transpirable soil water (mm) (SizeC2 + SizeC1minusVap)
 """
+
 function compute_compartment_size(m, root_depth)
 
     Taille_WP = m.H_WP * m.Z1
@@ -191,14 +192,16 @@ function soil_init_default(m::FTSW, root_depth)
     a_C = qty_H2O_C1 + qty_H2O_C2 - qty_H2O_Vap
     qty_H2O_C = max(0.0, a_C)
 
+    status = Status(qty_H2O_C1=qty_H2O_C1, qty_H2O_C2=qty_H2O_C2, qty_H2O_C=qty_H2O_C)
+
     compute_fraction!(status)
 end
 
-function soil_model!_(::FTSW, models, status, meteo, constants, extra=nothing)
-    rain = meteo.Precipitations
+function run!(::FTSW, models, status, meteo, constants, extra=nothing)
+    rain = meteo.Rainfall
 
-    EvapMax = (1 - status.tree_ei) * status.ET0 * models.soil_model.KC
-    Transp_Max = status.tree_ei * status.ET0 * models.soil_model.KC
+    EvapMax = (1 - status.tree_ei) * status.ET0 * m.KC
+    Transp_Max = status.tree_ei * status.ET0 * m.KC
 
     # estim effective rain
     if (0.916 * rain - 0.589) < 0
@@ -230,25 +233,25 @@ function soil_model!_(::FTSW, models, status, meteo, constants, extra=nothing)
                 status.qty_H2O_C2 = SizeC2 # Transpirative compartment in the second layer is full
                 rain_remain = rain_effective - SizeC1 - SizeC2
             else
-                qty_H2O_C2 += mem_qty_H2O_C1 + rain_remain - SizeC1
+                status.qty_H2O_C2 += mem_qty_H2O_C1 + rain_remain - SizeC1
                 rain_remain = 0
             end
         else
             qty_H2O_C1minusVap += rain_remain + mem_qty_H2O_Vap
-            qty_H2O_C1 = qty_H2O_C1minusVap + qty_H2O_Vap
+            status.qty_H2O_C1 = qty_H2O_C1minusVap + qty_H2O_Vap
             rain_remain = 0
         end
     else
         qty_H2O_Vap += rain_effective
-        qty_H2O_C1 = qty_H2O_Vap + qty_H2O_C1minusVap
+        status.qty_H2O_C1 = qty_H2O_Vap + qty_H2O_C1minusVap
         rain_remain = 0
     end
-    qty_H2O_C = qty_H2O_C1minusVap + qty_H2O_C2
+    status.qty_H2O_C = qty_H2O_C1minusVap + qty_H2O_C2
 
     compute_fraction!(status)
 
     # balance after evaporation
-    Evap = EvapMax * KS(FractionC1, models.soil_model.TRESH_EVAP)
+    Evap = EvapMax * KS(FractionC1, m.TRESH_EVAP)
 
     if qty_H2O_C1minusVap - Evap >= 0 # first evaporation on the evapotranspirative compartment
         qty_H2O_C1minusVap += -Evap
@@ -260,16 +263,16 @@ function soil_model!_(::FTSW, models, status, meteo, constants, extra=nothing)
         EvapVap = Evap - EvapC1minusVap
         qty_H2O_Vap += -EvapVap
     end
-    qty_H2O_C1 = qty_H2O_C1minusVap + qty_H2O_Vap
-    qty_H2O_C = qty_H2O_C1 + qty_H2O_C2 - qty_H2O_Vap
+    status.qty_H2O_C1 = qty_H2O_C1minusVap + qty_H2O_Vap
+    status.qty_H2O_C = status.qty_H2O_C1 + status.qty_H2O_C2 - qty_H2O_Vap
 
 
     compute_fraction!(status)
 
     # balance after transpiration
-    Transpi = Transp_Max * KS(models.soil_model.TRESH_FTSW_TRANSPI, ftsw)
+    Transpi = Transp_Max * KS(m.TRESH_FTSW_TRANSPI, ftsw)
 
-    if qty_H2O_C2 > 0
+    if status.qty_H2O_C2 > 0
         TranspiC2 = min(Transpi * (qty_H2O_C2 / (qty_H2O_C2 + qty_H2O_C1minusVap)), qty_H2O_C2)
     else
         TranspiC2 = 0
@@ -282,13 +285,12 @@ function soil_model!_(::FTSW, models, status, meteo, constants, extra=nothing)
     end
 
     qty_H2O_C1minusVap += -TranspiC1minusVap
-    qty_H2O_C2 += -TranspiC2
+    status.qty_H2O_C2 += -TranspiC2
     qty_H2O_C = qty_H2O_C2 + qty_H2O_C1minusVap
     qty_H2O_C1 = qty_H2O_Vap + qty_H2O_C1minusVap
 
     compute_fraction!(status)
 end
-
 
 
 function compute_fraction!(status)
