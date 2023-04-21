@@ -17,7 +17,7 @@ soil = FTSW(
 ``` 
 """
 
-@process Soil
+@process "Soil" verbose = false
 
 """
     FTSW(H_FC::Float64, H_WP_Z1::Float64,Z1::Float64,H_WP::Float64,Z2::Float64,H_0::Float64,KC::Float64,TRESH_EVAP::Float64,TRESH_FTSW_TRANSPI::Float64)
@@ -77,6 +77,9 @@ PlantSimEngine.outputs_(::FTSW) =
         FractionC1=-Inf,
         FractionC2=-Inf,
         ftsw=-Inf,
+        rain_remain=-Inf,
+        rain_effective=-Inf,
+        runoff=-Inf,
     )
 
 function FTSW(;
@@ -194,7 +197,6 @@ function soil_init_default(m, root_depth_ini)
     return status
 end
 
-
 function PlantSimEngine.run!(m::FTSW, models, status, meteo, constants, extra=nothing)
 
     rain = meteo.Rainfall
@@ -217,7 +219,7 @@ function PlantSimEngine.run!(m::FTSW, models, status, meteo, constants, extra=no
 
     status.rain_effective = rain_soil + stemflow
 
-    status.runoff = status.rain - status.rain_effective
+    status.runoff = rain - status.rain_effective
 
     # balance after rain
     mem_qty_H2O_C1 = copy(status.qty_H2O_C1)
@@ -229,7 +231,7 @@ function PlantSimEngine.run!(m::FTSW, models, status, meteo, constants, extra=no
         if (status.qty_H2O_C1minusVap + (status.rain_remain + mem_qty_H2O_Vap)) >= status.SizeC1minusVap
             status.qty_H2O_C1minusVap = status.SizeC1minusVap # Transpirative compartment in the first layer is full
             status.qty_H2O_C1 = status.qty_H2O_C1minusVap + status.qty_H2O_Vap
-            rain_remain = rain_effective - status.SizeC1
+            status.rain_remain = status.rain_effective - status.SizeC1
             if (status.qty_H2O_C2 + mem_qty_H2O_C1 + status.rain_remain) >= status.SizeC2
                 status.qty_H2O_C2 = status.SizeC2 # Transpirative compartment in the second layer is full
                 status.rain_remain = status.rain_effective - status.SizeC1 - status.SizeC2
@@ -238,7 +240,7 @@ function PlantSimEngine.run!(m::FTSW, models, status, meteo, constants, extra=no
                 status.rain_remain = 0.0
             end
         else
-            qty_H2O_C1minusVap += status.rain_remain + mem_qty_H2O_Vap
+            status.qty_H2O_C1minusVap += status.rain_remain + mem_qty_H2O_Vap
             status.qty_H2O_C1 = status.qty_H2O_C1minusVap + status.qty_H2O_Vap
             status.rain_remain = 0.0
         end
@@ -252,10 +254,10 @@ function PlantSimEngine.run!(m::FTSW, models, status, meteo, constants, extra=no
     compute_fraction!(status)
 
     # balance after evaporation
-    Evap = EvapMax * KS(FractionC1, m.TRESH_EVAP)
+    Evap = EvapMax * KS(status.FractionC1, m.TRESH_EVAP)
 
     if status.qty_H2O_C1minusVap - Evap >= 0.0 # first evaporation on the evapotranspirative compartment
-        qty_H2O_C1minusVap += -Evap
+        status.qty_H2O_C1minusVap += -Evap
         EvapC1minusVap = Evap
         EvapVap = 0.0
     else
@@ -285,7 +287,7 @@ function PlantSimEngine.run!(m::FTSW, models, status, meteo, constants, extra=no
         TranspiC2 = 0
     end
 
-    if qty_H2O_C1minusVap > 0
+    if status.qty_H2O_C1minusVap > 0
         TranspiC1minusVap = min(Transpi * (status.qty_H2O_C1minusVap / (status.qty_H2O_C2 + status.qty_H2O_C1minusVap)), status.qty_H2O_C1minusVap)
     else
         TranspiC1minusVap = 0
