@@ -19,3 +19,9 @@ m = ModelList(
 run!(m, meteo)
 
 m[:qty_H2O_Vap]
+
+# export outputs
+df = DataFrame(m)
+
+CSV.write("2-outputs/out_runFTSW.csv", df)
+
