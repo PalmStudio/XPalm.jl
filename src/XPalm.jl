@@ -4,7 +4,6 @@ import MultiScaleTreeGraph
 import MultiScaleTreeGraph: NodeMTG, addchild!
 import Dates
 import PlantSimEngine
-import PlantBiophysics
 import PlantMeteo
 
 include("structs.jl")

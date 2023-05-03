@@ -1,4 +1,4 @@
-PlantSimEngine.@gen_process_methods "maintenance_respiration" """
+PlantSimEngine.@process "maintenance_respiration" """
 Generic maintenance repspiration model. 
 
 The models used are defined by the types of the `maintenance_respiration` fields of a 
