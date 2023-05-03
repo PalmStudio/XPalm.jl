@@ -53,19 +53,11 @@ PlantSimEngine.inputs_(::FTSW) = (
     root_depth=-Inf,
     ET0=-Inf, #potential evapotranspiration
     tree_ei=-Inf, # light interception efficiency (ei=1-exp(-kLAI))
-    SizeC1=-Inf,
-    SizeVap=-Inf,
-    SizeC1minusVap=-Inf,
-    SizeC2=-Inf,
-    SizeC=-Inf,
     qty_H2O_Vap=-Inf, # quantity of water in evaporative compartment
     qty_H2O_C1=-Inf, # quantity of water in C1 compartment
     qty_H2O_C1minusVap=-Inf,
     qty_H2O_C2=-Inf, # quantity of water in C2 compartment
     qty_H2O_C=-Inf, # quantity of water in C compartment
-    FractionC1=-Inf,
-    FractionC2=-Inf,
-    ftsw=-Inf,
 )
 
 PlantSimEngine.outputs_(::FTSW) =
@@ -76,6 +68,11 @@ PlantSimEngine.outputs_(::FTSW) =
         qty_H2O_C=-Inf,
         FractionC1=-Inf,
         FractionC2=-Inf,
+        SizeC1=-Inf,
+        SizeC2=-Inf,
+        SizeC=-Inf,
+        SizeVap=-Inf,
+        SizeC1minusVap=-Inf,
         ftsw=-Inf,
         rain_remain=-Inf,
         rain_effective=-Inf,
@@ -172,7 +169,7 @@ function soil_init_default(m, root_depth_ini)
     @assert m.H_0 <= m.H_FC "H_0 cannot be higher than H_FC"
 
     # init status
-    status = Status(PlantSimEngine.inputs_(m))
+    status = Status(merge(PlantSimEngine.inputs_(m), PlantSimEngine.outputs_(m)))
     status.root_depth = root_depth_ini
     ## init compartments size
 
@@ -197,12 +194,21 @@ function soil_init_default(m, root_depth_ini)
     return status
 end
 
-function PlantSimEngine.run!(m::FTSW, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::FTSW, models, st, meteo, constants, extra=nothing)
 
     rain = meteo.Rainfall
 
-    EvapMax = (1 - status.tree_ei) * status.ET0 * m.KC
-    Transp_Max = status.tree_ei * status.ET0 * m.KC
+    # Initialize the water content to the values from the previous time step
+    st.qty_H2O_C1minusVap = PlantMeteo.prev_value(st, :qty_H2O_C1minusVap; default=st.qty_H2O_C1minusVap)
+    st.qty_H2O_C2 = PlantMeteo.prev_value(st, :qty_H2O_C2; default=st.qty_H2O_C2)
+    st.qty_H2O_C = PlantMeteo.prev_value(st, :qty_H2O_C; default=st.qty_H2O_C)
+    st.qty_H2O_C1 = PlantMeteo.prev_value(st, :qty_H2O_C1; default=st.qty_H2O_C1)
+    # Note: if we are computing the first time step, the previous values are the values already in the variables (=initial values)
+
+    compute_compartment_size(m, st)
+
+    EvapMax = (1 - st.tree_ei) * st.ET0 * m.KC
+    Transp_Max = st.tree_ei * st.ET0 * m.KC
 
     # estim effective rain (runoff)
     if (0.916 * rain - 0.589) < 0
@@ -217,86 +223,86 @@ function PlantSimEngine.run!(m::FTSW, models, status, meteo, constants, extra=no
         stemflow = (0.0713 * rain - 0.735)
     end
 
-    status.rain_effective = rain_soil + stemflow
+    st.rain_effective = rain_soil + stemflow
 
-    status.runoff = rain - status.rain_effective
+    st.runoff = rain - st.rain_effective
 
     # balance after rain
-    mem_qty_H2O_C1 = copy(status.qty_H2O_C1)
-    mem_qty_H2O_Vap = copy(status.qty_H2O_Vap)
+    mem_qty_H2O_C1 = copy(st.qty_H2O_C1)
+    mem_qty_H2O_Vap = copy(st.qty_H2O_Vap)
 
-    if (status.qty_H2O_Vap + status.rain_effective) >= status.SizeVap
-        status.qty_H2O_Vap = status.SizeVap # evaporative compartment is full
-        status.rain_remain = status.rain_effective - status.SizeVap
-        if (status.qty_H2O_C1minusVap + (status.rain_remain + mem_qty_H2O_Vap)) >= status.SizeC1minusVap
-            status.qty_H2O_C1minusVap = status.SizeC1minusVap # Transpirative compartment in the first layer is full
-            status.qty_H2O_C1 = status.qty_H2O_C1minusVap + status.qty_H2O_Vap
-            status.rain_remain = status.rain_effective - status.SizeC1
-            if (status.qty_H2O_C2 + mem_qty_H2O_C1 + status.rain_remain) >= status.SizeC2
-                status.qty_H2O_C2 = status.SizeC2 # Transpirative compartment in the second layer is full
-                status.rain_remain = status.rain_effective - status.SizeC1 - status.SizeC2
+    if (st.qty_H2O_Vap + st.rain_effective) >= st.SizeVap
+        st.qty_H2O_Vap = st.SizeVap # evaporative compartment is full
+        st.rain_remain = st.rain_effective - st.SizeVap
+        if (st.qty_H2O_C1minusVap + (st.rain_remain + mem_qty_H2O_Vap)) >= st.SizeC1minusVap
+            st.qty_H2O_C1minusVap = st.SizeC1minusVap # Transpirative compartment in the first layer is full
+            st.qty_H2O_C1 = st.qty_H2O_C1minusVap + st.qty_H2O_Vap
+            st.rain_remain = st.rain_effective - st.SizeC1
+            if (st.qty_H2O_C2 + mem_qty_H2O_C1 + st.rain_remain) >= st.SizeC2
+                st.qty_H2O_C2 = st.SizeC2 # Transpirative compartment in the second layer is full
+                st.rain_remain = st.rain_effective - st.SizeC1 - st.SizeC2
             else
-                status.qty_H2O_C2 += mem_qty_H2O_C1 + status.rain_remain - status.SizeC1
-                status.rain_remain = 0.0
+                st.qty_H2O_C2 += mem_qty_H2O_C1 + st.rain_remain - st.SizeC1
+                st.rain_remain = 0.0
             end
         else
-            status.qty_H2O_C1minusVap += status.rain_remain + mem_qty_H2O_Vap
-            status.qty_H2O_C1 = status.qty_H2O_C1minusVap + status.qty_H2O_Vap
-            status.rain_remain = 0.0
+            st.qty_H2O_C1minusVap += st.rain_remain + mem_qty_H2O_Vap
+            st.qty_H2O_C1 = st.qty_H2O_C1minusVap + st.qty_H2O_Vap
+            st.rain_remain = 0.0
         end
     else
-        status.qty_H2O_Vap += status.rain_effective
-        status.qty_H2O_C1 = status.qty_H2O_Vap + status.qty_H2O_C1minusVap
-        status.rain_remain = 0.0
+        st.qty_H2O_Vap += st.rain_effective
+        st.qty_H2O_C1 = st.qty_H2O_Vap + st.qty_H2O_C1minusVap
+        st.rain_remain = 0.0
     end
-    status.qty_H2O_C = status.qty_H2O_C1minusVap + status.qty_H2O_C2
+    st.qty_H2O_C = st.qty_H2O_C1minusVap + st.qty_H2O_C2
 
-    compute_fraction!(status)
+    compute_fraction!(st)
 
     # balance after evaporation
-    Evap = EvapMax * KS(status.FractionC1, m.TRESH_EVAP)
+    Evap = EvapMax * KS(st.FractionC1, m.TRESH_EVAP)
 
-    if status.qty_H2O_C1minusVap - Evap >= 0.0 # first evaporation on the evapotranspirative compartment
-        status.qty_H2O_C1minusVap += -Evap
+    if st.qty_H2O_C1minusVap - Evap >= 0.0 # first evaporation on the evapotranspirative compartment
+        st.qty_H2O_C1minusVap += -Evap
         EvapC1minusVap = Evap
         EvapVap = 0.0
     else
-        EvapC1minusVap = status.qty_H2O_C1minusVap # then evaporation only on the evaporative compartment
-        status.qty_H2O_C1minusVap = 0.0
+        EvapC1minusVap = st.qty_H2O_C1minusVap # then evaporation only on the evaporative compartment
+        st.qty_H2O_C1minusVap = 0.0
         EvapVap = Evap - EvapC1minusVap
-        if status.qty_H2O_Vap - EvapVap >= 0.0 #  evaporation on the evaporative compartment
-            status.qty_H2O_Vap += -EvapVap
+        if st.qty_H2O_Vap - EvapVap >= 0.0 #  evaporation on the evaporative compartment
+            st.qty_H2O_Vap += -EvapVap
             EvapVap = 0.0
         else
-            EvapVap = EvapVap - status.qty_H2O_Vap
-            status.qty_H2O_Vap = 0.0
+            EvapVap = EvapVap - st.qty_H2O_Vap
+            st.qty_H2O_Vap = 0.0
         end
 
     end
-    status.qty_H2O_C1 = status.qty_H2O_C1minusVap + status.qty_H2O_Vap
-    status.qty_H2O_C = status.qty_H2O_C1 + status.qty_H2O_C2 - status.qty_H2O_Vap
+    st.qty_H2O_C1 = st.qty_H2O_C1minusVap + st.qty_H2O_Vap
+    st.qty_H2O_C = st.qty_H2O_C1 + st.qty_H2O_C2 - st.qty_H2O_Vap
 
-    compute_fraction!(status)
+    compute_fraction!(st)
 
     # balance after transpiration
-    Transpi = Transp_Max * KS(m.TRESH_FTSW_TRANSPI, status.ftsw)
+    Transpi = Transp_Max * KS(m.TRESH_FTSW_TRANSPI, st.ftsw)
 
-    if status.qty_H2O_C2 > 0.0
-        TranspiC2 = min(Transpi * (status.qty_H2O_C2 / (status.qty_H2O_C2 + status.qty_H2O_C1minusVap)), status.qty_H2O_C2)
+    if st.qty_H2O_C2 > 0.0
+        TranspiC2 = min(Transpi * (st.qty_H2O_C2 / (st.qty_H2O_C2 + st.qty_H2O_C1minusVap)), st.qty_H2O_C2)
     else
         TranspiC2 = 0
     end
 
-    if status.qty_H2O_C1minusVap > 0
-        TranspiC1minusVap = min(Transpi * (status.qty_H2O_C1minusVap / (status.qty_H2O_C2 + status.qty_H2O_C1minusVap)), status.qty_H2O_C1minusVap)
+    if st.qty_H2O_C1minusVap > 0
+        TranspiC1minusVap = min(Transpi * (st.qty_H2O_C1minusVap / (st.qty_H2O_C2 + st.qty_H2O_C1minusVap)), st.qty_H2O_C1minusVap)
     else
         TranspiC1minusVap = 0
     end
 
-    status.qty_H2O_C1minusVap += -TranspiC1minusVap
-    status.qty_H2O_C2 += -TranspiC2
-    status.qty_H2O_C = status.qty_H2O_C2 + status.qty_H2O_C1minusVap
-    status.qty_H2O_C1 = status.qty_H2O_Vap + status.qty_H2O_C1minusVap
+    st.qty_H2O_C1minusVap += -TranspiC1minusVap
+    st.qty_H2O_C2 += -TranspiC2
+    st.qty_H2O_C = st.qty_H2O_C2 + st.qty_H2O_C1minusVap
+    st.qty_H2O_C1 = st.qty_H2O_Vap + st.qty_H2O_C1minusVap
 
-    compute_fraction!(status)
+    compute_fraction!(st)
 end

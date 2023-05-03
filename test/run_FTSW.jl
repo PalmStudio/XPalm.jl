@@ -1,9 +1,9 @@
 # Import dependencies
-using PlantMeteo, PlantBiophysics, PlantSimEngine
+using PlantMeteo, PlantSimEngine, Revise
 # using PlantGeom, CairoMakie, AlgebraOfGraphics
 using DataFrames, CSV, Statistics
 
-include("../src/soil/FTSW.jl")
+includet("../src/soil/FTSW.jl")
 meteo = CSV.read("0-data/Exemple_meteo.csv", DataFrame)
 
 soil = FTSW()
@@ -18,7 +18,27 @@ m = ModelList(
 
 run!(m, meteo)
 
-m[:qty_H2O_Vap]
+m[:ftsw]
+m[:qty_H2O_C1]
+m[:qty_H2O_C]
+m[:SizeC]
+status.qty_H2O_C / status.SizeC
+
+using CairoMakie
+
+lines(m[:qty_H2O_C])
+
+# Which time step is the first one where qty_H2O_C < 0.0?
+findfirst(x -> x < 0.0, m[:qty_H2O_C])
+
+# Get the status of the model at that time step:
+status(m)[684]
+
+# Print all the values of the status at that time step:
+PlantMeteo.row_struct(status(m)[684])
+m[:qty_H2O_C][684]
+
+st = PlantMeteo.row_struct(status(m)[684])
 
 # export outputs
 df = DataFrame(m)
