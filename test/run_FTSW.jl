@@ -5,6 +5,7 @@ using DataFrames, CSV, Statistics
 using CairoMakie
 
 includet("../src/soil/FTSW.jl")
+includet("../src/ThermalTime.jl")
 meteo = CSV.read("0-data/Exemple_meteo.csv", DataFrame)
 
 soil = FTSW()
@@ -14,6 +15,7 @@ init.tree_ei = 0.8
 
 # meteo = first(meteo, 20)
 m = ModelList(
+    ThermalTime(),
     FTSW(),
     status=TimeStepTable{Status}([init for i in eachrow(meteo)])
     # status=TimeStepTable{Status}([init for i in eachrow(meteo)])
