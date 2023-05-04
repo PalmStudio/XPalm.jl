@@ -207,8 +207,8 @@ function PlantSimEngine.run!(m::FTSW, models, st, meteo, constants, extra=nothin
 
     compute_compartment_size(m, st)
 
-    EvapMax = (1 - st.tree_ei) * st.ET0 * m.KC
-    Transp_Max = st.tree_ei * st.ET0 * m.KC
+    EvapMax = (1 - st.tree_ei) * st.ET0
+    Transp_Max = st.tree_ei * st.ET0
 
     # estim effective rain (runoff)
     if (0.916 * rain - 0.589) < 0
@@ -228,25 +228,25 @@ function PlantSimEngine.run!(m::FTSW, models, st, meteo, constants, extra=nothin
     st.runoff = rain - st.rain_effective
 
     # balance after rain
-    mem_qty_H2O_C1 = copy(st.qty_H2O_C1)
-    mem_qty_H2O_Vap = copy(st.qty_H2O_Vap)
 
     if (st.qty_H2O_Vap + st.rain_effective) >= st.SizeVap
+        st.rain_remain = st.rain_effective + st.qty_H2O_Vap - st.SizeVap
         st.qty_H2O_Vap = st.SizeVap # evaporative compartment is full
-        st.rain_remain = st.rain_effective - st.SizeVap
-        if (st.qty_H2O_C1minusVap + (st.rain_remain + mem_qty_H2O_Vap)) >= st.SizeC1minusVap
+        if (st.qty_H2O_C1minusVap + st.rain_remain) >= st.SizeC1minusVap
+            st.rain_remain = st.rain_remain + st.qty_H2O_C1minusVap - st.SizeC1minusVap
             st.qty_H2O_C1minusVap = st.SizeC1minusVap # Transpirative compartment in the first layer is full
             st.qty_H2O_C1 = st.qty_H2O_C1minusVap + st.qty_H2O_Vap
-            st.rain_remain = st.rain_effective - st.SizeC1
-            if (st.qty_H2O_C2 + mem_qty_H2O_C1 + st.rain_remain) >= st.SizeC2
+
+            if (st.qty_H2O_C2 + st.rain_remain) >= st.SizeC2
+                st.rain_remain = st.rain_remain + st.qty_H2O_C2 - st.SizeC2
                 st.qty_H2O_C2 = st.SizeC2 # Transpirative compartment in the second layer is full
-                st.rain_remain = st.rain_effective - st.SizeC1 - st.SizeC2
+
             else
-                st.qty_H2O_C2 += mem_qty_H2O_C1 + st.rain_remain - st.SizeC1
+                st.qty_H2O_C2 += st.rain_remain
                 st.rain_remain = 0.0
             end
         else
-            st.qty_H2O_C1minusVap += st.rain_remain + mem_qty_H2O_Vap
+            st.qty_H2O_C1minusVap += st.rain_remain
             st.qty_H2O_C1 = st.qty_H2O_C1minusVap + st.qty_H2O_Vap
             st.rain_remain = 0.0
         end

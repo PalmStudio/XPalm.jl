@@ -5,11 +5,13 @@ version = "0.1.0"
 
 [deps]
 AlgebraOfGraphics = "cbdf2221-f076-402e-a563-3d30da359d67"
+DataFramesMeta = "1313f7d8-7da2-5740-9ea0-a2ca25f37964"
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
 MultiScaleTreeGraph = "dd4a991b-8a45-4075-bede-262ee62d5583"
 PlantMeteo = "4630fe09-e0fb-4da5-a846-781cb73437b6"
 PlantSimEngine = "9a576370-710b-4269-adf9-4f603a9c6423"
 Pluto = "c3e4b0f8-55cb-11ea-2926-15256bba5781"
+Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
 
 [compat]
 julia = "1"
