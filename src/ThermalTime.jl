@@ -1,19 +1,10 @@
-"""
-    ThermalTime()
-
-Thermal time model.
-
-
-# Examples
-    
-```julia
-``` 
-"""
-@process "DegreeDays" verbose = false
+@process "degree_days" verbose = false
 
 """
-    ThermalTime(TOpt1::Float64,TOpt2::Float64,TBase::Float64,TLim::Float64)
+    ThermalTime(TOpt1, TOpt2, TBase, TLim)
+    ThermalTime(TOpt1=25, TOpt2=30, TBase=15, TLim=40)
 
+Compute thermal time form daily meteo data
 
 # Arguments
 
@@ -22,11 +13,12 @@ Thermal time model.
 - `TBase`: Tbase temperature for thermal time calculation (degree Celsius)
 - `TLim`: limit temperature for thermal time calculation (degree Celsius)
 """
-struct ThermalTime <: AbstractDegreeDaysModel
-    TOpt1::Float64
-    TOpt2::Float64
-    TBase::Float64
-    TLim::Float64
+
+struct ThermalTime{T} <: AbstractDegree_DaysModel
+    TOpt1::T
+    TOpt2::T
+    TBase::T
+    TLim::T
 end
 
 
@@ -36,18 +28,18 @@ PlantSimEngine.inputs_(::ThermalTime) = (
 )
 
 PlantSimEngine.outputs_(::ThermalTime) = (
-    TEff = -Inf
+    TEff=-Inf,
 )
 
 ### ici message d'erreur il manque un comma ou )...
-# function ThermalTime(
-#     TOpt1=25
-#     TOpt2 = 30
-#     TBase = 15
-#     TLim = 40
-# )
-#     ThermalTime(TOpt1, TOpt2, TBase, TLim)
-# end
+function ThermalTime(;
+    TOpt1=25,
+    TOpt2=30,
+    TBase=15,
+    TLim=40
+)
+    ThermalTime(TOpt1, TOpt2, TBase, TLim)
+end
 
 
 """
