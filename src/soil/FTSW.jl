@@ -165,12 +165,11 @@ function compute_fraction!(status)
     status.ftsw = status.qty_H2O_C / status.SizeC
 end
 
-function soil_init_default(m, root_depth_ini)
+function soil_init_default(m)
     @assert m.H_0 <= m.H_FC "H_0 cannot be higher than H_FC"
 
     # init status
     status = Status(merge(PlantSimEngine.inputs_(m), PlantSimEngine.outputs_(m)))
-    status.root_depth = root_depth_ini
     ## init compartments size
 
     compute_compartment_size(m, status)
@@ -196,6 +195,9 @@ end
 
 function PlantSimEngine.run!(m::FTSW, models, st, meteo, constants, extra=nothing)
 
+    #  run the root_growth model
+    run!(models.root_growth, models, status, meteo, constants)
+
     rain = meteo.Rainfall
 
     # Initialize the water content to the values from the previous time step
@@ -206,6 +208,8 @@ function PlantSimEngine.run!(m::FTSW, models, st, meteo, constants, extra=nothin
     # Note: if we are computing the first time step, the previous values are the values already in the variables (=initial values)
 
     compute_compartment_size(m, st)
+
+
 
     EvapMax = (1 - st.tree_ei) * st.ET0
     Transp_Max = st.tree_ei * st.ET0

@@ -31,7 +31,6 @@ PlantSimEngine.outputs_(::ThermalTime) = (
     TEff=-Inf,
 )
 
-### ici message d'erreur il manque un comma ou )...
 function ThermalTime(;
     TOpt1=25,
     TOpt2=30,
@@ -56,8 +55,8 @@ Compute degree days
 
 function PlantSimEngine.run!(m::ThermalTime, models, status, meteo, constants, extra=nothing)
 
-    Tmin = meteo.Tmin
-    Tmax = meteo.Tmax
+    Tmin = meteo.TMin
+    Tmax = meteo.TMax
 
     if (Tmin >= Tmax)
         if (Tmin > m.TOpt1)
