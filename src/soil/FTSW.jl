@@ -1,23 +1,5 @@
-"""
-    FTSW(layers::Vector{FTSWLayer})
 
-Fraction of Transpirable Soil Water model.
-
-Takes a vector of `FTSWLayer`s as input.
-
-# Examples
-    
-```julia
-soil = FTSW(
-    [
-        SoilLayer(0.1, 0.1, 0.2, 0.3),
-        SoilLayer(0.2, 0.2, 0.3, 0.4),
-    ]
-)
-``` 
-"""
-
-@process "Soil" verbose = false
+@process "soil_water" verbose = false
 
 """
     FTSW(H_FC::Float64, H_WP_Z1::Float64,Z1::Float64,H_WP::Float64,Z2::Float64,H_0::Float64,KC::Float64,TRESH_EVAP::Float64,TRESH_FTSW_TRANSPI::Float64)
@@ -36,7 +18,7 @@ Fraction of Transpirable Soil Water model.
 - `TRESH_EVAP`: fraction of water content in the evaporative layer below which evaporation is reduced (g[H20] g[Soil])
 - `TRESH_FTSW_TRANSPI`: FTSW treshold below which transpiration is reduced (g[H20] g[Soil])
 """
-struct FTSW <: AbstractSoilModel
+struct FTSW <: AbstractSoil_WaterModel
     H_FC::Float64
     H_WP_Z1::Float64
     Z1::Float64
@@ -78,6 +60,10 @@ PlantSimEngine.outputs_(::FTSW) =
         rain_effective=-Inf,
         runoff=-Inf,
     )
+
+# dependencies
+PlantSimEngine.dep(::FTSW) = (root_growth=AbstractRoot_GrowthModel,)
+
 
 function FTSW(;
     H_FC=0.23,
@@ -124,7 +110,6 @@ Compute the size of the layers of the FTSW model.
 - `SizeC2`: size of the transpirable water layer in the first soil layer (mm)
 - `SizeC`: size of transpirable soil water (mm) (SizeC2 + SizeC1minusVap)
 """
-
 function compute_compartment_size(m, status)
 
     Taille_WP = m.H_WP * m.Z1
@@ -169,7 +154,7 @@ function soil_init_default(m)
     @assert m.H_0 <= m.H_FC "H_0 cannot be higher than H_FC"
 
     # init status
-    status = Status(merge(PlantSimEngine.inputs_(m), PlantSimEngine.outputs_(m)))
+    status = PlantSimEngine.Status(merge(PlantSimEngine.inputs_(m), PlantSimEngine.outputs_(m)))
     ## init compartments size
 
     compute_compartment_size(m, status)
@@ -196,9 +181,9 @@ end
 function PlantSimEngine.run!(m::FTSW, models, st, meteo, constants, extra=nothing)
 
     #  run the root_growth model
-    run!(models.root_growth, models, status, meteo, constants)
+    PlantSimEngine.run!(models.root_growth, models, st, meteo, constants)
 
-    rain = meteo.Rainfall
+    rain = meteo.Precipitations
 
     # Initialize the water content to the values from the previous time step
     st.qty_H2O_C1minusVap = PlantMeteo.prev_value(st, :qty_H2O_C1minusVap; default=st.qty_H2O_C1minusVap)
@@ -208,8 +193,6 @@ function PlantSimEngine.run!(m::FTSW, models, st, meteo, constants, extra=nothin
     # Note: if we are computing the first time step, the previous values are the values already in the variables (=initial values)
 
     compute_compartment_size(m, st)
-
-
 
     EvapMax = (1 - st.tree_ei) * st.ET0
     Transp_Max = st.tree_ei * st.ET0

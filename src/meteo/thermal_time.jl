@@ -1,10 +1,10 @@
-@process "degree_days" verbose = false
+@process "thermal_time" verbose = false
 
 """
-    ThermalTime(TOpt1, TOpt2, TBase, TLim)
-    ThermalTime(TOpt1=25, TOpt2=30, TBase=15, TLim=40)
+    DailyDegreeDays(TOpt1, TOpt2, TBase, TLim)
+    DailyDegreeDays(TOpt1=25, TOpt2=30, TBase=15, TLim=40)
 
-Compute thermal time form daily meteo data
+Compute thermal time from daily meteo data
 
 # Arguments
 
@@ -13,8 +13,7 @@ Compute thermal time form daily meteo data
 - `TBase`: Tbase temperature for thermal time calculation (degree Celsius)
 - `TLim`: limit temperature for thermal time calculation (degree Celsius)
 """
-
-struct ThermalTime{T} <: AbstractDegree_DaysModel
+struct DailyDegreeDays{T} <: AbstractThermal_TimeModel
     TOpt1::T
     TOpt2::T
     TBase::T
@@ -22,22 +21,19 @@ struct ThermalTime{T} <: AbstractDegree_DaysModel
 end
 
 
-PlantSimEngine.inputs_(::ThermalTime) = (
-    Tmin=-Inf, #Daily minimal temperature
-    Tmax=-Inf, #Daily maximal temperature
-)
+PlantSimEngine.inputs_(::DailyDegreeDays) = NamedTuple()
 
-PlantSimEngine.outputs_(::ThermalTime) = (
+PlantSimEngine.outputs_(::DailyDegreeDays) = (
     TEff=-Inf,
 )
 
-function ThermalTime(;
+function DailyDegreeDays(;
     TOpt1=25,
     TOpt2=30,
     TBase=15,
     TLim=40
 )
-    ThermalTime(TOpt1, TOpt2, TBase, TLim)
+    DailyDegreeDays(TOpt1, TOpt2, TBase, TLim)
 end
 
 
@@ -46,17 +42,16 @@ Compute degree days
 
 # Arguments
 
-- `m`: ThermalTime model
+- `m`: DailyDegreeDays model
 
 # Returns
 
 - `TEff`: daily efficient temperature for plant growth (degree C days) 
 """
+function PlantSimEngine.run!(m::DailyDegreeDays, models, status, meteo, constants, extra=nothing)
 
-function PlantSimEngine.run!(m::ThermalTime, models, status, meteo, constants, extra=nothing)
-
-    Tmin = meteo.TMin
-    Tmax = meteo.TMax
+    Tmin = meteo.Tmin
+    Tmax = meteo.Tmax
 
     if (Tmin >= Tmax)
         if (Tmin > m.TOpt1)

@@ -13,7 +13,6 @@ Compute root growth depending on thermal time and water stress (ftsw)
 - `Z1`: Thickness of the first soil layer (mm)
 - `Z2`: Thickness of the second soil layer (mm)
 """
-
 struct RootGrowth{T} <: AbstractRoot_GrowthModel
     ROOTS_GROWTH_DEPTH::T
     TRESH_FTSW_SLOW_ROOTS::T
@@ -33,10 +32,10 @@ PlantSimEngine.outputs_(::RootGrowth) = (
 
 
 function RootGrowth(;
-    ROOTS_GROWTH_DEPTH=25,
-    TRESH_FTSW_SLOW_ROOTS=30,
-    Z1=15,
-    Z2=40
+    ROOTS_GROWTH_DEPTH=0.3,
+    TRESH_FTSW_SLOW_ROOTS=0.2,
+    Z1=200.0,
+    Z2=2000.0
 )
     RootGrowth(ROOTS_GROWTH_DEPTH, TRESH_FTSW_SLOW_ROOTS, Z1, Z2)
 end
@@ -55,18 +54,19 @@ Compute root growth
 
 - `root_depth`: root depth (cm)
 """
-
 function PlantSimEngine.run!(m::RootGrowth, models, status, meteo, constants, extra=nothing)
 
-    if (status.ftsw > m.TRESH_FTSW_SLOW_ROOTS)
-        red = 1
+    ftsw = PlantMeteo.prev_value(status, :ftsw; default=status.ftsw)
+    status.root_depth = PlantMeteo.prev_value(status, :root_depth; default=status.root_depth)
+    if (ftsw > m.TRESH_FTSW_SLOW_ROOTS)
+        coef_water_stress = 1
     else
-        red = status.ftsw / m.TRESH_FTSW_SLOW_ROOTS
+        coef_water_stress = ftsw / m.TRESH_FTSW_SLOW_ROOTS
     end
 
-    if (status.root_depth + red * m.ROOTS_GROWTH_DEPTH * status.TEff > m.Z2 + m.Z1)
+    if (status.root_depth + coef_water_stress * m.ROOTS_GROWTH_DEPTH * status.TEff > m.Z2 + m.Z1)
         status.root_depth = m.Z2 + m.Z1
     else
-        status.root_depth += red * m.ROOTS_GROWTH_DEPTH * status.TEff
+        status.root_depth += coef_water_stress * m.ROOTS_GROWTH_DEPTH * status.TEff
     end
 end
