@@ -8,8 +8,10 @@ import PlantMeteo
 import PlantSimEngine: @process
 
 include("soil/FTSW.jl")
-include("meteo/ThermalTime.jl")
-include("plant/root_growth.jl")
+include("meteo/thermal_time.jl")
+include("meteo/et0_BP.jl")
+include("plant/roots/root_growth.jl")
+
 
 # include("structs.jl")
 # include("add_organ.jl")

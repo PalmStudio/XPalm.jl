@@ -3,20 +3,26 @@ using PlantMeteo, PlantSimEngine, Revise
 # using PlantGeom, CairoMakie, AlgebraOfGraphics
 using DataFrames, CSV, Statistics
 using GLMakie
-using XPalm
+# using XPalm
+include("../src/soil/FTSW.jl")
+include("../src/meteo/thermal_time.jl")
+include("../src/plant/roots/root_growth.jl")
+
 
 meteo = CSV.read("0-data/Exemple_meteo.csv", DataFrame)
 
 rename!(meteo,
     :TMin => :Tmin,
     :TMax => :Tmax,
-    :Rainfall => :Precipitations)
+    :Rainfall => :Precipitations,
+    :WindSpeed => :Wind)
 begin
     soil = FTSW()
     init = soil_init_default(soil)
-    init.ET0 = 1.0
+    # init.ET0 = 1.0
     init.tree_ei = 0.8
-    init.root_depth = 91.0
+    init.root_depth = 90.0
+
 
 
     # meteo = first(meteo, 20)
