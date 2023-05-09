@@ -15,121 +15,6 @@ struct Snag <: OrganState end
 abstract type Organ end
 
 struct Plant end
-
-"""
-    Palm(mtg, phytomer_count, max_rank, node_count)
-    Palm()
-
-Create a new Palm. The maximum rank is used to determine how many living phytomers (i.e. leaves) are there
-on the Palm.
-
-`Palm()` (without arguments) creates a new Palm with a single phytomer, one leaf, and a Root system.
-
-# Arguments
-- `mtg`: a MTG object
-- `phytomer_count`: total number of phytomers emitted by the Palm since germination, *i.e.* physiological age
-- `mtg_node_count`: total number of nodes in the MTG (used to determine the unique ID)
-"""
-mutable struct Palm{T} <: Organ
-    mtg::MultiScaleTreeGraph.Node
-    initiation_date::Dates.Date
-    phytomer_count::Int
-    mtg_node_count::Int
-    parameters::T
-end
-
-abstract type InitState end
-
-function default_parameters()
-    p = Dict(
-        :SRL => 0.4, # Specific Root Length (m g-1)
-        :RL0 => 5.0, # Root length at emergence (m)
-        :Q10 => 2.1,
-        :Rm_base => 0.06,
-        :T_ref => 25.0,
-        :nitrogen_content => Dict(
-            :Stem => 0.005,
-            :Internode => 0.005,
-            :Leaf => 0.03,
-            :Female => 0.01,
-            :RootSystem => 0.01,
-        )
-    )
-
-    push!(p,
-        :biomass_dry => Dict(
-            :Stem => 0.1,
-            :Internode => 2.0,
-            :Leaf => 2.0,
-            :RootSystem => p[:RL0] / p[:SRL]
-        )
-    )
-
-    return p
-end
-
-function Palm(
-    initiation_date=Dates.Date(Dates.now()),
-    parameters=default_parameters(),
-    model_list=main_models_definition(parameters)
-)
-    mtg = MultiScaleTreeGraph.Node(
-        1,
-        NodeMTG("/", "Plant", 1, 1),
-        Dict{Symbol,Any}(
-            :models => model_list["Palm"],
-        ),
-        type=Plant()
-    )
-
-    roots = MultiScaleTreeGraph.Node(
-        mtg,
-        NodeMTG("+", "RootSystem", 1, 2),
-        Dict{Symbol,Any}(
-            :initiation_date => initiation_date,
-            :depth => parameters[:RL0], # total exploration depth m
-            :models => model_list[:RootSystem],
-        ),
-        type=RootSystem()
-    )
-
-    stem = MultiScaleTreeGraph.Node(
-        mtg,
-        NodeMTG("+", "Stem", 1, 2),
-        Dict{Symbol,Any}(
-            :initiation_date => initiation_date, # date of initiation / creation
-            :models => model_list[:Stem],
-        ),
-        type=Stem()
-    )
-
-    phyto = MultiScaleTreeGraph.Node(stem, NodeMTG("/", "Phytomer", 1, 3),
-        Dict{Symbol,Any}(
-            :initiation_date => initiation_date, # date of initiation / creation
-            :models => model_list["Phytomer"],
-        ),
-        type=Phytomer(),
-    )
-
-    internode = MultiScaleTreeGraph.Node(phyto, NodeMTG("/", "Internode", 1, 4),
-        Dict{Symbol,Any}(
-            :initiation_date => initiation_date, # date of initiation / creation
-            :models => model_list[:Internode],
-        ),
-        type=Internode(),
-    )
-
-    leaf = MultiScaleTreeGraph.Node(internode, NodeMTG("+", "Leaf", 1, 4),
-        Dict{Symbol,Any}(
-            :initiation_date => initiation_date, # date of initiation / creation
-            :models => model_list[:Leaf],
-        ),
-        type=Leaf(),
-    )
-
-    return Palm(mtg, initiation_date, 1, 6, parameters)
-end
-
 struct RootSystem <: Organ end
 struct Stem <: Organ end
 
@@ -219,3 +104,117 @@ end
 #     return nothing
 # end
 
+
+"""
+    Palm(mtg, phytomer_count, max_rank, node_count)
+    Palm()
+
+Create a new Palm. The maximum rank is used to determine how many living phytomers (i.e. leaves) are there
+on the Palm.
+
+`Palm()` (without arguments) creates a new Palm with a single phytomer, one leaf, and a Root system.
+
+# Arguments
+- `mtg`: a MTG object
+- `phytomer_count`: total number of phytomers emitted by the Palm since germination, *i.e.* physiological age
+- `mtg_node_count`: total number of nodes in the MTG (used to determine the unique ID)
+"""
+mutable struct Palm{T} <: Organ
+    mtg::MultiScaleTreeGraph.Node
+    initiation_date::Dates.Date
+    phytomer_count::Int
+    mtg_node_count::Int
+    parameters::T
+end
+
+abstract type InitState end
+
+function default_parameters()
+    p = Dict(
+        :SRL => 0.4, # Specific Root Length (m g-1)
+        :RL0 => 5.0, # Root length at emergence (m)
+        :Q10 => 2.1,
+        :Rm_base => 0.06,
+        :T_ref => 25.0,
+        :nitrogen_content => Dict(
+            :Stem => 0.005,
+            :Internode => 0.005,
+            :Leaf => 0.03,
+            :Female => 0.01,
+            :RootSystem => 0.01,
+        )
+    )
+
+    push!(p,
+        :biomass_dry => Dict(
+            :Stem => 0.1,
+            :Internode => 2.0,
+            :Leaf => 2.0,
+            :RootSystem => p[:RL0] / p[:SRL]
+        )
+    )
+
+    return p
+end
+
+function Palm(
+    initiation_date=Dates.Date(Dates.now()),
+    parameters=default_parameters(),
+    model_list=main_models_definition(parameters)
+)
+    mtg = MultiScaleTreeGraph.Node(
+        1,
+        NodeMTG("/", "Plant", 1, 1),
+        Dict{Symbol,Any}(
+            :models => model_list["Palm"],
+        ),
+        type=Plant()
+    )
+
+    roots = MultiScaleTreeGraph.Node(
+        mtg,
+        NodeMTG("+", "RootSystem", 1, 2),
+        Dict{Symbol,Any}(
+            :initiation_date => initiation_date,
+            :depth => parameters[:RL0], # total exploration depth m
+            :models => model_list["RootSystem"],
+        ),
+        type=RootSystem()
+    )
+
+    stem = MultiScaleTreeGraph.Node(
+        mtg,
+        NodeMTG("+", "Stem", 1, 2),
+        Dict{Symbol,Any}(
+            :initiation_date => initiation_date, # date of initiation / creation
+            :models => model_list["Stem"],
+        ),
+        type=Stem()
+    )
+
+    phyto = MultiScaleTreeGraph.Node(stem, NodeMTG("/", "Phytomer", 1, 3),
+        Dict{Symbol,Any}(
+            :initiation_date => initiation_date, # date of initiation / creation
+            :models => model_list["Phytomer"],
+        ),
+        type=Phytomer(),
+    )
+
+    internode = MultiScaleTreeGraph.Node(phyto, NodeMTG("/", "Internode", 1, 4),
+        Dict{Symbol,Any}(
+            :initiation_date => initiation_date, # date of initiation / creation
+            :models => model_list["Internode"],
+        ),
+        type=Internode(),
+    )
+
+    leaf = MultiScaleTreeGraph.Node(internode, NodeMTG("+", "Leaf", 1, 4),
+        Dict{Symbol,Any}(
+            :initiation_date => initiation_date, # date of initiation / creation
+            :models => model_list["Leaf"],
+        ),
+        type=Leaf(),
+    )
+
+    return Palm(mtg, initiation_date, [leaf], 1, 6, parameters)
+end

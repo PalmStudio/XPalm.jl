@@ -5,7 +5,7 @@ function main_models_definition(p)
             maintenance_respiration=RmQ10{Palm}(p[:Q10], p[:Rm_base], p[:T_ref]),
             variables_check=false
         ),
-        :Stem => PlantSimEngine.ModelList(
+        "Stem" => PlantSimEngine.ModelList(
             # maintenance respiration of organs
             maintenance_respiration=RmQ10{Stem}(p[:Q10], p[:Rm_base], p[:T_ref]),
             variables_check=false
@@ -18,7 +18,7 @@ function main_models_definition(p)
                 maintenance_respiration=RmQ10{Phytomer}(p[:Q10], p[:Rm_base], p[:T_ref]),
                 variables_check=false
             ),
-        :Internode =>
+        "Internode" =>
             PlantSimEngine.ModelList(
                 maintenance_respiration=RmQ10{Internode}(p[:Q10], p[:Rm_base], p[:T_ref]),
                 variables_check=false,
@@ -26,7 +26,7 @@ function main_models_definition(p)
                     nitrogen_content=p[:nitrogen_content][:Internode],
                 )
             ),
-        :Leaf =>
+        "Leaf" =>
             PlantSimEngine.ModelList(
                 maintenance_respiration=RmQ10{Leaf}(p[:Q10], p[:Rm_base], p[:T_ref]),
                 variables_check=false,
@@ -39,7 +39,7 @@ function main_models_definition(p)
                 maintenance_respiration=RmQ10{Male}(p[:Q10], p[:Rm_base], p[:T_ref]),
                 variables_check=false,
             ),
-        :Female =>
+        "Female" =>
             PlantSimEngine.ModelList(
                 maintenance_respiration=RmQ10{Female}(p[:Q10], p[:Rm_base], p[:T_ref]),
                 variables_check=false,
@@ -47,7 +47,7 @@ function main_models_definition(p)
                     nitrogen_content=p[:nitrogen_content][:Female],
                 )
             ),
-        :RootSystem =>
+        "RootSystem" =>
             PlantSimEngine.ModelList(
                 maintenance_respiration=RmQ10{RootSystem}(p[:Q10], p[:Rm_base], p[:T_ref]),
                 variables_check=false,
