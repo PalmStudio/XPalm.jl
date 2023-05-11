@@ -24,6 +24,7 @@ export Palm
 
 # exports for prototyping
 export FTSW, soil_init_default
-export ThermalTime
+export DailyDegreeDays
 export RootGrowth
+export ET0_BP
 end
