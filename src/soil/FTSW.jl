@@ -180,6 +180,9 @@ end
 
 function PlantSimEngine.run!(m::FTSW, models, st, meteo, constants, extra=nothing)
 
+    #  run the potential evapotranspiration model
+    PlantSimEngine.run!(models.potential_evapotranspiration, models, st, meteo, constants)
+
     #  run the root_growth model
     PlantSimEngine.run!(models.root_growth, models, st, meteo, constants)
 
