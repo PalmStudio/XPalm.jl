@@ -42,28 +42,27 @@ PlantSimEngine.inputs_(::FTSW) = (
     qty_H2O_C=-Inf, # quantity of water in C compartment
 )
 
-PlantSimEngine.outputs_(::FTSW) =
-    (qty_H2O_Vap=-Inf,
-        qty_H2O_C1=-Inf,
-        qty_H2O_C1minusVap=-Inf,
-        qty_H2O_C2=-Inf,
-        qty_H2O_C=-Inf,
-        FractionC1=-Inf,
-        FractionC2=-Inf,
-        SizeC1=-Inf,
-        SizeC2=-Inf,
-        SizeC=-Inf,
-        SizeVap=-Inf,
-        SizeC1minusVap=-Inf,
-        ftsw=-Inf,
-        rain_remain=-Inf,
-        rain_effective=-Inf,
-        runoff=-Inf,
-    )
+PlantSimEngine.outputs_(::FTSW) = (
+    qty_H2O_Vap=-Inf,
+    qty_H2O_C1=-Inf,
+    qty_H2O_C1minusVap=-Inf,
+    qty_H2O_C2=-Inf,
+    qty_H2O_C=-Inf,
+    FractionC1=-Inf,
+    FractionC2=-Inf,
+    SizeC1=-Inf,
+    SizeC2=-Inf,
+    SizeC=-Inf,
+    SizeVap=-Inf,
+    SizeC1minusVap=-Inf,
+    ftsw=-Inf,
+    rain_remain=-Inf,
+    rain_effective=-Inf,
+    runoff=-Inf,
+)
 
 # dependencies
 PlantSimEngine.dep(::FTSW) = (root_growth=AbstractRoot_GrowthModel,)
-
 
 function FTSW(;
     H_FC=0.23,

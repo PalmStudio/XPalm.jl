@@ -8,13 +8,15 @@ using DataFramesMeta
 
 meteo = CSV.read("0-data/Exemple_meteo.csv", DataFrame)
 
-rename!(meteo,
+rename!(
+    meteo,
     :TMin => :Tmin,
     :TMax => :Tmax,
     :HRMin => :Rh_min,
     :HRMax => :Rh_max,
     :Rainfall => :Precipitations,
-    :WindSpeed => :Wind)
+    :WindSpeed => :Wind
+)
 
 # prevent missing values
 replace!(meteo.Wind, missing => mean(skipmissing(meteo.Wind)))

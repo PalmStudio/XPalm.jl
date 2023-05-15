@@ -22,7 +22,7 @@ end
 
 
 PlantSimEngine.inputs_(::RootGrowth) = (
-    ftsw=-Inf, # fraction of transpirable soil water (unitless [0:1])
+    ftsw=PrevValue(-Inf), # fraction of transpirable soil water (unitless [0:1])
     TEff=-Inf, # daily efficient temperature for plant growth (degree C days) 
 )
 
