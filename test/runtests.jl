@@ -36,3 +36,6 @@ end
     include("test-roots.jl")
 end
 
+@testset "Test utils" begin
+    include("test-utils.jl")
+end
