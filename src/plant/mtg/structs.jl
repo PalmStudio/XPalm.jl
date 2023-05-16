@@ -216,5 +216,5 @@ function Palm(
         type=Leaf(),
     )
 
-    return Palm(mtg, initiation_date, [leaf], 1, 6, parameters)
+    return Palm(mtg, initiation_date, 1, 6, parameters)
 end
