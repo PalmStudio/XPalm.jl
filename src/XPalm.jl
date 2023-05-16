@@ -20,10 +20,12 @@ include("plant/roots/root_growth.jl")
 
 include("plant/mtg/structs.jl")
 include("plant/mtg/add_organ.jl")
-include("reproductive_organs.jl")
 include("plant/respiration/maintenance/maintenance_respiration.jl")
 include("plant/respiration/maintenance/Q10.jl")
 include("model_definition.jl")
+
+include("age_modulation/age_modulation_linear.jl")
+include("age_modulation/age_modulation_logistic.jl")
 
 export Palm
 
