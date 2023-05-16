@@ -142,9 +142,13 @@ function default_parameters()
             :Leaf => 0.03,
             :Female => 0.01,
             :RootSystem => 0.01,
+        ),
+        :potential_area => Dict(
+            :leaf_area_first_leaf => 0.0015, # leaf potential area for the first leaf (m2)
+            :leaf_area_mature_leaf => 12.0, # leaf potential area for a mature leaf (m2)
+            :age_first_mature_leaf => 8 * 365, # age of the first mature leaf (days)
         )
     )
-
     push!(p,
         :biomass_dry => Dict(
             :Stem => 0.1,
@@ -153,6 +157,8 @@ function default_parameters()
             :RootSystem => p[:RL0] / p[:SRL]
         )
     )
+
+
 
     return p
 end
@@ -211,7 +217,7 @@ function Palm(
     leaf = MultiScaleTreeGraph.Node(internode, NodeMTG("+", "Leaf", 1, 4),
         Dict{Symbol,Any}(
             :initiation_date => initiation_date, # date of initiation / creation
-            :models => model_list["Leaf"],
+            :models => leaf_models(parameters, 0),
         ),
         type=Leaf(),
     )
