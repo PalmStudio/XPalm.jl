@@ -33,11 +33,10 @@ function run!(m::PhyllochronModel, models, status, meteo, constants, mtg)
         PlantMeteo.prev_value(status, :newPhytomerEmergence; default=0.0) +
         status.TEff * production_speed * phylo_slow
 
-    if status.newPhytomerEmergence >= 1
-        total_phytomer_number += 1
-        newPhytomer += 1
-        status.newPhytomerEmergence -= 1
-        #! ask Raphael why not status.newPhytomerEmergence = 0.0
+    if status.newPhytomerEmergence >= 1.0
+        total_phytomer_number += 1.0
+        newPhytomer += 1.0
+        status.newPhytomerEmergence -= 1.0 # NB: -=1 because it can be > 1 so we pass along the remainder
         create_phytomer(t, newPhytomer, newPhytomer, age)
     end
 end
