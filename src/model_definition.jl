@@ -26,14 +26,7 @@ function main_models_definition(p)
                     nitrogen_content=p[:nitrogen_content][:Internode],
                 )
             ),
-        "Leaf" =>
-            PlantSimEngine.ModelList(
-                maintenance_respiration=RmQ10{Leaf}(p[:Q10], p[:Rm_base], p[:T_ref]),
-                variables_check=false,
-                status=(
-                    nitrogen_content=p[:nitrogen_content][:Leaf],
-                )
-            ),
+        "Leaf" => leaf_models(p, 0),
         "Male" =>
             PlantSimEngine.ModelList(
                 maintenance_respiration=RmQ10{Male}(p[:Q10], p[:Rm_base], p[:T_ref]),
@@ -58,6 +51,21 @@ function main_models_definition(p)
     )
 end
 
+function leaf_models(p, phytomer_age)
+    PlantSimEngine.ModelList(
+        maintenance_respiration=RmQ10{Leaf}(p[:Q10], p[:Rm_base], p[:T_ref]),
+        leaf_potential_area=Potential_AreaModel_BP(
+            phytomer_age,
+            p[:potential_area][:leaf_area_first_leaf],
+            p[:potential_area][:leaf_area_mature_leaf],
+            p[:potential_area][:age_first_mature_leaf]
+        ),
+        variables_check=false,
+        status=(
+            nitrogen_content=p[:nitrogen_content][:Leaf],
+        )
+    )
+end
 # function main_models_definition()
 #     models = Dict(
 #         "Palm" => ModelList(
