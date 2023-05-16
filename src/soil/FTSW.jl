@@ -1,53 +1,75 @@
-
-@process "soil_water" verbose = false
-
 """
-    FTSW(H_FC::Float64, H_WP_Z1::Float64,Z1::Float64,H_WP::Float64,Z2::Float64,H_0::Float64,KC::Float64,TRESH_EVAP::Float64,TRESH_FTSW_TRANSPI::Float64)
+    FTSW(H_FC::Float64, H_WP_Z1::Float64,Z1::Float64,H_WP_Z2::Float64,Z2::Float64,H_0::Float64,KC::Float64,TRESH_EVAP::Float64,TRESH_FTSW_TRANSPI::Float64)
 
 Fraction of Transpirable Soil Water model.
 
 # Arguments
 
+- `ini_root_depth`: root depth at initialization (mm)
 - `H_FC`: Humidity at field capacity (g[H20] g[Soil])
 - `H_WP_Z1`: Humidity at wilting point (g[H20] g[Soil]) for the first layer
 - `Z1`: Thickness of the first layer (mm)
-- `H_WP`: Humidity at wilting point (g[H20] g[Soil]) for the second layer
+- `H_WP_Z2`: Humidity at wilting point (g[H20] g[Soil]) for the second layer
 - `Z2`: Thickness of the second layer (mm)
 - `H_0`: Initial soil humidity (g[H20] g[Soil])
 - `KC`: cultural coefficient (unitless)
 - `TRESH_EVAP`: fraction of water content in the evaporative layer below which evaporation is reduced (g[H20] g[Soil])
 - `TRESH_FTSW_TRANSPI`: FTSW treshold below which transpiration is reduced (g[H20] g[Soil])
 """
-struct FTSW <: AbstractSoil_WaterModel
+struct FTSW <: AbstractFTSWModel
+    ini_root_depth::Float64   # root depth at initialization (mm)
     H_FC::Float64
     H_WP_Z1::Float64
     Z1::Float64
-    H_WP::Float64
+    H_WP_Z2::Float64
     Z2::Float64
     H_0::Float64
     KC::Float64
     TRESH_EVAP::Float64
     TRESH_FTSW_TRANSPI::Float64
+    ini_qty_H2O_Vap::Float64  # quantity of water in evaporative compartment
+    ini_qty_H2O_C1::Float64   # quantity of water in C1 compartment
+    ini_qty_H2O_C1minusVap::Float64
+    ini_qty_H2O_C2::Float64   # quantity of water in C2 compartment
+    ini_qty_H2O_C::Float64    # quantity of water in C compartment
 end
-
 
 PlantSimEngine.inputs_(::FTSW) = (
     root_depth=-Inf,
     ET0=-Inf, #potential evapotranspiration
     tree_ei=-Inf, # light interception efficiency (ei=1-exp(-kLAI))
-    qty_H2O_Vap=-Inf, # quantity of water in evaporative compartment
-    qty_H2O_C1=-Inf, # quantity of water in C1 compartment
-    qty_H2O_C1minusVap=-Inf,
-    qty_H2O_C2=-Inf, # quantity of water in C2 compartment
-    qty_H2O_C=-Inf, # quantity of water in C compartment
 )
 
+function FTSW(;
+    ini_root_depth,
+    H_FC=0.23,
+    H_WP_Z1=0.05,
+    Z1=200.0,
+    H_WP_Z2=0.05,
+    Z2=2000.0,
+    H_0=0.15,
+    KC=1.0,
+    TRESH_EVAP=0.5,
+    TRESH_FTSW_TRANSPI=0.5
+)
+    FTSW(ini_root_depth, H_FC, H_WP_Z1, Z1, H_WP_Z2, Z2, H_0, KC, TRESH_EVAP, TRESH_FTSW_TRANSPI)
+end
+
+function FTSW(ini_root_depth, H_FC, H_WP_Z1, Z1, H_WP_Z2, Z2, H_0, KC, TRESH_EVAP, TRESH_FTSW_TRANSPI)
+    soil = FTSW(ini_root_depth, H_FC, H_WP_Z1, Z1, H_WP_Z2, Z2, H_0, KC, TRESH_EVAP, TRESH_FTSW_TRANSPI, 0.0, 0.0, 0.0, 0.0, 0.0)
+    init = soil_init_default(soil)
+    FTSW(
+        ini_root_depth, H_FC, H_WP_Z1, Z1, H_WP_Z2, Z2, H_0, KC, TRESH_EVAP, TRESH_FTSW_TRANSPI,
+        init.qty_H2O_Vap, init.qty_H2O_C1, init.qty_H2O_C1minusVap, init.qty_H2O_C2, init.qty_H2O_C
+    )
+end
+
 PlantSimEngine.outputs_(::FTSW) = (
-    qty_H2O_Vap=-Inf,
-    qty_H2O_C1=-Inf,
+    qty_H2O_Vap=-Inf,  # quantity of water in evaporative compartment
+    qty_H2O_C1=-Inf,   # quantity of water in C1 compartment
     qty_H2O_C1minusVap=-Inf,
-    qty_H2O_C2=-Inf,
-    qty_H2O_C=-Inf,
+    qty_H2O_C2=-Inf,   # quantity of water in C2 compartment
+    qty_H2O_C=-Inf,    # quantity of water in C compartment
     FractionC1=-Inf,
     FractionC2=-Inf,
     SizeC1=-Inf,
@@ -60,24 +82,6 @@ PlantSimEngine.outputs_(::FTSW) = (
     rain_effective=-Inf,
     runoff=-Inf,
 )
-
-# dependencies
-PlantSimEngine.dep(::FTSW) = (root_growth=AbstractRoot_GrowthModel,)
-
-function FTSW(;
-    H_FC=0.23,
-    H_WP_Z1=0.05,
-    Z1=200.0,
-    H_WP=0.1,
-    Z2=2000.0,
-    H_0=0.15,
-    KC=1.0,
-    TRESH_EVAP=0.5,
-    TRESH_FTSW_TRANSPI=0.5
-)
-    FTSW(H_FC, H_WP_Z1, Z1, H_WP, Z2, H_0, KC, TRESH_EVAP, TRESH_FTSW_TRANSPI)
-end
-
 
 """
     KS(fillRate, tresh)
@@ -110,8 +114,7 @@ Compute the size of the layers of the FTSW model.
 - `SizeC`: size of transpirable soil water (mm) (SizeC2 + SizeC1minusVap)
 """
 function compute_compartment_size(m, status)
-
-    Taille_WP = m.H_WP * m.Z1
+    Taille_WP = m.H_WP_Z1 * m.Z1
     # Size of the evaporative component of the first layer:
     status.SizeVap = 0.5 * Taille_WP
     # NB: the 0.5 is because water can still evaporate below the wilting point
@@ -119,21 +122,21 @@ function compute_compartment_size(m, status)
     #! replace 0.5 * m.H_WP by a parameter
 
     # Size of the evapotranspirable water layer in the first soil layer:
-    if (status.root_depth > m.Z1)
+    if status.root_depth > m.Z1
         status.SizeC1 = m.H_FC * m.Z1 - (Taille_WP - status.SizeVap)
         # m.H_FC * m.Z1 -> size of the first layer at field capacity
         # (Taille_WP - SizeVap) -> size of the first layer that will never evapotranspirate
         # SizeC1 -> size of the first layer that can evapotranspirate
     else
-        status.SizeC1 = m.H_FC * status.root_depth - status.SizeVap
+        status.SizeC1 = max(0.0, m.H_FC * status.root_depth - status.SizeVap)
     end
-    status.SizeC1minusVap = status.SizeC1 - status.SizeVap
 
+    status.SizeC1minusVap = max(0.0, status.SizeC1 - status.SizeVap)
 
     if (status.root_depth > m.Z2 + m.Z1)
-        status.SizeC2 = (m.H_FC - m.H_WP) * m.Z2
+        status.SizeC2 = (m.H_FC - m.H_WP_Z2) * m.Z2
     else
-        status.SizeC2 = max(0.0, (m.H_FC - m.H_WP) * (status.root_depth - m.Z1))
+        status.SizeC2 = max(0.0, (m.H_FC - m.H_WP_Z2) * (status.root_depth - m.Z1))
     end
 
     status.SizeC = status.SizeC2 + status.SizeC1minusVap
@@ -141,12 +144,17 @@ end
 
 function compute_fraction!(status)
     status.FractionC1 = status.qty_H2O_C1 / status.SizeC1
-    if status.SizeC2 > 0
+    if status.SizeC2 > 0.0
         status.FractionC2 = status.qty_H2O_C2 / status.SizeC2
     else
-        status.FractionC2 = 0
+        status.FractionC2 = 0.0
     end
-    status.ftsw = status.qty_H2O_C / status.SizeC
+
+    if status.SizeC > 0.0
+        status.ftsw = status.qty_H2O_C / status.SizeC
+    else
+        status.ftsw = 0.0
+    end
 end
 
 function soil_init_default(m)
@@ -155,7 +163,7 @@ function soil_init_default(m)
     # init status
     status = PlantSimEngine.Status(merge(PlantSimEngine.inputs_(m), PlantSimEngine.outputs_(m)))
     ## init compartments size
-
+    status.root_depth = m.ini_root_depth
     compute_compartment_size(m, status)
 
     a_vap = min(status.SizeVap, (m.H_0 - m.H_WP_Z1) * m.Z1)
@@ -167,7 +175,7 @@ function soil_init_default(m)
     a_C1moinsV = status.qty_H2O_C1 - status.qty_H2O_Vap
     status.qty_H2O_C1minusVap = max(0.0, a_C1moinsV)
 
-    a_C2 = min(status.SizeC2, (m.H_0 - m.H_WP) * m.Z2)
+    a_C2 = min(status.SizeC2, (m.H_0 - m.H_WP_Z2) * m.Z2)
     status.qty_H2O_C2 = max(0.0, a_C2)
 
     a_C = status.qty_H2O_C1 + status.qty_H2O_C2 - status.qty_H2O_Vap
@@ -178,20 +186,14 @@ function soil_init_default(m)
 end
 
 function PlantSimEngine.run!(m::FTSW, models, st, meteo, constants, extra=nothing)
-
-    #  run the potential evapotranspiration model
-    PlantSimEngine.run!(models.potential_evapotranspiration, models, st, meteo, constants)
-
-    #  run the root_growth model
-    PlantSimEngine.run!(models.root_growth, models, st, meteo, constants)
-
     rain = meteo.Precipitations
 
     # Initialize the water content to the values from the previous time step
-    st.qty_H2O_C1minusVap = PlantMeteo.prev_value(st, :qty_H2O_C1minusVap; default=st.qty_H2O_C1minusVap)
-    st.qty_H2O_C2 = PlantMeteo.prev_value(st, :qty_H2O_C2; default=st.qty_H2O_C2)
-    st.qty_H2O_C = PlantMeteo.prev_value(st, :qty_H2O_C; default=st.qty_H2O_C)
-    st.qty_H2O_C1 = PlantMeteo.prev_value(st, :qty_H2O_C1; default=st.qty_H2O_C1)
+    st.qty_H2O_C1minusVap = PlantMeteo.prev_value(st, :qty_H2O_C1minusVap; default=m.ini_qty_H2O_C1minusVap)
+    st.qty_H2O_C2 = PlantMeteo.prev_value(st, :qty_H2O_C2; default=m.ini_qty_H2O_C2)
+    st.qty_H2O_C = PlantMeteo.prev_value(st, :qty_H2O_C; default=m.ini_qty_H2O_C)
+    st.qty_H2O_C1 = PlantMeteo.prev_value(st, :qty_H2O_C1; default=m.ini_qty_H2O_C1)
+    st.qty_H2O_Vap = PlantMeteo.prev_value(st, :qty_H2O_Vap; default=m.ini_qty_H2O_Vap)
     # Note: if we are computing the first time step, the previous values are the values already in the variables (=initial values)
 
     compute_compartment_size(m, st)
