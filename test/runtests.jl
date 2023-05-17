@@ -39,3 +39,7 @@ end
 @testset "Test utils" begin
     include("test-age_modulation.jl")
 end
+
+@testset "Running a simulation" begin
+    include("test-run.jl")
+end

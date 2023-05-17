@@ -1,8 +1,8 @@
 @process "potential_evapotranspiration" verbose = false
 
 """
-    ET0(LATITUDE,ALTITUDE)
-    ET0(LATITUDE=0.97,ALTITUDE=50)
+    ET0_BP(LATITUDE,ALTITUDE)
+    ET0_BP(LATITUDE=0.97,ALTITUDE=50)
 
 Compute root growth depending on thermal time and water stress (ftsw)
 
@@ -89,4 +89,10 @@ function PlantSimEngine.run!(m::ET0_BP, models, status, meteo, constants, extra=
     erad = 0.408 .* Rn .* pent_vap_sat ./ (pent_vap_sat .+ Kpsy .* (1 .+ 0.34 .* windspeed))
     eaero = ((900 ./ (TMoy .+ 273.16)) .* ((esat .- ea) .* windspeed) .* Kpsy) ./ (pent_vap_sat .+ Kpsy .* (1.0 .+ 0.34 .* windspeed))
     status.ET0 = erad .+ eaero
+end
+
+function PlantSimEngine.run!(::ET0_BP, models, st, meteo, constants, mtg::MultiScaleTreeGraph.Node)
+    scene = MultiScaleTreeGraph.get_root(mtg)
+    scene_status = PlantSimEngine.status(scene[:models])[PlantMeteo.rownumber(st)]
+    st.ET0 = scene_status.ET0
 end

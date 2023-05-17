@@ -1,71 +1,99 @@
-function main_models_definition(p)
+function main_models_definition(p, nsteps)
     Dict(
+        "Scene" => PlantSimEngine.ModelList(
+            potential_evapotranspiration=ET0_BP(),
+            thermal_time=DailyDegreeDays(),
+            nsteps=nsteps,
+        ),
         "Palm" => PlantSimEngine.ModelList(
             # maintenance respiration of organs
             maintenance_respiration=RmQ10{Palm}(p[:Q10], p[:Rm_base], p[:T_ref]),
-            variables_check=false
+            variables_check=false,
+            nsteps=nsteps,
         ),
         "Stem" => PlantSimEngine.ModelList(
             # maintenance respiration of organs
             maintenance_respiration=RmQ10{Stem}(p[:Q10], p[:Rm_base], p[:T_ref]),
-            variables_check=false
+            variables_check=false,
+            nsteps=nsteps,
         ),
-        # "Soil" => ModelList(
-        #     soil_model=FTSW(), #! Add parameters here
-        # ),
         "Phytomer" =>
             PlantSimEngine.ModelList(
                 maintenance_respiration=RmQ10{Phytomer}(p[:Q10], p[:Rm_base], p[:T_ref]),
-                variables_check=false
+                variables_check=false,
+                status=(initiation_day=0,),
+                nsteps=nsteps,
             ),
         "Internode" =>
             PlantSimEngine.ModelList(
                 maintenance_respiration=RmQ10{Internode}(p[:Q10], p[:Rm_base], p[:T_ref]),
                 variables_check=false,
+                nsteps=nsteps,
                 status=(
                     nitrogen_content=p[:nitrogen_content][:Internode],
+                    initiation_day=0
                 )
             ),
-        "Leaf" => leaf_models(p, 0),
+        "Leaf" => PlantSimEngine.ModelList(
+            maintenance_respiration=RmQ10{Leaf}(p[:Q10], p[:Rm_base], p[:T_ref]),
+            leaf_potential_area=Potential_AreaModel_BP(
+                p[:potential_area][:age_first_mature_leaf],
+                p[:potential_area][:leaf_area_first_leaf],
+                p[:potential_area][:leaf_area_mature_leaf],
+            ),
+            # phyllochron=PhyllochronModel(), #! continue here
+            variables_check=false,
+            nsteps=nsteps,
+            status=(
+                nitrogen_content=p[:nitrogen_content][:Leaf],
+                initiation_day=0
+            )
+        ),
         "Male" =>
             PlantSimEngine.ModelList(
                 maintenance_respiration=RmQ10{Male}(p[:Q10], p[:Rm_base], p[:T_ref]),
                 variables_check=false,
+                nsteps=nsteps,
             ),
         "Female" =>
             PlantSimEngine.ModelList(
                 maintenance_respiration=RmQ10{Female}(p[:Q10], p[:Rm_base], p[:T_ref]),
                 variables_check=false,
+                nsteps=nsteps,
                 status=(
                     nitrogen_content=p[:nitrogen_content][:Female],
                 )
             ),
         "RootSystem" =>
             PlantSimEngine.ModelList(
+                potential_evapotranspiration=ET0_BP(),
+                thermal_time=DailyDegreeDays(),
                 maintenance_respiration=RmQ10{RootSystem}(p[:Q10], p[:Rm_base], p[:T_ref]),
+                root_growth=RootGrowthFTSW(ini_root_depth=p[:ini_root_depth]),
+                soil_water=FTSW(ini_root_depth=p[:ini_root_depth]),
                 variables_check=false,
+                nsteps=nsteps,
                 status=(
                     nitrogen_content=p[:nitrogen_content][:RootSystem],
+                    #! to remove when we have the computation of light:
+                    tree_ei=0.8,
+                )
+            ),
+        "Soil" =>
+            PlantSimEngine.ModelList(
+                soil_water=FTSW(ini_root_depth=p[:ini_root_depth]),
+                potential_evapotranspiration=ET0_BP(),
+                variables_check=false,
+                nsteps=nsteps,
+                status=(
+                    nitrogen_content=p[:nitrogen_content][:RootSystem],
+                    #! to remove when we have the computation of light:
+                    tree_ei=0.8,
                 )
             )
     )
 end
 
-function leaf_models(p, phytomer_age)
-    PlantSimEngine.ModelList(
-        maintenance_respiration=RmQ10{Leaf}(p[:Q10], p[:Rm_base], p[:T_ref]),
-        leaf_potential_area=Potential_AreaModel_BP(
-            phytomer_age,
-            p[:potential_area][:leaf_area_first_leaf],
-            p[:potential_area][:leaf_area_mature_leaf],
-            p[:potential_area][:age_first_mature_leaf]
-        ),
-        variables_check=false,
-        status=(
-            nitrogen_content=p[:nitrogen_content][:Leaf],
-        )
-    )
-end
 # function main_models_definition()
 #     models = Dict(
 #         "Palm" => ModelList(

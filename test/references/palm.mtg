@@ -14,10 +14,10 @@ LEFT	RIGHT	RELTYPE	MAX
 
 FEATURES:
 NAME	TYPE
-initiation_date	DD/MM/YY
+initiation_day	DD/MM/YY
 
 MTG:
-ENTITY-CODE			initiation_date
+ENTITY-CODE			initiation_day
 /Palm1			
 	+Stem1		24/11/2022
 	^/Phytomer1		24/11/2022

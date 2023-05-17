@@ -81,6 +81,7 @@ PlantSimEngine.outputs_(::FTSW) = (
     rain_remain=-Inf,
     rain_effective=-Inf,
     runoff=-Inf,
+    soil_depth=-Inf,
 )
 
 """
@@ -187,6 +188,7 @@ end
 
 function PlantSimEngine.run!(m::FTSW, models, st, meteo, constants, extra=nothing)
     rain = meteo.Precipitations
+    st.root_depth = PlantMeteo.prev_value(st, :root_depth; default=m.ini_root_depth)
 
     # Initialize the water content to the values from the previous time step
     st.qty_H2O_C1minusVap = PlantMeteo.prev_value(st, :qty_H2O_C1minusVap; default=m.ini_qty_H2O_C1minusVap)
@@ -295,5 +297,19 @@ function PlantSimEngine.run!(m::FTSW, models, st, meteo, constants, extra=nothin
     st.qty_H2O_C = st.qty_H2O_C2 + st.qty_H2O_C1minusVap
     st.qty_H2O_C1 = st.qty_H2O_Vap + st.qty_H2O_C1minusVap
 
+    st.soil_depth = m.Z1 + m.Z2
+
     compute_fraction!(st)
+end
+
+# Method for when we apply the FTSW model to the roots of a plant (takes the status of the soil):
+function PlantSimEngine.run!(::FTSW, models, st, meteo, constants, mtg::MultiScaleTreeGraph.Node)
+    scene = MultiScaleTreeGraph.get_root(mtg)
+    soil_models = MultiScaleTreeGraph.descendants(scene, :models, symbol="Soil")[1]
+    soil_status = PlantSimEngine.status(soil_models)[PlantMeteo.rownumber(st)]
+    PlantSimEngine.run!(soil_models.models.soil_water, models, soil_status, meteo, constants, nothing)
+
+    st.ftsw = soil_status.ftsw
+    st.soil_depth = soil_status.soil_depth
+    nothing
 end

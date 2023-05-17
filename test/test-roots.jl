@@ -1,7 +1,7 @@
 @testset "RootGrowthFTSW" begin
     ini_root_depth = 30.0
     roots = RootGrowthFTSW(ini_root_depth=ini_root_depth)
-    @test [getfield(roots, i) for i in fieldnames(typeof(roots))] == [30.0, 0.3, 0.2, 200.0, 2000.0]
+    @test [getfield(roots, i) for i in fieldnames(typeof(roots))] == [30.0, 0.3, 0.2]
 end
 
 @testset "RootGrowthFTSW + FTSW" begin

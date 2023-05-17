@@ -6,8 +6,9 @@ struct PhyllochronModel <: AbstractPhyllochronModel
 end
 
 PlantSimEngine.inputs_(::Type{PhyllochronModel}) = (
-    age_palm=-9999,
+    initiation_day=-9999,
     ftsw=-Inf,
+    phytomer_count=-9999,
 )
 
 PlantSimEngine.outputs_(::Type{PhyllochronModel}) = (
@@ -15,9 +16,10 @@ PlantSimEngine.outputs_(::Type{PhyllochronModel}) = (
     phyllochron=-Inf,
 )
 
-function run!(m::PhyllochronModel, models, status, meteo, constants, mtg)
+# Applyed at the plant scale.
+function PlantSimEngine.run!(m::PhyllochronModel, models, status, meteo, constants, mtg)
     production_speed = age_relative_var(
-        status.age_palm,
+        status.initiation_day,
         0.0,
         m.age_palm_maturity,
         m.production_speed_initial,
@@ -26,17 +28,21 @@ function run!(m::PhyllochronModel, models, status, meteo, constants, mtg)
 
     phylo_slow = status.ftsw > m.treshold_ftsw_stress ? 1 : status.ftsw / m.treshold_ftsw_stress
 
-
-    PlantMeteo.prev_value(status, :root_depth; default=m.ini_root_depth)
-
     status.newPhytomerEmergence =
         PlantMeteo.prev_value(status, :newPhytomerEmergence; default=0.0) +
         status.TEff * production_speed * phylo_slow
 
+    status.phytomer_count = PlantMeteo.prev_value(
+        status,
+        :phytomer_count;
+        default=status.phytomer_count # default to the initialisation value
+    )
+
     if status.newPhytomerEmergence >= 1.0
-        total_phytomer_number += 1.0
-        newPhytomer += 1.0
+        status.phytomer_count += 1.0
         status.newPhytomerEmergence -= 1.0 # NB: -=1 because it can be > 1 so we pass along the remainder
-        create_phytomer(t, newPhytomer, newPhytomer, age)
+
+        # Add a new phytomer to the palm using a phytomer emission model:
+        PlantSimEngine.run!(models.phytomer_emission, models, status, meteo, constants, mtg)
     end
 end
