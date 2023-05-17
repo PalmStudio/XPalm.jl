@@ -7,7 +7,7 @@
         FTSW(ini_root_depth=ini_root_depth),
         status=(ET0=1.0, tree_ei=0.8, root_depth=fill(ini_root_depth, nrow(meteo)))
     )
-    run!(m, meteo)
+    run!(m, meteo, executor=SequentialEx())
 
     @test m[:ftsw][1] ≈ 0.5953044330938972
     @test m[:ftsw][end] ≈ 0.4202599224549292

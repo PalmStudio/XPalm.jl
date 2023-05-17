@@ -16,6 +16,7 @@ include("plant/phytomer/leaves/0-process.jl")
 
 # Import the models:
 include("soil/FTSW.jl")
+include("soil/FTSW_BP.jl")
 include("meteo/thermal_time.jl")
 include("meteo/et0_BP.jl")
 include("plant/roots/root_growth.jl")

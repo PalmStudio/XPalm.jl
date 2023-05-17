@@ -200,8 +200,8 @@ function PlantSimEngine.run!(m::FTSW, models, st, meteo, constants, extra=nothin
 
     compute_compartment_size(m, st)
 
-    EvapMax = (1 - st.tree_ei) * st.ET0
-    Transp_Max = st.tree_ei * st.ET0
+    EvapMax = (1 - st.tree_ei) * st.ET0 * m.KC
+    Transp_Max = st.tree_ei * st.ET0 * m.KC
 
     # estim effective rain (runoff)
     if (0.916 * rain - 0.589) < 0
