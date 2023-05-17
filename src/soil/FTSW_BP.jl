@@ -71,25 +71,39 @@ end
 
 PlantSimEngine.outputs_(::FTSW_BP) = (
     qty_H2O_Vap=-Inf,  # quantity of water in evaporative compartment
+    qty_H2O_Vap_Roots=-Inf,
     qty_H2O_C1=-Inf,   # quantity of water in C1 compartment
+    qty_H2O_C1_Roots=-Inf,
     qty_H2O_C1minusVap=-Inf,
+    qty_H2O_C1minusVap_Roots=-Inf,
     qty_H2O_C2=-Inf,   # quantity of water in C2 compartment
+    qty_H2O_C2_Roots=-Inf,
     qty_H2O_C=-Inf,    # quantity of water in C compartment
+    qty_H2O_C_Roots=-Inf,
     FractionC1=-Inf,
+    FractionC1Roots=-Inf,
     FractionC2=-Inf,
+    FractionC2Roots=-Inf,
+    FractionC1minusVapRoots=-Inf,
+    FractionC=-Inf,
+    FractionCRoots=-Inf,
     SizeC1=-Inf,
+    roots_SizeC1=-Inf,
     SizeC2=-Inf,
+    roots_SizeC2=-Inf,
     SizeC=-Inf,
+    roots_SizeC=-Inf,
     SizeVap=-Inf,
+    roots_SizeVap=-Inf,
     SizeC1minusVap=-Inf,
+    roots_SizeC1minusVap=-Inf,
     ftsw=-Inf,
     rain_remain=-Inf,
     rain_effective=-Inf,
-    runoff=-Inf,
-)
+    runoff=-Inf,)
 
 """
-    KS(fillRate, tresh)
+    KS_bp(fillRate, tresh)
 
 Coefficient of stress. 
 
@@ -98,7 +112,7 @@ Coefficient of stress.
 - `fillRate`: fill level of the compartment
 - `tresh`: filling treshold of the  compartment below which there is a reduction in the flow
 """
-KS(fillRate, tresh) = fillRate >= tresh ? 1 : 1 / (tresh) * fillRate
+KS_bp(fillRate, tresh) = fillRate >= tresh ? 1 : 1 / (tresh) * fillRate
 
 """
     compute_compartment_size(m, root_depth)
@@ -118,17 +132,16 @@ Compute the size of the layers of the FTSW model.
 - `SizeC2`: size of the transpirable water layer in the first soil layer (mm)
 - `SizeC`: size of transpirable soil water (mm) (SizeC2 + SizeC1minusVap)
 """
-function compute_compartment_size(m, status)
+function compute_compartment_size(m::FTSW_BP, status)
 
     # Size of the evapotranspirable water layer in the first soil layer:
     # NB: the 0.5 is because water can still evaporate below the wilting point
     if status.root_depth > m.Z1
-        status.SizeC1 = (H_FC - 0.5 * m.H_WP_Z1) * Z1
-        status.SizeVap = 0.5 * m.H_WP_Z1 * Z1
+        status.SizeC1 = (m.H_FC - 0.5 * m.H_WP_Z1) * m.Z1
     else
-        status.SizeC1 = (H_FC - 0.5 * m.H_WP_Z1) * status.root_depth
-        status.SizeVap = 0.5 * m.H_WP_Z1 * status.root_depth
+        status.SizeC1 = (m.H_FC - 0.5 * m.H_WP_Z1) * status.root_depth
     end
+    status.SizeVap = 0.5 * m.H_WP_Z1 * m.Z1
 
     status.SizeC1minusVap = status.SizeC1 - status.SizeVap
 
@@ -141,7 +154,7 @@ function compute_compartment_size(m, status)
     status.SizeC = status.SizeC2 + status.SizeC1minusVap
 end
 
-function compute_fraction!(status)
+function compute_fraction_bp!(status)
     status.FractionC1 = status.qty_H2O_C1 / status.SizeC1
     if status.SizeC2 > 0.0
         status.FractionC2 = status.qty_H2O_C2 / status.SizeC2
@@ -149,8 +162,8 @@ function compute_fraction!(status)
         status.FractionC2 = 0.0
     end
     status.FractionC = status.qty_H2O_C / status.SizeC
-    status.FractionC1Roots = status.qty_H2O_C1_Racines / status.roots_SizeC1
-    if (roots_SizeC2 > 0)
+    status.FractionC1Roots = status.qty_H2O_C1_Roots / status.roots_SizeC1
+    if (status.roots_SizeC2 > 0)
         status.FractionC2Roots = status.qty_H2O_C2_roots / status.roots_SizeC2
     else
         status.FractionC2Roots = 0
@@ -160,7 +173,7 @@ function compute_fraction!(status)
 
 end
 
-function soil_init_default(m)
+function soil_init_default(m::FTSW_BP)
     @assert m.H_0 <= m.H_FC "H_0 cannot be higher than H_FC"
 
     # init status
@@ -186,16 +199,16 @@ function soil_init_default(m)
 
 
     status.qty_H2O_C1_Roots = max(0.0, status.qty_H2O_C1 * status.roots_SizeC1 / status.SizeC1)
-    status.qty_H2O_Vap_Roots = max(0.0, status.qty_H2O_Vap * status.roots_SizeVap / TailleVap)
+    status.qty_H2O_Vap_Roots = max(0.0, status.qty_H2O_Vap * status.roots_SizeVap / status.SizeVap)
     status.qty_H2O_C2_Roots = max(0.0, status.qty_H2O_C2 * status.roots_SizeC2 / status.SizeC2)
     status.qty_H2O_C_Roots = max(0.0, status.qty_H2O_C * status.roots_SizeC / status.SizeC)
-    status.qty_H2O_C1minusVap_Roots = max(0.0, status.qty_H2O_C1minusVap * status.roots_SizeC1moinsVap / status.SizeC1minusVap)
+    status.qty_H2O_C1minusVap_Roots = max(0.0, status.qty_H2O_C1minusVap * status.roots_SizeC1minusVap / status.SizeC1minusVap)
 
-    compute_fraction!(status)
+    compute_fraction_bp!(status)
     return status
 end
 
-function PlantSimEngine.run!(m::FTSW, models, st, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::FTSW_BP, models, st, meteo, constants, extra=nothing)
     rain = meteo.Precipitations
 
     # Initialize the water content to the values from the previous time step
@@ -237,9 +250,9 @@ function PlantSimEngine.run!(m::FTSW, models, st, meteo, constants, extra=nothin
     # compute water balance after rain
     mem_qte_H2O_C1 = status.qty_H2O_C1
     mem_qte_H2O_Vap = status.qty_H2O_Vap
-    if ((status.qty_H2O_Vap + pluie_efficace) >= TailleVap)
+    if ((status.qty_H2O_Vap + pluie_efficace) >= status.SizeVap)
         status.qty_H2O_Vap = TailleVap
-        if ((status.qty_H2O_C1minusVap + (pluie_efficace - TailleVap + mem_qte_H2O_Vap)) >= status.SizeC1minusVap)
+        if ((status.qty_H2O_C1minusVap + (pluie_efficace - status.SizeVap + mem_qte_H2O_Vap)) >= status.SizeC1minusVap)
             status.qty_H2O_C1minusVap = status.SizeC1minusVap
             status.qty_H2O_C1 = status.qty_H2O_C1minusVap + status.qty_H2O_Vap
             if ((status.qty_H2O_C2 + mem_qte_H2O_C1 + pluie_efficace - status.SizeC1) >= status.SizeC2)
@@ -248,7 +261,7 @@ function PlantSimEngine.run!(m::FTSW, models, st, meteo, constants, extra=nothin
                 status.qty_H2O_C2 += mem_qte_H2O_C1 + pluie_efficace - status.SizeC1
             end
         else
-            status.qty_H2O_C1minusVap += pluie_efficace - TailleVap + mem_qte_H2O_Vap
+            status.qty_H2O_C1minusVap += pluie_efficace - status.SizeVap + mem_qte_H2O_Vap
             status.qty_H2O_C1 = status.qty_H2O_C1minusVap + status.qty_H2O_Vap
         end
     else
@@ -259,10 +272,10 @@ function PlantSimEngine.run!(m::FTSW, models, st, meteo, constants, extra=nothin
 
     #    compute roots water balance after rain
     mem_qty_H2O_C1_Roots = status.qty_H2O_C1_Roots
-    mem_qte_H2O_Vap_Racines = status.qty_H2O_Vap_Roots
+    mem_qte_H2O_Vap_Roots = status.qty_H2O_Vap_Roots
     if ((status.qty_H2O_Vap_Roots + pluie_efficace) >= status.roots_SizeVap)
         status.qty_H2O_Vap_Roots = status.roots_SizeVap
-        if ((status.qty_H2O_C1minusVap_Roots + (pluie_efficace - status.roots_SizeVap + mem_qte_H2O_Vap_Racines)) >= status.roots_SizeC1minusVap)
+        if ((status.qty_H2O_C1minusVap_Roots + (pluie_efficace - status.roots_SizeVap + mem_qte_H2O_Vap_Roots)) >= status.roots_SizeC1minusVap)
             status.qty_H2O_C1minusVap_Roots = status.roots_SizeC1minusVap
             status.qty_H2O_C1_Roots = status.qty_H2O_C1minusVap_Roots + status.qty_H2O_Vap_Roots
             if ((status.qty_H2O_C2_Roots + mem_qty_H2O_C1_Roots + pluie_efficace - status.roots_SizeC1) >= status.roots_SizeC2)
@@ -271,7 +284,7 @@ function PlantSimEngine.run!(m::FTSW, models, st, meteo, constants, extra=nothin
                 status.qty_H2O_C2_Roots += mem_qty_H2O_C1_Roots + pluie_efficace - status.roots_SizeC1
             end
         else
-            status.qty_H2O_C1minusVap_Roots += pluie_efficace - status.roots_SizeVap + mem_qte_H2O_Vap_Racines
+            status.qty_H2O_C1minusVap_Roots += pluie_efficace - status.roots_SizeVap + mem_qte_H2O_Vap_Roots
             status.qty_H2O_C1_Roots = status.qty_H2O_C1minusVap_Roots + status.qty_H2O_Vap_Roots
         end
     else
@@ -280,10 +293,10 @@ function PlantSimEngine.run!(m::FTSW, models, st, meteo, constants, extra=nothin
     end
     status.qty_H2O_C_Roots = status.qty_H2O_C1minusVap_Roots + status.qty_H2O_C2_Roots
 
-    compute_fraction!()
+    compute_fraction_bp!()
 
     #  compute water bamance after rain
-    Evap = EvapMax * KS(st.FractionC1, m.TRESH_EVAP)
+    Evap = EvapMax * KS_bp(st.FractionC1, m.TRESH_EVAP)
     if (status.qty_H2O_C1minusVap - Evap >= 0)
         status.qty_H2O_C1minusVap += -Evap
         EvapC1minusVap = Evap
@@ -300,16 +313,16 @@ function PlantSimEngine.run!(m::FTSW, models, st, meteo, constants, extra=nothin
     #  compute water balance roots after evaporation
     a_C1minusVap_Roots = status.qty_H2O_C1minusVap_Roots - EvapC1minusVap * status.roots_SizeC1minusVap / status.SizeC1minusVap
     status.qty_H2O_C1minusVap_Roots = max(0.0, a_C1minusVap_Roots)
-    a_Vap_Roots = status.qty_H2O_Vap_Roots - EvapVap * status.roots_SizeVap / TailleVap
+    a_Vap_Roots = status.qty_H2O_Vap_Roots - EvapVap * status.roots_SizeVap / status.SizeVap
     status.qty_H2O_Vap_Roots = max(0.0, a_Vap_Roots)
     status.qty_H2O_C1_Roots = status.qty_H2O_Vap_Roots + status.qty_H2O_C1minusVap_Roots
     status.qty_H2O_C_Roots = status.qty_H2O_C2_Roots + status.qty_H2O_C1minusVap_Roots
 
-    compute_fraction!()
+    compute_fraction_bp!()
 
     # compute water balance  roots after Transpiration
 
-    Transpi = Transp_Max * KS(m.TRESH_FTSW_TRANSPI, st.ftsw)
+    Transpi = Transp_Max * KS_bp(m.TRESH_FTSW_TRANSPI, st.ftsw)
     if (status.qty_H2O_C2_Roots > 0)
         TranspiC2 = min(Transpi * (status.qty_H2O_C2_Roots / (status.qty_H2O_C2_Roots + status.qty_H2O_C1minusVap_Roots)), status.qty_H2O_C2_Roots)
     else
@@ -332,5 +345,5 @@ function PlantSimEngine.run!(m::FTSW, models, st, meteo, constants, extra=nothin
     status.qty_H2O_C = status.qty_H2O_C2 + status.qty_H2O_C1minusVap
     status.qty_H2O_C1 = status.qty_H2O_Vap + status.qty_H2O_C1minusVap
 
-    compute_fraction!()
+    compute_fraction_bp!()
 end

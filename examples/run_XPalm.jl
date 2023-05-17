@@ -23,19 +23,19 @@ replace!(meteo.Wind, missing => mean(skipmissing(meteo.Wind)))
 replace!(meteo.Rg, missing => mean(skipmissing(meteo.Rg)))
 
 
-soil = FTSW()
-init = soil_init_default(soil)
-init.ET0 = 1.0
-init.tree_ei = 0.8
-init.root_depth = 500.0
+# soil = FTSW(ini_root_depth=500)
+# init = soil_init_default(soil)
+# init.ET0 = 1.0
+# init.tree_ei = 0.8
+# init.root_depth = 500.0
 
-m = FTSW(3.0, 0.23, 0.05, 200.0,
-    0.1,
-    2000.0,
-    0.15,
-    1.0,
-    0.5,
-    0.5, 0.0, 0.0, 0.0, 0.0, 0.0)
+# m = FTSW(3.0, 0.23, 0.05, 200.0,
+#     0.1,
+#     2000.0,
+#     0.15,
+#     1.0,
+#     0.5,
+#     0.5, 0.0, 0.0, 0.0, 0.0, 0.0)
 
 
 # meteo = first(meteo, 20)
@@ -43,8 +43,8 @@ init_root_depth = 3.0
 m = ModelList(
     ET0_BP(),
     DailyDegreeDays(),
-    RootGrowthFTSW(init_root_depth),
-    FTSW(),
+    # RootGrowthFTSW(init_root_depth),
+    FTSW(ini_root_depth=init_root_depth,),
     status=TimeStepTable{PlantSimEngine.Status}([init for i in eachrow(meteo)])
     # status=TimeStepTable{Status}([init for i in eachrow(meteo)])
 )
@@ -62,27 +62,18 @@ df = DataFrame(m)
 CSV.write("2-outputs/out_runFTSW.csv", df)
 
 
-ini_root_depth = 300.0
-m = ModelList(
-    # ET0_BP(),
-    # DailyDegreeDays(),
-    RootGrowthFTSW(ini_root_depth=ini_root_depth),
-    FTSW(ini_root_depth=ini_root_depth),
-    status=TimeStepTable{PlantSimEngine.Status}([init for i in eachrow(meteo)])
-    # status=TimeStepTable{Status}([init for i in eachrow(meteo)])
-)
-
+ini_root_depth = 700.0
 
 m = ModelList(
-    # ET0_BP(),
-    # DailyDegreeDays(),
-    # RootGrowthFTSW(),
-    FTSW(),
-    # status=(root_depth=fill(1.0, 916), tree_ei=0.8)
+    ET0_BP(),
+    DailyDegreeDays(),
+    RootGrowthFTSW(ini_root_depth=init_root_depth),
+    XPalm.FTSW _BP(ini_root_depth=init_root_depth),
+    status=(root_depth=fill(1.0, 916), tree_ei=0.8)
     # status=TimeStepTable{Status}([init for i in eachrow(meteo)])
 )
 to_initialize(m)
 
 
 run!(m, meteo)
-m[:ftsw]
+lines(m[:ftsw])
