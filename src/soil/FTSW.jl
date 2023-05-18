@@ -1,7 +1,25 @@
 """
-    FTSW(H_FC::Float64, H_WP_Z1::Float64,Z1::Float64,H_WP_Z2::Float64,Z2::Float64,H_0::Float64,KC::Float64,TRESH_EVAP::Float64,TRESH_FTSW_TRANSPI::Float64)
+    FTSW{O}(
+        ini_root_depth::T
+        H_FC::T
+        H_WP_Z1::T
+        Z1::T
+        H_WP_Z2::T
+        Z2::T
+        H_0::T
+        KC::T
+        TRESH_EVAP::T
+        TRESH_FTSW_TRANSPI::T
+        ini_qty_H2O_Vap::T
+        ini_qty_H2O_C1::T
+        ini_qty_H2O_C1minusVap::T
+        ini_qty_H2O_C2::T
+        ini_qty_H2O_C::T
+    )
 
 Fraction of Transpirable Soil Water model.
+
+Note that there is also a method for `FTSW` that takes an organ type as type, *e.g.* `FTSW{Leaf}(ini_root_depth = 200.0)`.
 
 # Arguments
 
@@ -16,29 +34,39 @@ Fraction of Transpirable Soil Water model.
 - `TRESH_EVAP`: fraction of water content in the evaporative layer below which evaporation is reduced (g[H20] g[Soil])
 - `TRESH_FTSW_TRANSPI`: FTSW treshold below which transpiration is reduced (g[H20] g[Soil])
 """
-struct FTSW <: AbstractFTSWModel
-    ini_root_depth::Float64   # root depth at initialization (mm)
-    H_FC::Float64
-    H_WP_Z1::Float64
-    Z1::Float64
-    H_WP_Z2::Float64
-    Z2::Float64
-    H_0::Float64
-    KC::Float64
-    TRESH_EVAP::Float64
-    TRESH_FTSW_TRANSPI::Float64
-    ini_qty_H2O_Vap::Float64  # quantity of water in evaporative compartment
-    ini_qty_H2O_C1::Float64   # quantity of water in C1 compartment
-    ini_qty_H2O_C1minusVap::Float64
-    ini_qty_H2O_C2::Float64   # quantity of water in C2 compartment
-    ini_qty_H2O_C::Float64    # quantity of water in C compartment
+struct FTSW{O,T} <: AbstractFTSWModel where {O,T} # O: type of organ, T: type of the values
+    ini_root_depth::T   # root depth at initialization (mm)
+    H_FC::T
+    H_WP_Z1::T
+    Z1::T
+    H_WP_Z2::T
+    Z2::T
+    H_0::T
+    KC::T
+    TRESH_EVAP::T
+    TRESH_FTSW_TRANSPI::T
+    ini_qty_H2O_Vap::T  # quantity of water in evaporative compartment
+    ini_qty_H2O_C1::T   # quantity of water in C1 compartment
+    ini_qty_H2O_C1minusVap::T
+    ini_qty_H2O_C2::T   # quantity of water in C2 compartment
+    ini_qty_H2O_C::T    # quantity of water in C compartment
 end
 
-PlantSimEngine.inputs_(::FTSW) = (
-    root_depth=-Inf,
-    ET0=-Inf, #potential evapotranspiration
-    tree_ei=-Inf, # light interception efficiency (ei=1-exp(-kLAI))
-)
+function FTSW{O}(;
+    ini_root_depth,
+    H_FC=0.23,
+    H_WP_Z1=0.05,
+    Z1=200.0,
+    H_WP_Z2=0.05,
+    Z2=2000.0,
+    H_0=0.15,
+    KC=1.0,
+    TRESH_EVAP=0.5,
+    TRESH_FTSW_TRANSPI=0.5
+) where {O}
+    vals = promote(ini_root_depth, H_FC, H_WP_Z1, Z1, H_WP_Z2, Z2, H_0, KC, TRESH_EVAP, TRESH_FTSW_TRANSPI)
+    FTSW{O,typeof(vals[1])}(vals...)
+end
 
 function FTSW(;
     ini_root_depth,
@@ -52,17 +80,24 @@ function FTSW(;
     TRESH_EVAP=0.5,
     TRESH_FTSW_TRANSPI=0.5
 )
-    FTSW(ini_root_depth, H_FC, H_WP_Z1, Z1, H_WP_Z2, Z2, H_0, KC, TRESH_EVAP, TRESH_FTSW_TRANSPI)
+    vals = promote(ini_root_depth, H_FC, H_WP_Z1, Z1, H_WP_Z2, Z2, H_0, KC, TRESH_EVAP, TRESH_FTSW_TRANSPI)
+    FTSW{typeof(vals[1]),typeof(vals[1])}(vals...)
 end
 
-function FTSW(ini_root_depth, H_FC, H_WP_Z1, Z1, H_WP_Z2, Z2, H_0, KC, TRESH_EVAP, TRESH_FTSW_TRANSPI)
-    soil = FTSW(ini_root_depth, H_FC, H_WP_Z1, Z1, H_WP_Z2, Z2, H_0, KC, TRESH_EVAP, TRESH_FTSW_TRANSPI, 0.0, 0.0, 0.0, 0.0, 0.0)
+function FTSW{O,T}(ini_root_depth, H_FC, H_WP_Z1, Z1, H_WP_Z2, Z2, H_0, KC, TRESH_EVAP, TRESH_FTSW_TRANSPI) where {O,T}
+    soil = FTSW{O,T}(ini_root_depth, H_FC, H_WP_Z1, Z1, H_WP_Z2, Z2, H_0, KC, TRESH_EVAP, TRESH_FTSW_TRANSPI, 0.0, 0.0, 0.0, 0.0, 0.0)
     init = soil_init_default(soil)
-    FTSW(
+    FTSW{O,T}(
         ini_root_depth, H_FC, H_WP_Z1, Z1, H_WP_Z2, Z2, H_0, KC, TRESH_EVAP, TRESH_FTSW_TRANSPI,
         init.qty_H2O_Vap, init.qty_H2O_C1, init.qty_H2O_C1minusVap, init.qty_H2O_C2, init.qty_H2O_C
     )
 end
+
+PlantSimEngine.inputs_(::FTSW) = (
+    root_depth=-Inf,
+    ET0=-Inf, #potential evapotranspiration
+    tree_ei=-Inf, # light interception efficiency (ei=1-exp(-kLAI))
+)
 
 PlantSimEngine.outputs_(::FTSW) = (
     qty_H2O_Vap=-Inf,  # quantity of water in evaporative compartment
@@ -162,7 +197,12 @@ function soil_init_default(m)
     @assert m.H_0 <= m.H_FC "H_0 cannot be higher than H_FC"
 
     # init status
-    status = PlantSimEngine.Status(merge(PlantSimEngine.inputs_(m), PlantSimEngine.outputs_(m)))
+    status = PlantSimEngine.Status(
+        root_depth=-Inf, ini_root_depth=-Inf, tree_ei=-Inf, ET0=-Inf, qty_H2O_Vap=-Inf,
+        qty_H2O_C1=-Inf, qty_H2O_C1minusVap=-Inf, qty_H2O_C2=-Inf, qty_H2O_C=-Inf, FractionC1=-Inf,
+        FractionC2=-Inf, SizeC1=-Inf, SizeC2=-Inf, SizeC=-Inf, SizeVap=-Inf, SizeC1minusVap=-Inf,
+        ftsw=-Inf, rain_remain=-Inf, rain_effective=-Inf, runoff=-Inf, soil_depth=-Inf
+    )
     ## init compartments size
     status.root_depth = m.ini_root_depth
     compute_compartment_size(m, status)
@@ -186,7 +226,7 @@ function soil_init_default(m)
     return status
 end
 
-function PlantSimEngine.run!(m::FTSW, models, st, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::T, models, st, meteo, constants, extra=nothing) where {T<:FTSW}
     rain = meteo.Precipitations
     st.root_depth = PlantMeteo.prev_value(st, :root_depth; default=m.ini_root_depth)
 
@@ -302,14 +342,36 @@ function PlantSimEngine.run!(m::FTSW, models, st, meteo, constants, extra=nothin
     compute_fraction!(st)
 end
 
-# Method for when we apply the FTSW model to the roots of a plant (takes the status of the soil):
+# Method to get the FTSW value from other organs:
 function PlantSimEngine.run!(::FTSW, models, st, meteo, constants, mtg::MultiScaleTreeGraph.Node)
     scene = MultiScaleTreeGraph.get_root(mtg)
     soil_models = MultiScaleTreeGraph.descendants(scene, :models, symbol="Soil")[1]
     soil_status = PlantSimEngine.status(soil_models)[PlantMeteo.rownumber(st)]
+    st.ftsw = soil_status.ftsw
+    nothing
+end
+
+PlantSimEngine.inputs_(::FTSW{T}) where {T<:Organ} = NamedTuple()
+PlantSimEngine.outputs_(::FTSW{T}) where {T<:Organ} = (
+    ftsw=-Inf,
+)
+
+# Method to run the FTSW model from the root system:
+function PlantSimEngine.run!(::FTSW{RootSystem}, models, st, meteo, constants, mtg::MultiScaleTreeGraph.Node)
+    scene = MultiScaleTreeGraph.get_root(mtg)
+    soil_models = MultiScaleTreeGraph.descendants(scene, :models, symbol="Soil")[1]
+    soil_status = PlantSimEngine.status(soil_models)[PlantMeteo.rownumber(st)]
+    soil_status.root_depth = st.root_depth
     PlantSimEngine.run!(soil_models.models.soil_water, models, soil_status, meteo, constants, nothing)
 
     st.ftsw = soil_status.ftsw
     st.soil_depth = soil_status.soil_depth
     nothing
 end
+
+PlantSimEngine.outputs_(::FTSW{RootSystem}) = (
+    ftsw=-Inf,
+    soil_depth=-Inf,
+)
+
+

@@ -7,9 +7,22 @@ function main_models_definition(p, nsteps)
         ),
         "Palm" => PlantSimEngine.ModelList(
             # maintenance respiration of organs
+            thermal_time=DailyDegreeDays(),
+            plant_age=DailyPlantAgeModel(),
+            soil_water=FTSW{Plant}(ini_root_depth=p[:ini_root_depth]), # needed to get the ftsw value
+            phyllochron=PhyllochronModel(
+                p[:phyllochron][:age_palm_maturity],
+                p[:phyllochron][:threshold_ftsw_stress],
+                p[:phyllochron][:production_speed_initial],
+                p[:phyllochron][:production_speed_mature],
+            ),
+            phytomer_emission=PhytomerEmission(),
             maintenance_respiration=RmQ10{Palm}(p[:Q10], p[:Rm_base], p[:T_ref]),
             variables_check=false,
             nsteps=nsteps,
+            status=(
+                phytomer_count=0,
+            )
         ),
         "Stem" => PlantSimEngine.ModelList(
             # maintenance respiration of organs
@@ -19,34 +32,34 @@ function main_models_definition(p, nsteps)
         ),
         "Phytomer" =>
             PlantSimEngine.ModelList(
+                plant_age=DailyPlantAgeModel(),
                 maintenance_respiration=RmQ10{Phytomer}(p[:Q10], p[:Rm_base], p[:T_ref]),
                 variables_check=false,
-                status=(initiation_day=0,),
+                status=(initiation_age=0,),
                 nsteps=nsteps,
             ),
         "Internode" =>
             PlantSimEngine.ModelList(
-                maintenance_respiration=RmQ10{Internode}(p[:Q10], p[:Rm_base], p[:T_ref]),
-                variables_check=false,
+                plant_age=DailyPlantAgeModel(),
+                maintenance_respiration=RmQ10{Internode}(p[:Q10], p[:Rm_base], p[:T_ref]), variables_check=false,
                 nsteps=nsteps,
                 status=(
                     nitrogen_content=p[:nitrogen_content][:Internode],
-                    initiation_day=0
+                    initiation_age=0
                 )
             ),
         "Leaf" => PlantSimEngine.ModelList(
-            maintenance_respiration=RmQ10{Leaf}(p[:Q10], p[:Rm_base], p[:T_ref]),
             leaf_potential_area=Potential_AreaModel_BP(
                 p[:potential_area][:age_first_mature_leaf],
                 p[:potential_area][:leaf_area_first_leaf],
                 p[:potential_area][:leaf_area_mature_leaf],
             ),
-            # phyllochron=PhyllochronModel(), #! continue here
-            variables_check=false,
+            plant_age=DailyPlantAgeModel(),
+            maintenance_respiration=RmQ10{Leaf}(p[:Q10], p[:Rm_base], p[:T_ref]), variables_check=false,
             nsteps=nsteps,
             status=(
                 nitrogen_content=p[:nitrogen_content][:Leaf],
-                initiation_day=0
+                initiation_age=0
             )
         ),
         "Male" =>
@@ -70,7 +83,7 @@ function main_models_definition(p, nsteps)
                 thermal_time=DailyDegreeDays(),
                 maintenance_respiration=RmQ10{RootSystem}(p[:Q10], p[:Rm_base], p[:T_ref]),
                 root_growth=RootGrowthFTSW(ini_root_depth=p[:ini_root_depth]),
-                soil_water=FTSW(ini_root_depth=p[:ini_root_depth]),
+                soil_water=FTSW{RootSystem}(ini_root_depth=p[:ini_root_depth]),
                 variables_check=false,
                 nsteps=nsteps,
                 status=(

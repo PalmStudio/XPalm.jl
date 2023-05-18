@@ -17,7 +17,7 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
         # Run the water model in the soil:
         PlantSimEngine.run!(soil[:models].models.soil_water, soil[:models].models, soil[:models].status[i], meteo_, constants, nothing)
 
-        # Five access to TEff to the roots:
+        # Give access to TEff to the roots:
         PlantSimEngine.run!(roots[:models].models.thermal_time, roots[:models], roots[:models].status[i], meteo_, constants, nothing)
         # Run the root growth model in the soil (it already knows how to get the ftsw from the soil model):
         PlantSimEngine.run!(roots[:models].models.root_growth, roots[:models].models, roots[:models].status[i], meteo_, constants, roots)
@@ -25,7 +25,10 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
         # Run the leaf_potential_area model over all leaves:
         MultiScaleTreeGraph.traverse(plant, symbol="Leaf") do node
             PlantSimEngine.run!(node[:models].models.leaf_potential_area, node[:models], node[:models].status[i], meteo_, constants, nothing)
+            #! note: only the last leaf should be computed here. Or maybe this computation should only be done at leaf emission.
         end
-        #! note: only the last leaf should be computed here. Or maybe this computation should only be done at leaf emission.
+
+        # Run the phyllochron model over the plant:
+        PlantSimEngine.run!(plant[:models].models.phyllochron, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
     end
 end

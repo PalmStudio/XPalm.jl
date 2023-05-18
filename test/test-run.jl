@@ -23,3 +23,6 @@
     # The potential area stays constant over time:
     @test leaf[:models].status[end][:potential_area] == leaf[:models].status[1][:potential_area]
 end
+
+# length(p.mtg)
+# get_node(p.mtg, 8)[:models].status[1]

@@ -5,21 +5,22 @@ struct PhyllochronModel <: AbstractPhyllochronModel
     production_speed_mature
 end
 
-PlantSimEngine.inputs_(::Type{PhyllochronModel}) = (
-    initiation_day=-9999,
+PlantSimEngine.inputs_(::PhyllochronModel) = (
+    plant_age=-9999,
+    TEff=-Inf,
     ftsw=-Inf,
     phytomer_count=-9999,
 )
 
-PlantSimEngine.outputs_(::Type{PhyllochronModel}) = (
+PlantSimEngine.outputs_(::PhyllochronModel) = (
     newPhytomerEmergence=-Inf,
     phyllochron=-Inf,
 )
 
-# Applyed at the plant scale.
+# Applied at the plant scale.
 function PlantSimEngine.run!(m::PhyllochronModel, models, status, meteo, constants, mtg)
     production_speed = age_relative_var(
-        status.initiation_day,
+        status.plant_age,
         0.0,
         m.age_palm_maturity,
         m.production_speed_initial,
@@ -39,9 +40,7 @@ function PlantSimEngine.run!(m::PhyllochronModel, models, status, meteo, constan
     )
 
     if status.newPhytomerEmergence >= 1.0
-        status.phytomer_count += 1.0
         status.newPhytomerEmergence -= 1.0 # NB: -=1 because it can be > 1 so we pass along the remainder
-
         # Add a new phytomer to the palm using a phytomer emission model:
         PlantSimEngine.run!(models.phytomer_emission, models, status, meteo, constants, mtg)
     end

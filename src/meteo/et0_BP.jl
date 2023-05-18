@@ -23,7 +23,6 @@ PlantSimEngine.outputs_(::ET0_BP) = (
     ET0=-Inf, # potential evpotranspiration (mm)
 )
 
-
 function ET0_BP(;
     LATITUDE=0.97,
     ALTITUDE=50.0
@@ -31,6 +30,8 @@ function ET0_BP(;
     ET0_BP(LATITUDE, ALTITUDE)
 end
 
+PlantSimEngine.ObjectDependencyTrait(::Type{<:ET0_BP}) = PlantSimEngine.IsObjectDependent()
+PlantSimEngine.TimeStepDependencyTrait(::Type{<:ET0_BP}) = PlantSimEngine.IsTimeStepIndependent()
 
 """
 Compute potential evapotranspiration

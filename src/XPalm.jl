@@ -8,21 +8,24 @@ import PlantMeteo
 import PlantSimEngine: @process
 import Tables
 
+# Palm structure:
+include("plant/mtg/structs.jl")
+
 # Import the processes:
 include("soil/0-process.jl")
+include("plant/plant_age/0-process.jl")
 include("plant/roots/0-process.jl")
 include("plant/phytomer/phytomer/0-process.jl")
 include("plant/phytomer/leaves/0-process.jl")
 
 # Import the models:
+include("plant/plant_age/palm_age_increment.jl")
 include("soil/FTSW.jl")
 include("soil/FTSW_BP.jl")
 include("meteo/thermal_time.jl")
 include("meteo/et0_BP.jl")
 include("plant/roots/root_growth.jl")
 
-
-include("plant/mtg/structs.jl")
 include("plant/phytomer/phytomer/add_phytomer.jl")
 include("plant/phytomer/leaves/phyllochron.jl")
 include("plant/phytomer/leaves/potential_area.jl")
