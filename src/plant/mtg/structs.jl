@@ -106,18 +106,21 @@ end
 
 
 """
-    Palm(mtg, phytomer_count, max_rank, node_count)
-    Palm()
+    Palm(;
+        nsteps=1,
+        initiation_day=0,
+        parameters=default_parameters(),
+        model_list=main_models_definition(parameters, nsteps)
+    )
 
-Create a new Palm. The maximum rank is used to determine how many living phytomers (i.e. leaves) are there
-on the Palm.
-
-`Palm()` (without arguments) creates a new Palm with a single phytomer, one leaf, and a Root system.
+Create a new scene with one Palm plant.
 
 # Arguments
-- `mtg`: a MTG object
-- `phytomer_count`: total number of phytomers emitted by the Palm since germination, *i.e.* physiological age
-- `mtg_node_count`: total number of nodes in the MTG (used to determine the unique ID)
+
+- `nsteps`: number of time steps to run the simulation for (default: 1, should match the number of rows in the meteo data)
+- `initiation_day`: date of the first phytomer initiation (default: 0)
+- `parameters`: a dictionary of parameters (default: `default_parameters()`)
+- `model_list`: a dictionary of models (default: `main_models_definition(parameters, nsteps)`)
 """
 mutable struct Palm{T} <: Organ
     mtg::MultiScaleTreeGraph.Node
