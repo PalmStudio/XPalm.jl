@@ -2,25 +2,29 @@ CODE:	FORM-A
 
 CLASSES:
 SYMBOL	SCALE	DECOMPOSITION	INDEXATION	DEFINITION
-Palm	1	FREE	FREE	IMPLICIT
+$	0	FREE	FREE	IMPLICIT
+Soil	1	FREE	FREE	IMPLICIT
+Plant	1	FREE	FREE	IMPLICIT
+RootSystem	2	FREE	FREE	IMPLICIT
 Stem	2	FREE	FREE	IMPLICIT
 Phytomer	3	FREE	FREE	IMPLICIT
 Internode	4	FREE	FREE	IMPLICIT
 Leaf	4	FREE	FREE	IMPLICIT
-RootSystem	2	FREE	FREE	IMPLICIT
 
 DESCRIPTION:
 LEFT	RIGHT	RELTYPE	MAX
 
 FEATURES:
 NAME	TYPE
-initiation_day	DD/MM/YY
+initiation_age	INT
 
 MTG:
-ENTITY-CODE			initiation_day
-/Palm1			
-	+Stem1		24/11/2022
-	^/Phytomer1		24/11/2022
-	^/Internode1		24/11/2022
-		+Leaf1	24/11/2022
-	+RootSystem1		24/11/2022
+ENTITY-CODE				initiation_age
+/Scene1				
+	+Soil1			
+	+Plant1			
+		+RootSystem1		0
+		+Stem1		0
+		^/Phytomer1		0
+		^/Internode1		0
+			+Leaf1	0

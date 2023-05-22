@@ -20,9 +20,9 @@ rename!(
 replace!(meteo.Wind, missing => mean(skipmissing(meteo.Wind)))
 replace!(meteo.Rg, missing => mean(skipmissing(meteo.Rg)))
 
-# @testset "Palm" begin
-#     include("test-palm.jl")
-# end
+@testset "Palm" begin
+    include("test-palm.jl")
+end
 
 @testset "ET0" begin
     include("test-et0.jl")
