@@ -1,5 +1,3 @@
-@process "LAI_Dynamic" verbose = false
-
 """
 LAIGrowth(LAI_max, LAI_growth_rate,TRESH_FTSW_SLOW_LAI)
 LAIGrowth(LAI_max=5.0, LAI_growth_rate=3*10^-5,TRESH_FTSW_SLOW_LAI=0.5)
