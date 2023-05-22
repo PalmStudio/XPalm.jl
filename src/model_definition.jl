@@ -5,7 +5,7 @@ function main_models_definition(p, nsteps)
             thermal_time=DailyDegreeDays(),
             nsteps=nsteps,
         ),
-        "Palm" => PlantSimEngine.ModelList(
+        "Plant" => PlantSimEngine.ModelList(
             # maintenance respiration of organs
             thermal_time=DailyDegreeDays(),
             plant_age=DailyPlantAgeModel(),
@@ -17,12 +17,10 @@ function main_models_definition(p, nsteps)
                 p[:phyllochron][:production_speed_mature],
             ),
             phytomer_emission=PhytomerEmission(),
+            lai_dynamic=LAIModel(),
             maintenance_respiration=RmQ10{Palm}(p[:Q10], p[:Rm_base], p[:T_ref]),
             variables_check=false,
             nsteps=nsteps,
-            status=(
-                phytomer_count=0,
-            )
         ),
         "Stem" => PlantSimEngine.ModelList(
             # maintenance respiration of organs
@@ -32,7 +30,7 @@ function main_models_definition(p, nsteps)
         ),
         "Phytomer" =>
             PlantSimEngine.ModelList(
-                plant_age=DailyPlantAgeModel(),
+                initiation_age=InitiationAgeFromPlantAge(),
                 maintenance_respiration=RmQ10{Phytomer}(p[:Q10], p[:Rm_base], p[:T_ref]),
                 variables_check=false,
                 status=(initiation_age=0,),
@@ -40,7 +38,7 @@ function main_models_definition(p, nsteps)
             ),
         "Internode" =>
             PlantSimEngine.ModelList(
-                plant_age=DailyPlantAgeModel(),
+                initiation_age=InitiationAgeFromPlantAge(),
                 maintenance_respiration=RmQ10{Internode}(p[:Q10], p[:Rm_base], p[:T_ref]), variables_check=false,
                 nsteps=nsteps,
                 status=(
@@ -54,7 +52,8 @@ function main_models_definition(p, nsteps)
                 p[:potential_area][:leaf_area_first_leaf],
                 p[:potential_area][:leaf_area_mature_leaf],
             ),
-            plant_age=DailyPlantAgeModel(),
+            initiation_age=InitiationAgeFromPlantAge(),
+            leaf_area=LeafAreaModel(),
             maintenance_respiration=RmQ10{Leaf}(p[:Q10], p[:Rm_base], p[:T_ref]), variables_check=false,
             nsteps=nsteps,
             status=(

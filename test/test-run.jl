@@ -22,7 +22,16 @@
     @test leaf[:models].status[1][:potential_area] ≈ 0.0015
     # The potential area stays constant over time:
     @test leaf[:models].status[end][:potential_area] == leaf[:models].status[1][:potential_area]
+
+    leaf_101 = get_node(p.mtg, 101)
+    leaf_101[:models].status[:potential_area]
 end
+
+leaf_101[:models].status[end][:potential_area]
+leaf_101[:models].status[end][:initiation_age]
+leaf_101[:models].status[end][:leaf_area]
+
+# Weird: node 9 is a child of node 2754...
 
 # length(p.mtg)
 # get_node(p.mtg, 8)[:models].status[1]

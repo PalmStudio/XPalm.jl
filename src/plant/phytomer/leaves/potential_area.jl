@@ -20,3 +20,7 @@ function PlantSimEngine.run!(m::Potential_AreaModel_BP, models, status, meteo, c
             m.leaf_area_mature_leaf
         )
 end
+
+function PlantSimEngine.run!(::Potential_AreaModel_BP, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node)
+    status.potential_area = PlantMeteo.prev_value(status, :potential_area, default=status.potential_area)
+end

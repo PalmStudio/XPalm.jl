@@ -154,8 +154,8 @@ function default_parameters()
         :phyllochron => Dict(
             :age_palm_maturity => 8 * 365, # age of the palm maturity (days)
             :threshold_ftsw_stress => 0.5, # threshold of FTSW for stress
-            :production_speed_initial => 0.075, # initial production speed (leaf.day-1.degreeC-1)
-            :production_speed_mature => 0.07, # production speed at maturity (leaf.day-1.degreeC-1)
+            :production_speed_initial => 0.0111, # initial production speed (leaf.day-1.degreeC-1)
+            :production_speed_mature => 0.0074, # production speed at maturity (leaf.day-1.degreeC-1)
         )
     )
     push!(p,
@@ -180,7 +180,8 @@ function Palm(;
         1,
         NodeMTG("/", "Scene", 1, 0),
         Dict{Symbol,Any}(
-            :models => model_list["Scene"],
+            :models => copy(model_list["Scene"]),
+            :plant_density => 136.0, # palm per hectare
         ),
         # type=Scene()
     )
@@ -189,7 +190,7 @@ function Palm(;
         scene,
         NodeMTG("+", "Soil", 1, 1),
         Dict{Symbol,Any}(
-            :models => model_list["Soil"],
+            :models => copy(model_list["Soil"]),
         ),
         type=Plant()
     )
@@ -198,7 +199,7 @@ function Palm(;
         scene,
         NodeMTG("+", "Plant", 1, 1),
         Dict{Symbol,Any}(
-            :models => model_list["Palm"],
+            :models => copy(model_list["Plant"]),
             :parameters => parameters,
             :all_models => model_list,
         ),
@@ -211,7 +212,7 @@ function Palm(;
         Dict{Symbol,Any}(
             :initiation_age => initiation_age,
             :depth => parameters[:RL0], # total exploration depth m
-            :models => model_list["RootSystem"],
+            :models => copy(model_list["RootSystem"]),
         ),
         type=RootSystem()
     )
@@ -221,7 +222,7 @@ function Palm(;
         NodeMTG("+", "Stem", 1, 2),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
-            :models => model_list["Stem"],
+            :models => copy(model_list["Stem"]),
         ),
         type=Stem()
     )
@@ -229,7 +230,7 @@ function Palm(;
     phyto = MultiScaleTreeGraph.Node(stem, NodeMTG("/", "Phytomer", 1, 3),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
-            :models => model_list["Phytomer"],
+            :models => copy(model_list["Phytomer"]),
         ),
         type=Phytomer(),
     )
@@ -237,7 +238,7 @@ function Palm(;
     internode = MultiScaleTreeGraph.Node(phyto, NodeMTG("/", "Internode", 1, 4),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
-            :models => model_list["Internode"],
+            :models => copy(model_list["Internode"]),
         ),
         type=Internode(),
     )
@@ -245,13 +246,13 @@ function Palm(;
     leaf = MultiScaleTreeGraph.Node(internode, NodeMTG("+", "Leaf", 1, 4),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
-            :models => model_list["Leaf"],
+            :models => copy(model_list["Leaf"]),
         ),
         type=Leaf(),
     )
 
     mtg[:phytomer_count] = 1
-    mtg[:mtg_node_count] = length(mtg)
+    mtg[:mtg_node_count] = length(scene)
     mtg[:last_phytomer] = phyto
 
     return Palm(scene, initiation_age, parameters)

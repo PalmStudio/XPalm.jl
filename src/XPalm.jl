@@ -20,6 +20,7 @@ include("plant/phytomer/leaves/0-process.jl")
 
 # Import the models:
 include("plant/plant_age/palm_age_increment.jl")
+include("plant/plant_age/initiation_age.jl")
 include("soil/FTSW.jl")
 include("soil/FTSW_BP.jl")
 include("meteo/thermal_time.jl")
@@ -29,6 +30,8 @@ include("plant/roots/root_growth.jl")
 include("plant/phytomer/phytomer/add_phytomer.jl")
 include("plant/phytomer/leaves/phyllochron.jl")
 include("plant/phytomer/leaves/potential_area.jl")
+include("plant/phytomer/leaves/leaf_area.jl")
+include("plant/phytomer/leaves/lai.jl")
 
 include("plant/respiration/maintenance/maintenance_respiration.jl")
 include("plant/respiration/maintenance/Q10.jl")

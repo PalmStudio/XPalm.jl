@@ -20,7 +20,7 @@ function DailyPlantAgeModel(; initiation_age=0)
 end
 
 PlantSimEngine.inputs_(::DailyPlantAgeModel) = NamedTuple()
-PlantSimEngine.outputs_(::DailyPlantAgeModel) = (age=-Inf,)
+PlantSimEngine.outputs_(::DailyPlantAgeModel) = (age=-9999,)
 PlantSimEngine.ObjectDependencyTrait(::Type{<:DailyPlantAgeModel}) = PlantSimEngine.IsObjectIndependent()
 PlantSimEngine.TimeStepDependencyTrait(::Type{<:DailyPlantAgeModel}) = PlantSimEngine.IsTimeStepIndependent()
 
