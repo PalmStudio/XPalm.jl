@@ -12,6 +12,7 @@ import Tables
 include("plant/mtg/structs.jl")
 
 # Import the processes:
+include("light/0-process.jl")
 include("soil/0-process.jl")
 include("plant/plant_age/0-process.jl")
 include("plant/roots/0-process.jl")
@@ -19,6 +20,7 @@ include("plant/phytomer/phytomer/0-process.jl")
 include("plant/phytomer/leaves/0-process.jl")
 
 # Import the models:
+include("light/beer.jl")
 include("plant/plant_age/palm_age_increment.jl")
 include("plant/plant_age/initiation_age.jl")
 include("soil/FTSW.jl")

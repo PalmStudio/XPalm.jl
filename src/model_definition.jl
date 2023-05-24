@@ -3,6 +3,8 @@ function main_models_definition(p, nsteps)
         "Scene" => PlantSimEngine.ModelList(
             potential_evapotranspiration=ET0_BP(),
             thermal_time=DailyDegreeDays(),
+            lai_dynamic=LAIModel(),
+            light_interception=Beer(p[:k]),
             nsteps=nsteps,
         ),
         "Plant" => PlantSimEngine.ModelList(
@@ -17,8 +19,8 @@ function main_models_definition(p, nsteps)
                 p[:phyllochron][:production_speed_mature],
             ),
             phytomer_emission=PhytomerEmission(),
-            lai_dynamic=LAIModel(),
             maintenance_respiration=RmQ10{Palm}(p[:Q10], p[:Rm_base], p[:T_ref]),
+            light_interception=Beer(p[:k]),
             variables_check=false,
             nsteps=nsteps,
         ),

@@ -132,6 +132,7 @@ abstract type InitState end
 
 function default_parameters()
     p = Dict(
+        :k => 0.5, # light extinction coefficient
         :SRL => 0.4, # Specific Root Length (m g-1)
         :RL0 => 5.0, # Root length at emergence (m)
         :Q10 => 2.1,

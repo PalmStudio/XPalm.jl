@@ -14,11 +14,16 @@ rename!(
     :HRMin => :Rh_min,
     :HRMax => :Rh_max,
     :Rainfall => :Precipitations,
-    :WindSpeed => :Wind
+    :WindSpeed => :Wind,
 )
+
 # prevent missing values
 replace!(meteo.Wind, missing => mean(skipmissing(meteo.Wind)))
 replace!(meteo.Rg, missing => mean(skipmissing(meteo.Rg)))
+transform!(
+    meteo,
+    :Rg => (x -> x .* 0.48) => :Ri_PAR_f,
+)
 
 @testset "Palm" begin
     include("test-palm.jl")

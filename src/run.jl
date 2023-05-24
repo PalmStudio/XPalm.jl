@@ -46,6 +46,11 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
         PlantSimEngine.run!(plant[:models].models.phyllochron, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
 
         # Compute LAI from total leaf area:
-        PlantSimEngine.run!(plant[:models].models.lai_dynamic, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
+        PlantSimEngine.run!(scene[:models].models.lai_dynamic, scene[:models].models, scene[:models].status[i], meteo_, constants, scene)
+
+        # Light interception at the scene scale:
+        PlantSimEngine.run!(scene[:models].models.light_interception, scene[:models].models, scene[:models].status[i], meteo_, constants)
+        # Give the light interception to the plants:
+        PlantSimEngine.run!(plant[:models].models.light_interception, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
     end
 end

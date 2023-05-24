@@ -1,0 +1,1 @@
+@process "light_interception" verbose = false
