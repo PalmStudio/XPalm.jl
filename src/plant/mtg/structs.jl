@@ -133,6 +133,7 @@ abstract type InitState end
 function default_parameters()
     p = Dict(
         :k => 0.5, # light extinction coefficient
+        :RUE => 4.8, # Radiation use efficiency (gC MJ[PAR]-1)
         :SRL => 0.4, # Specific Root Length (m g-1)
         :RL0 => 5.0, # Root length at emergence (m)
         :Q10 => 2.1,
@@ -182,7 +183,7 @@ function Palm(;
         NodeMTG("/", "Scene", 1, 0),
         Dict{Symbol,Any}(
             :models => copy(model_list["Scene"]),
-            :plant_density => 136.0, # palm per hectare
+            :area => 10000 / 136.0, # scene area, m2
         ),
         # type=Scene()
     )

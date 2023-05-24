@@ -45,6 +45,9 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
         # Run the phyllochron model over the plant:
         PlantSimEngine.run!(plant[:models].models.phyllochron, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
 
+        # Compute the plant total leaf area:
+        PlantSimEngine.run!(plant[:models].models.leaf_area, plant[:models], plant[:models].status[i], meteo_, constants, plant)
+
         # Compute LAI from total leaf area:
         PlantSimEngine.run!(scene[:models].models.lai_dynamic, scene[:models].models, scene[:models].status[i], meteo_, constants, scene)
 
@@ -52,5 +55,8 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
         PlantSimEngine.run!(scene[:models].models.light_interception, scene[:models].models, scene[:models].status[i], meteo_, constants)
         # Give the light interception to the plants:
         PlantSimEngine.run!(plant[:models].models.light_interception, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
+
+        # Carbon assimilation:
+        PlantSimEngine.run!(plant[:models].models.carbon_assimilation, plant[:models].models, plant[:models].status[i], meteo_, constants)
     end
 end

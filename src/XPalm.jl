@@ -7,6 +7,7 @@ import PlantSimEngine
 import PlantMeteo
 import PlantSimEngine: @process
 import Tables
+import Statistics: mean
 
 # Palm structure:
 include("plant/mtg/structs.jl")
@@ -18,15 +19,17 @@ include("plant/plant_age/0-process.jl")
 include("plant/roots/0-process.jl")
 include("plant/phytomer/phytomer/0-process.jl")
 include("plant/phytomer/leaves/0-process.jl")
+include("plant/carbon_assimilation/0-process.jl")
 
 # Import the models:
+include("meteo/thermal_time.jl")
+include("meteo/et0_BP.jl")
+
 include("light/beer.jl")
 include("plant/plant_age/palm_age_increment.jl")
 include("plant/plant_age/initiation_age.jl")
 include("soil/FTSW.jl")
 include("soil/FTSW_BP.jl")
-include("meteo/thermal_time.jl")
-include("meteo/et0_BP.jl")
 include("plant/roots/root_growth.jl")
 
 include("plant/phytomer/phytomer/add_phytomer.jl")
@@ -34,6 +37,7 @@ include("plant/phytomer/leaves/phyllochron.jl")
 include("plant/phytomer/leaves/potential_area.jl")
 include("plant/phytomer/leaves/leaf_area.jl")
 include("plant/phytomer/leaves/lai.jl")
+include("plant/carbon_assimilation/rue.jl")
 
 include("plant/respiration/maintenance/maintenance_respiration.jl")
 include("plant/respiration/maintenance/Q10.jl")

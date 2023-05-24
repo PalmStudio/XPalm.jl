@@ -28,5 +28,10 @@
     @test leaf_101[:models].status[:potential_area][1] == -Inf
     @test leaf_101[:models].status[:potential_area][end] == 1.801275
 
-    @test sum(plant[:models].status.aPPFD) ≈ 416918.8784915898
+    @test plant[:models].status.leaf_area[1] == 0.0015
+    @test plant[:models].status.leaf_area[end] ≈ 104.24123270547945
+
+    @test sum(scene[:models].status.aPPFD) ≈ 5670.096747485619
+    @test sum(plant[:models].status.carbon_assimilation) ≈ 437901.666687009
 end
+
