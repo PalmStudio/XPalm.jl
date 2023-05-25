@@ -34,11 +34,11 @@ An internode, which has a state of type [`InternodeState`](@ref) that can be eit
 - `Snag`: has maintenance respiration only, and no leaf 
 or reproductive organs
 """
-struct Internode{S} <: Organ where {S<:OrganState}
+mutable struct Internode{S} <: Organ where {S<:OrganState}
     state::S
 end
 
-Internode() = Internode(Growing)
+Internode() = Internode(Growing())
 
 """
     Leaf(state)
@@ -51,10 +51,10 @@ A leaf, which has a state of type [`LeafState`](@ref) that can be either:
 - `Pruned`: dead and removed from the plant
 - `Scenescent`: dead but still on the plant
 """
-struct Leaf{S} <: Organ where {S<:OrganState}
+mutable struct Leaf{S} <: Organ where {S<:OrganState}
     state::S
 end
-Leaf() = Leaf(Initiation)
+Leaf() = Leaf(Initiation())
 
 abstract type ReproductiveOrgan <: Organ end
 
@@ -69,7 +69,7 @@ A male inflorescence, which has a state that can be either:
 - `Scenescent`: dead but still on the plant
 - `Pruned`: removed from the plant
 """
-struct Male{S} <: ReproductiveOrgan where {S<:OrganState}
+mutable struct Male{S} <: ReproductiveOrgan where {S<:OrganState}
     state::String
 end
 
@@ -86,7 +86,7 @@ A female inflorescence, which has a state that can be either:
 - `Scenescent`: dead but still on the plant
 - `Pruned`: removed from the plant (*e.g.* harvested)
 """
-struct Female{S} <: ReproductiveOrgan where {S<:OrganState}
+mutable struct Female{S} <: ReproductiveOrgan where {S<:OrganState}
     state::String
 end
 

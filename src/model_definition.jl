@@ -51,7 +51,7 @@ function main_models_definition(p, nsteps)
                 )
             ),
         "Leaf" => PlantSimEngine.ModelList(
-            leaf_potential_area=Potential_AreaModel_BP(
+            leaf_potential_area=FinalPotential_AreaModel(
                 p[:potential_area][:age_first_mature_leaf],
                 p[:potential_area][:leaf_area_first_leaf],
                 p[:potential_area][:leaf_area_mature_leaf],
