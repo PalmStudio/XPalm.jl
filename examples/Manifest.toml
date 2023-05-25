@@ -2,7 +2,7 @@
 
 julia_version = "1.9.0"
 manifest_format = "2.0"
-project_hash = "e2fe0dbc9e09c19601adf68578ebb84b3144af25"
+project_hash = "817cb0b3ad5acc4ce5a1c5935c92586bfd566f17"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -1564,7 +1564,7 @@ uuid = "02c8fc9c-b97f-50b9-bbe4-9be30ff0a78a"
 version = "2.10.3+0"
 
 [[deps.XPalm]]
-deps = ["Dates", "MultiScaleTreeGraph", "PlantMeteo", "PlantSimEngine", "Revise", "Tables"]
+deps = ["Dates", "MultiScaleTreeGraph", "PlantMeteo", "PlantSimEngine", "Revise", "Statistics", "Tables"]
 path = ".."
 uuid = "6b523e1e-d512-416c-8e51-a8fbef0064e7"
 version = "0.1.0"

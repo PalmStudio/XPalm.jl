@@ -35,3 +35,8 @@
     @test sum(plant[:models].status.carbon_assimilation) ≈ 437901.666687009
 end
 
+
+plant[:models].status.leaf_area
+
+leaf_101 = get_node(p.mtg, 101)
+lines(leaf_101[:models].status[:potential_area])

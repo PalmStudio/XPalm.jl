@@ -34,10 +34,16 @@ include("plant/roots/root_growth.jl")
 
 include("plant/phytomer/phytomer/add_phytomer.jl")
 include("plant/phytomer/leaves/phyllochron.jl")
+include("plant/phytomer/leaves/final_potential_area.jl")
 include("plant/phytomer/leaves/potential_area.jl")
 include("plant/phytomer/leaves/leaf_area.jl")
 include("plant/phytomer/leaves/lai.jl")
+include("plant/phytomer/leaves/state.jl")
+include("plant/phytomer/leaves/leaf_rank.jl")
+include("plant/phytomer/leaves/leaf_pruning.jl")
+
 include("plant/carbon_assimilation/rue.jl")
+
 
 include("plant/respiration/maintenance/maintenance_respiration.jl")
 include("plant/respiration/maintenance/Q10.jl")
