@@ -53,7 +53,7 @@ Compute root growth
 """
 function PlantSimEngine.run!(m::RootGrowthFTSW, models, st, meteo, constants, extra=nothing)
 
-    st.root_depth = PlantMeteo.prev_value(st, :root_depth; default=m.ini_root_depth)
+    st.root_depth = prev_value(st, :root_depth; default=m.ini_root_depth)
 
     # Calling a soil model that computes the ftsw: fraction of transpirable soil water (unitless [0:1])
     PlantSimEngine.run!(models.soil_water, models, st, meteo, constants, extra)

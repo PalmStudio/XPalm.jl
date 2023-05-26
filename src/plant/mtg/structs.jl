@@ -34,11 +34,11 @@ An internode, which has a state of type [`InternodeState`](@ref) that can be eit
 - `Snag`: has maintenance respiration only, and no leaf 
 or reproductive organs
 """
-struct Internode{S} <: Organ where {S<:OrganState}
+mutable struct Internode{S} <: Organ where {S<:OrganState}
     state::S
 end
 
-Internode() = Internode(Growing)
+Internode() = Internode(Growing())
 
 """
     Leaf(state)
@@ -51,10 +51,10 @@ A leaf, which has a state of type [`LeafState`](@ref) that can be either:
 - `Pruned`: dead and removed from the plant
 - `Scenescent`: dead but still on the plant
 """
-struct Leaf{S} <: Organ where {S<:OrganState}
-    state::S
+mutable struct Leaf <: Organ
+    state
 end
-Leaf() = Leaf(Initiation)
+Leaf() = Leaf(Initiation())
 
 abstract type ReproductiveOrgan <: Organ end
 
@@ -69,7 +69,7 @@ A male inflorescence, which has a state that can be either:
 - `Scenescent`: dead but still on the plant
 - `Pruned`: removed from the plant
 """
-struct Male{S} <: ReproductiveOrgan where {S<:OrganState}
+mutable struct Male{S} <: ReproductiveOrgan where {S<:OrganState}
     state::String
 end
 
@@ -86,7 +86,7 @@ A female inflorescence, which has a state that can be either:
 - `Scenescent`: dead but still on the plant
 - `Pruned`: removed from the plant (*e.g.* harvested)
 """
-struct Female{S} <: ReproductiveOrgan where {S<:OrganState}
+mutable struct Female{S} <: ReproductiveOrgan where {S<:OrganState}
     state::String
 end
 
@@ -151,13 +151,22 @@ function default_parameters()
             :leaf_area_first_leaf => 0.0015, # leaf potential area for the first leaf (m2)
             :leaf_area_mature_leaf => 12.0, # leaf potential area for a mature leaf (m2)
             :age_first_mature_leaf => 8 * 365, # age of the first mature leaf (days)
+            :inflexion_index => 560.0,
+            :slope => 100.0,
         ),
-        #! check the right parameter values here:
         :phyllochron => Dict(
             :age_palm_maturity => 8 * 365, # age of the palm maturity (days)
-            :threshold_ftsw_stress => 0.5, # threshold of FTSW for stress
+            :threshold_ftsw_stress => 0.3, # threshold of FTSW for stress
             :production_speed_initial => 0.0111, # initial production speed (leaf.day-1.degreeC-1)
             :production_speed_mature => 0.0074, # production speed at maturity (leaf.day-1.degreeC-1)
+        ),
+        :rank_leaf_pruning => 50,
+        :carbon_demand => Dict(
+            :leaf => Dict(
+                :lma_min => 0.008, # min leaf mass area (g m-2)
+                :respiration_cost => 1.44,
+                :leaflets_biomass_contribution => 0.35,
+            ),
         )
     )
     push!(p,
@@ -252,6 +261,9 @@ function Palm(;
         ),
         type=Leaf(),
     )
+
+    # Initialise the final potential area of the first leaf (this computation is done only once in the model):
+    leaf[:models].status[1].final_potential_area = parameters[:potential_area][:leaf_area_first_leaf]
 
     mtg[:phytomer_count] = 1
     mtg[:mtg_node_count] = length(scene)

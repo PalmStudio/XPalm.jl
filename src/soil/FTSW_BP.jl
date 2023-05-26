@@ -212,11 +212,11 @@ function PlantSimEngine.run!(m::FTSW_BP, models, st, meteo, constants, extra=not
     rain = meteo.Precipitations
 
     # Initialize the water content to the values from the previous time step
-    st.qty_H2O_C1minusVap = PlantMeteo.prev_value(st, :qty_H2O_C1minusVap; default=m.ini_qty_H2O_C1minusVap)
-    st.qty_H2O_C2 = PlantMeteo.prev_value(st, :qty_H2O_C2; default=m.ini_qty_H2O_C2)
-    st.qty_H2O_C = PlantMeteo.prev_value(st, :qty_H2O_C; default=m.ini_qty_H2O_C)
-    st.qty_H2O_C1 = PlantMeteo.prev_value(st, :qty_H2O_C1; default=m.ini_qty_H2O_C1)
-    st.qty_H2O_Vap = PlantMeteo.prev_value(st, :qty_H2O_Vap; default=m.ini_qty_H2O_Vap)
+    st.qty_H2O_C1minusVap = prev_value(st, :qty_H2O_C1minusVap; default=m.ini_qty_H2O_C1minusVap)
+    st.qty_H2O_C2 = prev_value(st, :qty_H2O_C2; default=m.ini_qty_H2O_C2)
+    st.qty_H2O_C = prev_value(st, :qty_H2O_C; default=m.ini_qty_H2O_C)
+    st.qty_H2O_C1 = prev_value(st, :qty_H2O_C1; default=m.ini_qty_H2O_C1)
+    st.qty_H2O_Vap = prev_value(st, :qty_H2O_Vap; default=m.ini_qty_H2O_Vap)
 
     st.qty_H2O_C1_Roots = PlantMeteo.prev_value(st, :qty_H2O_C1_Roots; default=m.ini_qty_H2O_C1_Roots)
     st.qty_H2O_Vap_Roots = PlantMeteo.prev_value(st, :qty_H2O_Vap_Roots; default=m.ini_qty_H2O_Vap_Roots)

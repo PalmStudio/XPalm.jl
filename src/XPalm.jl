@@ -5,6 +5,7 @@ import MultiScaleTreeGraph: NodeMTG, addchild!
 import Dates
 import PlantSimEngine
 import PlantMeteo
+import PlantMeteo: prev_value
 import PlantSimEngine: @process
 import Tables
 import Statistics: mean
@@ -23,6 +24,7 @@ include("plant/carbon_assimilation/0-process.jl")
 
 # Import the models:
 include("meteo/thermal_time.jl")
+include("meteo/thermal_time_ftsw.jl")
 include("meteo/et0_BP.jl")
 
 include("light/beer.jl")
@@ -34,11 +36,16 @@ include("plant/roots/root_growth.jl")
 
 include("plant/phytomer/phytomer/add_phytomer.jl")
 include("plant/phytomer/leaves/phyllochron.jl")
+include("plant/phytomer/leaves/final_potential_area.jl")
 include("plant/phytomer/leaves/potential_area.jl")
 include("plant/phytomer/leaves/leaf_area.jl")
 include("plant/phytomer/leaves/lai.jl")
-include("plant/carbon_assimilation/rue.jl")
+include("plant/phytomer/leaves/state.jl")
+include("plant/phytomer/leaves/leaf_rank.jl")
+include("plant/phytomer/leaves/leaf_pruning.jl")
+include("plant/phytomer/leaves/carbon_demand.jl")
 
+include("plant/carbon_assimilation/rue.jl")
 include("plant/respiration/maintenance/maintenance_respiration.jl")
 include("plant/respiration/maintenance/Q10.jl")
 include("model_definition.jl")

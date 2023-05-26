@@ -1,6 +1,6 @@
 struct PhyllochronModel <: AbstractPhyllochronModel
     age_palm_maturity
-    treshold_ftsw_stress
+    threshold_ftsw_stress
     production_speed_initial
     production_speed_mature
 end
@@ -28,10 +28,10 @@ function PlantSimEngine.run!(m::PhyllochronModel, models, status, meteo, constan
         m.production_speed_mature
     )
 
-    status.phylo_slow = status.ftsw > m.treshold_ftsw_stress ? 1 : status.ftsw / m.treshold_ftsw_stress
+    status.phylo_slow = status.ftsw > m.threshold_ftsw_stress ? 1 : status.ftsw / m.threshold_ftsw_stress
 
     status.newPhytomerEmergence =
-        PlantMeteo.prev_value(status, :newPhytomerEmergence; default=0.0) +
+        prev_value(status, :newPhytomerEmergence; default=0.0) +
         status.TEff * status.production_speed * status.phylo_slow
 
     if status.newPhytomerEmergence >= 1.0

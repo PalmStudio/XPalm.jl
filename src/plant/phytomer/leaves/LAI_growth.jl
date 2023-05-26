@@ -52,8 +52,8 @@ Compute LAI growth
 """
 function PlantSimEngine.run!(m::LAIGrowth, models, status, meteo, constants, extra=nothing)
 
-    ftsw = PlantMeteo.prev_value(status, :ftsw; default=status.ftsw)
-    status.LAI = PlantMeteo.prev_value(status, :LAI; default=status.LAI)
+    ftsw = prev_value(status, :ftsw; default=status.ftsw)
+    status.LAI = prev_value(status, :LAI; default=status.LAI)
 
     if (ftsw > m.TRESH_FTSW_SLOW_LAI)
         coef_water_stress = 1

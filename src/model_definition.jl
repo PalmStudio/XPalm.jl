@@ -36,6 +36,8 @@ function main_models_definition(p, nsteps)
             PlantSimEngine.ModelList(
                 initiation_age=InitiationAgeFromPlantAge(),
                 maintenance_respiration=RmQ10{Phytomer}(p[:Q10], p[:Rm_base], p[:T_ref]),
+                leaf_rank=LeafRankModel(),
+                leaf_pruning=RankLeafPruning(p[:rank_leaf_pruning]),
                 variables_check=false,
                 status=(initiation_age=0,),
                 nsteps=nsteps,
@@ -51,14 +53,30 @@ function main_models_definition(p, nsteps)
                 )
             ),
         "Leaf" => PlantSimEngine.ModelList(
-            leaf_potential_area=Potential_AreaModel_BP(
+            thermal_time=DegreeDaysFTSW(
+                threshold_ftsw_stress=p[:phyllochron][:threshold_ftsw_stress],
+            ),
+            leaf_final_potential_area=FinalPotentialAreaModel(
                 p[:potential_area][:age_first_mature_leaf],
                 p[:potential_area][:leaf_area_first_leaf],
                 p[:potential_area][:leaf_area_mature_leaf],
             ),
+            leaf_potential_area=PotentialAreaModel(
+                p[:potential_area][:inflexion_index],
+                p[:potential_area][:slope],
+            ),
+            soil_water=FTSW{Leaf}(ini_root_depth=p[:ini_root_depth]), # needed to get the ftsw value
+            state=LeafStateModel(),
+            leaf_rank=LeafRankModel(),
             initiation_age=InitiationAgeFromPlantAge(),
             leaf_area=LeafAreaModel(),
-            maintenance_respiration=RmQ10{Leaf}(p[:Q10], p[:Rm_base], p[:T_ref]), variables_check=false,
+            maintenance_respiration=RmQ10{Leaf}(p[:Q10], p[:Rm_base], p[:T_ref]),
+            carbon_demand=LeafCarbonDemandModel(
+                p[:carbon_demand][:leaf][:lma_min],
+                p[:carbon_demand][:leaf][:respiration_cost],
+                p[:carbon_demand][:leaf][:leaflets_biomass_contribution]
+            ),
+            variables_check=false,
             nsteps=nsteps,
             status=(
                 nitrogen_content=p[:nitrogen_content][:Leaf],
