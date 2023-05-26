@@ -161,6 +161,13 @@ function default_parameters()
             :production_speed_mature => 0.0074, # production speed at maturity (leaf.day-1.degreeC-1)
         ),
         :rank_leaf_pruning => 50,
+        :carbon_demand => Dict(
+            :leaf => Dict(
+                :lma_min => 0.008, # min leaf mass area (g m-2)
+                :respiration_cost => 1.44,
+                :leaflets_biomass_contribution => 0.35,
+            ),
+        )
     )
     push!(p,
         :biomass_dry => Dict(

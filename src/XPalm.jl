@@ -43,10 +43,9 @@ include("plant/phytomer/leaves/lai.jl")
 include("plant/phytomer/leaves/state.jl")
 include("plant/phytomer/leaves/leaf_rank.jl")
 include("plant/phytomer/leaves/leaf_pruning.jl")
+include("plant/phytomer/leaves/carbon_demand.jl")
 
 include("plant/carbon_assimilation/rue.jl")
-
-
 include("plant/respiration/maintenance/maintenance_respiration.jl")
 include("plant/respiration/maintenance/Q10.jl")
 include("model_definition.jl")

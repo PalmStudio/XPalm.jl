@@ -70,7 +70,13 @@ function main_models_definition(p, nsteps)
             leaf_rank=LeafRankModel(),
             initiation_age=InitiationAgeFromPlantAge(),
             leaf_area=LeafAreaModel(),
-            maintenance_respiration=RmQ10{Leaf}(p[:Q10], p[:Rm_base], p[:T_ref]), variables_check=false,
+            maintenance_respiration=RmQ10{Leaf}(p[:Q10], p[:Rm_base], p[:T_ref]),
+            carbon_demand=LeafCarbonDemandModel(
+                p[:carbon_demand][:leaf][:lma_min],
+                p[:carbon_demand][:leaf][:respiration_cost],
+                p[:carbon_demand][:leaf][:leaflets_biomass_contribution]
+            ),
+            variables_check=false,
             nsteps=nsteps,
             status=(
                 nitrogen_content=p[:nitrogen_content][:Leaf],
