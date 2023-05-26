@@ -1,10 +1,8 @@
-@process "thermal_time" verbose = false
-
 """
-    DailyDegreeDays(TOpt1, TOpt2, TBase, TLim)
-    DailyDegreeDays(TOpt1=25, TOpt2=30, TBase=15, TLim=40)
+    DegreeDaysFTSW(TOpt1, TOpt2, TBase, TLim, threshold_ftsw_stress)
+    DegreeDaysFTSW(TOpt1=25, TOpt2=30, TBase=15, TLim=40, threshold_ftsw_stress=0.3)
 
-Compute thermal time from daily meteo data
+Compute thermal time from daily meteo data, corrected by FTSW
 
 # Arguments
 
@@ -12,43 +10,46 @@ Compute thermal time from daily meteo data
 - `TOpt2`: ending optimal temperature for thermal time calculation (degree Celsius)
 - `TBase`: Tbase temperature for thermal time calculation (degree Celsius)
 - `TLim`: limit temperature for thermal time calculation (degree Celsius)
+- `threshold_ftsw_stress`: threshold value under which we apply an FTSW stress
 """
-struct DailyDegreeDays{T} <: AbstractThermal_TimeModel
+struct DegreeDaysFTSW{T} <: AbstractThermal_TimeModel
     TOpt1::T
     TOpt2::T
     TBase::T
     TLim::T
+    threshold_ftsw_stress::T
 end
 
 
-PlantSimEngine.inputs_(::DailyDegreeDays) = NamedTuple()
+PlantSimEngine.inputs_(::DegreeDaysFTSW) = (ftsw=-Inf,)
 
-PlantSimEngine.outputs_(::DailyDegreeDays) = (
+PlantSimEngine.outputs_(::DegreeDaysFTSW) = (
     TEff=-Inf,
     TT_since_init=-Inf,
 )
 
-function DailyDegreeDays(;
+function DegreeDaysFTSW(;
     TOpt1=25.0,
     TOpt2=30.0,
     TBase=15.0,
-    TLim=40.0
+    TLim=40.0,
+    threshold_ftsw_stress=0.3
 )
-    DailyDegreeDays(promote(TOpt1, TOpt2, TBase, TLim)...)
+    DegreeDaysFTSW(TOpt1, TOpt2, TBase, TLim, threshold_ftsw_stress)
 end
 
 """
-Compute degree days
+Compute degree days corrected by FTSW
 
 # Arguments
 
-- `m`: DailyDegreeDays model
+- `m`: DegreeDaysFTSW model
 
 # Returns
 
 - `TEff`: daily efficient temperature for plant growth (degree C days) 
 """
-function PlantSimEngine.run!(m::DailyDegreeDays, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::DegreeDaysFTSW, models, status, meteo, constants, extra=nothing)
 
     Tmin = meteo.Tmin
     Tmax = meteo.Tmax
@@ -99,14 +100,16 @@ function PlantSimEngine.run!(m::DailyDegreeDays, models, status, meteo, constant
         end
     end
 
-    status.TT_since_init = PlantMeteo.prev_value(status, :TT_since_init, default=0.0) + status.TEff
-end
+    expansion_stress = status.ftsw > m.threshold_ftsw_stress ? 1 : status.ftsw / m.threshold_ftsw_stress
+    status.TEff = status.TEff * expansion_stress
+    # We apply an expansion stress to the thermal time based on FTSW:
+    prevTT = PlantMeteo.prev_value(status, :TT_since_init, default=0.0)
 
+    #! here we check if the previous value was -Inf because the leaf can appear at any day 
+    #! since begining of the simulation, so at initialisation the previous value is -Inf
+    if prevTT == -Inf
+        prevTT = 0.0
+    end
 
-function PlantSimEngine.run!(::DailyDegreeDays, models, st, meteo, constants, mtg::MultiScaleTreeGraph.Node)
-    scene = MultiScaleTreeGraph.get_root(mtg)
-    scene_status = PlantSimEngine.status(scene[:models])[PlantMeteo.rownumber(st)]
-    st.TEff = scene_status.TEff
-    prev_TT = PlantMeteo.prev_value(st, :TT_since_init, default=0.0)
-    st.TT_since_init = prev_TT == -Inf ? 0.0 : prev_TT + st.TEff
+    status.TT_since_init = prevTT + status.TEff
 end

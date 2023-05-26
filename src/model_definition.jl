@@ -53,7 +53,9 @@ function main_models_definition(p, nsteps)
                 )
             ),
         "Leaf" => PlantSimEngine.ModelList(
-            thermal_time=DailyDegreeDays(),
+            thermal_time=DegreeDaysFTSW(
+                threshold_ftsw_stress=p[:phyllochron][:threshold_ftsw_stress],
+            ),
             leaf_final_potential_area=FinalPotentialAreaModel(
                 p[:potential_area][:age_first_mature_leaf],
                 p[:potential_area][:leaf_area_first_leaf],
@@ -63,6 +65,7 @@ function main_models_definition(p, nsteps)
                 p[:potential_area][:inflexion_index],
                 p[:potential_area][:slope],
             ),
+            soil_water=FTSW{Leaf}(ini_root_depth=p[:ini_root_depth]), # needed to get the ftsw value
             state=LeafStateModel(),
             leaf_rank=LeafRankModel(),
             initiation_age=InitiationAgeFromPlantAge(),

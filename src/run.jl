@@ -37,6 +37,9 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
 
         # Run models at leaf scale:
         MultiScaleTreeGraph.traverse(plant, symbol="Leaf") do leaf
+            # Give the ftsw value to the leaf:
+            PlantSimEngine.run!(leaf[:models].models.soil_water, leaf[:models].models, leaf[:models].status[i], meteo_, constants, leaf)
+
             # Propagate initiation age:
             PlantSimEngine.run!(leaf[:models].models.initiation_age, leaf[:models].models, leaf[:models].status[i], meteo_, constants, nothing)
             # Thermal time since initiation:

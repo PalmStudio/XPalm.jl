@@ -23,6 +23,7 @@ include("plant/carbon_assimilation/0-process.jl")
 
 # Import the models:
 include("meteo/thermal_time.jl")
+include("meteo/thermal_time_ftsw.jl")
 include("meteo/et0_BP.jl")
 
 include("light/beer.jl")

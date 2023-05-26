@@ -156,7 +156,7 @@ function default_parameters()
         ),
         :phyllochron => Dict(
             :age_palm_maturity => 8 * 365, # age of the palm maturity (days)
-            :threshold_ftsw_stress => 0.5, # threshold of FTSW for stress
+            :threshold_ftsw_stress => 0.3, # threshold of FTSW for stress
             :production_speed_initial => 0.0111, # initial production speed (leaf.day-1.degreeC-1)
             :production_speed_mature => 0.0074, # production speed at maturity (leaf.day-1.degreeC-1)
         ),
