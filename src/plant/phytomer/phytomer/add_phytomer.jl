@@ -15,7 +15,7 @@ Add a new phytomer to the palm
 - `initiation_age::Dates.Date`: date of initiation of the phytomer 
 """
 function PlantSimEngine.run!(::PhytomerEmission, models, status, meteo, constants, mtg)
-    current_step = PlantMeteo.rownumber(status)
+    current_step = rownumber(status)
     mtg[:phytomer_count] += 1
     mtg[:mtg_node_count] += 1
 

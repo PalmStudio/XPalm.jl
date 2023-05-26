@@ -11,7 +11,7 @@ function PlantSimEngine.run!(::LeafRankModel, models, status, meteo, constants, 
     @assert mtg.MTG.symbol == "Leaf"
     phytomer = parent(parent(mtg))
     @assert phytomer.MTG.symbol == "Phytomer" "mtg.MTG.symbol should be Phytomer, it is $(mtg.MTG.symbol)"
-    row_number = PlantMeteo.rownumber(status)
+    row_number = rownumber(status)
     phytomer[:models].status[row_number].rank = 1
     increase_rank_parent(phytomer, row_number)
 end

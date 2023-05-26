@@ -11,6 +11,6 @@ end
 
 # Other method when the model is called with a mtg node:
 function PlantSimEngine.run!(::InitiationAgeFromPlantAge, models, st, meteo, constants, mtg::MultiScaleTreeGraph.Node)
-    st.initiation_age = MultiScaleTreeGraph.ancestors(mtg, :models, symbol="Plant")[1].status[PlantMeteo.rownumber(st)][:age]
+    st.initiation_age = MultiScaleTreeGraph.ancestors(mtg, :models, symbol="Plant")[1].status[rownumber(st)][:age]
 end
 
