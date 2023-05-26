@@ -23,6 +23,7 @@ function main_models_definition(p, nsteps)
             maintenance_respiration=RmQ10{Palm}(p[:Q10], p[:Rm_base], p[:T_ref]),
             light_interception=Beer(p[:k]),
             carbon_assimilation=ConstantRUEModel(p[:RUE]),
+            carbon_offer=CarbonOfferPhotosynthesis(),
             carbon_demand=LeafCarbonDemandModel(
                 p[:carbon_demand][:leaf][:lma_min],
                 p[:carbon_demand][:leaf][:respiration_cost],

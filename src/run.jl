@@ -46,6 +46,9 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
         # Carbon assimilation:
         PlantSimEngine.run!(plant[:models].models.carbon_assimilation, plant[:models].models, plant[:models].status[i], meteo_, constants)
 
+        # Carbon offer:
+        PlantSimEngine.run!(plant[:models].models.carbon_offer, plant[:models].models, plant[:models].status[i], meteo_, constants, nothing)
+
         # Run models at leaf scale:
         MultiScaleTreeGraph.traverse(plant, symbol="Leaf") do leaf
             # Give the ftsw value to the leaf:
