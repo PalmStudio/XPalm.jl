@@ -4,7 +4,7 @@ PlantSimEngine.inputs_(::LeafRankModel) = NamedTuple()
 PlantSimEngine.outputs_(::LeafRankModel) = (rank=-9999,)
 
 function PlantSimEngine.run!(::LeafRankModel, models, status, meteo, constants, extra=nothing)
-    status.rank = PlantMeteo.prev_value(status, :rank, default=-9999)
+    status.rank = prev_value(status, :rank, default=-9999)
 end
 
 function PlantSimEngine.run!(::LeafRankModel, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node)

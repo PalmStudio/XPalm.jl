@@ -99,7 +99,7 @@ function PlantSimEngine.run!(m::DailyDegreeDays, models, status, meteo, constant
         end
     end
 
-    status.TT_since_init = PlantMeteo.prev_value(status, :TT_since_init, default=0.0) + status.TEff
+    status.TT_since_init = prev_value(status, :TT_since_init, default=0.0) + status.TEff
 end
 
 
@@ -107,6 +107,6 @@ function PlantSimEngine.run!(::DailyDegreeDays, models, st, meteo, constants, mt
     scene = MultiScaleTreeGraph.get_root(mtg)
     scene_status = PlantSimEngine.status(scene[:models])[PlantMeteo.rownumber(st)]
     st.TEff = scene_status.TEff
-    prev_TT = PlantMeteo.prev_value(st, :TT_since_init, default=0.0)
+    prev_TT = prev_value(st, :TT_since_init, default=0.0)
     st.TT_since_init = prev_TT == -Inf ? 0.0 : prev_TT + st.TEff
 end

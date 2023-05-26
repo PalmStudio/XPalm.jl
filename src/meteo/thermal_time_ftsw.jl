@@ -103,7 +103,7 @@ function PlantSimEngine.run!(m::DegreeDaysFTSW, models, status, meteo, constants
     expansion_stress = status.ftsw > m.threshold_ftsw_stress ? 1 : status.ftsw / m.threshold_ftsw_stress
     status.TEff = status.TEff * expansion_stress
     # We apply an expansion stress to the thermal time based on FTSW:
-    prevTT = PlantMeteo.prev_value(status, :TT_since_init, default=0.0)
+    prevTT = prev_value(status, :TT_since_init, default=0.0)
 
     #! here we check if the previous value was -Inf because the leaf can appear at any day 
     #! since begining of the simulation, so at initialisation the previous value is -Inf

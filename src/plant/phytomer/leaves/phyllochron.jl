@@ -31,7 +31,7 @@ function PlantSimEngine.run!(m::PhyllochronModel, models, status, meteo, constan
     status.phylo_slow = status.ftsw > m.threshold_ftsw_stress ? 1 : status.ftsw / m.threshold_ftsw_stress
 
     status.newPhytomerEmergence =
-        PlantMeteo.prev_value(status, :newPhytomerEmergence; default=0.0) +
+        prev_value(status, :newPhytomerEmergence; default=0.0) +
         status.TEff * status.production_speed * status.phylo_slow
 
     if status.newPhytomerEmergence >= 1.0

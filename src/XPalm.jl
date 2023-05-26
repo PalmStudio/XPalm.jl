@@ -5,6 +5,7 @@ import MultiScaleTreeGraph: NodeMTG, addchild!
 import Dates
 import PlantSimEngine
 import PlantMeteo
+import PlantMeteo: prev_value
 import PlantSimEngine: @process
 import Tables
 import Statistics: mean

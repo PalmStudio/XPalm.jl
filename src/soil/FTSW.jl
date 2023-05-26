@@ -228,14 +228,14 @@ end
 
 function PlantSimEngine.run!(m::T, models, st, meteo, constants, extra=nothing) where {T<:FTSW}
     rain = meteo.Precipitations
-    st.root_depth = PlantMeteo.prev_value(st, :root_depth; default=m.ini_root_depth)
+    st.root_depth = prev_value(st, :root_depth; default=m.ini_root_depth)
 
     # Initialize the water content to the values from the previous time step
-    st.qty_H2O_C1minusVap = PlantMeteo.prev_value(st, :qty_H2O_C1minusVap; default=m.ini_qty_H2O_C1minusVap)
-    st.qty_H2O_C2 = PlantMeteo.prev_value(st, :qty_H2O_C2; default=m.ini_qty_H2O_C2)
-    st.qty_H2O_C = PlantMeteo.prev_value(st, :qty_H2O_C; default=m.ini_qty_H2O_C)
-    st.qty_H2O_C1 = PlantMeteo.prev_value(st, :qty_H2O_C1; default=m.ini_qty_H2O_C1)
-    st.qty_H2O_Vap = PlantMeteo.prev_value(st, :qty_H2O_Vap; default=m.ini_qty_H2O_Vap)
+    st.qty_H2O_C1minusVap = prev_value(st, :qty_H2O_C1minusVap; default=m.ini_qty_H2O_C1minusVap)
+    st.qty_H2O_C2 = prev_value(st, :qty_H2O_C2; default=m.ini_qty_H2O_C2)
+    st.qty_H2O_C = prev_value(st, :qty_H2O_C; default=m.ini_qty_H2O_C)
+    st.qty_H2O_C1 = prev_value(st, :qty_H2O_C1; default=m.ini_qty_H2O_C1)
+    st.qty_H2O_Vap = prev_value(st, :qty_H2O_Vap; default=m.ini_qty_H2O_Vap)
     # Note: if we are computing the first time step, the previous values are the values already in the variables (=initial values)
 
     compute_compartment_size(m, st)

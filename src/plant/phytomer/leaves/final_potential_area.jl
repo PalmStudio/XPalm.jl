@@ -23,5 +23,5 @@ function PlantSimEngine.run!(m::FinalPotentialAreaModel, models, status, meteo, 
 end
 
 function PlantSimEngine.run!(::FinalPotentialAreaModel, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node)
-    status.final_potential_area = PlantMeteo.prev_value(status, :final_potential_area, default=status.final_potential_area)
+    status.final_potential_area = prev_value(status, :final_potential_area, default=status.final_potential_area)
 end
