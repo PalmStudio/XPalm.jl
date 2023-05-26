@@ -218,10 +218,10 @@ function PlantSimEngine.run!(m::FTSW_BP, models, st, meteo, constants, extra=not
     st.qty_H2O_C1 = prev_value(st, :qty_H2O_C1; default=m.ini_qty_H2O_C1)
     st.qty_H2O_Vap = prev_value(st, :qty_H2O_Vap; default=m.ini_qty_H2O_Vap)
 
-    status.qty_H2O_C1_Roots = prev_value(st, :qty_H2O_C1_Roots; default=m.ini_qty_H2O_C1_Roots)
-    status.qty_H2O_Vap_Roots = prev_value(st, :qty_H2O_Vap_Roots; default=m.ini_qty_H2O_Vap_Roots)
-    status.qty_H2O_C2_Roots = prev_value(st, :qty_H2O_C2_Roots; default=m.ini_qty_H2O_C2_Roots)
-    status.qty_H2O_C_Roots = prev_value(st, :qty_H2O_C_Roots; default=m.ini_qty_H2O_C_Roots)
+    st.qty_H2O_C1_Roots = PlantMeteo.prev_value(st, :qty_H2O_C1_Roots; default=m.ini_qty_H2O_C1_Roots)
+    st.qty_H2O_Vap_Roots = PlantMeteo.prev_value(st, :qty_H2O_Vap_Roots; default=m.ini_qty_H2O_Vap_Roots)
+    st.qty_H2O_C2_Roots = PlantMeteo.prev_value(st, :qty_H2O_C2_Roots; default=m.ini_qty_H2O_C2_Roots)
+    st.qty_H2O_C_Roots = PlantMeteo.prev_value(st, :qty_H2O_C_Roots; default=m.ini_qty_H2O_C_Roots)
 
     # Note: if we are computing the first time step, the previous values are the values already in the variables (=initial values)
 
@@ -248,102 +248,102 @@ function PlantSimEngine.run!(m::FTSW_BP, models, st, meteo, constants, extra=not
     st.runoff = rain - st.rain_effective
 
     # compute water balance after rain
-    mem_qte_H2O_C1 = status.qty_H2O_C1
-    mem_qte_H2O_Vap = status.qty_H2O_Vap
-    if ((status.qty_H2O_Vap + pluie_efficace) >= status.SizeVap)
-        status.qty_H2O_Vap = TailleVap
-        if ((status.qty_H2O_C1minusVap + (pluie_efficace - status.SizeVap + mem_qte_H2O_Vap)) >= status.SizeC1minusVap)
-            status.qty_H2O_C1minusVap = status.SizeC1minusVap
-            status.qty_H2O_C1 = status.qty_H2O_C1minusVap + status.qty_H2O_Vap
-            if ((status.qty_H2O_C2 + mem_qte_H2O_C1 + pluie_efficace - status.SizeC1) >= status.SizeC2)
-                status.qty_H2O_C2 = status.SizeC2
+    mem_qte_H2O_C1 = st.qty_H2O_C1
+    mem_qte_H2O_Vap = st.qty_H2O_Vap
+    if ((st.qty_H2O_Vap + st.rain_effective) >= st.SizeVap)
+        st.qty_H2O_Vap = TailleVap
+        if ((st.qty_H2O_C1minusVap + (st.rain_effective - st.SizeVap + mem_qte_H2O_Vap)) >= st.SizeC1minusVap)
+            st.qty_H2O_C1minusVap = st.SizeC1minusVap
+            st.qty_H2O_C1 = st.qty_H2O_C1minusVap + st.qty_H2O_Vap
+            if ((st.qty_H2O_C2 + mem_qte_H2O_C1 + st.rain_effective - st.SizeC1) >= st.SizeC2)
+                st.qty_H2O_C2 = st.SizeC2
             else
-                status.qty_H2O_C2 += mem_qte_H2O_C1 + pluie_efficace - status.SizeC1
+                st.qty_H2O_C2 += mem_qte_H2O_C1 + st.rain_effective - st.SizeC1
             end
         else
-            status.qty_H2O_C1minusVap += pluie_efficace - status.SizeVap + mem_qte_H2O_Vap
-            status.qty_H2O_C1 = status.qty_H2O_C1minusVap + status.qty_H2O_Vap
+            st.qty_H2O_C1minusVap += st.rain_effective - st.SizeVap + mem_qte_H2O_Vap
+            st.qty_H2O_C1 = st.qty_H2O_C1minusVap + st.qty_H2O_Vap
         end
     else
-        status.qty_H2O_Vap += pluie_efficace
-        status.qty_H2O_C1 = status.qty_H2O_Vap + status.qty_H2O_C1minusVap
+        st.qty_H2O_Vap += st.rain_effective
+        st.qty_H2O_C1 = st.qty_H2O_Vap + st.qty_H2O_C1minusVap
     end
-    status.qty_H2O_C = status.qty_H2O_C1minusVap + status.qty_H2O_C2
+    st.qty_H2O_C = st.qty_H2O_C1minusVap + st.qty_H2O_C2
 
     #    compute roots water balance after rain
-    mem_qty_H2O_C1_Roots = status.qty_H2O_C1_Roots
-    mem_qte_H2O_Vap_Roots = status.qty_H2O_Vap_Roots
-    if ((status.qty_H2O_Vap_Roots + pluie_efficace) >= status.roots_SizeVap)
-        status.qty_H2O_Vap_Roots = status.roots_SizeVap
-        if ((status.qty_H2O_C1minusVap_Roots + (pluie_efficace - status.roots_SizeVap + mem_qte_H2O_Vap_Roots)) >= status.roots_SizeC1minusVap)
-            status.qty_H2O_C1minusVap_Roots = status.roots_SizeC1minusVap
-            status.qty_H2O_C1_Roots = status.qty_H2O_C1minusVap_Roots + status.qty_H2O_Vap_Roots
-            if ((status.qty_H2O_C2_Roots + mem_qty_H2O_C1_Roots + pluie_efficace - status.roots_SizeC1) >= status.roots_SizeC2)
-                status.qty_H2O_C2_Roots = status.roots_SizeC2
+    mem_qty_H2O_C1_Roots = st.qty_H2O_C1_Roots
+    mem_qte_H2O_Vap_Roots = st.qty_H2O_Vap_Roots
+    if ((st.qty_H2O_Vap_Roots + st.rain_effective) >= st.roots_SizeVap)
+        st.qty_H2O_Vap_Roots = st.roots_SizeVap
+        if ((st.qty_H2O_C1minusVap_Roots + (st.rain_effective - st.roots_SizeVap + mem_qte_H2O_Vap_Roots)) >= st.roots_SizeC1minusVap)
+            st.qty_H2O_C1minusVap_Roots = st.roots_SizeC1minusVap
+            st.qty_H2O_C1_Roots = st.qty_H2O_C1minusVap_Roots + st.qty_H2O_Vap_Roots
+            if ((st.qty_H2O_C2_Roots + mem_qty_H2O_C1_Roots + st.rain_effective - st.roots_SizeC1) >= st.roots_SizeC2)
+                st.qty_H2O_C2_Roots = st.roots_SizeC2
             else
-                status.qty_H2O_C2_Roots += mem_qty_H2O_C1_Roots + pluie_efficace - status.roots_SizeC1
+                st.qty_H2O_C2_Roots += mem_qty_H2O_C1_Roots + st.rain_effective - st.roots_SizeC1
             end
         else
-            status.qty_H2O_C1minusVap_Roots += pluie_efficace - status.roots_SizeVap + mem_qte_H2O_Vap_Roots
-            status.qty_H2O_C1_Roots = status.qty_H2O_C1minusVap_Roots + status.qty_H2O_Vap_Roots
+            st.qty_H2O_C1minusVap_Roots += st.rain_effective - st.roots_SizeVap + mem_qte_H2O_Vap_Roots
+            st.qty_H2O_C1_Roots = st.qty_H2O_C1minusVap_Roots + st.qty_H2O_Vap_Roots
         end
     else
-        status.qty_H2O_Vap_Roots += pluie_efficace
-        status.qty_H2O_C1_Roots = status.qty_H2O_C1minusVap_Roots + status.qty_H2O_Vap_Roots
+        st.qty_H2O_Vap_Roots += st.rain_effective
+        st.qty_H2O_C1_Roots = st.qty_H2O_C1minusVap_Roots + st.qty_H2O_Vap_Roots
     end
-    status.qty_H2O_C_Roots = status.qty_H2O_C1minusVap_Roots + status.qty_H2O_C2_Roots
+    st.qty_H2O_C_Roots = st.qty_H2O_C1minusVap_Roots + st.qty_H2O_C2_Roots
 
     compute_fraction_bp!()
 
     #  compute water bamance after rain
     Evap = EvapMax * KS_bp(st.FractionC1, m.TRESH_EVAP)
-    if (status.qty_H2O_C1minusVap - Evap >= 0)
-        status.qty_H2O_C1minusVap += -Evap
+    if (st.qty_H2O_C1minusVap - Evap >= 0)
+        st.qty_H2O_C1minusVap += -Evap
         EvapC1minusVap = Evap
         EvapVap = 0
     else
-        EvapC1minusVap = status.qty_H2O_C1minusVap
-        status.qty_H2O_C1minusVap = 0
+        EvapC1minusVap = st.qty_H2O_C1minusVap
+        st.qty_H2O_C1minusVap = 0
         EvapVap = Evap - EvapC1minusVap
-        status.qty_H2O_Vap += -EvapVap
+        st.qty_H2O_Vap += -EvapVap
     end
-    status.qty_H2O_C1 = status.qty_H2O_C1minusVap + status.qty_H2O_Vap
-    status.qty_H2O_C = status.qty_H2O_C1 + status.qty_H2O_C2 - status.qty_H2O_Vap
+    st.qty_H2O_C1 = st.qty_H2O_C1minusVap + st.qty_H2O_Vap
+    st.qty_H2O_C = st.qty_H2O_C1 + st.qty_H2O_C2 - st.qty_H2O_Vap
 
     #  compute water balance roots after evaporation
-    a_C1minusVap_Roots = status.qty_H2O_C1minusVap_Roots - EvapC1minusVap * status.roots_SizeC1minusVap / status.SizeC1minusVap
-    status.qty_H2O_C1minusVap_Roots = max(0.0, a_C1minusVap_Roots)
-    a_Vap_Roots = status.qty_H2O_Vap_Roots - EvapVap * status.roots_SizeVap / status.SizeVap
-    status.qty_H2O_Vap_Roots = max(0.0, a_Vap_Roots)
-    status.qty_H2O_C1_Roots = status.qty_H2O_Vap_Roots + status.qty_H2O_C1minusVap_Roots
-    status.qty_H2O_C_Roots = status.qty_H2O_C2_Roots + status.qty_H2O_C1minusVap_Roots
+    a_C1minusVap_Roots = st.qty_H2O_C1minusVap_Roots - EvapC1minusVap * st.roots_SizeC1minusVap / st.SizeC1minusVap
+    st.qty_H2O_C1minusVap_Roots = max(0.0, a_C1minusVap_Roots)
+    a_Vap_Roots = st.qty_H2O_Vap_Roots - EvapVap * st.roots_SizeVap / st.SizeVap
+    st.qty_H2O_Vap_Roots = max(0.0, a_Vap_Roots)
+    st.qty_H2O_C1_Roots = st.qty_H2O_Vap_Roots + st.qty_H2O_C1minusVap_Roots
+    st.qty_H2O_C_Roots = st.qty_H2O_C2_Roots + st.qty_H2O_C1minusVap_Roots
 
     compute_fraction_bp!()
 
     # compute water balance  roots after Transpiration
 
     Transpi = Transp_Max * KS_bp(m.TRESH_FTSW_TRANSPI, st.ftsw)
-    if (status.qty_H2O_C2_Roots > 0)
-        TranspiC2 = min(Transpi * (status.qty_H2O_C2_Roots / (status.qty_H2O_C2_Roots + status.qty_H2O_C1minusVap_Roots)), status.qty_H2O_C2_Roots)
+    if (st.qty_H2O_C2_Roots > 0)
+        TranspiC2 = min(Transpi * (st.qty_H2O_C2_Roots / (st.qty_H2O_C2_Roots + st.qty_H2O_C1minusVap_Roots)), st.qty_H2O_C2_Roots)
     else
         TranspiC2 = 0
     end
-    if (status.qty_H2O_C1minusVap_Roots > 0)
-        TranspiC1moinsVap = min(Transpi * (status.qty_H2O_C1minusVap_Roots / (status.qty_H2O_C2_Roots + status.qty_H2O_C1minusVap_Roots)), status.qty_H2O_C1minusVap_Roots)
+    if (st.qty_H2O_C1minusVap_Roots > 0)
+        TranspiC1moinsVap = min(Transpi * (st.qty_H2O_C1minusVap_Roots / (st.qty_H2O_C2_Roots + st.qty_H2O_C1minusVap_Roots)), st.qty_H2O_C1minusVap_Roots)
     else
         TranspiC1moinsVap = 0
     end
-    status.qty_H2O_C1minusVap_Roots += -TranspiC1moinsVap
-    status.qty_H2O_C2_Roots += -TranspiC2
-    status.qty_H2O_C_Roots = status.qty_H2O_C2_Roots + status.qty_H2O_C1minusVap_Roots
-    status.qty_H2O_C1_Roots = status.qty_H2O_Vap_Roots + status.qty_H2O_C1minusVap_Roots
+    st.qty_H2O_C1minusVap_Roots += -TranspiC1moinsVap
+    st.qty_H2O_C2_Roots += -TranspiC2
+    st.qty_H2O_C_Roots = st.qty_H2O_C2_Roots + st.qty_H2O_C1minusVap_Roots
+    st.qty_H2O_C1_Roots = st.qty_H2O_Vap_Roots + st.qty_H2O_C1minusVap_Roots
 
 
     # compute water balance after transpiration
-    status.qty_H2O_C1minusVap += -TranspiC1moinsVap
-    status.qty_H2O_C2 += -TranspiC2
-    status.qty_H2O_C = status.qty_H2O_C2 + status.qty_H2O_C1minusVap
-    status.qty_H2O_C1 = status.qty_H2O_Vap + status.qty_H2O_C1minusVap
+    st.qty_H2O_C1minusVap += -TranspiC1moinsVap
+    st.qty_H2O_C2 += -TranspiC2
+    st.qty_H2O_C = st.qty_H2O_C2 + st.qty_H2O_C1minusVap
+    st.qty_H2O_C1 = st.qty_H2O_Vap + st.qty_H2O_C1minusVap
 
     compute_fraction_bp!()
 end
