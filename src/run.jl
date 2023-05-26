@@ -56,7 +56,7 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
             PlantSimEngine.run!(phytomer[:models].models.leaf_pruning, phytomer[:models].models, phytomer[:models].status[i], meteo_, constants, phytomer)
         end
 
-        # Run the phyllochron model over the plant:
+        # Run the phyllochron model over the plant (calls phytomer emission):
         PlantSimEngine.run!(plant[:models].models.phyllochron, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
 
         # Compute the plant total leaf area:
