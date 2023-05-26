@@ -22,3 +22,13 @@ function PlantSimEngine.run!(m::LeafCarbonDemandModel, models, status, meteo, co
     increment_potential_area = status.potential_area - prev_value(status, :potential_area, default=0.0)
     status.carbon_demand = increment_potential_area * (m.lma_min * m.respiration_cost) / m.leaflets_biomass_contribution
 end
+
+# Plant scale:
+function PlantSimEngine.run!(m::LeafCarbonDemandModel, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node)
+    @assert mtg.MTG.symbol == "Plant" "The node should be a Plant but is a $(mtg.MTG.symbol)"
+
+    carbon_demand = MultiScaleTreeGraph.traverse(mtg, symbol="Leaf") do leaf
+        leaf[:models].status[PlantMeteo.rownumber(status)][:carbon_demand]
+    end
+    status.carbon_demand = sum(carbon_demand)
+end

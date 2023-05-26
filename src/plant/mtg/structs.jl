@@ -163,7 +163,7 @@ function default_parameters()
         :rank_leaf_pruning => 50,
         :carbon_demand => Dict(
             :leaf => Dict(
-                :lma_min => 0.008, # min leaf mass area (g m-2)
+                :lma_min => 80.0, # min leaf mass area (g m-2)
                 :respiration_cost => 1.44,
                 :leaflets_biomass_contribution => 0.35,
             ),
