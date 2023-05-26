@@ -10,3 +10,8 @@ function PlantSimEngine.run!(::LAIModel, models, st, meteo, constants, mtg::Mult
     end
     st.lai = sum(leaf_area) / mtg[:area] # m2 leaf / m2 soil
 end
+
+# Propagate the value from the day before:
+function PlantSimEngine.run!(::LAIModel, models, st, meteo, constants, extra=nothing)
+    st.lai = prev_value(st, :lai, default=st.lai)
+end

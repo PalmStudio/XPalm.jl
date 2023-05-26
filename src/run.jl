@@ -15,6 +15,9 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
         # Give access to TEff to the plant:
         PlantSimEngine.run!(plant[:models].models.thermal_time, plant[:models].models, plant[:models].status[i], meteo_, constants, nothing)
 
+        # Propagate the lai from the day before to the current day:
+        PlantSimEngine.run!(scene[:models].models.lai_dynamic, scene[:models].models, scene[:models].status[i], meteo_, constants, nothing)
+
         # Call the model that propagates the value of the rank to the next day:
         MultiScaleTreeGraph.traverse(plant, symbol="Phytomer") do phytomer
             PlantSimEngine.run!(phytomer[:models].models.leaf_rank, phytomer[:models].models, phytomer[:models].status[i], meteo_, constants, nothing)
@@ -34,6 +37,14 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
 
         # Give the ftsw value to the plant:
         PlantSimEngine.run!(plant[:models].models.soil_water, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
+
+        # Light interception at the scene scale:
+        PlantSimEngine.run!(scene[:models].models.light_interception, scene[:models].models, scene[:models].status[i], meteo_, constants)
+        # Give the light interception to the plants:
+        PlantSimEngine.run!(plant[:models].models.light_interception, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
+
+        # Carbon assimilation:
+        PlantSimEngine.run!(plant[:models].models.carbon_assimilation, plant[:models].models, plant[:models].status[i], meteo_, constants)
 
         # Run models at leaf scale:
         MultiScaleTreeGraph.traverse(plant, symbol="Leaf") do leaf
@@ -69,13 +80,5 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
 
         # Compute LAI from total leaf area:
         PlantSimEngine.run!(scene[:models].models.lai_dynamic, scene[:models].models, scene[:models].status[i], meteo_, constants, scene)
-
-        # Light interception at the scene scale:
-        PlantSimEngine.run!(scene[:models].models.light_interception, scene[:models].models, scene[:models].status[i], meteo_, constants)
-        # Give the light interception to the plants:
-        PlantSimEngine.run!(plant[:models].models.light_interception, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
-
-        # Carbon assimilation:
-        PlantSimEngine.run!(plant[:models].models.carbon_assimilation, plant[:models].models, plant[:models].status[i], meteo_, constants)
     end
 end

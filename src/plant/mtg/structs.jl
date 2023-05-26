@@ -265,6 +265,9 @@ function Palm(;
     # Initialise the final potential area of the first leaf (this computation is done only once in the model):
     leaf[:models].status[1].final_potential_area = parameters[:potential_area][:leaf_area_first_leaf]
 
+    # Initialise the LAI:
+    scene[:models].status[1].lai = leaf[:models].status[1].leaf_area / scene[:area] # m2 leaf / m2 soil
+
     mtg[:phytomer_count] = 1
     mtg[:mtg_node_count] = length(scene)
     mtg[:last_phytomer] = phyto
