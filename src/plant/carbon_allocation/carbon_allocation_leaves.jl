@@ -1,14 +1,12 @@
-struct LeavesCarbonAllocationModel <: AbstractCarbon_AllocationModel end
+struct LeavesCarbonAllocationModel{O} <: AbstractCarbon_AllocationModel end
+
+LeavesCarbonAllocationModel() = LeavesCarbonAllocationModel{Any}()
 
 PlantSimEngine.inputs_(::LeavesCarbonAllocationModel) = (carbon_offer=-Inf,)
 PlantSimEngine.outputs_(::LeavesCarbonAllocationModel) = (carbon_allocation_leaves=-Inf,)
-
-PlantSimEngine.inputs_(::LeavesCarbonAllocationModel{Leaf}) = (carbon_offer=-Inf,)
 PlantSimEngine.outputs_(::LeavesCarbonAllocationModel{Leaf}) = (carbon_allocation=-Inf,)
 
-#! compute it at the leaf scale instead! Using the total leaf demand and then using the proportion 
-#! for this leaf in particular.
-function PlantSimEngine.run!(::LeavesCarbonAllocationModel{Plant}, models, status, meteo, constants, mtg)
+function PlantSimEngine.run!(::LeavesCarbonAllocationModel, models, status, meteo, constants, mtg)
     carbon_demand = MultiScaleTreeGraph.traverse(mtg, symbol="Leaf") do leaf
         leaf[:models].status[rownumber(status)][:carbon_demand]
     end

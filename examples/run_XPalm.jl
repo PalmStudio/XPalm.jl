@@ -38,10 +38,9 @@ scatter(filter(x -> x > -9999, get_node(p.mtg, 18)[:models].status.rank))
 get_node(p.mtg, 9)[:models].status.rank
 
 lines(plant[:models].status.leaf_area)
-
+lines(plant[:models].status.carbon_demand)
+lines(plant[:models].status.carbon_allocation)
 lines(plant[:models].status.ftsw)
-
-
 
 leaf_95 = get_node(p.mtg, 95)
 leaf_101 = get_node(p.mtg, 101)

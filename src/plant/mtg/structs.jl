@@ -264,6 +264,8 @@ function Palm(;
 
     # Initialise the final potential area of the first leaf (this computation is done only once in the model):
     leaf[:models].status[1].final_potential_area = parameters[:potential_area][:leaf_area_first_leaf]
+    # And compute the leaf area as one percent of the potential area:
+    leaf[:models].status[1].leaf_area = leaf[:models].status[1].final_potential_area * 0.01
 
     # Initialise the LAI:
     scene[:models].status[1].lai = leaf[:models].status[1].leaf_area / scene[:area] # m2 leaf / m2 soil

@@ -84,7 +84,7 @@ function main_models_definition(p, nsteps)
                 p[:carbon_demand][:leaf][:leaflets_biomass_contribution]
             ),
             #! only to have the variable initialised in the status (we put the values from another scale):
-            carbon_allocation=LeavesCarbonAllocationModel(),
+            carbon_allocation=LeavesCarbonAllocationModel{Leaf}(),
             variables_check=false,
             nsteps=nsteps,
             status=(
