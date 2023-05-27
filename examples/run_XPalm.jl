@@ -2,7 +2,7 @@
 using PlantMeteo, PlantSimEngine, Revise, MultiScaleTreeGraph
 # using PlantGeom, CairoMakie, AlgebraOfGraphics
 using DataFrames, CSV, Statistics
-using GLMakie
+using CairoMakie
 using XPalm
 using DataFramesMeta
 
@@ -33,22 +33,40 @@ plant = scene[2]
 roots = plant[1]
 XPalm.run_XPalm(p, meteo)
 
-scatter(filter(x -> x > -9999, get_node(p.mtg, 18)[:models].status.rank))
-
-get_node(p.mtg, 9)[:models].status.rank
+lines(scene[:models].status.lai)
 
 lines(plant[:models].status.leaf_area)
+lines(plant[:models].status.carbon_demand)
+lines(plant[:models].status.carbon_allocation)
 
 leaf_101 = get_node(p.mtg, 101)
+leaf_95 = get_node(p.mtg, 95)
 lines(filter(x -> x > -Inf, leaf_101[:models].status[:leaf_area]))
+lines(filter(x -> x > -Inf, leaf_95[:models].status[:leaf_area]))
+
+la101 = filter(x -> x > -Inf, leaf_101[:models].status[:leaf_area])
+la95 = filter(x -> x > -Inf, leaf_95[:models].status[:leaf_area])
+f, ax, plt = lines(1:length(la101), la101, color="red")
+lines!(ax, 1:length(la95), la95, color="blue")
+f
+
+lines(filter(x -> x > -Inf, leaf_101[:models].status[:TT_since_init]))
+lines(filter(x -> x > -Inf, leaf_101[:models].status[:carbon_demand]))
 
 get_node(p.mtg, 8)[:models].models.leaf_rank
+# scatter(filter(x -> x > -9999, get_node(p.mtg, 18)[:models].status.rank))
+# get_node(p.mtg, 9)[:models].status.rank
 
 leaf_area = MultiScaleTreeGraph.traverse(p.mtg, symbol="Leaf") do node
-    node[:models].status[200][:leaf_area]
+    node.id => node[:models].status[200][:leaf_area]
 end
 
-get_node(p.mtg, 8)[:models].status[200][:leaf_area]
+get_node(p.mtg, 56)[:models].status[:TT_since_init]
+get_node(p.mtg, 56)[:models].status[:initiation_age]
+get_node(p.mtg, 56)[:models].status[:final_potential_area]
+get_node(p.mtg, 56)[:models].status[:potential_area]
+get_node(p.mtg, 56)[:models].status[:leaf_area]
+
 unique(get_node(p.mtg, 8)[:models].status[:final_potential_area])
 
 sum(filter(x -> x > 0.0, leaf_area))
