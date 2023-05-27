@@ -268,26 +268,24 @@ function PlantSimEngine.run!(m::T, models, st, meteo, constants, extra=nothing) 
         if (st.qty_H2O_C1minusVap + st.rain_remain) >= st.SizeC1minusVap
             st.rain_remain = st.rain_remain + st.qty_H2O_C1minusVap - st.SizeC1minusVap
             st.qty_H2O_C1minusVap = st.SizeC1minusVap # Transpirative compartment in the first layer is full
-            st.qty_H2O_C1 = st.qty_H2O_C1minusVap + st.qty_H2O_Vap
 
             if (st.qty_H2O_C2 + st.rain_remain) >= st.SizeC2
                 st.rain_remain = st.rain_remain + st.qty_H2O_C2 - st.SizeC2
                 st.qty_H2O_C2 = st.SizeC2 # Transpirative compartment in the second layer is full
-
             else
                 st.qty_H2O_C2 += st.rain_remain
                 st.rain_remain = 0.0
             end
         else
             st.qty_H2O_C1minusVap += st.rain_remain
-            st.qty_H2O_C1 = st.qty_H2O_C1minusVap + st.qty_H2O_Vap
             st.rain_remain = 0.0
         end
+
     else
         st.qty_H2O_Vap += st.rain_effective
-        st.qty_H2O_C1 = st.qty_H2O_Vap + st.qty_H2O_C1minusVap
         st.rain_remain = 0.0
     end
+    st.qty_H2O_C1 = st.qty_H2O_C1minusVap + st.qty_H2O_Vap
     st.qty_H2O_C = st.qty_H2O_C1minusVap + st.qty_H2O_C2
 
     compute_fraction!(st)

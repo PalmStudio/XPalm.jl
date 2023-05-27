@@ -21,6 +21,7 @@ include("plant/roots/0-process.jl")
 include("plant/phytomer/phytomer/0-process.jl")
 include("plant/phytomer/leaves/0-process.jl")
 include("plant/carbon_assimilation/0-process.jl")
+include("plant/carbon_offer/0-process.jl")
 
 # Import the models:
 include("meteo/thermal_time.jl")
@@ -48,6 +49,7 @@ include("plant/phytomer/leaves/carbon_demand.jl")
 include("plant/carbon_assimilation/rue.jl")
 include("plant/respiration/maintenance/maintenance_respiration.jl")
 include("plant/respiration/maintenance/Q10.jl")
+include("plant/carbon_offer/carbon_offer_photosynthesis.jl")
 include("model_definition.jl")
 
 include("age_modulation/age_modulation_linear.jl")
@@ -59,7 +61,7 @@ include("run.jl")
 export Palm
 
 # exports for prototyping
-export FTSW, soil_init_default
+export FTSW, FTSW_BP, soil_init_default
 export DailyDegreeDays
 export RootGrowthFTSW
 export ET0_BP

@@ -1,5 +1,5 @@
 # Import dependencies
-using PlantMeteo, PlantSimEngine, Revise, MultiScaleTreeGraph
+using PlantMeteo, PlantSimEngine, MultiScaleTreeGraph
 # using PlantGeom, CairoMakie, AlgebraOfGraphics
 using DataFrames, CSV, Statistics
 using GLMakie
@@ -39,8 +39,17 @@ get_node(p.mtg, 9)[:models].status.rank
 
 lines(plant[:models].status.leaf_area)
 
+lines(plant[:models].status.ftsw)
+
+
+
+leaf_95 = get_node(p.mtg, 95)
 leaf_101 = get_node(p.mtg, 101)
-lines(filter(x -> x > -Inf, leaf_101[:models].status[:leaf_area]))
+f, ax, plt = lines(filter(x -> x > -Inf, leaf_101[:models].status[:leaf_area]), color="blue")
+
+ax2 = Axis(f[1, 2])
+lines!(ax2, filter(x -> x > -Inf, leaf_95[:models].status[:leaf_area]), color="red")
+f
 
 get_node(p.mtg, 8)[:models].models.leaf_rank
 
