@@ -60,18 +60,18 @@ end
 
 # At the plant scale
 function PlantSimEngine.run!(::Beer, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node)
+    rn = max(1, rownumber(status) - 1) # take the row number (cannot be < 1)
+
     scene_node = MultiScaleTreeGraph.get_root(mtg)
     plant_leaf_area = MultiScaleTreeGraph.traverse(scene_node, symbol="Plant") do node
-        node[:models].status[rownumber(status)][:leaf_area]
+        node[:models].status[rn][:leaf_area]
     end
 
-    relative_leaf_area =
-        mtg[:models].status[rownumber(status)].leaf_area /
-        sum(plant_leaf_area)
+    relative_leaf_area = mtg[:models].status[rn].leaf_area / sum(plant_leaf_area)
 
     # aPPFD in MJ d-1 plant-1:
     status.aPPFD =
-        scene_node[:models].status[rownumber(status)].aPPFD *
+        scene_node[:models].status[rn].aPPFD *
         scene_node[:area] *
         relative_leaf_area
 end
