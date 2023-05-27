@@ -344,7 +344,7 @@ end
 function PlantSimEngine.run!(::FTSW, models, st, meteo, constants, mtg::MultiScaleTreeGraph.Node)
     scene = MultiScaleTreeGraph.get_root(mtg)
     soil_models = MultiScaleTreeGraph.descendants(scene, :models, symbol="Soil")[1]
-    soil_status = PlantSimEngine.status(soil_models)[PlantMeteo.rownumber(st)]
+    soil_status = PlantSimEngine.status(soil_models)[rownumber(st)]
     st.ftsw = soil_status.ftsw
     nothing
 end
@@ -358,7 +358,7 @@ PlantSimEngine.outputs_(::FTSW{T}) where {T<:Organ} = (
 function PlantSimEngine.run!(::FTSW{RootSystem}, models, st, meteo, constants, mtg::MultiScaleTreeGraph.Node)
     scene = MultiScaleTreeGraph.get_root(mtg)
     soil_models = MultiScaleTreeGraph.descendants(scene, :models, symbol="Soil")[1]
-    soil_status = PlantSimEngine.status(soil_models)[PlantMeteo.rownumber(st)]
+    soil_status = PlantSimEngine.status(soil_models)[rownumber(st)]
     soil_status.root_depth = st.root_depth
     PlantSimEngine.run!(soil_models.models.soil_water, models, soil_status, meteo, constants, nothing)
 

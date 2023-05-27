@@ -9,6 +9,6 @@ function PlantSimEngine.run!(m::RankLeafPruning, models, status, meteo, constant
     if status.rank > m.rank
         leaf = mtg[1][1]
         leaf.type.status = Pruned()
-        leaf[:models].status[PlantMeteo.rownumber(status)].leaf_area = 0.0
+        leaf[:models].status[rownumber(status)].leaf_area = 0.0
     end
 end

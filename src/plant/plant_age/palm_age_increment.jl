@@ -26,12 +26,12 @@ PlantSimEngine.TimeStepDependencyTrait(::Type{<:DailyPlantAgeModel}) = PlantSimE
 
 
 function PlantSimEngine.run!(m::DailyPlantAgeModel, models, status, meteo, constants, extra=nothing)
-    status.age = PlantMeteo.rownumber(status) + m.initiation_age
+    status.age = rownumber(status) + m.initiation_age
     # could also be written as (TODO: check which is faster):
     # status.age = prev_value(status, :age; default=m.initiation_age)
 end
 
 # Other method when the model is called with a mtg node:
 function PlantSimEngine.run!(m::DailyPlantAgeModel, models, st, meteo, constants, mtg::MultiScaleTreeGraph.Node)
-    st.age = MultiScaleTreeGraph.ancestors(mtg, :models, symbol="Plant")[1].status[PlantMeteo.rownumber(st)][:age]
+    st.age = MultiScaleTreeGraph.ancestors(mtg, :models, symbol="Plant")[1].status[rownumber(st)][:age]
 end

@@ -94,6 +94,6 @@ end
 
 function PlantSimEngine.run!(::ET0_BP, models, st, meteo, constants, mtg::MultiScaleTreeGraph.Node)
     scene = MultiScaleTreeGraph.get_root(mtg)
-    scene_status = PlantSimEngine.status(scene[:models])[PlantMeteo.rownumber(st)]
+    scene_status = PlantSimEngine.status(scene[:models])[rownumber(st)]
     st.ET0 = scene_status.ET0
 end

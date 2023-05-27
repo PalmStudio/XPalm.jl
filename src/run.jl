@@ -74,6 +74,9 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
         PlantSimEngine.run!(plant[:models].models.carbon_demand, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
         #! note: update to a full model when several organs are computed for the carbon demand here.
 
+        # Compute the carbon allocation to the leaves:
+        PlantSimEngine.run!(plant[:models].models.carbon_allocation, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
+
         # Pruning:
         MultiScaleTreeGraph.traverse(plant, symbol="Phytomer") do phytomer
             PlantSimEngine.run!(phytomer[:models].models.leaf_pruning, phytomer[:models].models, phytomer[:models].status[i], meteo_, constants, phytomer)
