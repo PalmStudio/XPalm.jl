@@ -206,7 +206,7 @@ function Palm(;
         type=Plant()
     )
 
-    mtg = MultiScaleTreeGraph.Node(
+    plant = MultiScaleTreeGraph.Node(
         scene,
         NodeMTG("+", "Plant", 1, 1),
         Dict{Symbol,Any}(
@@ -218,7 +218,7 @@ function Palm(;
     )
 
     roots = MultiScaleTreeGraph.Node(
-        mtg,
+        plant,
         NodeMTG("+", "RootSystem", 1, 2),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age,
@@ -229,7 +229,7 @@ function Palm(;
     )
 
     stem = MultiScaleTreeGraph.Node(
-        mtg,
+        plant,
         NodeMTG("+", "Stem", 1, 2),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
@@ -267,12 +267,13 @@ function Palm(;
     # And compute the leaf area as one percent of the potential area:
     leaf[:models].status[1].leaf_area = leaf[:models].status[1].final_potential_area * 0.01
 
+    plant[:models].status[1].leaf_area = leaf[:models].status[1].leaf_area
     # Initialise the LAI:
     scene[:models].status[1].lai = leaf[:models].status[1].leaf_area / scene[:area] # m2 leaf / m2 soil
 
-    mtg[:phytomer_count] = 1
-    mtg[:mtg_node_count] = length(scene)
-    mtg[:last_phytomer] = phyto
+    plant[:phytomer_count] = 1
+    plant[:mtg_node_count] = length(scene)
+    plant[:last_phytomer] = phyto
 
     return Palm(scene, initiation_age, parameters)
 end
