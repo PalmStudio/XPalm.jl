@@ -15,7 +15,8 @@ PlantSimEngine.outputs_(::PhyllochronModel) = (
     newPhytomerEmergence=-Inf,
     phyllochron=-Inf,
     production_speed=-Inf,
-    phylo_slow=-Inf
+    phylo_slow=-Inf,
+    phytomers=-Inf,
 )
 
 # Applied at the plant scale.
@@ -34,8 +35,11 @@ function PlantSimEngine.run!(m::PhyllochronModel, models, status, meteo, constan
         prev_value(status, :newPhytomerEmergence; default=0.0) +
         status.TEff * status.production_speed * status.phylo_slow
 
+    status.phytomers = prev_value(status, :phytomers, default=status.phytomers)
+
     if status.newPhytomerEmergence >= 1.0
         status.newPhytomerEmergence -= 1.0 # NB: -=1 because it can be > 1 so we pass along the remainder
+        status.phytomers += 1
         # Add a new phytomer to the palm using a phytomer emission model:
         PlantSimEngine.run!(models.phytomer_emission, models, status, meteo, constants, mtg)
     end
