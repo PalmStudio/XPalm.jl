@@ -2,9 +2,8 @@
 using PlantMeteo, PlantSimEngine, MultiScaleTreeGraph
 # using PlantGeom, CairoMakie, AlgebraOfGraphics
 using DataFrames, CSV, Statistics
-using GLMakie
+using CairoMakie
 using XPalm
-using DataFramesMeta
 
 meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/Exemple_meteo.csv"), DataFrame)
 rename!(
@@ -27,23 +26,58 @@ transform!(
 
 p = Palm(nsteps=nrow(meteo))
 
-scene = p.mtg
-soil = scene[1]
-plant = scene[2]
-roots = plant[1]
 XPalm.run_XPalm(p, meteo)
+
+begin
+    scene = p.mtg
+    soil = scene[1]
+    plant = scene[2]
+    roots = plant[1]
+    leaf1 = get_node(p.mtg, 8)
+    leaf2 = get_node(p.mtg, 11)
+end
+
+lines(leaf1[:models].status.biomass)
+lines(leaf1[:models].status.leaf_area)
+lines(leaf1[:models].status.carbon_allocation)
+
+lines(filter(x -> x > -Inf, leaf2[:models].status.biomass))
+lines(leaf2[:models].status.leaf_area)
+lines(leaf2[:models].status.carbon_allocation)
+
+leaf_area = MultiScaleTreeGraph.traverse(plant, symbol="Leaf") do leaf
+    leaf[:models].status[1][:leaf_area]
+end
+
+
+
+plant[:models].status.carbon_demand[1]
+
+
+
+
+
 
 scatter(filter(x -> x > -9999, get_node(p.mtg, 18)[:models].status.rank))
 
 get_node(p.mtg, 9)[:models].status.rank
 
+lines(scene[:models].status.lai)
+
 lines(plant[:models].status.leaf_area)
 lines(plant[:models].status.carbon_demand)
-lines(plant[:models].status.carbon_allocation)
+lines(plant[:models].status.carbon_offer)
+lines(plant[:models].status.carbon_allocation_leaves)
 lines(plant[:models].status.ftsw)
+lines(roots[:models].status.root_depth)
 
 leaf_95 = get_node(p.mtg, 95)
 leaf_101 = get_node(p.mtg, 101)
+
+
+lines(filter(x -> x > -Inf, leaf_101[:models].status.carbon_allocation))
+
+
 f, ax, plt = lines(filter(x -> x > -Inf, leaf_101[:models].status[:leaf_area]), color="blue")
 
 ax2 = Axis(f[1, 2])

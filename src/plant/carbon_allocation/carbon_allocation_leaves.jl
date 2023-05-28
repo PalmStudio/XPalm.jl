@@ -6,6 +6,7 @@ PlantSimEngine.inputs_(::LeavesCarbonAllocationModel) = (carbon_offer=-Inf,)
 PlantSimEngine.outputs_(::LeavesCarbonAllocationModel) = (carbon_allocation_leaves=-Inf,)
 PlantSimEngine.outputs_(::LeavesCarbonAllocationModel{Leaf}) = (carbon_allocation=-Inf,)
 
+# At the plant scale:
 function PlantSimEngine.run!(::LeavesCarbonAllocationModel, models, status, meteo, constants, mtg)
     timestep = rownumber(status)
 

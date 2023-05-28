@@ -6,3 +6,7 @@
 @process "leaf_rank" verbose = false
 @process "state" verbose = false
 @process "leaf_pruning" verbose = false
+@process "biomass_from_area" verbose = false
+@process "biomass_to_area" verbose = false
+@process "biomass" verbose = false
+@process "reserve" verbose = false

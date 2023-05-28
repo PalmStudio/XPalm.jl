@@ -47,6 +47,8 @@ include("plant/phytomer/leaves/state.jl")
 include("plant/phytomer/leaves/leaf_rank.jl")
 include("plant/phytomer/leaves/leaf_pruning.jl")
 include("plant/phytomer/leaves/carbon_demand.jl")
+include("plant/phytomer/leaves/biomass.jl")
+include("plant/phytomer/leaves/reserves.jl")
 
 include("plant/carbon_assimilation/rue.jl")
 include("plant/carbon_offer/carbon_offer_photosynthesis.jl")

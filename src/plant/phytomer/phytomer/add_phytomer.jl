@@ -67,6 +67,12 @@ function PlantSimEngine.run!(::PhytomerEmission, models, status, meteo, constant
     # Compute the leaf_potential_area model over the new leaf:
     PlantSimEngine.run!(leaf[:models].models.leaf_final_potential_area, leaf[:models].models, leaf[:models].status[current_step], meteo, constants, nothing)
     PlantSimEngine.run!(leaf[:models].models.leaf_potential_area, leaf[:models].models, leaf[:models].status[current_step], meteo, constants, nothing)
-    # Give it a leaf area:
-    PlantSimEngine.run!(leaf[:models].models.leaf_area, leaf[:models].models, leaf[:models].status[current_step], meteo, constants, nothing)
+
+    # Initialise its leaf area:
+    leaf[:models].status[current_step].leaf_area = 0.0
+    # And biomass:
+    leaf[:models].status[current_step].biomass = 0.0
+
+    # Compute the reserves:
+    PlantSimEngine.run!(leaf[:models].models.reserve, leaf[:models].models, leaf[:models].status[current_step], meteo, constants, nothing)
 end

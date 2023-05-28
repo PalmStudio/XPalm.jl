@@ -2,7 +2,7 @@
 
 julia_version = "1.9.0"
 manifest_format = "2.0"
-project_hash = "c975bb1ee456fa1b834a78bf60677077a356408f"
+project_hash = "537e08db221209ba8884385264da90ad35485d65"
 
 [[deps.AbstractFFTs]]
 deps = ["LinearAlgebra"]
@@ -148,11 +148,6 @@ git-tree-sha1 = "f641eb0a4f00c343bbc32346e1217b86f3ce9dad"
 uuid = "49dc2e85-a5d0-5ad3-a950-438e2897f1b9"
 version = "0.5.1"
 
-[[deps.Chain]]
-git-tree-sha1 = "8c4920235f6c561e401dfe569beb8b924adad003"
-uuid = "8be319e6-bccf-4806-a6f7-6fae938471bc"
-version = "0.5.0"
-
 [[deps.ChainRulesCore]]
 deps = ["Compat", "LinearAlgebra", "SparseArrays"]
 git-tree-sha1 = "e30f2f4e20f7f186dc36529910beaedc60cfa644"
@@ -270,12 +265,6 @@ deps = ["Compat", "DataAPI", "Future", "InlineStrings", "InvertedIndices", "Iter
 git-tree-sha1 = "aa51303df86f8626a962fccb878430cdb0a97eee"
 uuid = "a93c6f00-e57d-5684-b7b6-d8193f3e46c0"
 version = "1.5.0"
-
-[[deps.DataFramesMeta]]
-deps = ["Chain", "DataFrames", "MacroTools", "OrderedCollections", "Reexport"]
-git-tree-sha1 = "7f13b2f9fa5fc843a06596f1cc917ed1a3d6740b"
-uuid = "1313f7d8-7da2-5740-9ea0-a2ca25f37964"
-version = "0.14.0"
 
 [[deps.DataStructures]]
 deps = ["Compat", "InteractiveUtils", "OrderedCollections"]

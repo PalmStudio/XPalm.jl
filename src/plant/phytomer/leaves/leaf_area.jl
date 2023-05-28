@@ -1,13 +1,14 @@
-struct LeafAreaModel <: AbstractLeaf_AreaModel end
+struct LeafAreaModel{T} <: AbstractLeaf_AreaModel
+    lma_min::T
+    leaflets_biomass_contribution::T
+end
 
-PlantSimEngine.inputs_(::LeafAreaModel) = NamedTuple()
+PlantSimEngine.inputs_(::LeafAreaModel) = (biomass=-Inf,)
 PlantSimEngine.outputs_(::LeafAreaModel) = (leaf_area=-Inf,)
 
 # Applied at the phytomer scale:
-function PlantSimEngine.run!(::LeafAreaModel, models, status, meteo, constants, extra=nothing)
-    expansion_rate = status.potential_area - prev_value(status, :potential_area, default=0.0)
-
-    status.leaf_area = status.potential_area
+function PlantSimEngine.run!(m::LeafAreaModel, models, status, meteo, constants, extra=nothing)
+    status.leaf_area = status.biomass * m.leaflets_biomass_contribution / m.lma_min
 end
 
 # Applied at the plant scale:

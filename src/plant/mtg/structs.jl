@@ -271,6 +271,12 @@ function Palm(;
     # Initialise the LAI:
     scene[:models].status[1].lai = leaf[:models].status[1].leaf_area / scene[:area] # m2 leaf / m2 soil
 
+    leaf[:models].status[1].biomass =
+        leaf[:models].status[1].leaf_area * parameters[:carbon_demand][:leaf][:lma_min] /
+        parameters[:carbon_demand][:leaf][:leaflets_biomass_contribution]
+
+    leaf[:models].status[1].reserve = 0.0
+
     plant[:phytomer_count] = 1
     plant[:mtg_node_count] = length(scene)
     plant[:last_phytomer] = phyto

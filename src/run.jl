@@ -65,8 +65,6 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
 
             PlantSimEngine.run!(leaf[:models].models.state, leaf[:models].models, leaf[:models].status[i], meteo_, constants, leaf)
 
-            PlantSimEngine.run!(leaf[:models].models.leaf_area, leaf[:models].models, leaf[:models].status[i], meteo_, constants, nothing)
-
             PlantSimEngine.run!(leaf[:models].models.carbon_demand, leaf[:models].models, leaf[:models].status[i], meteo_, constants, nothing)
         end
 
@@ -76,6 +74,14 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
 
         # Compute the carbon allocation to the leaves:
         PlantSimEngine.run!(plant[:models].models.carbon_allocation, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
+
+        MultiScaleTreeGraph.traverse(plant, symbol="Leaf") do leaf
+            PlantSimEngine.run!(leaf[:models].models.biomass, leaf[:models].models, leaf[:models].status[i], meteo_, constants, nothing)
+            PlantSimEngine.run!(leaf[:models].models.leaf_area, leaf[:models].models, leaf[:models].status[i], meteo_, constants, nothing)
+            PlantSimEngine.run!(leaf[:models].models.reserve, leaf[:models].models, leaf[:models].status[i], meteo_, constants, nothing)
+        end
+
+        PlantSimEngine.run!(plant[:models].models.biomass, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
 
         # Pruning:
         MultiScaleTreeGraph.traverse(plant, symbol="Phytomer") do phytomer
