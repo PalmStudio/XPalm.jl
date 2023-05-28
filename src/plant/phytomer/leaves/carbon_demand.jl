@@ -72,11 +72,11 @@ function PlantSimEngine.run!(m::LeafCarbonDemandModelArea, models, status, meteo
 end
 
 # Plant scale:
-function PlantSimEngine.run!(::LeafCarbonDemandModelArea, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node)
-    @assert mtg.MTG.symbol == "Plant" "The node should be a Plant but is a $(mtg.MTG.symbol)"
+# function PlantSimEngine.run!(::LeafCarbonDemandModelArea, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node)
+#     @assert mtg.MTG.symbol == "Plant" "The node should be a Plant but is a $(mtg.MTG.symbol)"
 
-    carbon_demand = MultiScaleTreeGraph.traverse(mtg, symbol="Leaf") do leaf
-        leaf[:models].status[rownumber(status)][:carbon_demand]
-    end
-    status.carbon_demand = sum(carbon_demand)
-end
+#     carbon_demand = MultiScaleTreeGraph.traverse(mtg, symbol="Leaf") do leaf
+#         leaf[:models].status[rownumber(status)][:carbon_demand]
+#     end
+#     status.carbon_demand = sum(carbon_demand)
+# end

@@ -34,9 +34,14 @@ begin
     plant = scene[2]
     roots = plant[1]
     leaf1 = get_node(p.mtg, 8)
+    internode1 = get_node(p.mtg, 7)
     leaf2 = get_node(p.mtg, 11)
 end
 
+# lines(internode1[:models].status.TT_since_init)
+lines(internode1[:models].status.potential_height)
+lines(internode1[:models].status.potential_radius)
+lines(internode1[:models].status.carbon_demand)
 
 lines(scene[:models].status.lai)
 lines(plant[:models].status.leaf_area)

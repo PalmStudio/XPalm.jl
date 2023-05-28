@@ -49,16 +49,15 @@ Compute degree days corrected by FTSW
 
 - `TEff`: daily efficient temperature for plant growth (degree C days) 
 """
-function PlantSimEngine.run!(m::DegreeDaysFTSW, models, status, meteo, constants, extra=nothing)
-
+function PlantSimEngine.run!(m::DegreeDaysFTSW, models, st, meteo, constants, extra=nothing)
     Tmin = meteo.Tmin
     Tmax = meteo.Tmax
 
     if (Tmin >= Tmax)
         if (Tmin > m.TOpt1)
-            status.TEff = m.TOpt1 - m.TBase
+            st.TEff = m.TOpt1 - m.TBase
         else
-            status.TEff = Tmin - m.TBase
+            st.TEff = Tmin - m.TBase
         end
     else
         if (Tmin < m.TOpt1)
@@ -87,23 +86,23 @@ function PlantSimEngine.run!(m::DegreeDaysFTSW, models, status, meteo, constants
         m1 = V * (min(m.TOpt1, Tmax) - Tmin)
         m2 = W * (Tmax - max(Tmin, m.TOpt2))
         if (Tmax <= m.TBase)
-            status.TEff = 0
+            st.TEff = 0
         else
             if (Tmin >= m.TLim)
-                status.TEff = 0
+                st.TEff = 0
             else
-                status.TEff = ((m1 + m2 + S2) / (Tmax - Tmin)) * (m.TOpt1 - m.TBase)
+                st.TEff = ((m1 + m2 + S2) / (Tmax - Tmin)) * (m.TOpt1 - m.TBase)
             end
-            if (status.TEff < 0)
-                status.TEff = 0
+            if (st.TEff < 0)
+                st.TEff = 0
             end
         end
     end
 
-    expansion_stress = status.ftsw > m.threshold_ftsw_stress ? 1 : status.ftsw / m.threshold_ftsw_stress
-    status.TEff = status.TEff * expansion_stress
+    expansion_stress = st.ftsw > m.threshold_ftsw_stress ? 1 : st.ftsw / m.threshold_ftsw_stress
+    st.TEff = st.TEff * expansion_stress
     # We apply an expansion stress to the thermal time based on FTSW:
-    prevTT = prev_value(status, :TT_since_init, default=0.0)
+    prevTT = prev_value(st, :TT_since_init, default=0.0)
 
     #! here we check if the previous value was -Inf because the leaf can appear at any day 
     #! since begining of the simulation, so at initialisation the previous value is -Inf
@@ -111,5 +110,5 @@ function PlantSimEngine.run!(m::DegreeDaysFTSW, models, status, meteo, constants
         prevTT = 0.0
     end
 
-    status.TT_since_init = prevTT + status.TEff
+    st.TT_since_init = prevTT + st.TEff
 end

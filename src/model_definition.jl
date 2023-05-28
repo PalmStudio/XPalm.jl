@@ -27,12 +27,12 @@ function main_models_definition(p, nsteps)
             light_interception=Beer(p[:k]),
             carbon_assimilation=ConstantRUEModel(p[:RUE]),
             carbon_offer=CarbonOfferPhotosynthesis(),
-            carbon_demand=LeafCarbonDemandModelPotentialArea(
-                p[:lma_min],
-                p[:carbon_demand][:leaf][:respiration_cost],
-                p[:leaflets_biomass_contribution]
-            ),
-            carbon_allocation=LeavesCarbonAllocationModel(),
+            # carbon_demand=LeafCarbonDemandModelPotentialArea(
+            #     p[:lma_min],
+            #     p[:carbon_demand][:leaf][:respiration_cost],
+            #     p[:leaflets_biomass_contribution]
+            # ),
+            carbon_allocation=OrgansCarbonAllocationModel(),
             biomass=LeafBiomass(p[:carbon_demand][:leaf][:respiration_cost]),
             reserve_filling=LeafReserveFilling(
                 p[:lma_min],
@@ -61,8 +61,32 @@ function main_models_definition(p, nsteps)
         "Internode" =>
             PlantSimEngine.ModelList(
                 initiation_age=InitiationAgeFromPlantAge(),
-                maintenance_respiration=RmQ10{Internode}(p[:Q10], p[:Rm_base], p[:T_ref]), variables_check=false,
+                thermal_time=DegreeDaysFTSW(
+                    threshold_ftsw_stress=p[:phyllochron][:threshold_ftsw_stress],
+                ),
+                soil_water=FTSW{Internode}(ini_root_depth=p[:ini_root_depth]), # needed to get the ftsw value
+                maintenance_respiration=RmQ10{Internode}(p[:Q10], p[:Rm_base], p[:T_ref]),
+                internode_final_potential_dimensions=FinalPotentialInternodeDimensionModel(
+                    p[:potential_dimensions][:age_max_height],
+                    p[:potential_dimensions][:age_max_radius],
+                    p[:potential_dimensions][:min_height],
+                    p[:potential_dimensions][:min_radius],
+                    p[:potential_dimensions][:max_height],
+                    p[:potential_dimensions][:max_radius],
+                ),
+                internode_potential_dimensions=PotentialInternodeDimensionModel(
+                    p[:potential_dimensions][:inflexion_point_height],
+                    p[:potential_dimensions][:slope_height],
+                    p[:potential_dimensions][:inflexion_point_radius],
+                    p[:potential_dimensions][:slope_radius],
+                ),
+                carbon_demand=InternodeCarbonDemandModel(
+                    p[:carbon_demand][:internode][:stem_apparent_density],
+                    p[:carbon_demand][:internode][:respiration_cost]
+                ),
+                carbon_allocation=OrgansCarbonAllocationModel{Internode}(),
                 nsteps=nsteps,
+                variables_check=false,
                 status=(
                     nitrogen_content=p[:nitrogen_content][:Internode],
                     initiation_age=0
@@ -96,7 +120,7 @@ function main_models_definition(p, nsteps)
                 p[:leaflets_biomass_contribution]
             ),
             #! only to have the variable initialised in the status (we put the values from another scale):
-            carbon_allocation=LeavesCarbonAllocationModel{Leaf}(),
+            carbon_allocation=OrgansCarbonAllocationModel{Leaf}(),
             # Used at init only:
             # biomass_from_area=BiomassFromArea(
             #     p[:lma_min],

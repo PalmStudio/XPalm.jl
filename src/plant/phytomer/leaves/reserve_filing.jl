@@ -1,7 +1,7 @@
-struct LeafReserveFilling <: AbstractReserve_FillingModel
-    lma_min
-    lma_max
-    leaflets_biomass_contribution
+struct LeafReserveFilling{T} <: AbstractReserve_FillingModel
+    lma_min::T
+    lma_max::T
+    leaflets_biomass_contribution::T
 end
 
 PlantSimEngine.inputs_(::LeafReserveFilling) = (carbon_offer=-Inf, leaf_reserve_potential=-Inf,)

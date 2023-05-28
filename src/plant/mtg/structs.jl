@@ -157,6 +157,18 @@ function default_parameters()
             :inflexion_index => 560.0,
             :slope => 100.0,
         ),
+        :potential_dimensions => Dict(
+            :age_max_height => 8 * 365,
+            :age_max_radius => 8 * 365,
+            :min_height => 2e-3,
+            :min_radius => 2e-3,
+            :max_height => 0.03,
+            :max_radius => 0.30,
+            :inflexion_point_height => 900.0,
+            :slope_height => 150.0,
+            :inflexion_point_radius => 900.0,
+            :slope_radius => 150.0,
+        ),
         :phyllochron => Dict(
             :age_palm_maturity => 8 * 365, # age of the palm maturity (days)
             :threshold_ftsw_stress => 0.3, # threshold of FTSW for stress
@@ -168,6 +180,10 @@ function default_parameters()
             :leaf => Dict(
                 :respiration_cost => 1.44,
             ),
+            :internode => Dict(
+                :stem_apparent_density => 150000.0, # g m-3
+                :respiration_cost => 1.44, # g g-1
+            )
         )
     )
     push!(p,
@@ -280,6 +296,9 @@ function Palm(;
         parameters[:leaflets_biomass_contribution]
 
     leaf[:models].status[1].reserve = 0.0
+
+    internode[:models].status[1].final_potential_height = parameters[:potential_dimensions][:min_height]
+    internode[:models].status[1].final_potential_radius = parameters[:potential_dimensions][:min_radius]
 
     plant[:phytomer_count] = 1
     plant[:mtg_node_count] = length(scene)
