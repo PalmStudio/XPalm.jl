@@ -24,7 +24,7 @@ function PlantSimEngine.run!(m::LeafCarbonDemandModel, models, status, meteo, co
 end
 
 # Plant scale:
-function PlantSimEngine.run!(m::LeafCarbonDemandModel, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node)
+function PlantSimEngine.run!(::LeafCarbonDemandModel, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node)
     @assert mtg.MTG.symbol == "Plant" "The node should be a Plant but is a $(mtg.MTG.symbol)"
 
     carbon_demand = MultiScaleTreeGraph.traverse(mtg, symbol="Leaf") do leaf
