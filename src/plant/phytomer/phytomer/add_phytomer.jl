@@ -72,7 +72,6 @@ function PlantSimEngine.run!(::PhytomerEmission, models, status, meteo, constant
     leaf[:models].status[current_step].leaf_area = 0.0
     # And biomass:
     leaf[:models].status[current_step].biomass = 0.0
-
-    # Compute the reserves:
-    PlantSimEngine.run!(leaf[:models].models.reserve, leaf[:models].models, leaf[:models].status[current_step], meteo, constants, nothing)
+    # leaf[:models].status[max(1, current_step - 1)].reserve = 0.0
+    leaf[:models].status[current_step].reserve = 0.0
 end

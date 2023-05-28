@@ -15,6 +15,7 @@
 - remove dependency to dev versions of packages
 - LAIModel: traverse the MTG for all plants but stop at the plant scale (do not traverse every node)
 - Test difference between LeafCarbonDemandModelArea and LeafCarbonDemandModelPotentialArea. The first assumes that the leaf can always increase its demand more than the potential to catch back any delay in growth induced by previous stress. The second assumes that the potential daily increment only follows the daily potential curve, and that any lost demand induced by stress will be lost demand.
+- For LAI, only use the leaf area of the leaves that are `Opened()`.
 
 
 

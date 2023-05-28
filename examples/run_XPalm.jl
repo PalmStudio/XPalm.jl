@@ -37,6 +37,41 @@ begin
     leaf2 = get_node(p.mtg, 11)
 end
 
+
+lines(scene[:models].status.lai)
+lines(plant[:models].status.leaf_area)
+lines(plant[:models].status.carbon_demand)
+lines(plant[:models].status.carbon_assimilation - plant[:models].status.carbon_demand)
+lines(plant[:models].status.carbon_allocation_reserve_leaves)
+
+lines(plant[:models].status.total_reserve_potential_leaves)
+lines(plant[:models].status.carbon_offer)
+lines(plant[:models].status.carbon_demand)
+
+lines(plant[:models].status.carbon_allocation_leaves)
+lines(plant[:models].status.ftsw)
+lines(roots[:models].status.root_depth)
+
+timestep = 6
+
+plant[:models].status.phytomers[timestep]
+plant[:models].status.phytomers[1:11]
+
+leaf1[:models].status.reserve
+leaf_reserve_potential = MultiScaleTreeGraph.traverse(plant, symbol="Leaf") do leaf
+    st_leaf = leaf[:models].status[timestep]
+    leaf_reserve_max = (200 - 80) * st_leaf.leaf_area / 0.35
+    res_prev = PlantMeteo.prev_value(st_leaf, :reserve, default=0.0)
+    # if res_prev == -Inf
+    #     res_prev = st_leaf.reserve
+    # end
+    # leaf_reserve_max - res_prev
+end
+
+leaf_reserve_potential[1]
+
+
+
 lines(leaf1[:models].status.biomass)
 lines(leaf1[:models].status.leaf_area)
 lines(leaf1[:models].status.carbon_allocation)
@@ -62,14 +97,6 @@ scatter(filter(x -> x > -9999, get_node(p.mtg, 18)[:models].status.rank))
 
 get_node(p.mtg, 9)[:models].status.rank
 
-lines(scene[:models].status.lai)
-
-lines(plant[:models].status.leaf_area)
-lines(plant[:models].status.carbon_demand)
-lines(plant[:models].status.carbon_offer)
-lines(plant[:models].status.carbon_allocation_leaves)
-lines(plant[:models].status.ftsw)
-lines(roots[:models].status.root_depth)
 
 leaf_95 = get_node(p.mtg, 95)
 leaf_101 = get_node(p.mtg, 101)

@@ -19,8 +19,8 @@ function main_models_definition(p, nsteps)
                 p[:phyllochron][:production_speed_mature],
             ),
             leaf_area=LeafAreaModel(
-                p[:carbon_demand][:leaf][:lma_min],
-                p[:carbon_demand][:leaf][:leaflets_biomass_contribution]
+                p[:lma_min],
+                p[:leaflets_biomass_contribution]
             ),
             phytomer_emission=PhytomerEmission(),
             maintenance_respiration=RmQ10{Palm}(p[:Q10], p[:Rm_base], p[:T_ref]),
@@ -28,12 +28,17 @@ function main_models_definition(p, nsteps)
             carbon_assimilation=ConstantRUEModel(p[:RUE]),
             carbon_offer=CarbonOfferPhotosynthesis(),
             carbon_demand=LeafCarbonDemandModelPotentialArea(
-                p[:carbon_demand][:leaf][:lma_min],
+                p[:lma_min],
                 p[:carbon_demand][:leaf][:respiration_cost],
-                p[:carbon_demand][:leaf][:leaflets_biomass_contribution]
+                p[:leaflets_biomass_contribution]
             ),
             carbon_allocation=LeavesCarbonAllocationModel(),
             biomass=LeafBiomass(p[:carbon_demand][:leaf][:respiration_cost]),
+            reserve_filling=LeafReserveFilling(
+                p[:lma_min],
+                p[:lma_max],
+                p[:leaflets_biomass_contribution],
+            ),
             variables_check=false,
             nsteps=nsteps,
         ),
@@ -81,25 +86,29 @@ function main_models_definition(p, nsteps)
             leaf_rank=LeafRankModel(),
             initiation_age=InitiationAgeFromPlantAge(),
             leaf_area=LeafAreaModel(
-                p[:carbon_demand][:leaf][:lma_min],
-                p[:carbon_demand][:leaf][:leaflets_biomass_contribution]
+                p[:lma_min],
+                p[:leaflets_biomass_contribution]
             ),
             maintenance_respiration=RmQ10{Leaf}(p[:Q10], p[:Rm_base], p[:T_ref]),
             carbon_demand=LeafCarbonDemandModelPotentialArea(
-                p[:carbon_demand][:leaf][:lma_min],
+                p[:lma_min],
                 p[:carbon_demand][:leaf][:respiration_cost],
-                p[:carbon_demand][:leaf][:leaflets_biomass_contribution]
+                p[:leaflets_biomass_contribution]
             ),
             #! only to have the variable initialised in the status (we put the values from another scale):
             carbon_allocation=LeavesCarbonAllocationModel{Leaf}(),
             # Used at init only:
             # biomass_from_area=BiomassFromArea(
-            #     p[:carbon_demand][:leaf][:lma_min],
-            #     p[:carbon_demand][:leaf][:leaflets_biomass_contribution]
+            #     p[:lma_min],
+            #     p[:leaflets_biomass_contribution]
             # ),
             # Used after init:
             biomass=LeafBiomass(p[:carbon_demand][:leaf][:respiration_cost]), variables_check=false,
-            reserve=LeafReserve(),
+            reserve_filling=LeafReserveFilling(
+                p[:lma_min],
+                p[:lma_max],
+                p[:leaflets_biomass_contribution],
+            ),
             nsteps=nsteps,
             status=(
                 nitrogen_content=p[:nitrogen_content][:Leaf],

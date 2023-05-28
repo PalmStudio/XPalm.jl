@@ -135,6 +135,9 @@ function default_parameters()
         :k => 0.5, # light extinction coefficient
         :RUE => 4.8, # Radiation use efficiency (gC MJ[PAR]-1)
         :SRL => 0.4, # Specific Root Length (m g-1)
+        :lma_min => 80.0, # min leaf mass area (g m-2)
+        :lma_max => 200.0, # max  leaf mass area (g m-2)
+        :leaflets_biomass_contribution => 0.35,
         :RL0 => 5.0, # Root length at emergence (m)
         :Q10 => 2.1,
         :Rm_base => 0.06,
@@ -163,9 +166,7 @@ function default_parameters()
         :rank_leaf_pruning => 50,
         :carbon_demand => Dict(
             :leaf => Dict(
-                :lma_min => 80.0, # min leaf mass area (g m-2)
                 :respiration_cost => 1.44,
-                :leaflets_biomass_contribution => 0.35,
             ),
         )
     )
@@ -262,6 +263,9 @@ function Palm(;
         type=Leaf(),
     )
 
+    # Initilialise the number of phytomers:
+    plant[:models].status[1].phytomers = 1
+
     # Initialise the final potential area of the first leaf (this computation is done only once in the model):
     leaf[:models].status[1].final_potential_area = parameters[:potential_area][:leaf_area_first_leaf]
     # And compute the leaf area as one percent of the potential area:
@@ -272,8 +276,8 @@ function Palm(;
     scene[:models].status[1].lai = leaf[:models].status[1].leaf_area / scene[:area] # m2 leaf / m2 soil
 
     leaf[:models].status[1].biomass =
-        leaf[:models].status[1].leaf_area * parameters[:carbon_demand][:leaf][:lma_min] /
-        parameters[:carbon_demand][:leaf][:leaflets_biomass_contribution]
+        leaf[:models].status[1].leaf_area * parameters[:lma_min] /
+        parameters[:leaflets_biomass_contribution]
 
     leaf[:models].status[1].reserve = 0.0
 
