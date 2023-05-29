@@ -49,6 +49,18 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
         # Carbon offer:
         PlantSimEngine.run!(plant[:models].models.carbon_offer, plant[:models].models, plant[:models].status[i], meteo_, constants, nothing)
 
+
+        MultiScaleTreeGraph.traverse(plant, symbol="Internode") do internode
+            PlantSimEngine.run!(internode[:models].models.soil_water, internode[:models].models, internode[:models].status[i], meteo_, constants, internode)
+            # Thermal time since initiation:
+            PlantSimEngine.run!(internode[:models].models.thermal_time, internode[:models].models, internode[:models].status[i], meteo_, constants, internode)
+            # Propagate initiation age:
+            PlantSimEngine.run!(internode[:models].models.initiation_age, internode[:models].models, internode[:models].status[i], meteo_, constants, nothing)
+            PlantSimEngine.run!(internode[:models].models.internode_final_potential_dimensions, internode[:models].models, internode[:models].status[i], meteo_, constants, internode)
+            PlantSimEngine.run!(internode[:models].models.internode_potential_dimensions, internode[:models].models, internode[:models].status[i], meteo_, constants, internode)
+            PlantSimEngine.run!(internode[:models].models.carbon_demand, internode[:models].models, internode[:models].status[i], meteo_, constants, internode)
+        end
+
         # Run models at leaf scale:
         MultiScaleTreeGraph.traverse(plant, symbol="Leaf") do leaf
             # Give the ftsw value to the leaf:
@@ -64,16 +76,19 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
             PlantSimEngine.run!(leaf[:models].models.leaf_potential_area, leaf[:models].models, leaf[:models].status[i], meteo_, constants, nothing)
 
             PlantSimEngine.run!(leaf[:models].models.state, leaf[:models].models, leaf[:models].status[i], meteo_, constants, leaf)
-
             PlantSimEngine.run!(leaf[:models].models.carbon_demand, leaf[:models].models, leaf[:models].status[i], meteo_, constants, nothing)
         end
 
         # sum the leaves carbon demand at the plant scale:
-        PlantSimEngine.run!(plant[:models].models.carbon_demand, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
-        #! note: update to a full model when several organs are computed for the carbon demand here.
+        # PlantSimEngine.run!(plant[:models].models.carbon_demand, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
+        # note: update to a full model when several organs are computed for the carbon demand here.
 
-        # Compute the carbon allocation to the leaves:
+        # Compute the carbon allocation to the organs:
         PlantSimEngine.run!(plant[:models].models.carbon_allocation, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
+
+        MultiScaleTreeGraph.traverse(plant, symbol="Internode") do internode
+            PlantSimEngine.run!(internode[:models].models.biomass, internode[:models].models, internode[:models].status[i], meteo_, constants, internode)
+        end
 
         MultiScaleTreeGraph.traverse(plant, symbol="Leaf") do leaf
             PlantSimEngine.run!(leaf[:models].models.biomass, leaf[:models].models, leaf[:models].status[i], meteo_, constants, nothing)

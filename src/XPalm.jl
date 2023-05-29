@@ -55,6 +55,7 @@ include("plant/phytomer/leaves/reserve_filing.jl")
 include("plant/phytomer/internode/final_potential_dimension.jl")
 include("plant/phytomer/internode/potential_dimensions.jl")
 include("plant/phytomer/internode/carbon_demand.jl")
+include("plant/phytomer/internode/biomass.jl")
 
 include("plant/carbon_assimilation/rue.jl")
 include("plant/carbon_offer/carbon_offer_photosynthesis.jl")

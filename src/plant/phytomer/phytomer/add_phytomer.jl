@@ -63,6 +63,7 @@ function PlantSimEngine.run!(::PhytomerEmission, models, status, meteo, constant
     )
 
     PlantSimEngine.run!(leaf[:models].models.initiation_age, leaf[:models].models, leaf[:models].status[current_step], meteo, constants, leaf)
+    PlantSimEngine.run!(internode[:models].models.initiation_age, internode[:models].models, internode[:models].status[current_step], meteo, constants, internode)
 
     # Compute the leaf_potential_area model over the new leaf:
     PlantSimEngine.run!(leaf[:models].models.leaf_final_potential_area, leaf[:models].models, leaf[:models].status[current_step], meteo, constants, nothing)
@@ -74,4 +75,7 @@ function PlantSimEngine.run!(::PhytomerEmission, models, status, meteo, constant
     leaf[:models].status[current_step].biomass = 0.0
     # leaf[:models].status[max(1, current_step - 1)].reserve = 0.0
     leaf[:models].status[current_step].reserve = 0.0
+
+    # Internode:
+    PlantSimEngine.run!(internode[:models].models.internode_final_potential_dimensions, internode[:models].models, internode[:models].status[current_step], meteo, constants, nothing)
 end
