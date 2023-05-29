@@ -88,6 +88,7 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
 
         MultiScaleTreeGraph.traverse(plant, symbol="Internode") do internode
             PlantSimEngine.run!(internode[:models].models.biomass, internode[:models].models, internode[:models].status[i], meteo_, constants, internode)
+            PlantSimEngine.run!(internode[:models].models.internode_dimensions, internode[:models].models, internode[:models].status[i], meteo_, constants, nothing)
         end
 
         MultiScaleTreeGraph.traverse(plant, symbol="Leaf") do leaf

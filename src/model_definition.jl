@@ -86,6 +86,7 @@ function main_models_definition(p, nsteps)
                 ),
                 carbon_allocation=OrgansCarbonAllocationModel{Internode}(),
                 biomass=InternodeBiomass(p[:carbon_demand][:internode][:respiration_cost]),
+                internode_dimensions=InternodeDimensionModel(p[:carbon_demand][:internode][:stem_apparent_density]),
                 nsteps=nsteps,
                 variables_check=false,
                 status=(
