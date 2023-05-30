@@ -25,7 +25,6 @@ include("plant/carbon_assimilation/0-process.jl")
 include("plant/carbon_offer/0-process.jl")
 include("plant/carbon_demand/0-process.jl")
 include("plant/carbon_allocation/0-process.jl")
-include("plant/stem/0-process.jl")
 include("plant/reserves/0-process.jl")
 
 # Import the models:

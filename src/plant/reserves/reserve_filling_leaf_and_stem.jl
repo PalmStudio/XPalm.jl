@@ -36,15 +36,8 @@ function PlantSimEngine.run!(m::OrganReserveFilling, models, st, meteo, constant
 
     @assert mtg.MTG.symbol == "Plant" "The node should be a Plant but is a $(mtg.MTG.symbol)"
 
-    organ_reserve_potential = MultiScaleTreeGraph.traverse(mtg, symbol=["Leaf", "Stem"]) do organ
+    organ_reserve_potential = MultiScaleTreeGraph.traverse(mtg, symbol=["Leaf", "Internode"]) do organ
         st_organ = organ[:models].status[timestep]
-        res_prev = prev_value(st_organ, :reserve, default=st_organ.reserve)
-
-        # If there are reserves the day before, we initialise the reserve today at this value:
-        if res_prev != -Inf
-            st_organ.reserve = res_prev
-        end
-        # If the reserve from yesterday == -Inf, then we are at organ initialisation, so the value should be initialized already in st
 
         if organ.MTG.symbol == "Leaf"
             if organ.type.state == Opened()
@@ -54,7 +47,7 @@ function PlantSimEngine.run!(m::OrganReserveFilling, models, st, meteo, constant
                 0.0
             end
         else
-            # This is the potential reserve for the stem:
+            # This is the potential reserve for the internode:
             return st_organ.biomass * m.nsc_max - st_organ.reserve
         end
     end
@@ -72,10 +65,10 @@ function PlantSimEngine.run!(m::OrganReserveFilling, models, st, meteo, constant
         carbon_reserve_organ = zeros(typeof(organ_reserve_potential[1]), length(organ_reserve_potential))
     end
 
-    total_reserves = MultiScaleTreeGraph.traverse(mtg, symbol=["Leaf", "Stem"]) do organ
+    total_reserves = MultiScaleTreeGraph.traverse(mtg, symbol=["Leaf", "Internode"]) do organ
         organ[:models].status[timestep][:reserve] += popfirst!(carbon_reserve_organ)
         # Note: the reserve from the day before was already propagated to the current day just above so we 
-        # can juest add the new allocated reserve
+        # can just add the new allocated reserve
     end
 
     st.reserve = sum(total_reserves)

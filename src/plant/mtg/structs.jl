@@ -182,8 +182,11 @@ function default_parameters()
                 :respiration_cost => 1.44,
             ),
             :internode => Dict(
-                :stem_apparent_density => 150000.0, # g m-3
+                :stem_apparent_density => 300000.0, # g m-3
                 :respiration_cost => 1.44, # g g-1
+            ),
+            :reserves => Dict(
+                :cost_reserve_mobilization => 1.667
             )
         )
     )
@@ -297,7 +300,9 @@ function Palm(;
         parameters[:leaflets_biomass_contribution]
 
     leaf[:models].status[1].reserve = 0.0
-    stem[:models].status[1].reserve = 0.0
+    internode[:models].status[1].reserve = 0.0
+    # stem[:models].status[1].reserve = 0.0
+    plant[:models].status[1].reserve = 0.0
     internode[:models].status[1].final_potential_height = parameters[:potential_dimensions][:min_height]
     internode[:models].status[1].final_potential_radius = parameters[:potential_dimensions][:min_radius]
 

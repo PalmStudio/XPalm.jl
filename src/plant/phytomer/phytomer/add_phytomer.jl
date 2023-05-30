@@ -75,6 +75,9 @@ function PlantSimEngine.run!(::PhytomerEmission, models, status, meteo, constant
     leaf[:models].status[current_step].biomass = 0.0
     # leaf[:models].status[max(1, current_step - 1)].reserve = 0.0
     leaf[:models].status[current_step].reserve = 0.0
+    internode[:models].status[current_step].reserve = 0.0
+    leaf[:models].status[current_step].carbon_demand = 0.0
+    internode[:models].status[current_step].carbon_demand = 0.0
 
     # Internode:
     PlantSimEngine.run!(internode[:models].models.internode_final_potential_dimensions, internode[:models].models, internode[:models].status[current_step], meteo, constants, nothing)

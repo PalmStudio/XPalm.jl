@@ -18,6 +18,9 @@
 - For LAI, only use the leaf area of the leaves that are `Opened()`.
 - For models that specialize on the organ type, we should probably just make one model for each organ type (or at least for each that needs a different algorithm).
 - Initialisations should maybe be given in the model structure and done in the model itself ? See `src/plant/reserves/reserve_filing_leaf_and_stem.jl` for example, where we check if the value of the previous day is == -Inf and take the current value if so because the initialization is done on the current day, and the previous date is at -Inf. Or simply initialize the day previous organ initiation so the code is the same whatever the time step.
+- There can still be some carbon offer at the end of the day, where do we put it ? 
+- Initialize reserves for the seed
+- Increase the new internode size when the reserves are full ?
 
 To add: maintenance respiration, affect LAI from surface and biomass of the leaves, and thus affect the carbon_demand of the plant, and the carbon_supply of the plant.
 

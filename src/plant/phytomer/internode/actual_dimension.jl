@@ -2,7 +2,6 @@ struct InternodeDimensionModel{T} <: AbstractInternode_DimensionsModel
     stem_apparent_density::T
 end
 
-
 PlantSimEngine.inputs_(::InternodeDimensionModel) = (
     potential_height=-Inf,
     potential_radius=-Inf,

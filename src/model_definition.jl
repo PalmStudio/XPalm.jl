@@ -32,7 +32,7 @@ function main_models_definition(p, nsteps)
             #     p[:carbon_demand][:leaf][:respiration_cost],
             #     p[:leaflets_biomass_contribution]
             # ),
-            carbon_allocation=OrgansCarbonAllocationModel(),
+            carbon_allocation=OrgansCarbonAllocationModel(p[:carbon_demand][:reserves][:cost_reserve_mobilization]),
             biomass=LeafBiomass(p[:carbon_demand][:leaf][:respiration_cost]),
             reserve_filling=OrganReserveFilling(
                 p[:lma_min],
@@ -47,7 +47,6 @@ function main_models_definition(p, nsteps)
             # maintenance respiration of organs
             maintenance_respiration=RmQ10{Stem}(p[:Q10], p[:Rm_base], p[:T_ref]),
             biomass=StemBiomass(),
-            reserve_filling=OrganReserveFilling{Stem}(),
             variables_check=false,
             nsteps=nsteps,
         ),
@@ -90,6 +89,7 @@ function main_models_definition(p, nsteps)
                 carbon_allocation=OrgansCarbonAllocationModel{Internode}(),
                 biomass=InternodeBiomass(p[:carbon_demand][:internode][:respiration_cost]),
                 internode_dimensions=InternodeDimensionModel(p[:carbon_demand][:internode][:stem_apparent_density]),
+                reserve_filling=OrganReserveFilling{Stem}(),
                 nsteps=nsteps,
                 variables_check=false,
                 status=(
