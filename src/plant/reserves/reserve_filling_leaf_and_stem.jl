@@ -66,7 +66,7 @@ function PlantSimEngine.run!(m::OrganReserveFilling, models, st, meteo, constant
     end
 
     total_reserves = MultiScaleTreeGraph.traverse(mtg, symbol=["Leaf", "Internode"]) do organ
-        organ[:models].status[timestep][:reserve] += popfirst!(carbon_reserve_organ)
+        organ[:models].status[timestep].reserve += popfirst!(carbon_reserve_organ)
         # Note: the reserve from the day before was already propagated to the current day just above so we 
         # can just add the new allocated reserve
     end

@@ -17,12 +17,7 @@ function PlantSimEngine.run!(m::LeafReserveFilling, models, st, meteo, constants
         if leaf.type.state == Opened()
             st_leaf = leaf[:models].status[timestep]
             leaf_reserve_max = (m.lma_max - m.lma_min) * st_leaf.leaf_area / m.leaflets_biomass_contribution
-
-            res_prev = prev_value(st_leaf, :reserve, default=st_leaf.reserve)
-            if res_prev == -Inf
-                res_prev = st_leaf.reserve
-            end
-            leaf_reserve_max - res_prev
+            leaf_reserve_max - st_leaf.reserve
         else
             0.0
         end
@@ -42,9 +37,7 @@ function PlantSimEngine.run!(m::LeafReserveFilling, models, st, meteo, constants
     end
 
     MultiScaleTreeGraph.traverse!(mtg, symbol="Leaf") do leaf
-        leaf[:models].status[timestep][:reserve] =
-            prev_value(leaf[:models].status[timestep], :reserve, default=leaf[:models].status[timestep].reserve) +
-            popfirst!(carbon_reserve_leaf)
+        leaf[:models].status[timestep][:reserve] = leaf[:models].status[timestep].reserve + popfirst!(carbon_reserve_leaf)
     end
 
     st.carbon_offer -= st.carbon_allocation_reserve_leaves

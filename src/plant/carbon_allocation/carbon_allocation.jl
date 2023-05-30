@@ -80,7 +80,7 @@ function PlantSimEngine.run!(m::OrgansCarbonAllocationModel, models, status, met
             popfirst!(carbon_allocation_organ)
 
         # We propagate the reserve from the day before if we are not at initialisation:
-        prev_reserve = prev_value(status, :reserve, default=status.reserve)
+        prev_reserve = prev_value(organ[:models].status[timestep], :reserve, default=organ[:models].status[timestep].reserve)
         if prev_reserve != -Inf
             organ[:models].status[timestep].reserve = prev_reserve
         end
