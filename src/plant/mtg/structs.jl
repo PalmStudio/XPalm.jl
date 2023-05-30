@@ -138,6 +138,7 @@ function default_parameters()
         :lma_min => 80.0, # min leaf mass area (g m-2)
         :lma_max => 200.0, # max  leaf mass area (g m-2)
         :leaflets_biomass_contribution => 0.35,
+        :seed_reserve => 100, # seed reserve (from which the plant grows)
         :nsc_max => 0.3, # Maximum non-structural carbohydrates content in the stem.
         :RL0 => 5.0, # Root length at emergence (m)
         :Q10 => 2.1,
@@ -300,7 +301,8 @@ function Palm(;
         parameters[:leaflets_biomass_contribution]
 
     leaf[:models].status[1].reserve = 0.0
-    internode[:models].status[1].reserve = 0.0
+    # Put the reserves from the seed at sowing:
+    internode[:models].status[1].reserve = parameters[:seed_reserve]
     # stem[:models].status[1].reserve = 0.0
     plant[:models].status[1].reserve = 0.0
     internode[:models].status[1].final_potential_height = parameters[:potential_dimensions][:min_height]
