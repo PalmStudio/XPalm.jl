@@ -65,6 +65,7 @@ include("plant/stem/biomass.jl")
 
 include("plant/carbon_assimilation/rue.jl")
 include("plant/carbon_offer/carbon_offer_photosynthesis.jl")
+include("plant/carbon_offer/carbon_offer_rm.jl")
 include("plant/carbon_allocation/carbon_allocation.jl")
 include("plant/respiration/maintenance/maintenance_respiration.jl")
 include("plant/respiration/maintenance/Q10.jl")

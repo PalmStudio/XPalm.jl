@@ -23,10 +23,17 @@ function main_models_definition(p, nsteps)
                 p[:leaflets_biomass_contribution]
             ),
             phytomer_emission=PhytomerEmission(),
-            maintenance_respiration=RmQ10{Palm}(p[:Q10], p[:Rm_base], p[:T_ref]),
+            # Here we put the Rm but we only need it to have the variables at this scale:
+            maintenance_respiration=RmQ10FixedN(
+                p[:respiration][:Internode][:Q10],
+                p[:respiration][:Internode][:Rm_base],
+                p[:respiration][:Internode][:T_ref],
+                p[:respiration][:Internode][:P_alive],
+                p[:nitrogen_content][:Internode],
+            ),
             light_interception=Beer(p[:k]),
             carbon_assimilation=ConstantRUEModel(p[:RUE]),
-            carbon_offer=CarbonOfferPhotosynthesis(),
+            carbon_offer=CarbonOfferRm(),
             # carbon_demand=LeafCarbonDemandModelPotentialArea(
             #     p[:lma_min],
             #     p[:carbon_demand][:leaf][:respiration_cost],
@@ -44,8 +51,6 @@ function main_models_definition(p, nsteps)
             nsteps=nsteps,
         ),
         "Stem" => PlantSimEngine.ModelList(
-            # maintenance respiration of organs
-            maintenance_respiration=RmQ10{Stem}(p[:Q10], p[:Rm_base], p[:T_ref]),
             biomass=StemBiomass(),
             variables_check=false,
             nsteps=nsteps,
@@ -53,7 +58,6 @@ function main_models_definition(p, nsteps)
         "Phytomer" =>
             PlantSimEngine.ModelList(
                 initiation_age=InitiationAgeFromPlantAge(),
-                maintenance_respiration=RmQ10{Phytomer}(p[:Q10], p[:Rm_base], p[:T_ref]),
                 leaf_rank=LeafRankModel(),
                 leaf_pruning=RankLeafPruning(p[:rank_leaf_pruning]),
                 variables_check=false,
@@ -67,7 +71,13 @@ function main_models_definition(p, nsteps)
                     threshold_ftsw_stress=p[:phyllochron][:threshold_ftsw_stress],
                 ),
                 soil_water=FTSW{Internode}(ini_root_depth=p[:ini_root_depth]), # needed to get the ftsw value
-                maintenance_respiration=RmQ10{Internode}(p[:Q10], p[:Rm_base], p[:T_ref]),
+                maintenance_respiration=RmQ10FixedN(
+                    p[:respiration][:Internode][:Q10],
+                    p[:respiration][:Internode][:Rm_base],
+                    p[:respiration][:Internode][:T_ref],
+                    p[:respiration][:Internode][:P_alive],
+                    p[:nitrogen_content][:Internode],
+                ),
                 internode_final_potential_dimensions=FinalPotentialInternodeDimensionModel(
                     p[:potential_dimensions][:age_max_height],
                     p[:potential_dimensions][:age_max_radius],
@@ -118,7 +128,13 @@ function main_models_definition(p, nsteps)
                 p[:lma_min],
                 p[:leaflets_biomass_contribution]
             ),
-            maintenance_respiration=RmQ10{Leaf}(p[:Q10], p[:Rm_base], p[:T_ref]),
+            maintenance_respiration=RmQ10FixedN(
+                p[:respiration][:Leaf][:Q10],
+                p[:respiration][:Leaf][:Rm_base],
+                p[:respiration][:Leaf][:T_ref],
+                p[:respiration][:Leaf][:P_alive],
+                p[:nitrogen_content][:Leaf]
+            ),
             carbon_demand=LeafCarbonDemandModelPotentialArea(
                 p[:lma_min],
                 p[:carbon_demand][:leaf][:respiration_cost],
@@ -140,26 +156,25 @@ function main_models_definition(p, nsteps)
                 initiation_age=0
             )
         ),
-        "Male" =>
-            PlantSimEngine.ModelList(
-                maintenance_respiration=RmQ10{Male}(p[:Q10], p[:Rm_base], p[:T_ref]),
-                variables_check=false,
-                nsteps=nsteps,
-            ),
-        "Female" =>
-            PlantSimEngine.ModelList(
-                maintenance_respiration=RmQ10{Female}(p[:Q10], p[:Rm_base], p[:T_ref]),
-                variables_check=false,
-                nsteps=nsteps,
-                status=(
-                    nitrogen_content=p[:nitrogen_content][:Female],
-                )
-            ),
+        # "Male" =>
+        #     PlantSimEngine.ModelList(
+        #         maintenance_respiration=RmQ10(p[:Q10], p[:Rm_base], p[:T_ref]),
+        #         variables_check=false,
+        #         nsteps=nsteps,
+        #     ),
+        # "Female" =>
+        #     PlantSimEngine.ModelList(
+        #         maintenance_respiration=RmQ10{Female}(p[:Q10], p[:Rm_base], p[:T_ref]),
+        #         variables_check=false,
+        #         nsteps=nsteps,
+        #         status=(
+        #             nitrogen_content=p[:nitrogen_content][:Female],
+        #         )
+        #     ),
         "RootSystem" =>
             PlantSimEngine.ModelList(
                 potential_evapotranspiration=ET0_BP(),
                 thermal_time=DailyDegreeDays(),
-                maintenance_respiration=RmQ10{RootSystem}(p[:Q10], p[:Rm_base], p[:T_ref]),
                 root_growth=RootGrowthFTSW(ini_root_depth=p[:ini_root_depth]),
                 soil_water=FTSW{RootSystem}(ini_root_depth=p[:ini_root_depth]),
                 variables_check=false,

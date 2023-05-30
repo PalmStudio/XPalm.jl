@@ -6,7 +6,7 @@
 [![Coverage](https://codecov.io/gh/PalmStudio/XPalm.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/PalmStudio/XPalm.jl)
 [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
 
-# Roadmap
+# To do
 
 - Manage the case when photosynthesis + reserves are not enough for maintenance respiration: e.g. abortions ? 
 - Add variable than tells us how far we are from the demand, i.e. (demand - allocation)
@@ -15,13 +15,11 @@
 - remove dependency to dev versions of packages
 - LAIModel: traverse the MTG for all plants but stop at the plant scale (do not traverse every node)
 - Test difference between LeafCarbonDemandModelArea and LeafCarbonDemandModelPotentialArea. The first assumes that the leaf can always increase its demand more than the potential to catch back any delay in growth induced by previous stress. The second assumes that the potential daily increment only follows the daily potential curve, and that any lost demand induced by stress will be lost demand.
-- For LAI, only use the leaf area of the leaves that are `Opened()`.
 - For models that specialize on the organ type, we should probably just make one model for each organ type (or at least for each that needs a different algorithm).
 - Initialisations should maybe be given in the model structure and done in the model itself ? See `src/plant/reserves/reserve_filing_leaf_and_stem.jl` for example, where we check if the value of the previous day is == -Inf and take the current value if so because the initialization is done on the current day, and the previous date is at -Inf. Or simply initialize the day previous organ initiation so the code is the same whatever the time step.
 - There can still be some carbon offer at the end of the day, where do we put it ? 
-- Initialize reserves for the seed
 - Increase the new internode size when the reserves are full ?
-
-To add: maintenance respiration, affect LAI from surface and biomass of the leaves, and thus affect the carbon_demand of the plant, and the carbon_supply of the plant.
-
-Add reserves for leaves.
+- Check the carbon balance (add it as a variable?)
+- Add maintenance respiration
+- Affect LAI from surface and biomass of the leaves, and thus affect the carbon_demand of the plant, and the carbon_supply of the plant.
+- Test if it is faster to pass the models as the first argument (*e.g.* `m.param`) or to use the models argument *e.g.* `models.maintenance_respiration.param` 

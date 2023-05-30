@@ -141,15 +141,38 @@ function default_parameters()
         :seed_reserve => 100, # seed reserve (from which the plant grows)
         :nsc_max => 0.3, # Maximum non-structural carbohydrates content in the stem.
         :RL0 => 5.0, # Root length at emergence (m)
-        :Q10 => 2.1,
-        :Rm_base => 0.06,
-        :T_ref => 25.0,
+        :respiration => Dict(
+            :Internode => Dict(
+                :Q10 => 1.7,  # Dufrene et al. (2005)
+                :Rm_base => 0.005, # Dufrene et al. (1990), Oleagineux.
+                :T_ref => 25.0,
+                :P_alive => 0.21, # Dufrene et al. (2005)
+            ),
+            :Leaf => Dict(
+                :Q10 => 2.1,
+                :Rm_base => 0.083, # Dufrene et al. (1990), Oleagineux.
+                :T_ref => 25.0,
+                :P_alive => 0.90,
+            ),
+            :Bunch => Dict(
+                :Q10 => 2.1,
+                :Rm_base => 0.0022, # Kraalingen et al. 1989, AFM
+                :T_ref => 25.0,
+                :P_alive => 0.50,
+            ),
+            :RootSystem => Dict(
+                :Q10 => 2.1,
+                :Rm_base => 0.0022, # Dufrene et al. (1990), Oleagineux.
+                :T_ref => 25.0,
+                :P_alive => 0.80,
+            ),
+        ),
         :nitrogen_content => Dict(
-            :Stem => 0.005,
-            :Internode => 0.005,
-            :Leaf => 0.03,
-            :Female => 0.01,
-            :RootSystem => 0.01,
+            :Stem => 0.004,
+            :Internode => 0.004,
+            :Leaf => 0.025,
+            # :Female => 0.01,
+            :RootSystem => 0.008,
         ),
         :ini_root_depth => 100.0,
         :potential_area => Dict(
@@ -299,6 +322,8 @@ function Palm(;
     leaf[:models].status[1].biomass =
         leaf[:models].status[1].leaf_area * parameters[:lma_min] /
         parameters[:leaflets_biomass_contribution]
+
+    internode[:models].status[1].biomass = 0.0 # Just for Rm, it is then recomputed
 
     leaf[:models].status[1].reserve = 0.0
     # Put the reserves from the seed at sowing:

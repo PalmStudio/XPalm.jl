@@ -47,10 +47,13 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
         # Carbon assimilation:
         PlantSimEngine.run!(plant[:models].models.carbon_assimilation, plant[:models].models, plant[:models].status[i], meteo_, constants)
 
+        # Maintenance respiration:
+        PlantSimEngine.run!(plant[:models].models.maintenance_respiration, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
+
         # Carbon offer:
         PlantSimEngine.run!(plant[:models].models.carbon_offer, plant[:models].models, plant[:models].status[i], meteo_, constants, nothing)
 
-
+        # Compute models for the internodes:
         MultiScaleTreeGraph.traverse(plant, symbol="Internode") do internode
             PlantSimEngine.run!(internode[:models].models.soil_water, internode[:models].models, internode[:models].status[i], meteo_, constants, internode)
             # Thermal time since initiation:

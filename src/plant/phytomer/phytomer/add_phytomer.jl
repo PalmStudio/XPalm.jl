@@ -73,6 +73,10 @@ function PlantSimEngine.run!(::PhytomerEmission, models, status, meteo, constant
     leaf[:models].status[current_step].leaf_area = 0.0
     # And biomass:
     leaf[:models].status[current_step].biomass = 0.0
+
+    # Just for Rm at the begining of the day:
+    internode[:models].status[current_step].biomass = 0.0
+
     # leaf[:models].status[max(1, current_step - 1)].reserve = 0.0
     leaf[:models].status[current_step].reserve = 0.0
     internode[:models].status[current_step].reserve = 0.0
