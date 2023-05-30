@@ -25,6 +25,8 @@ include("plant/carbon_assimilation/0-process.jl")
 include("plant/carbon_offer/0-process.jl")
 include("plant/carbon_demand/0-process.jl")
 include("plant/carbon_allocation/0-process.jl")
+include("plant/stem/0-process.jl")
+include("plant/reserves/0-process.jl")
 
 # Import the models:
 include("meteo/thermal_time.jl")
@@ -49,7 +51,8 @@ include("plant/phytomer/leaves/leaf_rank.jl")
 include("plant/phytomer/leaves/leaf_pruning.jl")
 include("plant/phytomer/leaves/carbon_demand.jl")
 include("plant/phytomer/leaves/biomass.jl")
-include("plant/phytomer/leaves/reserve_filing.jl")
+include("plant/reserves/reserve_filling_leaf_only.jl")
+include("plant/reserves/reserve_filling_leaf_and_stem.jl")
 
 # Internode:
 include("plant/phytomer/internode/final_potential_dimension.jl")
@@ -57,6 +60,9 @@ include("plant/phytomer/internode/potential_dimensions.jl")
 include("plant/phytomer/internode/carbon_demand.jl")
 include("plant/phytomer/internode/biomass.jl")
 include("plant/phytomer/internode/actual_dimension.jl")
+
+# Stem:
+include("plant/stem/biomass.jl")
 
 include("plant/carbon_assimilation/rue.jl")
 include("plant/carbon_offer/carbon_offer_photosynthesis.jl")

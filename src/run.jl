@@ -2,7 +2,8 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
     scene = p.mtg
     soil = scene[1]
     plant = scene[2]
-    roots = scene[2][1]
+    stem = plant[2]
+    roots = plant[1]
 
     for (i, meteo_) in enumerate(Tables.rows(meteo))
         # Compute the models at the scene scale:
@@ -90,6 +91,9 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
             PlantSimEngine.run!(internode[:models].models.biomass, internode[:models].models, internode[:models].status[i], meteo_, constants, internode)
             PlantSimEngine.run!(internode[:models].models.internode_dimensions, internode[:models].models, internode[:models].status[i], meteo_, constants, nothing)
         end
+
+        # Sum the internode biomass into the stem:
+        PlantSimEngine.run!(stem[:models].models.biomass, stem[:models].models, stem[:models].status[i], meteo_, constants, stem)
 
         MultiScaleTreeGraph.traverse(plant, symbol="Leaf") do leaf
             PlantSimEngine.run!(leaf[:models].models.biomass, leaf[:models].models, leaf[:models].status[i], meteo_, constants, nothing)

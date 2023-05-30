@@ -138,6 +138,7 @@ function default_parameters()
         :lma_min => 80.0, # min leaf mass area (g m-2)
         :lma_max => 200.0, # max  leaf mass area (g m-2)
         :leaflets_biomass_contribution => 0.35,
+        :nsc_max => 0.3, # Maximum non-structural carbohydrates content in the stem.
         :RL0 => 5.0, # Root length at emergence (m)
         :Q10 => 2.1,
         :Rm_base => 0.06,
@@ -171,7 +172,7 @@ function default_parameters()
         ),
         :phyllochron => Dict(
             :age_palm_maturity => 8 * 365, # age of the palm maturity (days)
-            :threshold_ftsw_stress => 0.3, # threshold of FTSW for stress
+            :threshold_ftsw_stress => 0.3, # threshold of FTSW for stress, SMART-RI considers this value to be at 0.5
             :production_speed_initial => 0.0111, # initial production speed (leaf.day-1.degreeC-1)
             :production_speed_mature => 0.0074, # production speed at maturity (leaf.day-1.degreeC-1)
         ),
@@ -296,7 +297,7 @@ function Palm(;
         parameters[:leaflets_biomass_contribution]
 
     leaf[:models].status[1].reserve = 0.0
-
+    stem[:models].status[1].reserve = 0.0
     internode[:models].status[1].final_potential_height = parameters[:potential_dimensions][:min_height]
     internode[:models].status[1].final_potential_radius = parameters[:potential_dimensions][:min_radius]
 

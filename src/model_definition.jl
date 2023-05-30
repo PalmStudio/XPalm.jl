@@ -34,10 +34,11 @@ function main_models_definition(p, nsteps)
             # ),
             carbon_allocation=OrgansCarbonAllocationModel(),
             biomass=LeafBiomass(p[:carbon_demand][:leaf][:respiration_cost]),
-            reserve_filling=LeafReserveFilling(
+            reserve_filling=OrganReserveFilling(
                 p[:lma_min],
                 p[:lma_max],
                 p[:leaflets_biomass_contribution],
+                p[:nsc_max]
             ),
             variables_check=false,
             nsteps=nsteps,
@@ -45,6 +46,8 @@ function main_models_definition(p, nsteps)
         "Stem" => PlantSimEngine.ModelList(
             # maintenance respiration of organs
             maintenance_respiration=RmQ10{Stem}(p[:Q10], p[:Rm_base], p[:T_ref]),
+            biomass=StemBiomass(),
+            reserve_filling=OrganReserveFilling{Stem}(),
             variables_check=false,
             nsteps=nsteps,
         ),
@@ -130,11 +133,7 @@ function main_models_definition(p, nsteps)
             # ),
             # Used after init:
             biomass=LeafBiomass(p[:carbon_demand][:leaf][:respiration_cost]), variables_check=false,
-            reserve_filling=LeafReserveFilling(
-                p[:lma_min],
-                p[:lma_max],
-                p[:leaflets_biomass_contribution],
-            ),
+            reserve_filling=OrganReserveFilling{Leaf}(),
             nsteps=nsteps,
             status=(
                 nitrogen_content=p[:nitrogen_content][:Leaf],
