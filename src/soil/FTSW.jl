@@ -96,7 +96,7 @@ end
 PlantSimEngine.inputs_(::FTSW) = (
     root_depth=-Inf,
     ET0=-Inf, #potential evapotranspiration
-    tree_ei=-Inf, # light interception efficiency (ei=1-exp(-kLAI))
+    aPPFD=-Inf, # light intercepted by the crop
 )
 
 PlantSimEngine.outputs_(::FTSW) = (
@@ -117,6 +117,7 @@ PlantSimEngine.outputs_(::FTSW) = (
     rain_effective=-Inf,
     runoff=-Inf,
     soil_depth=-Inf,
+    transpiration=-Inf,
 )
 
 """
@@ -198,7 +199,7 @@ function soil_init_default(m)
 
     # init status
     status = PlantSimEngine.Status(
-        root_depth=-Inf, ini_root_depth=-Inf, tree_ei=-Inf, ET0=-Inf, qty_H2O_Vap=-Inf,
+        root_depth=-Inf, ini_root_depth=-Inf, aPPFD=-Inf, ET0=-Inf, qty_H2O_Vap=-Inf,
         qty_H2O_C1=-Inf, qty_H2O_C1minusVap=-Inf, qty_H2O_C2=-Inf, qty_H2O_C=-Inf, FractionC1=-Inf,
         FractionC2=-Inf, SizeC1=-Inf, SizeC2=-Inf, SizeC=-Inf, SizeVap=-Inf, SizeC1minusVap=-Inf,
         ftsw=-Inf, rain_remain=-Inf, rain_effective=-Inf, runoff=-Inf, soil_depth=-Inf
@@ -240,8 +241,10 @@ function PlantSimEngine.run!(m::T, models, st, meteo, constants, extra=nothing) 
 
     compute_compartment_size(m, st)
 
-    EvapMax = (1 - st.tree_ei) * st.ET0 * m.KC
-    Transp_Max = st.tree_ei * st.ET0 * m.KC
+    transmitted_light_fraction = (meteo.Ri_PAR_f * constants.J_to_umol - st.aPPFD) / (meteo.Ri_PAR_f * constants.J_to_umol)
+
+    EvapMax = transmitted_light_fraction * st.ET0 * m.KC
+    Transp_Max = (1.0 - transmitted_light_fraction) * st.ET0 * m.KC
 
     # estim effective rain (runoff)
     if (0.916 * rain - 0.589) < 0
@@ -316,22 +319,22 @@ function PlantSimEngine.run!(m::T, models, st, meteo, constants, extra=nothing) 
     compute_fraction!(st)
 
     # balance after transpiration
-    Transpi = Transp_Max * KS(m.TRESH_FTSW_TRANSPI, st.ftsw)
-
+    st.transpiration = Transp_Max * KS(m.TRESH_FTSW_TRANSPI, st.ftsw)
+    # st.transpiration = 0.0
     if st.qty_H2O_C2 > 0.0
-        TranspiC2 = min(Transpi * (st.qty_H2O_C2 / (st.qty_H2O_C2 + st.qty_H2O_C1minusVap)), st.qty_H2O_C2)
+        TranspiC2 = min(st.transpiration * (st.qty_H2O_C2 / (st.qty_H2O_C2 + st.qty_H2O_C1minusVap)), st.qty_H2O_C2)
     else
         TranspiC2 = 0
     end
 
     if st.qty_H2O_C1minusVap > 0
-        TranspiC1minusVap = min(Transpi * (st.qty_H2O_C1minusVap / (st.qty_H2O_C2 + st.qty_H2O_C1minusVap)), st.qty_H2O_C1minusVap)
+        TranspiC1minusVap = min(st.transpiration * (st.qty_H2O_C1minusVap / (st.qty_H2O_C2 + st.qty_H2O_C1minusVap)), st.qty_H2O_C1minusVap)
     else
         TranspiC1minusVap = 0
     end
 
-    st.qty_H2O_C1minusVap += -TranspiC1minusVap
-    st.qty_H2O_C2 += -TranspiC2
+    st.qty_H2O_C1minusVap -= TranspiC1minusVap
+    st.qty_H2O_C2 -= TranspiC2
     st.qty_H2O_C = st.qty_H2O_C2 + st.qty_H2O_C1minusVap
     st.qty_H2O_C1 = st.qty_H2O_Vap + st.qty_H2O_C1minusVap
 
@@ -343,9 +346,10 @@ end
 # Method to get the FTSW value from other organs:
 function PlantSimEngine.run!(::FTSW, models, st, meteo, constants, mtg::MultiScaleTreeGraph.Node)
     scene = MultiScaleTreeGraph.get_root(mtg)
-    soil_models = MultiScaleTreeGraph.descendants(scene, :models, symbol="Soil")[1]
-    soil_status = PlantSimEngine.status(soil_models)[rownumber(st)]
-    st.ftsw = soil_status.ftsw
+    timestep = rownumber(st)
+    MultiScaleTreeGraph.traverse(scene, symbol="Soil") do soil
+        st.ftsw = soil[:models].status[timestep].ftsw
+    end
     nothing
 end
 
@@ -357,13 +361,12 @@ PlantSimEngine.outputs_(::FTSW{T}) where {T<:Organ} = (
 # Method to run the FTSW model from the root system:
 function PlantSimEngine.run!(::FTSW{RootSystem}, models, st, meteo, constants, mtg::MultiScaleTreeGraph.Node)
     scene = MultiScaleTreeGraph.get_root(mtg)
-    soil_models = MultiScaleTreeGraph.descendants(scene, :models, symbol="Soil")[1]
-    soil_status = PlantSimEngine.status(soil_models)[rownumber(st)]
-    soil_status.root_depth = st.root_depth
-    PlantSimEngine.run!(soil_models.models.soil_water, models, soil_status, meteo, constants, nothing)
-
-    st.ftsw = soil_status.ftsw
-    st.soil_depth = soil_status.soil_depth
+    timestep = rownumber(st)
+    MultiScaleTreeGraph.traverse(scene, symbol="Soil") do soil
+        soil_st = soil[:models].status[timestep]
+        st.ftsw = soil_st.ftsw
+        st.soil_depth = soil_st.soil_depth
+    end
     nothing
 end
 
@@ -371,5 +374,3 @@ PlantSimEngine.outputs_(::FTSW{RootSystem}) = (
     ftsw=-Inf,
     soil_depth=-Inf,
 )
-
-

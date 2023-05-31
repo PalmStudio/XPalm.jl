@@ -11,12 +11,12 @@ end
         RootGrowthFTSW(ini_root_depth=ini_root_depth),
     )
 
-    @test to_initialize(m) == (soil_water=(:ET0, :tree_ei), root_growth=(:TEff,))
+    @test to_initialize(m) == (soil_water=(:ET0, :aPPFD), root_growth=(:TEff,))
 
     m = ModelList(
         FTSW(ini_root_depth=ini_root_depth),
         RootGrowthFTSW(ini_root_depth=ini_root_depth),
-        status=(ET0=1.0, tree_ei=0.8, TEff=fill(9.0, nrow(meteo)))
+        status=(ET0=1.0, aPPFD=1.0, TEff=fill(9.0, nrow(meteo)))
     )
 
     run!(m, meteo, executor=SequentialEx())

@@ -5,7 +5,7 @@
 
     m = ModelList(
         FTSW(ini_root_depth=ini_root_depth),
-        status=(ET0=1.0, tree_ei=0.8, root_depth=fill(ini_root_depth, nrow(meteo)))
+        status=(ET0=2.5, tree_ei=0.8, root_depth=fill(ini_root_depth, nrow(meteo)))
     )
     run!(m, meteo, executor=SequentialEx())
 

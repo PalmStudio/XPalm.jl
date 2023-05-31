@@ -14,6 +14,7 @@ struct Snag <: OrganState end
 
 abstract type Organ end
 
+struct Soil end
 struct Plant end
 struct RootSystem <: Organ end
 struct Stem <: Organ end

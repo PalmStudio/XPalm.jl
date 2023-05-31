@@ -9,13 +9,22 @@ PAR, in W m[soil]⁻² (== J m[soil]⁻² s⁻¹).
 
 Output: aPPFD, the absorbed Photosynthetic Photon Flux Density in μmol[PAR] m[leaf]⁻² s⁻¹.
 """
-struct Beer{T} <: AbstractLight_InterceptionModel
+struct Beer{T,O} <: AbstractLight_InterceptionModel
     k::T
 end
+
+Beer{O}(k::T=0.6) where {O,T} = Beer{T,O}(k)
+Beer(k::T=0.6) where {T} = Beer{T,Any}(k)
 
 function PlantSimEngine.inputs_(::Beer)
     (lai=-Inf,)
 end
+
+function PlantSimEngine.inputs_(::Beer{T,Plant}) where {T}
+    (leaf_area=-Inf,)
+end
+
+PlantSimEngine.inputs_(::Beer{T,Soil}) where {T} = NamedTuple()
 
 function PlantSimEngine.outputs_(::Beer)
     (aPPFD=-Inf,)
@@ -59,7 +68,7 @@ function PlantSimEngine.run!(::Beer, models, status, meteo, constants, extra=not
 end
 
 # At the plant scale
-function PlantSimEngine.run!(::Beer, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node)
+function PlantSimEngine.run!(::Beer{T,Plant}, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node) where {T}
     rn = max(1, rownumber(status) - 1) # take the row number (cannot be < 1)
 
     scene_node = MultiScaleTreeGraph.get_root(mtg)
@@ -76,3 +85,8 @@ function PlantSimEngine.run!(::Beer, models, status, meteo, constants, mtg::Mult
         relative_leaf_area
 end
 
+# At the soil scale:
+function PlantSimEngine.run!(::Beer{T,Soil}, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node) where {T}
+    timestep = rownumber(status)
+    status.aPPFD = MultiScaleTreeGraph.get_root(mtg)[:models].status[timestep].aPPFD
+end

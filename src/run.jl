@@ -30,19 +30,27 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
         # Give access to the ET0 of the scene to the soil:
         PlantSimEngine.run!(soil[:models].models.potential_evapotranspiration, soil[:models].models, soil[:models].status[i], meteo_, constants, soil)
 
-        # Run the water model in the soil:
-        PlantSimEngine.run!(soil[:models].models.soil_water, soil[:models].models, soil[:models].status[i], meteo_, constants, nothing)
-
-        # Run the root growth model in the soil (it already knows how to get the ftsw from the soil model):
-        PlantSimEngine.run!(roots[:models].models.root_growth, roots[:models].models, roots[:models].status[i], meteo_, constants, roots)
-
-        # Give the ftsw value to the plant:
-        PlantSimEngine.run!(plant[:models].models.soil_water, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
-
         # Light interception at the scene scale:
         PlantSimEngine.run!(scene[:models].models.light_interception, scene[:models].models, scene[:models].status[i], meteo_, constants)
         # Give the light interception to the plants:
         PlantSimEngine.run!(plant[:models].models.light_interception, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
+        # And to the soil:
+        PlantSimEngine.run!(soil[:models].models.light_interception, soil[:models].models, soil[:models].status[i], meteo_, constants, soil)
+
+        # Run the water model in the soil:
+        PlantSimEngine.run!(soil[:models].models.soil_water, soil[:models].models, soil[:models].status[i], meteo_, constants, nothing)
+
+        # Give the value of ftsw to the roots:
+        PlantSimEngine.run!(roots[:models].models.soil_water, roots[:models].models, roots[:models].status[i], meteo_, constants, roots)
+
+        # Run the root growth model in the soil (it already knows how to get the ftsw from the soil model):
+        PlantSimEngine.run!(roots[:models].models.root_growth, roots[:models].models, roots[:models].status[i], meteo_, constants, nothing)
+
+        # Give the value of root_depth to the soil:
+        PlantSimEngine.run!(soil[:models].models.root_growth, soil[:models].models, soil[:models].status[i], meteo_, constants, soil)
+
+        # Give the ftsw value to the plant:
+        PlantSimEngine.run!(plant[:models].models.soil_water, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
 
         # Carbon assimilation:
         PlantSimEngine.run!(plant[:models].models.carbon_assimilation, plant[:models].models, plant[:models].status[i], meteo_, constants)

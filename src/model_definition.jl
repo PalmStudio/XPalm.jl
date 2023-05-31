@@ -31,7 +31,7 @@ function main_models_definition(p, nsteps)
                 p[:respiration][:Internode][:P_alive],
                 p[:nitrogen_content][:Internode],
             ),
-            light_interception=Beer(p[:k]),
+            light_interception=Beer{Plant}(p[:k]),
             carbon_assimilation=ConstantRUEModel(p[:RUE]),
             carbon_offer=CarbonOfferRm(),
             # carbon_demand=LeafCarbonDemandModelPotentialArea(
@@ -181,20 +181,18 @@ function main_models_definition(p, nsteps)
                 nsteps=nsteps,
                 status=(
                     nitrogen_content=p[:nitrogen_content][:RootSystem],
-                    #! to remove when we have the computation of light:
-                    tree_ei=0.8,
                 )
             ),
         "Soil" =>
             PlantSimEngine.ModelList(
+                light_interception=Beer{Soil}(),
                 soil_water=FTSW(ini_root_depth=p[:ini_root_depth]),
+                root_growth=RootGrowthFTSW(ini_root_depth=p[:ini_root_depth]),
                 potential_evapotranspiration=ET0_BP(),
                 variables_check=false,
                 nsteps=nsteps,
                 status=(
                     nitrogen_content=p[:nitrogen_content][:RootSystem],
-                    #! to remove when we have the computation of light:
-                    tree_ei=0.8,
                 )
             )
     )

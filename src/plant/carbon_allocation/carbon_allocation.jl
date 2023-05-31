@@ -38,8 +38,6 @@ function PlantSimEngine.run!(m::OrgansCarbonAllocationModel, models, status, met
             reserve_available = status.reserve / m.cost_reserve_mobilization # 1.667
             # Else the plant tries to use its reserves:
             if total_carbon_demand_organs <= status.carbon_offer + reserve_available
-                # The reserve that are really available for allocation (- cost of respiration)
-                reserve_available = status.reserve / m.cost_reserve_mobilization
                 # We allocated the demand because there is enough carbon:
                 status.carbon_allocation_organs = total_carbon_demand_organs
                 # What we need from the reserves is the demand - what we took from the offer:
@@ -48,8 +46,6 @@ function PlantSimEngine.run!(m::OrgansCarbonAllocationModel, models, status, met
                 status.carbon_offer = 0.0
                 # What is really mobilized is the reserve needed + cost of respiration (mobilization):
                 reserve_mobilized = reserve_needed * m.cost_reserve_mobilization
-                # We remove the reserve we mobilized from the reserve pool:
-                status.reserve -= reserve_mobilized
                 # The cost of using the reserves is the following respiration:
                 status.respiration_reserve_mobilization = reserve_mobilized - reserve_needed
             else
@@ -61,8 +57,6 @@ function PlantSimEngine.run!(m::OrgansCarbonAllocationModel, models, status, met
                 # The carbon offer is now 0.0 because we took all:
                 status.carbon_offer = 0.0
                 reserve_mobilized = status.reserve
-                # The reserve is also 0.0 (reserve_mobilized = reserve) because we took all:
-                status.reserve -= reserve_mobilized
                 # The cost of using the reserves is the following respiration:
                 status.respiration_reserve_mobilization = reserve_mobilized - reserve_available
             end
@@ -93,4 +87,7 @@ function PlantSimEngine.run!(m::OrgansCarbonAllocationModel, models, status, met
                 reserve_mobilized * organ[:models].status[timestep].reserve / status.reserve
         end
     end
+
+    # We remove the reserve we mobilized from the reserve pool:
+    status.reserve -= reserve_mobilized
 end

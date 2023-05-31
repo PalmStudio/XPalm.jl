@@ -28,7 +28,7 @@ transform!(
 m = ModelList(
     DailyDegreeDays(),
     FTSW(ini_root_depth=300.0),
-    status=(ET0=1.0, tree_ei=0.8, root_depth=fill(300.0, nrow(meteo)))
+    status=(ET0=1.0, aPPFD=1.0, root_depth=fill(300.0, nrow(meteo)))
 )
 
 
@@ -36,7 +36,7 @@ m = ModelList(
 m1 = ModelList(
     DailyDegreeDaysFTSW(),
     FTSW(ini_root_depth=300.0),
-    status=(ET0=1.0, tree_ei=0.8, root_depth=fill(300.0, nrow(meteo)))
+    status=(ET0=1.0, aPPFD=1.0, root_depth=fill(300.0, nrow(meteo)))
 )
 
 run!(m, meteo, executor=SequentialEx())

@@ -55,9 +55,6 @@ function PlantSimEngine.run!(m::RootGrowthFTSW, models, st, meteo, constants, ex
 
     st.root_depth = prev_value(st, :root_depth; default=m.ini_root_depth)
 
-    # Calling a soil model that computes the ftsw: fraction of transpirable soil water (unitless [0:1])
-    PlantSimEngine.run!(models.soil_water, models, st, meteo, constants, extra)
-
     if (st.ftsw > m.TRESH_FTSW_SLOW_ROOTS)
         coef_water_stress = 1
     else
@@ -68,5 +65,14 @@ function PlantSimEngine.run!(m::RootGrowthFTSW, models, st, meteo, constants, ex
         st.root_depth = st.soil_depth
     else
         st.root_depth += coef_water_stress * m.ROOTS_GROWTH_DEPTH * st.TEff
+    end
+end
+
+# Called by the soil to get the root_depth:
+function PlantSimEngine.run!(::RootGrowthFTSW, models, st, meteo, constants, mtg::MultiScaleTreeGraph.Node)
+    scene = MultiScaleTreeGraph.get_root(mtg)
+    timestep = rownumber(st)
+    MultiScaleTreeGraph.traverse(scene, symbol="RootSystem") do roots
+        st.root_depth = roots[:models].status[timestep].root_depth
     end
 end
