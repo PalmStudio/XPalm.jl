@@ -13,7 +13,7 @@ PlantSimEngine.outputs_(::FinalPotentialAreaModel) = (
 function PlantSimEngine.run!(m::FinalPotentialAreaModel, models, status, meteo, constants, extra=nothing)
     # This is the potential area of the leaf (should be computed once only...)
     status.final_potential_area =
-        age_relative_var(
+        age_relative_value(
             status.initiation_age,
             0,
             m.age_first_mature_leaf,

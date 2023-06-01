@@ -21,7 +21,7 @@ PlantSimEngine.outputs_(::PhyllochronModel) = (
 
 # Applied at the plant scale.
 function PlantSimEngine.run!(m::PhyllochronModel, models, status, meteo, constants, mtg)
-    status.production_speed = age_relative_var(
+    status.production_speed = age_relative_value(
         status.plant_age,
         0.0,
         m.age_palm_maturity,
