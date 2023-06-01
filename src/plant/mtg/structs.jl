@@ -213,7 +213,14 @@ function default_parameters()
             :reserves => Dict(
                 :cost_reserve_mobilization => 1.667
             )
-        )
+        ),
+        :bunch => Dict(
+            :TT_sex_determination => 4725.0,
+            :duration_sex_determination => 1350.0,
+            :sex_ratio_min => 0.2,
+            :sex_ratio_ref => 0.6,
+            :random_seed => 1,
+        ),
     )
     push!(p,
         :biomass_dry => Dict(

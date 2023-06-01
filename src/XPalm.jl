@@ -9,6 +9,7 @@ import PlantMeteo: prev_value, rownumber
 import PlantSimEngine: @process
 import Tables
 import Statistics: mean
+import Random: MersenneTwister
 
 # Palm structure:
 include("plant/mtg/structs.jl")
@@ -74,6 +75,8 @@ include("model_definition.jl")
 include("age_modulation/age_modulation_linear.jl")
 include("age_modulation/age_modulation_logistic.jl")
 
+# Fruits:
+include("plant/phytomer/phytomer/sex_determination.jl")
 
 include("run.jl")
 

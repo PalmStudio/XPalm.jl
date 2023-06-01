@@ -114,9 +114,20 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
         PlantSimEngine.run!(plant[:models].models.biomass, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
         PlantSimEngine.run!(plant[:models].models.reserve_filling, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
 
-        # Pruning:
         MultiScaleTreeGraph.traverse(plant, symbol="Phytomer") do phytomer
             PlantSimEngine.run!(phytomer[:models].models.leaf_pruning, phytomer[:models].models, phytomer[:models].status[i], meteo_, constants, phytomer)
+
+            #! these models only go and get the values from other scales:
+            # Give the ftsw value to the phytomer:
+            PlantSimEngine.run!(phytomer[:models].models.soil_water, phytomer[:models].models, phytomer[:models].status[i], meteo_, constants, phytomer)
+            PlantSimEngine.run!(phytomer[:models].models.carbon_offer, phytomer[:models].models, phytomer[:models].status[i], meteo_, constants, phytomer)
+            PlantSimEngine.run!(phytomer[:models].models.carbon_allocation, phytomer[:models].models, phytomer[:models].status[i], meteo_, constants, phytomer)
+            #! end of comment above
+
+            # Thermal time since initiation:
+            PlantSimEngine.run!(phytomer[:models].models.thermal_time, phytomer[:models].models, phytomer[:models].status[i], meteo_, constants, phytomer)
+            PlantSimEngine.run!(phytomer[:models].models.initiation_age, phytomer[:models].models, phytomer[:models].status[i], meteo_, constants, nothing)
+            PlantSimEngine.run!(phytomer[:models].models.sex_determination, phytomer[:models].models, phytomer[:models].status[i], meteo_, constants, phytomer)
         end
 
         # Run the phyllochron model over the plant (calls phytomer emission):

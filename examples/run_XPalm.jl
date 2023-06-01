@@ -32,32 +32,155 @@ begin
     scene = p.mtg
     soil = scene[1]
     plant = scene[2]
+    stem = plant[2]
     roots = plant[1]
     leaf1 = get_node(p.mtg, 8)
     internode1 = get_node(p.mtg, 7)
     leaf2 = get_node(p.mtg, 11)
 end
 
+lines(scene[:models].status.lai)
+lines(scene[:models].status.aPPFD)
+lines(plant[:models].status.aPPFD)
+lines(plant[:models].status.leaf_area)
+lines(plant[:models].status.biomass ./ 1000, axis=(ylabel="Total drymass (kg plant⁻¹)",))
+lines(plant[:models].status.carbon_assimilation)
+lines(plant[:models].status.carbon_offer_after_allocation)
+lines(plant[:models].status.reserve)
+lines(plant[:models].status.Rm)
+
+lines(roots[:models].status.ftsw)
+lines(soil[:models].status.ftsw)
+lines(roots[:models].status.root_depth)
+lines(soil[:models].status.root_depth)
+lines(roots[:models].status.soil_depth)
+lines(soil[:models].status.soil_depth)
+
+lines(plant[:models].status.carbon_allocation_organs)
+
+f, ax, plt = lines(soil[:models].status.SizeC, label="SizeC")
+# lines!(ax, soil[:models].status.qty_H2O_C, label="qty_H2O_C")
+# lines!(ax, soil[:models].status.qty_H2O_C1minusVap, label="qty_H2O_C1minusVap")
+lines!(ax, soil[:models].status.qty_H2O_C2, label="qty_H2O_C2")
+lines!(ax, soil[:models].status.qty_H2O_C, color="red")
+lines!(ax, soil[:models].status.qty_H2O_C1minusVap, color="green")
+f
+
+transmitted_light_fraction = ((meteo.Ri_PAR_f * constants.J_to_umol) - st.aPPFD) / (meteo.Ri_PAR_f * constants.J_to_umol)
+lines((meteo.Ri_PAR_f[1:100] .* Constants().J_to_umol .- soil[:models].status.aPPFD[1:100]) ./ (meteo.Ri_PAR_f[1:100] .* Constants().J_to_umol))
+lines((meteo.Ri_PAR_f[1:100] .* Constants().J_to_umol .- soil[:models].status.aPPFD[1:100]))
+lines(scene[:models].status.aPPFD[1:100])
+lines(plant[:models].status.aPPFD[1:100])
+
+lines(scene[:models].status.aPPFD[1:89])
+lines(scene[:models].status.aPPFD[1:88])
+
+
+
+plant[:models].status.carbon_assimilation[88]
+plant[:models].status.leaf_area[88]
+
+phytomer = get_node(p.mtg, 6)
+unique(phytomer[:models].status.TT_since_init)
+unique(phytomer[:models].status.sex)
+
+lines(scene[:models].status.lai[1:100])
+lines(soil[:models].status.ftsw[1:100])
+lines(soil[:models].status.transpiration[1:100])
+
+f, ax, plt = lines(soil[:models].status.aPPFD[1:200])
+lines!(ax, meteo.Ri_PAR_f * Constants().J_to_umol, color="red")
+f
+
+
+transmitted_light_fraction = ((meteo.Ri_PAR_f * constants.J_to_umol) - st.aPPFD) / (meteo.Ri_PAR_f * constants.J_to_umol)
+
+
+
+lines(soil[:models].status.ftsw)
+lines(soil[:models].status.ET0)
+lines(soil[:models].status.aPPFD)
+lines(soil[:models].status.root_depth)
+
+
+lines(plant[:models].status.carbon_assimilation)
+lines(plant[:models].status.carbon_assimilation - plant[:models].status.carbon_allocation_organs)
+
+
+lines(stem[:models].status.reserve)
+lines(stem[:models].status.biomass)
+lines(stem[:models].status.carbon_offer)
 # lines(internode1[:models].status.TT_since_init)
+
+plant[:models].status.carbon_assimilation
+plant[:models].status.reserve
+internode1[:models].status.carbon_demand
+leaf1[:models].status.carbon_demand
+
+internode1[:models].status.carbon_allocation
+leaf1[:models].status.carbon_allocation
+
+internode1[:models].status.biomass
+leaf1[:models].status.biomass
+leaf1[:models].status.leaf_area
+scene[:models].status.lai
+scene[:models].status.aPPFD
+
+plant[:models].status.biomass
+
 lines(internode1[:models].status.potential_height)
 lines(internode1[:models].status.potential_radius)
-lines(internode1[:models].status.carbon_demand)
+lines(internode1[:models].status.carbon_allocation)
+lines(internode1[:models].status.biomass)
+lines(internode1[:models].status.height)
+lines(internode1[:models].status.radius)
+lines(plant[:models].status.carbon_allocation_organs)
 
-lines(scene[:models].status.lai)
-lines(plant[:models].status.leaf_area)
-lines(plant[:models].status.carbon_demand)
-lines(plant[:models].status.carbon_assimilation - plant[:models].status.carbon_demand)
-lines(plant[:models].status.carbon_allocation_reserve_leaves)
 
-lines(plant[:models].status.total_reserve_potential_leaves)
-lines(plant[:models].status.carbon_offer)
-lines(plant[:models].status.carbon_demand)
+timestep = 87
 
-lines(plant[:models].status.carbon_allocation_leaves)
-lines(plant[:models].status.ftsw)
-lines(roots[:models].status.root_depth)
+scene[:models].status.lai[timestep]
+scene[:models].status.aPPFD[timestep]
+plant[:models].status.aPPFD[timestep]
+plant[:models].status.carbon_allocation[timestep]
+n_phyto_timestep = plant[:models].status.phytomers[timestep]
 
-timestep = 6
+out = MultiScaleTreeGraph.traverse(p.mtg, symbol="Leaf") do node
+    node[:models].status.carbon_allocation[timestep]
+end[1:Int(n_phyto_timestep)]
+sum(out)
+out = MultiScaleTreeGraph.traverse(p.mtg, symbol="Leaf") do node
+    node[:models].status.carbon_demand[timestep]
+end[1:Int(n_phyto_timestep)]
+sum(out)
+out = MultiScaleTreeGraph.traverse(p.mtg, symbol="Internode") do node
+    node[:models].status.carbon_demand[timestep]
+end[1:Int(n_phyto_timestep)]
+sum(out)
+out = MultiScaleTreeGraph.traverse(p.mtg, symbol="Internode") do node
+    node[:models].status.carbon_allocation[timestep]
+end[1:Int(n_phyto_timestep)]
+sum(out)
+
+plant[:models].status.carbon_assimilation[timestep]
+plant[:models].status.Rm[timestep]
+plant[:models].status.reserve[timestep]
+soil[:models].status.ftsw[timestep]
+
+out = MultiScaleTreeGraph.traverse(p.mtg, symbol="Internode") do node
+    node[:models].status.carbon_allocation[timestep]
+end[1:Int(n_phyto_timestep)]
+sum(out)
+
+out = MultiScaleTreeGraph.traverse(p.mtg, symbol="Leaf") do node
+    node[:models].status.carbon_allocation[timestep]
+end[1:Int(n_phyto_timestep)]
+sum(out)
+
+findfirst(
+    x -> x === plant[:models].status.reserve[end],
+    plant[:models].status.reserve
+)
 
 plant[:models].status.phytomers[timestep]
 plant[:models].status.phytomers[1:11]

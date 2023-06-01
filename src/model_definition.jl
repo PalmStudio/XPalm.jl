@@ -39,7 +39,7 @@ function main_models_definition(p, nsteps)
             #     p[:carbon_demand][:leaf][:respiration_cost],
             #     p[:leaflets_biomass_contribution]
             # ),
-            carbon_allocation=OrgansCarbonAllocationModel(p[:carbon_demand][:reserves][:cost_reserve_mobilization]),
+            carbon_allocation=OrgansCarbonAllocationModel{Plant}(p[:carbon_demand][:reserves][:cost_reserve_mobilization]),
             biomass=LeafBiomass(p[:carbon_demand][:leaf][:respiration_cost]),
             reserve_filling=OrganReserveFilling(
                 p[:lma_min],
@@ -57,9 +57,24 @@ function main_models_definition(p, nsteps)
         ),
         "Phytomer" =>
             PlantSimEngine.ModelList(
+                #! these models are just taking values from other ones:
                 initiation_age=InitiationAgeFromPlantAge(),
+                soil_water=FTSW{Phytomer}(ini_root_depth=p[:ini_root_depth]), # needed to get the ftsw value
+                carbon_offer=CarbonOfferRm(),
+                carbon_allocation=OrgansCarbonAllocationModel{Phytomer}(p[:carbon_demand][:reserves][:cost_reserve_mobilization]),
+                #! the previous comment end here
+                thermal_time=DegreeDaysFTSW(
+                    threshold_ftsw_stress=p[:phyllochron][:threshold_ftsw_stress],
+                ),
                 leaf_rank=LeafRankModel(),
                 leaf_pruning=RankLeafPruning(p[:rank_leaf_pruning]),
+                sex_determination=SexDetermination(
+                    p[:bunch][:TT_sex_determination],
+                    p[:bunch][:duration_sex_determination],
+                    p[:bunch][:sex_ratio_min],
+                    p[:bunch][:sex_ratio_ref],
+                    p[:bunch][:random_seed],
+                ),
                 variables_check=false,
                 status=(initiation_age=0,),
                 nsteps=nsteps,

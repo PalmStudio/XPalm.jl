@@ -6,11 +6,12 @@ OrgansCarbonAllocationModel(cost_reserve_mobilization) = OrgansCarbonAllocationM
 OrgansCarbonAllocationModel{O}(; cost_reserve_mobilization=1.667) where {O} = OrgansCarbonAllocationModel{O}(cost_reserve_mobilization)
 
 PlantSimEngine.inputs_(::OrgansCarbonAllocationModel) = (carbon_offer_after_rm=-Inf,)#, reserve=-Inf,)
-PlantSimEngine.outputs_(::OrgansCarbonAllocationModel) = (carbon_allocation_organs=-Inf, respiration_reserve_mobilization=-Inf, trophic_status=-Inf, carbon_offer_after_allocation=-Inf)
+PlantSimEngine.outputs_(::OrgansCarbonAllocationModel) = (carbon_allocation_organs=-Inf, respiration_reserve_mobilization=-Inf, trophic_status=-Inf, carbon_offer_after_allocation=-Inf, carbon_demand=-Inf)
 PlantSimEngine.outputs_(::OrgansCarbonAllocationModel{T}) where {T<:Union{Leaf,Internode}} = (carbon_allocation=-Inf,)
+PlantSimEngine.outputs_(::OrgansCarbonAllocationModel{Phytomer}) = (carbon_demand=-Inf,)
 
 # At the plant scale:
-function PlantSimEngine.run!(m::OrgansCarbonAllocationModel, models, status, meteo, constants, mtg)
+function PlantSimEngine.run!(m::OrgansCarbonAllocationModel{Plant}, models, status, meteo, constants, mtg)
     timestep = rownumber(status)
 
     # Propagate the reserves from the previous day:
@@ -18,34 +19,34 @@ function PlantSimEngine.run!(m::OrgansCarbonAllocationModel, models, status, met
 
     #! provide Float64 as the type of returned vector here? Or maybe get the type from the status
     # Carbon demand of the organs (internode + leaves):
-    carbon_demand = MultiScaleTreeGraph.traverse(mtg, symbol=["Leaf", "Internode"]) do node
+    carbon_demand_organs = MultiScaleTreeGraph.traverse(mtg, symbol=["Leaf", "Internode"]) do node
         node[:models].status[timestep][:carbon_demand]
     end
 
-    total_carbon_demand_organs = sum(carbon_demand)
+    status.carbon_demand = sum(carbon_demand_organs)
 
     # Trophic status, based on the carbon offer / demand ratio. Note that maintenance respiration 
     # was already removed from the carbon offer here:
-    status.trophic_status = status.carbon_offer_after_rm / total_carbon_demand_organs
+    # status.trophic_status = status.carbon_offer_after_rm / status.carbon_demand
 
     # If the total demand is positive, we try allocating carbon:
-    if total_carbon_demand_organs > 0.0
+    if status.carbon_demand > 0.0
         # Proportion of the demand of each leaf compared to the total leaf demand: 
-        proportion_carbon_demand = carbon_demand ./ total_carbon_demand_organs
+        proportion_carbon_demand = carbon_demand_organs ./ status.carbon_demand
 
-        if total_carbon_demand_organs <= status.carbon_offer_after_rm
+        if status.carbon_demand <= status.carbon_offer_after_rm
             # If the carbon demand is lower than the offer we allocate the offer:
-            status.carbon_allocation_organs = total_carbon_demand_organs
+            status.carbon_allocation_organs = status.carbon_demand
             status.carbon_offer_after_allocation = status.carbon_offer_after_rm - status.carbon_allocation_organs
             reserve_mobilized = 0.0
         else
             reserve_available = status.reserve / m.cost_reserve_mobilization # 1.667
             # Else the plant tries to use its reserves:
-            if total_carbon_demand_organs <= status.carbon_offer_after_rm + reserve_available
+            if status.carbon_demand <= status.carbon_offer_after_rm + reserve_available
                 # We allocated the demand because there is enough carbon:
-                status.carbon_allocation_organs = total_carbon_demand_organs
+                status.carbon_allocation_organs = status.carbon_demand
                 # What we need from the reserves is the demand - what we took from the offer:
-                reserve_needed = total_carbon_demand_organs - status.carbon_offer_after_rm
+                reserve_needed = status.carbon_demand - status.carbon_offer_after_rm
                 # The carbon offer is now 0.0 because we took it first:
                 status.carbon_offer_after_allocation = 0.0
                 # What is really mobilized is the reserve needed + cost of respiration (mobilization):
@@ -70,7 +71,7 @@ function PlantSimEngine.run!(m::OrgansCarbonAllocationModel, models, status, met
         # If the carbon demand is 0.0, we allocate nothing:
         status.carbon_allocation_organs = 0.0
         status.carbon_offer_after_allocation = status.carbon_offer_after_rm
-        carbon_allocation_organ = zeros(typeof(carbon_demand[1]), length(carbon_demand))
+        carbon_allocation_organ = zeros(typeof(carbon_demand_organs[1]), length(carbon_demand_organs))
         reserve_mobilized = 0.0
     end
 
@@ -95,4 +96,14 @@ function PlantSimEngine.run!(m::OrgansCarbonAllocationModel, models, status, met
 
     # We remove the reserve we mobilized from the reserve pool:
     status.reserve -= reserve_mobilized
+end
+
+
+# Get values from phytomer (do not use for leaves and internode, they get their values from the Plant model already):
+function PlantSimEngine.run!(::OrgansCarbonAllocationModel{Phytomer}, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node)
+    scene = MultiScaleTreeGraph.get_root(mtg)
+    timestep = rownumber(status)
+    MultiScaleTreeGraph.traverse(scene, symbol="Plant") do plant
+        status.carbon_demand = plant[:models].status[timestep].carbon_demand
+    end
 end
