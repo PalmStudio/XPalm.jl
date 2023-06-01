@@ -35,7 +35,7 @@ PlantSimEngine.outputs_(::PotentialAreaModel) = (
 
 function PlantSimEngine.run!(m::PotentialAreaModel, models, status, meteo, constants, extra=nothing)
     # This is the daily potential area of the leaf (should be computed once only...)
-    inflexion_point = status.final_potential_area * m.inflexion_index
+    inflexion_point = max(status.final_potential_area * m.inflexion_index, 27.0)
 
     status.potential_area =
         status.final_potential_area / (1.0 + exp(-(status.TT_since_init - inflexion_point) / m.slope))
