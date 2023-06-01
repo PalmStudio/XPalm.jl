@@ -23,8 +23,8 @@ function OrganReserveFilling{O}(
     OrganReserveFilling{T,O}(lma_min, lma_max, leaflets_biomass_contribution, nsc_max)
 end
 
-PlantSimEngine.inputs_(::OrganReserveFilling) = (carbon_offer=-Inf,)
-PlantSimEngine.outputs_(::OrganReserveFilling) = (reserve=-Inf, carbon_allocation_reserve=-Inf,)
+PlantSimEngine.inputs_(::OrganReserveFilling) = (carbon_offer_after_allocation=-Inf,)
+PlantSimEngine.outputs_(::OrganReserveFilling) = (reserve=-Inf, carbon_allocation_reserve=-Inf, carbon_offer_after_storage=-Inf,)
 
 # The model makes computations for the organs from the Plant scale, so we only need the output for them:
 PlantSimEngine.inputs_(::OrganReserveFilling{T}) where {T<:Union{Leaf,Stem}} = NamedTuple()
@@ -57,7 +57,7 @@ function PlantSimEngine.run!(m::OrganReserveFilling, models, st, meteo, constant
     if total_reserve_potential_organ > 0.0
         # Proportion of the demand of each organ compared to the total organ demand: 
         proportion_carbon_potential = organ_reserve_potential ./ total_reserve_potential_organ
-        st.carbon_allocation_reserve = min(total_reserve_potential_organ, st.carbon_offer)
+        st.carbon_allocation_reserve = min(total_reserve_potential_organ, st.carbon_offer_after_allocation)
         carbon_reserve_organ = st.carbon_allocation_reserve .* proportion_carbon_potential
     else
         # If the potential carbon storage is 0.0, we allocate nothing:
@@ -72,5 +72,5 @@ function PlantSimEngine.run!(m::OrganReserveFilling, models, st, meteo, constant
     end
 
     st.reserve = sum(total_reserves)
-    st.carbon_offer -= st.carbon_allocation_reserve
+    st.carbon_offer_after_storage = st.carbon_offer_after_allocation - st.carbon_allocation_reserve
 end
