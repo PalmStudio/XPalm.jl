@@ -215,8 +215,9 @@ function default_parameters()
             )
         ),
         :bunch => Dict(
-            :TT_sex_determination => 4725.0,
+            :TT_flowering => 6300.0,
             :duration_sex_determination => 1350.0,
+            :duration_abortion => 540.0,
             :sex_ratio_min => 0.2,
             :sex_ratio_ref => 0.6,
             :random_seed => 1,

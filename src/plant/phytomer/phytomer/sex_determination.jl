@@ -1,29 +1,32 @@
 """
-    SexDetermination(TT_sex_determination, duration_sex_determination)
+    SexDetermination(TT_flowering,duration_abortion,duration_sex_determination)
 
 Determines the sex of a phytomer -or rather, its bunch- based on the trophic 
 state of the plant during a given period in thermal time.
 
 # Arguments 
-
-- `TT_sex_determination`: thermal time for sex determination (degree days).
-- `duration_sex_determination`: duration of the period used for sex determination before `TT_sex_determination`(degree days).
+- `TT_flowering`: thermal time for flowering since phytomer appearence (degree days).
+- `duration_abortion`: duration used for computing abortion rate before flowering (degree days).
+- `duration_sex_determination`: duration used for sex determination before the abortion period(degree days).
 
 # Note
 
-The sex of the organ is determined at `TT_sex_determination` based on the `trophic_status` of the plant during a period of time 
+#---duration_sex_determination---/---duration_abortion---/TT_flowering
+
+The sex of the organ is determined at `TT_flowering-duration_abortion` based on the `trophic_status` of the plant during a period of time 
 before this date. The hypothesis is that a trophic stress can trigger more males in the plant.
 """
 struct SexDetermination{T} <: AbstractSex_DeterminationModel
-    TT_sex_determination::T
+    TT_flowering::T
+    duration_abortion::T
     duration_sex_determination::T
     sex_ratio_min::T
     sex_ratio_ref::T
     random_seed::Int
 end
 
-function SexDetermination(TT_sex_determination, duration_sex_determination)
-    SexDetermination(TT_sex_determination, duration_sex_determination, 1)
+function SexDetermination(TT_flowering, duration_abortion, duration_sex_determination)
+    SexDetermination(TT_flowering, duration_abortion, duration_sex_determination, 1)
 end
 
 PlantSimEngine.inputs_(::SexDetermination) = (carbon_offer_after_rm=-Inf, carbon_demand_organs=-Inf)
@@ -35,7 +38,7 @@ function PlantSimEngine.run!(m::SexDetermination, models, status, meteo, constan
     status.sex != "undetermined" && return # if the sex is already determined, no need to compute it again
 
     # We only look into the period that begin at TT_since_init - period and end at TT_since_init:
-    if status.TT_since_init > (m.TT_sex_determination - m.duration_sex_determination)
+    if status.TT_since_init > (m.TT_flowering - m.duration_abortion - m.duration_sex_determination)
         # Propagate the values:
         status.carbon_offer_sex_determination =
             prev_value(status, :carbon_offer_sex_determination, default=0.0)
@@ -56,7 +59,7 @@ function PlantSimEngine.run!(m::SexDetermination, models, status, meteo, constan
     end
 
     # Here we have to determine the sex:
-    if status.TT_since_init > m.TT_sex_determination
+    if status.TT_since_init > (m.TT_flowering - m.duration_abortion)
         trophic_status_sex_determination = status.carbon_offer_sex_determination / status.carbon_demand_sex_determination
 
         # draws a number between 0 and 1 in a uniform distribution:

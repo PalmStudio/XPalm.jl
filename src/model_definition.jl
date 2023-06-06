@@ -69,8 +69,9 @@ function main_models_definition(p, nsteps)
                 leaf_rank=LeafRankModel(),
                 leaf_pruning=RankLeafPruning(p[:rank_leaf_pruning]),
                 sex_determination=SexDetermination(
-                    p[:bunch][:TT_sex_determination],
+                    p[:bunch][:TT_flowering],
                     p[:bunch][:duration_sex_determination],
+                    p[:bunch][:duration_abortion],
                     p[:bunch][:sex_ratio_min],
                     p[:bunch][:sex_ratio_ref],
                     p[:bunch][:random_seed],
