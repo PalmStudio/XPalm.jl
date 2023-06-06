@@ -25,3 +25,4 @@
 - Test if it is faster to pass the models as the first argument (*e.g.* `m.param`) or to use the models argument *e.g.* `models.maintenance_respiration.param` 
 - in add_phytomer: determine inputs, outputs and model dependency
 - in carbon allocation, put again `reserve` as needed input. We had to remove it because PSE detects a cyclic dependency with reserve filling. This is ok to remove because carbon allocation needs the value from the day before. We should define how this is done in PSE, e.g. via a special type that provides the values from the day before or else ? Maybe more a way to say to the model that we take the value from before, in the modellist directly e.g. `carbon_allocation = [:reserve => PreviousTimeStep(1)] => CarbonAllocationModel()`
+- in the former verion TT_flowering was changing over plant development. here we fixed it, to update if necessary

@@ -220,6 +220,8 @@ function default_parameters()
             :duration_abortion => 540.0,
             :sex_ratio_min => 0.2,
             :sex_ratio_ref => 0.6,
+            :abortion_rate_max => 0.8,
+            :abortion_rate_ref => 0.2,
             :random_seed => 1,
         ),
     )

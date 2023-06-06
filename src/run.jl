@@ -128,6 +128,7 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
             PlantSimEngine.run!(phytomer[:models].models.thermal_time, phytomer[:models].models, phytomer[:models].status[i], meteo_, constants, phytomer)
             PlantSimEngine.run!(phytomer[:models].models.initiation_age, phytomer[:models].models, phytomer[:models].status[i], meteo_, constants, nothing)
             PlantSimEngine.run!(phytomer[:models].models.sex_determination, phytomer[:models].models, phytomer[:models].status[i], meteo_, constants, phytomer)
+            PlantSimEngine.run!(phytomer[:models].models.abortion, phytomer[:models].models, phytomer[:models].status[i], meteo_, constants, phytomer)
         end
 
         # Run the phyllochron model over the plant (calls phytomer emission):

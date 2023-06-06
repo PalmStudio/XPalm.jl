@@ -76,6 +76,13 @@ function main_models_definition(p, nsteps)
                     p[:bunch][:sex_ratio_ref],
                     p[:bunch][:random_seed],
                 ),
+                abortion=AbortionRate(
+                    p[:bunch][:TT_flowering],
+                    p[:bunch][:duration_abortion],
+                    p[:bunch][:abortion_rate_max],
+                    p[:bunch][:abortion_rate_ref],
+                    p[:bunch][:random_seed],
+                ),
                 variables_check=false,
                 status=(initiation_age=0,),
                 nsteps=nsteps,

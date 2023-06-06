@@ -77,7 +77,7 @@ include("age_modulation/age_modulation_logistic.jl")
 
 # Fruits:
 include("plant/phytomer/phytomer/sex_determination.jl")
-
+include("plant/phytomer/phytomer/abortion.jl")
 include("run.jl")
 
 export Palm

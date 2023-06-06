@@ -37,7 +37,7 @@ function PlantSimEngine.run!(m::SexDetermination, models, status, meteo, constan
     status.sex = prev_value(status, :sex, default="undetermined")
     status.sex != "undetermined" && return # if the sex is already determined, no need to compute it again
 
-    # We only look into the period that begin at TT_since_init - period and end at TT_since_init:
+    # We only look into the period of sex determination:
     if status.TT_since_init > (m.TT_flowering - m.duration_abortion - m.duration_sex_determination)
         # Propagate the values:
         status.carbon_offer_sex_determination =
