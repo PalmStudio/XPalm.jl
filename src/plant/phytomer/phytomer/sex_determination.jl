@@ -32,7 +32,7 @@ end
 PlantSimEngine.inputs_(::SexDetermination) = (carbon_offer_after_rm=-Inf, carbon_demand_organs=-Inf)
 PlantSimEngine.outputs_(::SexDetermination) = (sex="undetermined", carbon_demand_sex_determination=-Inf, carbon_offer_sex_determination=-Inf,)
 
-function PlantSimEngine.run!(m::SexDetermination, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::SexDetermination, models, status, meteo, constants, mtg)
 
     status.sex = prev_value(status, :sex, default="undetermined")
     status.sex != "undetermined" && return # if the sex is already determined, no need to compute it again
@@ -76,9 +76,11 @@ function PlantSimEngine.run!(m::SexDetermination, models, status, meteo, constan
 
         #e.g. if threshold_sex is 0.7 we will have more chance to have a female
         if random_sex < threshold_sex
-            status.sex = "female"
+            status.sex = "Female"
         else
-            status.sex = "male"
+            status.sex = "Male"
         end
+
+        PlantSimEngine.run!(models.reproductive_organ_emission, models, status, meteo, constants, mtg)
     end
 end

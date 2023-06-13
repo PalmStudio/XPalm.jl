@@ -53,7 +53,7 @@ A leaf, which has a state of type [`LeafState`](@ref) that can be either:
 - `Scenescent`: dead but still on the plant
 """
 mutable struct Leaf <: Organ
-    state
+    state::OrganState
 end
 Leaf() = Leaf(Initiated())
 
@@ -70,8 +70,8 @@ A male inflorescence, which has a state that can be either:
 - `Scenescent`: dead but still on the plant
 - `Pruned`: removed from the plant
 """
-mutable struct Male{S} <: ReproductiveOrgan where {S<:OrganState}
-    state::String
+mutable struct Male <: ReproductiveOrgan
+    state::OrganState
 end
 
 Male() = Male(Initiated())
@@ -90,9 +90,11 @@ A female inflorescence, which has a state that can be either:
 - `Scenescent`: dead but still on the plant
 - `Pruned`: removed from the plant (*e.g.* harvested)
 """
-mutable struct Female{S} <: ReproductiveOrgan where {S<:OrganState}
-    state::String
+mutable struct Female
+    state::OrganState
 end
+
+Female() = Female(Initiation())
 
 # """
 #     increment_rank!(palm::Palm)
@@ -181,7 +183,7 @@ function default_parameters()
             :Stem => 0.004,
             :Internode => 0.004,
             :Leaf => 0.025,
-            # :Female => 0.01,
+            :Female => 0.01,
             :Male => 0.01,
             :RootSystem => 0.008,
         ),
@@ -236,6 +238,9 @@ function default_parameters()
             :abortion_rate_max => 0.8,
             :abortion_rate_ref => 0.2,
             :random_seed => 1,
+            :age_max_coefficient => 8.0 * 365.0,
+            :min_coefficient => 0.3,
+            :max_coefficient => 1.0,
         ),
         :male => Dict(
             :TT_flowering => 6300.0,

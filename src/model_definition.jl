@@ -76,6 +76,7 @@ function main_models_definition(p, nsteps)
                     p[:bunch][:sex_ratio_ref],
                     p[:bunch][:random_seed],
                 ),
+                reproductive_organ_emission=ReproductiveOrganEmission(),
                 abortion=AbortionRate(
                     p[:bunch][:TT_flowering],
                     p[:bunch][:duration_abortion],
@@ -182,6 +183,11 @@ function main_models_definition(p, nsteps)
         "Male" =>
             PlantSimEngine.ModelList(
                 initiation_age=InitiationAgeFromPlantAge(),
+                reproductive_development=ReproductiveDevelopment(
+                    p[:bunch][:age_max_coefficient],
+                    p[:bunch][:min_coefficient],
+                    p[:bunch][:max_coefficient],
+                ),
                 thermal_time=DegreeDaysFTSW(
                     p[:phyllochron][:threshold_ftsw_stress],
                 ),
@@ -209,6 +215,12 @@ function main_models_definition(p, nsteps)
                 carbon_allocation=OrgansCarbonAllocationModel{Male}(), variables_check=false,
                 nsteps=nsteps,
             ),
+        # "Male" =>
+        #     PlantSimEngine.ModelList(
+        #         maintenance_respiration=RmQ10(p[:Q10], p[:Rm_base], p[:T_ref]),
+        #         variables_check=false,
+        #         nsteps=nsteps,
+        #     ),
         # "Female" =>
         #     PlantSimEngine.ModelList(
         #         maintenance_respiration=RmQ10{Female}(p[:Q10], p[:Rm_base], p[:T_ref]),

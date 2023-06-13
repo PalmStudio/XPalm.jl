@@ -25,6 +25,7 @@ include("plant/phytomer/internode/0-process.jl")
 include("plant/generic_processes/0-process.jl")
 include("plant/reserves/0-process.jl")
 include("plant/phytomer/ReproductiveOrgans/Male/0-process.jl")
+include("plant/phytomer/fruits/0-process.jl")
 
 # Import the models:
 include("meteo/thermal_time.jl")
@@ -83,6 +84,8 @@ include("plant/phytomer/ReproductiveOrgans/Male/state.jl")
 include("plant/phytomer/ReproductiveOrgans/Male/carbon_demand.jl")
 include("plant/phytomer/ReproductiveOrgans/Male/final_potential_biomass.jl")
 
+include("plant/phytomer/phytomer/add_reproductive_organ.jl")
+include("plant/phytomer/fruits/reproductive_development.jl")
 
 include("run.jl")
 
