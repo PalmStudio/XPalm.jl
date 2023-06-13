@@ -189,7 +189,7 @@ function main_models_definition(p, nsteps)
                     p[:bunch][:max_coefficient],
                 ),
                 thermal_time=DegreeDaysFTSW(
-                    p[:phyllochron][:threshold_ftsw_stress],
+                    threshold_ftsw_stress=p[:phyllochron][:threshold_ftsw_stress],
                 ),
                 state=MaleStateModel(
                     p[:male][:TT_flowering],
