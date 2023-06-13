@@ -53,7 +53,7 @@ A leaf, which has a state of type [`LeafState`](@ref) that can be either:
 - `Scenescent`: dead but still on the plant
 """
 mutable struct Leaf <: Organ
-    state
+    state::OrganState
 end
 Leaf() = Leaf(Initiation())
 
@@ -70,9 +70,11 @@ A male inflorescence, which has a state that can be either:
 - `Scenescent`: dead but still on the plant
 - `Pruned`: removed from the plant
 """
-mutable struct Male{S} <: ReproductiveOrgan where {S<:OrganState}
-    state::String
+mutable struct Male <: ReproductiveOrgan
+    state::OrganState
 end
+
+Male() = Male(Initiation())
 
 """
     Female(state)
@@ -87,9 +89,11 @@ A female inflorescence, which has a state that can be either:
 - `Scenescent`: dead but still on the plant
 - `Pruned`: removed from the plant (*e.g.* harvested)
 """
-mutable struct Female{S} <: ReproductiveOrgan where {S<:OrganState}
-    state::String
+mutable struct Female
+    state::OrganState
 end
+
+Female() = Female(Initiation())
 
 # """
 #     increment_rank!(palm::Palm)
@@ -172,7 +176,7 @@ function default_parameters()
             :Stem => 0.004,
             :Internode => 0.004,
             :Leaf => 0.025,
-            # :Female => 0.01,
+            :Female => 0.01,
             :RootSystem => 0.008,
         ),
         :ini_root_depth => 100.0,
@@ -220,6 +224,9 @@ function default_parameters()
             :sex_ratio_min => 0.2,
             :sex_ratio_ref => 0.6,
             :random_seed => 1,
+            :age_max_coefficient => 8.0 * 365.0,
+            :min_coefficient => 0.3,
+            :max_coefficient => 1.0,
         ),
     )
     push!(p,

@@ -27,6 +27,7 @@ include("plant/carbon_offer/0-process.jl")
 include("plant/carbon_demand/0-process.jl")
 include("plant/carbon_allocation/0-process.jl")
 include("plant/reserves/0-process.jl")
+include("plant/phytomer/fruits/0-process.jl")
 
 # Import the models:
 include("meteo/thermal_time.jl")
@@ -77,6 +78,8 @@ include("age_modulation/age_modulation_logistic.jl")
 
 # Fruits:
 include("plant/phytomer/phytomer/sex_determination.jl")
+include("plant/phytomer/phytomer/add_reproductive_organ.jl")
+include("plant/phytomer/fruits/reproductive_development.jl")
 
 include("run.jl")
 

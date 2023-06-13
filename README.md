@@ -6,6 +6,19 @@
 [![Coverage](https://codecov.io/gh/PalmStudio/XPalm.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/PalmStudio/XPalm.jl)
 [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
 
+# Add a model
+
+To add a new model and process, you need to:
+
+- define the process in a `0-process.jl` file using `@process`
+- define a model that implement the process. If the computation needs values from other organs, you can use the mtg as the last argument of the `run!` function. 
+- add the model in the ModelList of the organ(s) you want it to simulate. If the output of the model needs to be passed to other organs, you can write a specific implementation for the organ type for the `run!` function (see carbon allocation for example)
+- If the model needs parameters, add the parameters in the parameter dictionnary in `structs.jl`, in the `default_parameters()` function around l.140.
+- Add a call to the model in `run_XPalm()` in the `run.jl` script. The model should be called at the right moment in the script considering its dependencies over previously computed variables. It can also take the mtg node of an organ as last argument, or `nothing` if the mtg is not needed. Make sure to call the right method, as sometimes a model has a different method when called with an MTG node.
+- Run the `run_XPalm.jl` file in the examples scripts, and make sure that everything runs. If there is an error, make sure to read the lines of the error that correspond to the `XPalm` package, not the others, as the error most probably comes from your new implementation rather than another package.
+
+
+
 # To do
 
 - Manage the case when photosynthesis + reserves are not enough for maintenance respiration: e.g. abortions ? 
@@ -25,3 +38,4 @@
 - Test if it is faster to pass the models as the first argument (*e.g.* `m.param`) or to use the models argument *e.g.* `models.maintenance_respiration.param` 
 - in add_phytomer: determine inputs, outputs and model dependency
 - in carbon allocation, put again `reserve` as needed input. We had to remove it because PSE detects a cyclic dependency with reserve filling. This is ok to remove because carbon allocation needs the value from the day before. We should define how this is done in PSE, e.g. via a special type that provides the values from the day before or else ? Maybe more a way to say to the model that we take the value from before, in the modellist directly e.g. `carbon_allocation = [:reserve => PreviousTimeStep(1)] => CarbonAllocationModel()`
+- Add model dependency in sex determination

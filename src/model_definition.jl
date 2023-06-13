@@ -75,6 +75,7 @@ function main_models_definition(p, nsteps)
                     p[:bunch][:sex_ratio_ref],
                     p[:bunch][:random_seed],
                 ),
+                reproductive_organ_emission=ReproductiveOrganEmission(),
                 variables_check=false,
                 status=(initiation_age=0,),
                 nsteps=nsteps,
@@ -171,21 +172,33 @@ function main_models_definition(p, nsteps)
                 initiation_age=0
             )
         ),
-        # "Male" =>
-        #     PlantSimEngine.ModelList(
-        #         maintenance_respiration=RmQ10(p[:Q10], p[:Rm_base], p[:T_ref]),
-        #         variables_check=false,
-        #         nsteps=nsteps,
-        #     ),
-        # "Female" =>
-        #     PlantSimEngine.ModelList(
-        #         maintenance_respiration=RmQ10{Female}(p[:Q10], p[:Rm_base], p[:T_ref]),
-        #         variables_check=false,
-        #         nsteps=nsteps,
-        #         status=(
-        #             nitrogen_content=p[:nitrogen_content][:Female],
-        #         )
-        #     ),
+        "Male" =>
+            PlantSimEngine.ModelList(
+                initiation_age=InitiationAgeFromPlantAge(),
+                reproductive_development=ReproductiveDevelopment(
+                    p[:bunch][:age_max_coefficient],
+                    p[:bunch][:min_coefficient],
+                    p[:bunch][:max_coefficient],
+                ),
+                # maintenance_respiration=RmQ10(p[:Q10], p[:Rm_base], p[:T_ref]),
+                variables_check=false,
+                nsteps=nsteps,
+            ),
+        "Female" =>
+            PlantSimEngine.ModelList(
+                initiation_age=InitiationAgeFromPlantAge(),
+                reproductive_development=ReproductiveDevelopment(
+                    p[:bunch][:age_max_coefficient],
+                    p[:bunch][:min_coefficient],
+                    p[:bunch][:max_coefficient],
+                ),
+                # maintenance_respiration=RmQ10{Female}(p[:Q10], p[:Rm_base], p[:T_ref]),
+                variables_check=false,
+                nsteps=nsteps,
+                status=(
+                    nitrogen_content=p[:nitrogen_content][:Female],
+                )
+            ),
         "RootSystem" =>
             PlantSimEngine.ModelList(
                 potential_evapotranspiration=ET0_BP(),
