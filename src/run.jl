@@ -95,6 +95,19 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
         # PlantSimEngine.run!(plant[:models].models.carbon_demand, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
         # note: update to a full model when several organs are computed for the carbon demand here.
 
+        # Compute models for the Male inflorescences:
+        MultiScaleTreeGraph.traverse(plant, symbol="Male") do male
+            PlantSimEngine.run!(male[:models].models.soil_water, male[:models].models, male[:models].status[i], meteo_, constants, male)
+            # Thermal time since initiation:
+            PlantSimEngine.run!(male[:models].models.thermal_time, male[:models].models, male[:models].status[i], meteo_, constants, male)
+            # Propagate initiation age:
+            PlantSimEngine.run!(male[:models].models.initiation_age, male[:models].models, male[:models].status[i], meteo_, constants, nothing)
+            PlantSimEngine.run!(male[:models].models.final_potential_biomass, male[:models].models, male[:models].status[i], meteo_, constants, nothing)
+            PlantSimEngine.run!(male[:models].models.carbon_demand, male[:models].models, male[:models].status[i], meteo_, constants, male)
+            PlantSimEngine.run!(male[:models].models.state, male[:models].models, male[:models].status[i], meteo_, constants, male)
+        end
+
+
         # Compute the carbon allocation to the organs:
         PlantSimEngine.run!(plant[:models].models.carbon_allocation, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
 
@@ -110,6 +123,11 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
             PlantSimEngine.run!(leaf[:models].models.biomass, leaf[:models].models, leaf[:models].status[i], meteo_, constants, nothing)
             PlantSimEngine.run!(leaf[:models].models.leaf_area, leaf[:models].models, leaf[:models].status[i], meteo_, constants, nothing)
         end
+
+        # MultiScaleTreeGraph.traverse(plant, symbol="Male") do male
+        #     PlantSimEngine.run!(male[:models].models.biomass, male[:models].models, male[:models].status[i], meteo_, constants, male)
+
+        # end
 
         PlantSimEngine.run!(plant[:models].models.biomass, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
         PlantSimEngine.run!(plant[:models].models.reserve_filling, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)

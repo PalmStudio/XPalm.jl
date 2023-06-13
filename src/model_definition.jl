@@ -179,12 +179,36 @@ function main_models_definition(p, nsteps)
                 initiation_age=0
             )
         ),
-        # "Male" =>
-        #     PlantSimEngine.ModelList(
-        #         maintenance_respiration=RmQ10(p[:Q10], p[:Rm_base], p[:T_ref]),
-        #         variables_check=false,
-        #         nsteps=nsteps,
-        #     ),
+        "Male" =>
+            PlantSimEngine.ModelList(
+                initiation_age=InitiationAgeFromPlantAge(),
+                thermal_time=DegreeDaysFTSW(
+                    p[:phyllochron][:threshold_ftsw_stress],
+                ),
+                state=MaleStateModel(
+                    p[:male][:TT_flowering],
+                    p[:male][:duration_abortion],
+                    p[:male][:duration_flowering_male],
+                ),
+                maintenance_respiration=RmQ10FixedN(
+                    p[:respiration][:Male][:Q10],
+                    p[:respiration][:Male][:Rm_base],
+                    p[:respiration][:Male][:T_ref],
+                    p[:respiration][:Male][:P_alive],
+                    p[:nitrogen_content][:Male],
+                ),
+                final_potential_biomass=MaleFinalPotentialBiomass(
+                    p[:male][:male_max_biomass],
+                    p[:male][:age_mature_male],
+                    p[:male][:fraction_biomass_first_male],
+                ),
+                carbon_demand=MaleCarbonDemandModel(
+                    p[:male][:duration_flowering_male],
+                    p[:carbon_demand][:male][:respiration_cost]
+                ),
+                carbon_allocation=OrgansCarbonAllocationModel{Male}(), variables_check=false,
+                nsteps=nsteps,
+            ),
         # "Female" =>
         #     PlantSimEngine.ModelList(
         #         maintenance_respiration=RmQ10{Female}(p[:Q10], p[:Rm_base], p[:T_ref]),

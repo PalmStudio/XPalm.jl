@@ -39,6 +39,11 @@ begin
     leaf2 = get_node(p.mtg, 11)
 end
 
+
+
+
+
+
 lines(scene[:models].status.lai)
 lines(scene[:models].status.aPPFD)
 lines(plant[:models].status.aPPFD)
@@ -83,6 +88,9 @@ plant[:models].status.leaf_area[88]
 phytomer = get_node(p.mtg, 6)
 unique(phytomer[:models].status.TT_since_init)
 unique(phytomer[:models].status.sex)
+
+
+
 
 lines(scene[:models].status.lai[1:100])
 lines(soil[:models].status.ftsw[1:100])

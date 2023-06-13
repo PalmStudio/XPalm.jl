@@ -1,11 +1,11 @@
 abstract type OrganState end
 
-struct Initiation <: OrganState end
+struct Initiated <: OrganState end
 struct Spear <: OrganState end
 struct Opened <: OrganState end
 struct Pruned <: OrganState end
 struct Scenescent <: OrganState end
-struct Abortion <: OrganState end
+struct Aborted <: OrganState end
 struct Flowering <: OrganState end
 struct Bunch <: OrganState end
 struct OleoSynthesis <: OrganState end
@@ -46,7 +46,7 @@ Internode() = Internode(Growing())
 
 A leaf, which has a state of type [`LeafState`](@ref) that can be either:
 
-- `Initiation`: in initiation phase (cell division until begining of elongation)
+- `Initiated`: in initiation phase (cell division until begining of elongation)
 - `Spear`: spear phase, almost fully developped, but leaflets are not yet deployed
 - `Opened`: deployed and photosynthetically active
 - `Pruned`: dead and removed from the plant
@@ -55,7 +55,7 @@ A leaf, which has a state of type [`LeafState`](@ref) that can be either:
 mutable struct Leaf <: Organ
     state
 end
-Leaf() = Leaf(Initiation())
+Leaf() = Leaf(Initiated())
 
 abstract type ReproductiveOrgan <: Organ end
 
@@ -64,8 +64,8 @@ abstract type ReproductiveOrgan <: Organ end
 
 A male inflorescence, which has a state that can be either:
 
-- `Initiation`: in initiation phase (cell division)
-- `Abortion`
+- `Initiated`: in initiation phase (cell division)
+- `Aborted`
 - `Flowering`
 - `Scenescent`: dead but still on the plant
 - `Pruned`: removed from the plant
@@ -74,13 +74,16 @@ mutable struct Male{S} <: ReproductiveOrgan where {S<:OrganState}
     state::String
 end
 
+Male() = Male(Initiated())
+
+
 """
     Female(state)
 
 A female inflorescence, which has a state that can be either:
 
-- `Initiation`: in initiation phase (cell division)
-- `Abortion`
+- `Initiated`: in initiation phase (cell division)
+- `Aborted`
 - `Flowering`
 - `Bunch`: the bunch of fruits is developping
 - `OleoSynthesis`: the inflorescence is in the process of oleosynthesis
@@ -161,6 +164,12 @@ function default_parameters()
                 :T_ref => 25.0,
                 :P_alive => 0.50,
             ),
+            :Male => Dict( ## to check 
+                :Q10 => 2.1,
+                :Rm_base => 0.0022, # Kraalingen et al. 1989, AFM
+                :T_ref => 25.0,
+                :P_alive => 0.50,
+            ),
             :RootSystem => Dict(
                 :Q10 => 2.1,
                 :Rm_base => 0.0022, # Dufrene et al. (1990), Oleagineux.
@@ -173,6 +182,7 @@ function default_parameters()
             :Internode => 0.004,
             :Leaf => 0.025,
             # :Female => 0.01,
+            :Male => 0.01,
             :RootSystem => 0.008,
         ),
         :ini_root_depth => 100.0,
@@ -210,6 +220,9 @@ function default_parameters()
                 :stem_apparent_density => 300000.0, # g m-3
                 :respiration_cost => 1.44, # g g-1
             ),
+            :male => Dict(
+                :respiration_cost => 1.44, # g g-1
+            ),
             :reserves => Dict(
                 :cost_reserve_mobilization => 1.667
             )
@@ -223,6 +236,14 @@ function default_parameters()
             :abortion_rate_max => 0.8,
             :abortion_rate_ref => 0.2,
             :random_seed => 1,
+        ),
+        :male => Dict(
+            :TT_flowering => 6300.0,
+            :duration_flowering_male => 1800.0,
+            :duration_abortion => 540.0,
+            :male_max_biomass => 1200.0,
+            :age_mature_male => 8 * 365,
+            :fraction_biomass_first_male => 0.3,
         ),
     )
     push!(p,

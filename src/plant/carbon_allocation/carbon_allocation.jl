@@ -19,7 +19,7 @@ function PlantSimEngine.run!(m::OrgansCarbonAllocationModel{Plant}, models, stat
 
     #! provide Float64 as the type of returned vector here? Or maybe get the type from the status
     # Carbon demand of the organs (internode + leaves):
-    carbon_demand_organs = MultiScaleTreeGraph.traverse(mtg, symbol=["Leaf", "Internode"]) do node
+    carbon_demand_organs = MultiScaleTreeGraph.traverse(mtg, symbol=["Leaf", "Internode", "Male"]) do node
         node[:models].status[timestep][:carbon_demand]
     end
 
@@ -75,7 +75,7 @@ function PlantSimEngine.run!(m::OrgansCarbonAllocationModel{Plant}, models, stat
         reserve_mobilized = 0.0
     end
 
-    MultiScaleTreeGraph.traverse!(mtg, symbol=["Leaf", "Internode"]) do organ
+    MultiScaleTreeGraph.traverse!(mtg, symbol=["Leaf", "Internode", "Male"]) do organ
         organ[:models].status[timestep][:carbon_allocation] =
             popfirst!(carbon_allocation_organ)
 

@@ -75,10 +75,18 @@ include("model_definition.jl")
 include("age_modulation/age_modulation_linear.jl")
 include("age_modulation/age_modulation_logistic.jl")
 
-# Fruits:
+# inflorescences:
 include("plant/phytomer/phytomer/sex_determination.jl")
 include("plant/phytomer/phytomer/abortion.jl")
+
+# male
+include("plant/phytomer/ReproductiveOrgans/Male/biomass.jl")
+include("plant/phytomer/ReproductiveOrgans/Male/state.jl")
+include("plant/phytomer/ReproductiveOrgans/Male/carbon_demand.jl")
+include("plant/phytomer/ReproductiveOrgans/Male/final_potential_biomass.jl")
 include("run.jl")
+
+
 
 export Palm
 
