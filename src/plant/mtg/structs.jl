@@ -247,7 +247,7 @@ function default_parameters()
             :duration_flowering_male => 1800.0,
             :duration_abortion => 540.0,
             :male_max_biomass => 1200.0,
-            :age_mature_male => 8 * 365,
+            :age_mature_male => 8.0 * 365,
             :fraction_biomass_first_male => 0.3,
         ),
     )
