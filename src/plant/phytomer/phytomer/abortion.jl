@@ -31,7 +31,7 @@ PlantSimEngine.outputs_(::AbortionRate) = (abortion=false, carbon_demand_abortio
 function PlantSimEngine.run!(m::AbortionRate, models, status, meteo, constants, extra=nothing)
 
     status.abortion = prev_value(status, :abortion, default=false)
-    status.abortion != false && return # if abortion is determined, no need to compute it again
+    status.abortion == true && return # if abortion is determined, no need to compute it again
 
     # We only look into the period of abortion :
     if status.TT_since_init > (m.TT_flowering - m.duration_abortion)

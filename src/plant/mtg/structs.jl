@@ -94,7 +94,7 @@ mutable struct Female
     state::OrganState
 end
 
-Female() = Female(Initiation())
+Female() = Female(Initiated())
 
 # """
 #     increment_rank!(palm::Palm)
@@ -238,9 +238,9 @@ function default_parameters()
             :abortion_rate_max => 0.8,
             :abortion_rate_ref => 0.2,
             :random_seed => 1,
-            :age_max_coefficient => 8.0 * 365.0,
-            :min_coefficient => 0.3,
-            :max_coefficient => 1.0,
+            # :age_max_coefficient => 8.0 * 365.0,
+            # :min_coefficient => 0.3,
+            # :max_coefficient => 1.0,
         ),
         :male => Dict(
             :TT_flowering => 6300.0,
@@ -250,6 +250,12 @@ function default_parameters()
             :age_mature_male => 8.0 * 365,
             :fraction_biomass_first_male => 0.3,
         ),
+        :female => Dict(
+            :age_mature_female => 8.0 * 365,
+            :fraction_first_female => 0.30,
+            :potential_fruit_number_at_maturity => 2000,
+            :potential_fruit_weight_at_maturity => 6.5, # g
+        )
     )
     push!(p,
         :biomass_dry => Dict(
@@ -275,6 +281,7 @@ function Palm(;
         Dict{Symbol,Any}(
             :models => copy(model_list["Scene"]),
             :area => 10000 / 136.0, # scene area, m2
+            :all_models => model_list,
         ),
         # type=Scene()
     )
@@ -294,7 +301,6 @@ function Palm(;
         Dict{Symbol,Any}(
             :models => copy(model_list["Plant"]),
             :parameters => parameters,
-            :all_models => model_list,
         ),
         type=Plant()
     )
@@ -371,7 +377,7 @@ function Palm(;
     internode[:models].status[1].final_potential_radius = parameters[:potential_dimensions][:min_radius]
 
     plant[:phytomer_count] = 1
-    plant[:mtg_node_count] = length(scene)
+    scene[:mtg_node_count] = length(scene)
     plant[:last_phytomer] = phyto
 
     return Palm(scene, initiation_age, parameters)

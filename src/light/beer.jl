@@ -71,7 +71,7 @@ end
 function PlantSimEngine.run!(::Beer{T,Plant}, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node) where {T}
     rn = max(1, rownumber(status) - 1) # take the row number (cannot be < 1)
 
-    scene_node = MultiScaleTreeGraph.get_root(mtg)
+    scene_node = get_root(mtg)
     plant_leaf_area = MultiScaleTreeGraph.traverse(scene_node, symbol="Plant") do node
         node[:models].status[rn][:leaf_area]
     end
@@ -88,5 +88,5 @@ end
 # At the soil scale:
 function PlantSimEngine.run!(::Beer{T,Soil}, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node) where {T}
     timestep = rownumber(status)
-    status.aPPFD = MultiScaleTreeGraph.get_root(mtg)[:models].status[timestep].aPPFD
+    status.aPPFD = get_root(mtg)[:models].status[timestep].aPPFD
 end

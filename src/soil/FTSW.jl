@@ -345,7 +345,7 @@ end
 
 # Method to get the FTSW value from other organs:
 function PlantSimEngine.run!(::FTSW, models, st, meteo, constants, mtg::MultiScaleTreeGraph.Node)
-    scene = MultiScaleTreeGraph.get_root(mtg)
+    scene = get_root(mtg)
     timestep = rownumber(st)
     MultiScaleTreeGraph.traverse(scene, symbol="Soil") do soil
         st.ftsw = soil[:models].status[timestep].ftsw
@@ -360,7 +360,7 @@ PlantSimEngine.outputs_(::FTSW{T}) where {T<:Organ} = (
 
 # Method to run the FTSW model from the root system:
 function PlantSimEngine.run!(::FTSW{RootSystem}, models, st, meteo, constants, mtg::MultiScaleTreeGraph.Node)
-    scene = MultiScaleTreeGraph.get_root(mtg)
+    scene = get_root(mtg)
     timestep = rownumber(st)
     MultiScaleTreeGraph.traverse(scene, symbol="Soil") do soil
         soil_st = soil[:models].status[timestep]

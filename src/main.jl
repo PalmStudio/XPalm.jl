@@ -8,9 +8,6 @@ end
 function XPalm(; model_list=main_models_definition())
     p = Palm() # create a palm from seed
 
-    # Defining the models for each organ type:
-    mod_list = model_list()
-
     PlantSimEngine.ModelList(
         photosynthesis=FcVB(),
         # stomatal_conductance=BallBerry(),

@@ -101,7 +101,7 @@ end
 
 # Get values from phytomer (do not use for leaves and internode, they get their values from the Plant model already):
 function PlantSimEngine.run!(::OrgansCarbonAllocationModel{Phytomer}, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node)
-    scene = MultiScaleTreeGraph.get_root(mtg)
+    scene = get_root(mtg)
     timestep = rownumber(status)
     MultiScaleTreeGraph.traverse(scene, symbol="Plant") do plant
         status.carbon_demand = plant[:models].status[timestep].carbon_demand

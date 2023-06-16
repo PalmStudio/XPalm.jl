@@ -183,13 +183,19 @@ function main_models_definition(p, nsteps)
         "Male" =>
             PlantSimEngine.ModelList(
                 initiation_age=InitiationAgeFromPlantAge(),
-                reproductive_development=ReproductiveDevelopment(
-                    p[:bunch][:age_max_coefficient],
-                    p[:bunch][:min_coefficient],
-                    p[:bunch][:max_coefficient],
-                ),
+                # reproductive_development=ReproductiveDevelopment(
+                #     p[:bunch][:age_max_coefficient],
+                #     p[:bunch][:min_coefficient],
+                #     p[:bunch][:max_coefficient],
+                # ),
                 thermal_time=DegreeDaysFTSW(
                     threshold_ftsw_stress=p[:phyllochron][:threshold_ftsw_stress],
+                ),
+                soil_water=FTSW{Male}(ini_root_depth=p[:ini_root_depth]), # needed to get the ftsw value
+                final_potential_biomass=MaleFinalPotentialBiomass(
+                    p[:male][:male_max_biomass],
+                    p[:male][:age_mature_male],
+                    p[:male][:fraction_biomass_first_male],
                 ),
                 state=MaleStateModel(
                     p[:male][:TT_flowering],
@@ -203,33 +209,34 @@ function main_models_definition(p, nsteps)
                     p[:respiration][:Male][:P_alive],
                     p[:nitrogen_content][:Male],
                 ),
-                final_potential_biomass=MaleFinalPotentialBiomass(
-                    p[:male][:male_max_biomass],
-                    p[:male][:age_mature_male],
-                    p[:male][:fraction_biomass_first_male],
-                ),
                 carbon_demand=MaleCarbonDemandModel(
                     p[:male][:duration_flowering_male],
+                    p[:male][:TT_flowering],
                     p[:carbon_demand][:male][:respiration_cost]
                 ),
                 carbon_allocation=OrgansCarbonAllocationModel{Male}(), variables_check=false,
                 nsteps=nsteps,
             ),
-        # "Male" =>
-        #     PlantSimEngine.ModelList(
-        #         maintenance_respiration=RmQ10(p[:Q10], p[:Rm_base], p[:T_ref]),
-        #         variables_check=false,
-        #         nsteps=nsteps,
-        #     ),
-        # "Female" =>
-        #     PlantSimEngine.ModelList(
-        #         maintenance_respiration=RmQ10{Female}(p[:Q10], p[:Rm_base], p[:T_ref]),
-        #         variables_check=false,
-        #         nsteps=nsteps,
-        #         status=(
-        #             nitrogen_content=p[:nitrogen_content][:Female],
-        #         )
-        #     ),
+        "Female" =>
+            PlantSimEngine.ModelList(
+                initiation_age=InitiationAgeFromPlantAge(),
+                thermal_time=DegreeDaysFTSW(
+                    threshold_ftsw_stress=p[:phyllochron][:threshold_ftsw_stress],
+                ),
+                soil_water=FTSW{Female}(ini_root_depth=p[:ini_root_depth]), # needed to get the ftsw value
+                final_potential_biomass=FemaleFinalPotentialFruits(
+                    p[:female][:age_mature_female],
+                    p[:female][:fraction_first_female],
+                    p[:female][:potential_fruit_number_at_maturity],
+                    p[:female][:potential_fruit_weight_at_maturity],
+                ),
+                # maintenance_respiration=RmQ10{Female}(p[:Q10], p[:Rm_base], p[:T_ref]),
+                variables_check=false,
+                nsteps=nsteps,
+                status=(
+                    nitrogen_content=p[:nitrogen_content][:Female],
+                )
+            ),
         "RootSystem" =>
             PlantSimEngine.ModelList(
                 potential_evapotranspiration=ET0_BP(),

@@ -39,10 +39,11 @@ begin
     leaf2 = get_node(p.mtg, 11)
 end
 
-
-
-
-
+traverse(scene) do node
+    if node.MTG.symbol == "Female"
+        println(node.id)
+    end
+end
 
 lines(scene[:models].status.lai)
 lines(scene[:models].status.aPPFD)
