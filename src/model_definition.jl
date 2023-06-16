@@ -69,26 +69,32 @@ function main_models_definition(p, nsteps)
                 leaf_rank=LeafRankModel(),
                 leaf_pruning=RankLeafPruning(p[:rank_leaf_pruning]),
                 sex_determination=SexDetermination(
-                    p[:bunch][:TT_flowering],
-                    p[:bunch][:duration_sex_determination],
-                    p[:bunch][:duration_abortion],
-                    p[:bunch][:sex_ratio_min],
-                    p[:bunch][:sex_ratio_ref],
-                    p[:bunch][:random_seed],
+                    p[:inflo][:TT_flowering],
+                    p[:inflo][:duration_sex_determination],
+                    p[:inflo][:duration_abortion],
+                    p[:inflo][:sex_ratio_min],
+                    p[:inflo][:sex_ratio_ref],
+                    p[:inflo][:random_seed],
                 ),
                 reproductive_organ_emission=ReproductiveOrganEmission(),
                 abortion=AbortionRate(
-                    p[:bunch][:TT_flowering],
-                    p[:bunch][:duration_abortion],
-                    p[:bunch][:abortion_rate_max],
-                    p[:bunch][:abortion_rate_ref],
-                    p[:bunch][:random_seed],
+                    p[:inflo][:TT_flowering],
+                    p[:inflo][:duration_abortion],
+                    p[:inflo][:abortion_rate_max],
+                    p[:inflo][:abortion_rate_ref],
+                    p[:inflo][:random_seed],
+                ),
+                state=InfloStateModel(
+                    p[:inflo][:TT_flowering],
+                    p[:inflo][:duration_abortion],
+                    p[:male][:duration_flowering_male],
+                    p[:female][:TT_harvest],
+                    p[:female][:fraction_period_oleosynthesis],
                 ),
                 variables_check=false,
                 status=(initiation_age=0,),
                 nsteps=nsteps,
-            ),
-        "Internode" =>
+            ), "Internode" =>
             PlantSimEngine.ModelList(
                 initiation_age=InitiationAgeFromPlantAge(),
                 thermal_time=DegreeDaysFTSW(
@@ -192,16 +198,11 @@ function main_models_definition(p, nsteps)
                     threshold_ftsw_stress=p[:phyllochron][:threshold_ftsw_stress],
                 ),
                 soil_water=FTSW{Male}(ini_root_depth=p[:ini_root_depth]), # needed to get the ftsw value
-                final_potential_biomass=MaleFinalPotentialBiomass(
-                    p[:male][:male_max_biomass],
-                    p[:male][:age_mature_male],
-                    p[:male][:fraction_biomass_first_male],
-                ),
-                state=MaleStateModel(
-                    p[:male][:TT_flowering],
-                    p[:male][:duration_abortion],
-                    p[:male][:duration_flowering_male],
-                ),
+                # final_potential_biomass=MaleFinalPotentialBiomass(
+                #     p[:male][:male_max_biomass],
+                #     p[:male][:age_mature_male],
+                #     p[:male][:fraction_biomass_first_male],
+                # ),
                 maintenance_respiration=RmQ10FixedN(
                     p[:respiration][:Male][:Q10],
                     p[:respiration][:Male][:Rm_base],
@@ -209,14 +210,13 @@ function main_models_definition(p, nsteps)
                     p[:respiration][:Male][:P_alive],
                     p[:nitrogen_content][:Male],
                 ),
-                carbon_demand=MaleCarbonDemandModel(
-                    p[:male][:duration_flowering_male],
-                    p[:male][:TT_flowering],
-                    p[:carbon_demand][:male][:respiration_cost]
-                ),
+                # carbon_demand=MaleCarbonDemandModel(
+                #     p[:male][:duration_flowering_male],
+                #     p[:inflo][:TT_flowering],
+                #     p[:carbon_demand][:male][:respiration_cost]
+                # ),
                 carbon_allocation=OrgansCarbonAllocationModel{Male}(), variables_check=false,
                 nsteps=nsteps,
-                status=(state="undetermined",)
             ),
         "Female" =>
             PlantSimEngine.ModelList(
@@ -236,7 +236,6 @@ function main_models_definition(p, nsteps)
                 nsteps=nsteps,
                 status=(
                     nitrogen_content=p[:nitrogen_content][:Female],
-                    state="undetermined",
                 )
             ),
         "RootSystem" =>

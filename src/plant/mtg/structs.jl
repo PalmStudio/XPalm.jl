@@ -229,7 +229,7 @@ function default_parameters()
                 :cost_reserve_mobilization => 1.667
             )
         ),
-        :bunch => Dict(
+        :inflo => Dict(
             :TT_flowering => 6300.0,
             :duration_sex_determination => 1350.0,
             :duration_abortion => 540.0,
@@ -243,9 +243,7 @@ function default_parameters()
             # :max_coefficient => 1.0,
         ),
         :male => Dict(
-            :TT_flowering => 6300.0,
             :duration_flowering_male => 1800.0,
-            :duration_abortion => 540.0,
             :male_max_biomass => 1200.0,
             :age_mature_male => 8.0 * 365,
             :fraction_biomass_first_male => 0.3,
@@ -256,6 +254,7 @@ function default_parameters()
             :potential_fruit_number_at_maturity => 2000,
             :potential_fruit_weight_at_maturity => 6.5, # g
             :TT_harvest => 12150.0,
+            :fraction_period_oleosynthesis => 0.8,
         )
     )
     push!(p,
