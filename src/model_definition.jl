@@ -210,6 +210,7 @@ function main_models_definition(p, nsteps)
                     p[:respiration][:Male][:P_alive],
                     p[:nitrogen_content][:Male],
                 ),
+                state=InfloStateModel(),
                 # carbon_demand=MaleCarbonDemandModel(
                 #     p[:male][:duration_flowering_male],
                 #     p[:inflo][:TT_flowering],
@@ -231,6 +232,7 @@ function main_models_definition(p, nsteps)
                     p[:female][:potential_fruit_number_at_maturity],
                     p[:female][:potential_fruit_weight_at_maturity],
                 ),
+                state=InfloStateModel(),
                 # maintenance_respiration=RmQ10{Female}(p[:Q10], p[:Rm_base], p[:T_ref]),
                 variables_check=false,
                 nsteps=nsteps,

@@ -36,5 +36,5 @@ function PlantSimEngine.run!(::ReproductiveOrganEmission, models, status, meteo,
     PlantSimEngine.run!(repro_organ[:models].models.final_potential_biomass, repro_organ[:models].models, repro_organ[:models].status[current_step], meteo, constants, repro_organ)
 
     # repro_organ[:models].status[current_step].biomass = 0.0
-    repro_organ[:models].status[current_step].carbon_demand = 0.0
+    # repro_organ[:models].status[current_step].carbon_demand = 0.0
 end
