@@ -81,9 +81,8 @@ include("plant/phytomer/phytomer/state.jl")
 
 # male
 include("plant/phytomer/ReproductiveOrgans/Male/biomass.jl")
-# include("plant/phytomer/ReproductiveOrgans/Male/state.jl")
-# include("plant/phytomer/ReproductiveOrgans/Male/carbon_demand.jl")
-# include("plant/phytomer/ReproductiveOrgans/Male/final_potential_biomass.jl")
+include("plant/phytomer/ReproductiveOrgans/Male/carbon_demand.jl")
+include("plant/phytomer/ReproductiveOrgans/Male/final_potential_biomass.jl")
 
 # female
 include("plant/phytomer/ReproductiveOrgans/Female/final_potential_biomass.jl")

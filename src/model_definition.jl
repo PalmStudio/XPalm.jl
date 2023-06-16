@@ -198,11 +198,11 @@ function main_models_definition(p, nsteps)
                     threshold_ftsw_stress=p[:phyllochron][:threshold_ftsw_stress],
                 ),
                 soil_water=FTSW{Male}(ini_root_depth=p[:ini_root_depth]), # needed to get the ftsw value
-                # final_potential_biomass=MaleFinalPotentialBiomass(
-                #     p[:male][:male_max_biomass],
-                #     p[:male][:age_mature_male],
-                #     p[:male][:fraction_biomass_first_male],
-                # ),
+                final_potential_biomass=MaleFinalPotentialBiomass(
+                    p[:male][:male_max_biomass],
+                    p[:male][:age_mature_male],
+                    p[:male][:fraction_biomass_first_male],
+                ),
                 maintenance_respiration=RmQ10FixedN(
                     p[:respiration][:Male][:Q10],
                     p[:respiration][:Male][:Rm_base],
@@ -211,11 +211,11 @@ function main_models_definition(p, nsteps)
                     p[:nitrogen_content][:Male],
                 ),
                 state=InfloStateModel(),
-                # carbon_demand=MaleCarbonDemandModel(
-                #     p[:male][:duration_flowering_male],
-                #     p[:inflo][:TT_flowering],
-                #     p[:carbon_demand][:male][:respiration_cost]
-                # ),
+                carbon_demand=MaleCarbonDemandModel(
+                    p[:male][:duration_flowering_male],
+                    p[:inflo][:TT_flowering],
+                    p[:carbon_demand][:male][:respiration_cost]
+                ),
                 carbon_allocation=OrgansCarbonAllocationModel{Male}(), variables_check=false,
                 nsteps=nsteps,
             ),
