@@ -40,3 +40,4 @@ To add a new model and process, you need to:
 - in carbon allocation, put again `reserve` as needed input. We had to remove it because PSE detects a cyclic dependency with reserve filling. This is ok to remove because carbon allocation needs the value from the day before. We should define how this is done in PSE, e.g. via a special type that provides the values from the day before or else ? Maybe more a way to say to the model that we take the value from before, in the modellist directly e.g. `carbon_allocation = [:reserve => PreviousTimeStep(1)] => CarbonAllocationModel()`
 - Add model dependency in sex determination
 - in the former verion TT_flowering was changing over plant development. here we fixed it, to update if necessary
+- calibration of 'final_potential_biomass' check on ECOPALM data the maximum number of furit and maximal individual fruit
