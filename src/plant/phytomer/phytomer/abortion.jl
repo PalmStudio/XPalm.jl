@@ -26,12 +26,11 @@ function AbortionRate(TT_flowering, duration_abortion)
 end
 
 PlantSimEngine.inputs_(::AbortionRate) = (carbon_offer_after_rm=-Inf, carbon_demand_organs=-Inf)
-PlantSimEngine.outputs_(::AbortionRate) = (abortion=false, carbon_demand_abortion=-Inf, carbon_offer_abortion=-Inf,)
+PlantSimEngine.outputs_(::AbortionRate) = (state="undetermined", carbon_demand_abortion=-Inf, carbon_offer_abortion=-Inf,)
 
 function PlantSimEngine.run!(m::AbortionRate, models, status, meteo, constants, extra=nothing)
 
-    status.abortion = prev_value(status, :abortion, default=false)
-    status.abortion == true && return # if abortion is determined, no need to compute it again
+    status.state == "Aborted" && return # if abortion is determined, no need to compute it again
 
     # We only look into the period of abortion :
     if status.TT_since_init > (m.TT_flowering - m.duration_abortion)
@@ -72,9 +71,7 @@ function PlantSimEngine.run!(m::AbortionRate, models, status, meteo, constants, 
 
         #e.g. if threshold_abortion is 0.7 we will have more chance to abort
         if random_abort < threshold_abortion
-            status.abortion = true
-        else
-            status.abortion = false
+            status.state = "Aborted"
         end
     end
 end

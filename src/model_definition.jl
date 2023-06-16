@@ -216,6 +216,7 @@ function main_models_definition(p, nsteps)
                 ),
                 carbon_allocation=OrgansCarbonAllocationModel{Male}(), variables_check=false,
                 nsteps=nsteps,
+                status=(state="undetermined",)
             ),
         "Female" =>
             PlantSimEngine.ModelList(
@@ -235,6 +236,7 @@ function main_models_definition(p, nsteps)
                 nsteps=nsteps,
                 status=(
                     nitrogen_content=p[:nitrogen_content][:Female],
+                    state="undetermined",
                 )
             ),
         "RootSystem" =>

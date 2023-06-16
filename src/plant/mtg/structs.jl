@@ -255,6 +255,7 @@ function default_parameters()
             :fraction_first_female => 0.30,
             :potential_fruit_number_at_maturity => 2000,
             :potential_fruit_weight_at_maturity => 6.5, # g
+            :TT_harvest => 12150.0,
         )
     )
     push!(p,

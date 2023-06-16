@@ -104,7 +104,6 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
             PlantSimEngine.run!(male[:models].models.initiation_age, male[:models].models, male[:models].status[i], meteo_, constants, nothing)
             PlantSimEngine.run!(male[:models].models.final_potential_biomass, male[:models].models, male[:models].status[i], meteo_, constants, nothing)
             # PlantSimEngine.run!(male[:models].models.carbon_demand, male[:models].models, male[:models].status[i], meteo_, constants, male)
-            PlantSimEngine.run!(male[:models].models.state, male[:models].models, male[:models].status[i], meteo_, constants, male)
         end
 
         MultiScaleTreeGraph.traverse(plant, symbol="Female") do female
@@ -155,6 +154,7 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
             PlantSimEngine.run!(phytomer[:models].models.initiation_age, phytomer[:models].models, phytomer[:models].status[i], meteo_, constants, nothing)
             PlantSimEngine.run!(phytomer[:models].models.sex_determination, phytomer[:models].models, phytomer[:models].status[i], meteo_, constants, phytomer)
             PlantSimEngine.run!(phytomer[:models].models.abortion, phytomer[:models].models, phytomer[:models].status[i], meteo_, constants, phytomer)
+            PlantSimEngine.run!(phytomer[:models].models.state, phytomer[:models].models, phytomer[:models].status[i], meteo_, constants, phytomer)
         end
 
         # Run the phyllochron model over the plant (calls phytomer emission):
