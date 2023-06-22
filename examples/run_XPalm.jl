@@ -37,13 +37,49 @@ begin
     leaf1 = get_node(p.mtg, 8)
     internode1 = get_node(p.mtg, 7)
     leaf2 = get_node(p.mtg, 11)
+    female = get_node(scene, 171)
 end
 
-traverse(scene) do node
-    if node.MTG.symbol == "Female"
-        println(node.id)
-    end
+plant[:models].status.carbon_demand
+lines(plant[:models].status.carbon_assimilation - plant[:models].status.carbon_demand)
+
+plant_models = MultiScaleTreeGraph.ancestors(female, :models, symbol="Plant")[1]
+plant_status_prev = plant_models.status[200-1]
+plant_status_prev[:carbon_offer_after_rm]
+
+female[:models].status.TT_since_init
+
+male_demand = traverse(scene, symbol="Male") do node
+    node[:models].status[:carbon_demand]
 end
+
+a = male_demand[1]
+unique(a)
+
+
+
+females_var = traverse(scene, symbol="Female") do node
+                  node[:models].status[:carbon_offer_fruits]
+              end |> first |> unique
+
+
+plant[:models].status.carbon_offer_after_rm
+plant[:models].status.carbon_demand
+unique(females_var[1])
+
+lines(plant[:models].status.carbon_assimilation - plant[:models].status.carbon_demand)
+
+lines(plant[:models].status.carbon_demand)
+
+male_demand = traverse(scene, symbol="Male") do node
+    node[:models].status[:sex]
+end
+
+a = male_demand[1]
+unique(a)
+
+lines(plant[:models].status.carbon_demand)
+
 
 lines(scene[:models].status.lai)
 lines(scene[:models].status.aPPFD)

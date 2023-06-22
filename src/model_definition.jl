@@ -74,7 +74,7 @@ function main_models_definition(p, nsteps)
                     p[:inflo][:duration_abortion],
                     p[:inflo][:sex_ratio_min],
                     p[:inflo][:sex_ratio_ref],
-                    p[:inflo][:random_seed],
+                    random_seed=p[:inflo][:random_seed],
                 ),
                 reproductive_organ_emission=ReproductiveOrganEmission(),
                 abortion=AbortionRate(
@@ -94,7 +94,8 @@ function main_models_definition(p, nsteps)
                 variables_check=false,
                 status=(initiation_age=0,),
                 nsteps=nsteps,
-            ), "Internode" =>
+            ),
+        "Internode" =>
             PlantSimEngine.ModelList(
                 initiation_age=InitiationAgeFromPlantAge(),
                 thermal_time=DegreeDaysFTSW(
@@ -216,7 +217,8 @@ function main_models_definition(p, nsteps)
                     p[:inflo][:TT_flowering],
                     p[:carbon_demand][:male][:respiration_cost]
                 ),
-                carbon_allocation=OrgansCarbonAllocationModel{Male}(), variables_check=false,
+                carbon_allocation=OrgansCarbonAllocationModel{Male}(),
+                variables_check=false,
                 nsteps=nsteps,
             ),
         "Female" =>
@@ -231,6 +233,23 @@ function main_models_definition(p, nsteps)
                     p[:female][:fraction_first_female],
                     p[:female][:potential_fruit_number_at_maturity],
                     p[:female][:potential_fruit_weight_at_maturity],
+                ),
+                number_spikelets=NumberSpikelets(
+                    p[:inflo][:TT_flowering],
+                    p[:female][:duration_dev_spikelets],
+                ),
+                number_fruits=NumberFruits(
+                    p[:inflo][:TT_flowering],
+                    p[:female][:duration_fruit_setting],
+                ),
+                carbon_demand=FemaleCarbonDemandModel(
+                    p[:carbon_demand][:female][:respiration_cost],
+                    p[:carbon_demand][:female][:respiration_cost_oleosynthesis],
+                    p[:inflo][:TT_flowering],
+                    p[:female][:TT_harvest],
+                    p[:female][:duration_fruit_setting],
+                    p[:female][:oil_content],
+                    p[:female][:fraction_period_oleosynthesis],
                 ),
                 state=InfloStateModel(),
                 # maintenance_respiration=RmQ10{Female}(p[:Q10], p[:Rm_base], p[:T_ref]),

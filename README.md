@@ -16,6 +16,7 @@ To add a new model and process, you need to:
 - If the model needs parameters, add the parameters in the parameter dictionnary in `structs.jl`, in the `default_parameters()` function around l.140.
 - Add a call to the model in `run_XPalm()` in the `run.jl` script. The model should be called at the right moment in the script considering its dependencies over previously computed variables. It can also take the mtg node of an organ as last argument, or `nothing` if the mtg is not needed. Make sure to call the right method, as sometimes a model has a different method when called with an MTG node.
 - Run the `run_XPalm.jl` file in the examples scripts, and make sure that everything runs. If there is an error, make sure to read the lines of the error that correspond to the `XPalm` package, not the others, as the error most probably comes from your new implementation rather than another package.
+- Pre-allocate a hundred phytomers at instantiation and only use them when needed (and set the parent + variables)
 
 
 
@@ -41,3 +42,7 @@ To add a new model and process, you need to:
 - Add model dependency in sex determination
 - in the former verion TT_flowering was changing over plant development. here we fixed it, to update if necessary
 - calibration of 'final_potential_biomass' check on ECOPALM data the maximum number of furit and maximal individual fruit
+- Add peduncle carbon demand and biomass for the female
+- add harvest management: remove fruits, remove leaves
+- Review how maintenance respiration is computed
+- Compute the trophic status of the phytomer and females as a proper process (see number_fruits + sex_determination)

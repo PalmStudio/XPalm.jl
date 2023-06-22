@@ -113,6 +113,9 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
             # Propagate initiation age:
             PlantSimEngine.run!(female[:models].models.initiation_age, female[:models].models, female[:models].status[i], meteo_, constants, nothing)
             PlantSimEngine.run!(female[:models].models.final_potential_biomass, female[:models].models, female[:models].status[i], meteo_, constants, nothing)
+            PlantSimEngine.run!(female[:models].models.number_spikelets, female[:models].models, female[:models].status[i], meteo_, constants, female)
+            PlantSimEngine.run!(female[:models].models.number_fruits, female[:models].models, female[:models].status[i], meteo_, constants, female)
+            PlantSimEngine.run!(female[:models].models.carbon_demand, female[:models].models, female[:models].status[i], meteo_, constants, nothing)
         end
 
         # Compute the carbon allocation to the organs:
@@ -130,11 +133,6 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
             PlantSimEngine.run!(leaf[:models].models.biomass, leaf[:models].models, leaf[:models].status[i], meteo_, constants, nothing)
             PlantSimEngine.run!(leaf[:models].models.leaf_area, leaf[:models].models, leaf[:models].status[i], meteo_, constants, nothing)
         end
-
-        # MultiScaleTreeGraph.traverse(plant, symbol="Male") do male
-        #     PlantSimEngine.run!(male[:models].models.biomass, male[:models].models, male[:models].status[i], meteo_, constants, male)
-
-        # end
 
         PlantSimEngine.run!(plant[:models].models.biomass, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
         PlantSimEngine.run!(plant[:models].models.reserve_filling, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)

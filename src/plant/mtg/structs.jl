@@ -225,6 +225,10 @@ function default_parameters()
             :male => Dict(
                 :respiration_cost => 1.44, # g g-1
             ),
+            :female => Dict(
+                :respiration_cost => 1.44, # g g-1
+                :respiration_cost_oleosynthesis => 3.2, # g g-1
+            ),
             :reserves => Dict(
                 :cost_reserve_mobilization => 1.667
             )
@@ -253,9 +257,12 @@ function default_parameters()
             :fraction_first_female => 0.30,
             :potential_fruit_number_at_maturity => 2000,
             :potential_fruit_weight_at_maturity => 6.5, # g
+            :duration_fruit_setting => 405.0,
+            :duration_dev_spikelets => 675.0,
+            :oil_content => 0.25,
             :TT_harvest => 12150.0,
             :fraction_period_oleosynthesis => 0.8,
-        )
+        ),
     )
     push!(p,
         :biomass_dry => Dict(

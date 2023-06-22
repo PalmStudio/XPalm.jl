@@ -7,7 +7,7 @@ OrgansCarbonAllocationModel{O}(; cost_reserve_mobilization=1.667) where {O} = Or
 
 PlantSimEngine.inputs_(::OrgansCarbonAllocationModel) = (carbon_offer_after_rm=-Inf,)#, reserve=-Inf,)
 PlantSimEngine.outputs_(::OrgansCarbonAllocationModel) = (carbon_allocation_organs=-Inf, respiration_reserve_mobilization=-Inf, trophic_status=-Inf, carbon_offer_after_allocation=-Inf, carbon_demand=-Inf)
-PlantSimEngine.outputs_(::OrgansCarbonAllocationModel{T}) where {T<:Union{Leaf,Internode}} = (carbon_allocation=-Inf,)
+PlantSimEngine.outputs_(::OrgansCarbonAllocationModel{T}) where {T<:Union{Leaf,Internode,Male,Female}} = (carbon_allocation=-Inf,)
 PlantSimEngine.outputs_(::OrgansCarbonAllocationModel{Phytomer}) = (carbon_demand=-Inf,)
 
 # At the plant scale:
@@ -19,7 +19,7 @@ function PlantSimEngine.run!(m::OrgansCarbonAllocationModel{Plant}, models, stat
 
     #! provide Float64 as the type of returned vector here? Or maybe get the type from the status
     # Carbon demand of the organs (internode + leaves):
-    carbon_demand_organs = MultiScaleTreeGraph.traverse(mtg, symbol=["Leaf", "Internode", "Male"]) do node
+    carbon_demand_organs = MultiScaleTreeGraph.traverse(mtg, symbol=["Leaf", "Internode", "Male", "Female"]) do node
         node[:models].status[timestep][:carbon_demand]
     end
 
@@ -75,7 +75,8 @@ function PlantSimEngine.run!(m::OrgansCarbonAllocationModel{Plant}, models, stat
         reserve_mobilized = 0.0
     end
 
-    MultiScaleTreeGraph.traverse!(mtg, symbol=["Leaf", "Internode", "Male"]) do organ
+    # No reserves for the other organs:
+    MultiScaleTreeGraph.traverse!(mtg, symbol=["Leaf", "Internode"]) do organ
         organ[:models].status[timestep][:carbon_allocation] =
             popfirst!(carbon_allocation_organ)
 
