@@ -8,9 +8,7 @@ PlantSimEngine.inputs_(::MaleCarbonDemandModel) = (final_potential_biomass=-Inf,
 PlantSimEngine.outputs_(::MaleCarbonDemandModel) = (carbon_demand=-Inf,)
 
 function PlantSimEngine.run!(m::MaleCarbonDemandModel, models, status, meteo, constants, extra=nothing)
-
-    state = prev_value(status, :state, default="undefined")
-    prev_value(status, :sex, default="undefined") != "Male" && return # if the sex is not male, no need to compute 
+    state = prev_value(status, :state, default="undetermined")
 
     if state == "Aborted" || state == "Senescent" # if abortion no more carbon demand
         status.carbon_demand = 0.0

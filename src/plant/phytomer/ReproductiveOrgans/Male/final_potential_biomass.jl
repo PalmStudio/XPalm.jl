@@ -14,7 +14,8 @@ function PlantSimEngine.run!(m::MaleFinalPotentialBiomass, models, status, meteo
         0.0,
         m.age_mature_male,
         m.fraction_biomass_first_male,
-        1.0)
+        1.0
+    )
 
     status.final_potential_biomass = coeff_dev * m.male_max_biomass
 end
