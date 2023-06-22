@@ -2,14 +2,16 @@ struct InfloStateModel{T} <: AbstractStateModel
     TT_flowering::T
     duration_abortion::T
     duration_flowering_male::T
+    duration_fruit_setting::T
     TT_harvest::T
     fraction_period_oleosynthesis::T
     TT_ini_oleo::T
 end
 
-function InfloStateModel(TT_flowering=6300.0, duration_abortion=540.0, duration_flowering_male=1800.0, TT_harvest=12150.0, fraction_period_oleosynthesis=0.8)
-    TT_ini_oleo = TT_flowering + (1 - fraction_period_oleosynthesis) * (TT_harvest - TT_flowering)
-    InfloStateModel(TT_flowering, duration_abortion, duration_flowering_male, TT_harvest, fraction_period_oleosynthesis, TT_ini_oleo)
+function InfloStateModel(TT_flowering=6300.0, duration_abortion=540.0, duration_flowering_male=1800.0, duration_fruit_setting=405.0, TT_harvest=12150.0, fraction_period_oleosynthesis=0.8)
+    duration_dev_bunch = TT_harvest - (TT_flowering + duration_fruit_setting)
+    TT_ini_oleo = TT_flowering + duration_fruit_setting + (1 - fraction_period_oleosynthesis) * duration_dev_bunch
+    InfloStateModel(TT_flowering, duration_abortion, duration_flowering_male, duration_fruit_setting, TT_harvest, fraction_period_oleosynthesis, TT_ini_oleo)
 end
 
 PlantSimEngine.inputs_(::InfloStateModel) = (TT_since_init=-Inf,)
@@ -31,7 +33,7 @@ function PlantSimEngine.run!(m::InfloStateModel, models, status, meteo, constant
         end
         # Give the state to the reproductive organ:
         timestep = rownumber(status)
-        status(mtg[1][2][:models])[timestep].state = status.state
+        mtg[1][2][:models].status[timestep].state = status.state
     elseif status.sex == "Female"
 
         if status.TT_since_init >= m.TT_harvest
