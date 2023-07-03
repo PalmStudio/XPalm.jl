@@ -18,14 +18,13 @@ struct RootGrowthFTSW{T} <: AbstractRoot_GrowthModel
     TRESH_FTSW_SLOW_ROOTS::T
 end
 
-
 PlantSimEngine.inputs_(::RootGrowthFTSW) = (
     TEff=-Inf, # daily efficient temperature for plant growth (degree C days)
+    soil_depth=-Inf, # soil depth (cm)
 )
 
 PlantSimEngine.outputs_(::RootGrowthFTSW) = (
     root_depth=-Inf, # root depth (cm)
-    soil_depth=-Inf, # soil depth (cm)
 )
 
 function RootGrowthFTSW(;
