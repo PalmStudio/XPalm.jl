@@ -5,7 +5,8 @@ using DataFrames, CSV, Statistics
 using CairoMakie
 using XPalm
 
-meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/Exemple_meteo.csv"), DataFrame)
+# meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/Exemple_meteo.csv"), DataFrame)
+meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/Meteo_extract_BDD_SMSE.txt"), DataFrame)
 rename!(
     meteo,
     :TMin => :Tmin,
@@ -24,9 +25,15 @@ transform!(
     :Rg => (x -> x .* 0.48) => :Ri_PAR_f,
 )
 
+dropmissing!(meteo)
+
+meteo = first(meteo, 1000)
+
 p = Palm(nsteps=nrow(meteo))
 
 XPalm.run_XPalm(p, meteo)
+
+@profview XPalm.run_XPalm(p, first(meteo, 10))
 
 begin
     scene = p.mtg
