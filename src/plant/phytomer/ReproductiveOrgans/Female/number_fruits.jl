@@ -23,7 +23,7 @@ function PlantSimEngine.run!(m::NumberFruits, models, status, meteo, constants, 
     status.fruits_number !== -Inf && return # if it has a number of fruits, no need to compute it again
 
     # We only look into the period of abortion :
-    if status.TT_since_init >= m.TT_flowering && status.TT_since_init < (m.TT_flowering + m.duration_fruit_setting)
+    if status.TT_since_init >= m.TT_flowering && status.TT_since_init <= (m.TT_flowering + m.duration_fruit_setting)
         # Propagate the values:
         status.carbon_offer_fruits = prev_value(status, :carbon_offer_fruits, default=0.0)
 

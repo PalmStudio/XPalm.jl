@@ -8,7 +8,7 @@ struct InfloStateModel{T} <: AbstractStateModel
     TT_ini_oleo::T
 end
 
-function InfloStateModel(TT_flowering=6300.0, duration_abortion=540.0, duration_flowering_male=1800.0, duration_fruit_setting=405.0, TT_harvest=12150.0, fraction_period_oleosynthesis=0.8)
+function InfloStateModel(; TT_flowering=6300.0, duration_abortion=540.0, duration_flowering_male=1800.0, duration_fruit_setting=405.0, TT_harvest=12150.0, fraction_period_oleosynthesis=0.8)
     duration_dev_bunch = TT_harvest - (TT_flowering + duration_fruit_setting)
     TT_ini_oleo = TT_flowering + duration_fruit_setting + (1 - fraction_period_oleosynthesis) * duration_dev_bunch
     InfloStateModel(TT_flowering, duration_abortion, duration_flowering_male, duration_fruit_setting, TT_harvest, fraction_period_oleosynthesis, TT_ini_oleo)

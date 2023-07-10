@@ -43,11 +43,17 @@ begin
     leaf1 = get_node(p.mtg, 8)
     internode1 = get_node(p.mtg, 7)
     leaf2 = get_node(p.mtg, 11)
-    female = get_node(scene, 171)
-    male = get_node(scene, 13)
+    female = get_node(scene, 21)
+    male = get_node(scene, 9)
 end
 
-maximum(male[:models].status.biomass)
+unique(male[:models].status.biomass)
+unique(male[:models].status.carbon_allocation)
+unique(female[:models].status.biomass)
+unique(female[:models].status.biomass_harvested)
+unique(female[:models].status.carbon_allocation)
+
+df = DataFrame(female[:models].status)
 
 plant[:models].status.carbon_demand
 lines(plant[:models].status.carbon_assimilation - plant[:models].status.carbon_demand)

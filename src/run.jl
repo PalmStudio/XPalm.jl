@@ -142,8 +142,6 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
         PlantSimEngine.run!(plant[:models].models.reserve_filling, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
 
         MultiScaleTreeGraph.traverse(plant, symbol="Phytomer") do phytomer
-            PlantSimEngine.run!(phytomer[:models].models.leaf_pruning, phytomer[:models].models, phytomer[:models].status[i], meteo_, constants, phytomer)
-
             #! these models only go and get the values from other scales:
             # Give the ftsw value to the phytomer:
             PlantSimEngine.run!(phytomer[:models].models.soil_water, phytomer[:models].models, phytomer[:models].status[i], meteo_, constants, phytomer)
@@ -157,6 +155,12 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
             PlantSimEngine.run!(phytomer[:models].models.sex_determination, phytomer[:models].models, phytomer[:models].status[i], meteo_, constants, phytomer)
             PlantSimEngine.run!(phytomer[:models].models.abortion, phytomer[:models].models, phytomer[:models].status[i], meteo_, constants, phytomer)
             PlantSimEngine.run!(phytomer[:models].models.state, phytomer[:models].models, phytomer[:models].status[i], meteo_, constants, phytomer)
+            PlantSimEngine.run!(phytomer[:models].models.leaf_pruning, phytomer[:models].models, phytomer[:models].status[i], meteo_, constants, phytomer)
+        end
+
+        # Compute the harvest:
+        MultiScaleTreeGraph.traverse(plant, symbol="Female") do female
+            PlantSimEngine.run!(female[:models].models.harvest, female[:models].models, female[:models].status[i], meteo_, constants, nothing)
         end
 
         # Run the phyllochron model over the plant (calls phytomer emission):
@@ -164,6 +168,9 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
 
         # Compute the plant total leaf area:
         PlantSimEngine.run!(plant[:models].models.leaf_area, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
+
+        # Compute the total harvest:
+        PlantSimEngine.run!(plant[:models].models.harvest, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
 
         # Compute LAI from total leaf area:
         PlantSimEngine.run!(scene[:models].models.lai_dynamic, scene[:models].models, scene[:models].status[i], meteo_, constants, scene)

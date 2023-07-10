@@ -42,8 +42,9 @@ To add a new model and process, you need to:
 - Add model dependency in sex determination
 - in the former verion TT_flowering was changing over plant development. here we fixed it, to update if necessary
 - calibration of 'final_potential_biomass' check on ECOPALM data the maximum number of furit and maximal individual fruit
-- Add peduncle carbon demand and biomass for the female
+- [x] Add peduncle carbon demand and biomass for the female
 - add harvest management: remove fruits, remove leaves
-- Review how maintenance respiration is computed (add Male and Female)
+- [x] Review how maintenance respiration is computed (add Male and Female)
 - Compute the trophic status of the phytomer and females as a proper process (see number_fruits + sex_determination)
 - Don't forget to put back thermal time of flowering to 6300 when we're finished prototyping (and when it runs faster!!!!)
+- Add litter (when leaves are removed) + male inflorescences

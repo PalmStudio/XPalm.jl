@@ -47,6 +47,7 @@ function main_models_definition(p, nsteps)
                 p[:leaflets_biomass_contribution],
                 p[:nsc_max]
             ),
+            harvest=BunchHarvest{Plant}(),
             variables_check=false,
             nsteps=nsteps,
         ),
@@ -85,11 +86,12 @@ function main_models_definition(p, nsteps)
                     p[:inflo][:random_seed],
                 ),
                 state=InfloStateModel(
-                    p[:inflo][:TT_flowering],
-                    p[:inflo][:duration_abortion],
-                    p[:male][:duration_flowering_male],
-                    p[:female][:TT_harvest],
-                    p[:female][:fraction_period_oleosynthesis],
+                    TT_flowering=p[:inflo][:TT_flowering],
+                    duration_abortion=p[:inflo][:duration_abortion],
+                    duration_flowering_male=p[:male][:duration_flowering_male],
+                    duration_fruit_setting=p[:female][:duration_fruit_setting],
+                    TT_harvest=p[:female][:TT_harvest],
+                    fraction_period_oleosynthesis=p[:female][:fraction_period_oleosynthesis],
                 ),
                 variables_check=false,
                 status=(initiation_age=0,),
@@ -230,12 +232,20 @@ function main_models_definition(p, nsteps)
                 thermal_time=DegreeDaysFTSW(
                     threshold_ftsw_stress=p[:phyllochron][:threshold_ftsw_stress],
                 ),
+                maintenance_respiration=RmQ10FixedN(
+                    p[:respiration][:Female][:Q10],
+                    p[:respiration][:Female][:Rm_base],
+                    p[:respiration][:Female][:T_ref],
+                    p[:respiration][:Female][:P_alive],
+                    p[:nitrogen_content][:Female],
+                ),
                 soil_water=FTSW{Female}(ini_root_depth=p[:ini_root_depth]), # needed to get the ftsw value
                 final_potential_biomass=FemaleFinalPotentialFruits(
                     p[:female][:age_mature_female],
                     p[:female][:fraction_first_female],
                     p[:female][:potential_fruit_number_at_maturity],
                     p[:female][:potential_fruit_weight_at_maturity],
+                    p[:female][:stalk_max_biomass],
                 ),
                 number_spikelets=NumberSpikelets(
                     p[:inflo][:TT_flowering],
@@ -253,12 +263,14 @@ function main_models_definition(p, nsteps)
                     p[:female][:duration_fruit_setting],
                     p[:female][:oil_content],
                     p[:female][:fraction_period_oleosynthesis],
+                    p[:female][:fraction_period_stalk],
                 ),
                 biomass=FemaleBiomass(
                     p[:carbon_demand][:female][:respiration_cost],
                     p[:carbon_demand][:female][:respiration_cost_oleosynthesis],
                 ),
                 state=InfloStateModel(),
+                harvest=BunchHarvest(),
                 # maintenance_respiration=RmQ10{Female}(p[:Q10], p[:Rm_base], p[:T_ref]),
                 variables_check=false,
                 nsteps=nsteps,
@@ -281,7 +293,7 @@ function main_models_definition(p, nsteps)
         "Soil" =>
             PlantSimEngine.ModelList(
                 light_interception=Beer{Soil}(),
-                soil_water=FTSW(ini_root_depth=p[:ini_root_depth]),
+                soil_water=FTSW{Soil}(ini_root_depth=p[:ini_root_depth]),
                 root_growth=RootGrowthFTSW(ini_root_depth=p[:ini_root_depth]),
                 potential_evapotranspiration=ET0_BP(),
                 variables_check=false,

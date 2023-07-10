@@ -5,7 +5,7 @@ import MultiScaleTreeGraph: NodeMTG, addchild!, get_root
 import Dates
 import PlantSimEngine
 import PlantMeteo
-import PlantMeteo: prev_value, rownumber
+import PlantMeteo: prev_value, rownumber, prev_row
 import PlantSimEngine: @process
 import Tables
 import Statistics: mean
@@ -93,6 +93,7 @@ include("plant/phytomer/ReproductiveOrgans/Female/number_spikelets.jl")
 include("plant/phytomer/ReproductiveOrgans/Female/number_fruits.jl")
 include("plant/phytomer/ReproductiveOrgans/Female/carbon_demand.jl")
 include("plant/phytomer/ReproductiveOrgans/Female/biomass.jl")
+include("plant/phytomer/ReproductiveOrgans/Female/harvest.jl")
 
 include("run.jl")
 

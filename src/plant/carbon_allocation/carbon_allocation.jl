@@ -55,8 +55,6 @@ function PlantSimEngine.run!(m::OrgansCarbonAllocationModel{Plant}, models, stat
                 status.respiration_reserve_mobilization = reserve_mobilized - reserve_needed
             else
                 # Here we don't have enough carbon in reserve + offer so we take all:
-                # The reserve that are really available for allocation (- cost of respiration)
-                reserve_available = status.reserve / m.cost_reserve_mobilization
                 # We only allocate what we have (offer+reserves):
                 status.carbon_allocation_organs = status.carbon_offer_after_rm + reserve_available
                 # The carbon offer is now 0.0 because we took all:
@@ -75,23 +73,26 @@ function PlantSimEngine.run!(m::OrgansCarbonAllocationModel{Plant}, models, stat
         reserve_mobilized = 0.0
     end
 
-    # No reserves for the other organs:
-    MultiScaleTreeGraph.traverse!(mtg, symbol=["Leaf", "Internode"]) do organ
+
+    MultiScaleTreeGraph.traverse!(mtg, symbol=["Leaf", "Internode", "Male", "Female"]) do organ
         organ[:models].status[timestep][:carbon_allocation] =
             popfirst!(carbon_allocation_organ)
 
-        # We propagate the reserve from the day before if we are not at initialisation:
-        prev_reserve = prev_value(organ[:models].status[timestep], :reserve, default=organ[:models].status[timestep].reserve)
-        if prev_reserve != -Inf
-            organ[:models].status[timestep].reserve = prev_reserve
-        end
-        # else the initialisation set the value for this day already
+        # Reserves only for leaves and internodes:    
+        if hasproperty(organ[:models].status, :reserve)
+            # We propagate the reserve from the day before if we are not at initialisation:
+            prev_reserve = prev_value(organ[:models].status[timestep], :reserve, default=organ[:models].status[timestep].reserve)
+            if prev_reserve != -Inf
+                organ[:models].status[timestep].reserve = prev_reserve
+            end
+            # else the initialisation set the value for this day already
 
-        # We take the reserve we used at the palm scale using the proportion of reserve that came
-        # from that organ (unless there is no reserve anymore, no need to compute, and it would give NaN).
-        if status.reserve != 0.0
-            organ[:models].status[timestep].reserve -=
-                reserve_mobilized * organ[:models].status[timestep].reserve / status.reserve
+            # We take the reserve we used at the palm scale using the proportion of reserve that came
+            # from that organ (unless there is no reserve anymore, no need to compute, and it would give NaN).
+            if status.reserve != 0.0
+                organ[:models].status[timestep].reserve -=
+                    reserve_mobilized * organ[:models].status[timestep].reserve / status.reserve
+            end
         end
     end
 

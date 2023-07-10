@@ -28,7 +28,8 @@ PlantSimEngine.outputs_(::RmQ10FixedN) = (Rm=-Inf,)
 function PlantSimEngine.run!(::RmQ10FixedN, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node)
     timestep = rownumber(status)
     status.Rm = 0.0
-    MultiScaleTreeGraph.traverse(mtg, symbol=["Leaf", "Internode"]) do organ
+    MultiScaleTreeGraph.traverse(mtg, symbol=["Leaf", "Internode", "Male", "Female"]) do organ
+        # MultiScaleTreeGraph.traverse(mtg, symbol=["Leaf", "Internode"]) do organ
         PlantSimEngine.run!(organ[:models].models.maintenance_respiration, organ[:models].models, organ[:models].status[timestep], meteo, constants, nothing)
         status.Rm += organ[:models].status[timestep].Rm
     end
@@ -38,7 +39,7 @@ end
 function PlantSimEngine.run!(m::RmQ10FixedN, models, status, meteo, constants, extra=nothing)
     biomass = prev_value(status, :biomass, default=status.biomass)
     if biomass == -Inf
-        biomass = status.biomass
+        biomass = zero(eltype(biomass))
     end
     status.Rm =
         biomass * m.P_alive * m.nitrogen_content * m.Rm_base *

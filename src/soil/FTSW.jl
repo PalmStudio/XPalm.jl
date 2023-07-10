@@ -93,13 +93,13 @@ function FTSW{O,T}(ini_root_depth, H_FC, H_WP_Z1, Z1, H_WP_Z2, Z2, H_0, KC, TRES
     )
 end
 
-PlantSimEngine.inputs_(::FTSW) = (
+PlantSimEngine.inputs_(::FTSW{Soil}) = (
     root_depth=-Inf,
     ET0=-Inf, #potential evapotranspiration
     aPPFD=-Inf, # light intercepted by the crop
 )
 
-PlantSimEngine.outputs_(::FTSW) = (
+PlantSimEngine.outputs_(::FTSW{Soil}) = (
     qty_H2O_Vap=-Inf,  # quantity of water in evaporative compartment
     qty_H2O_C1=-Inf,   # quantity of water in C1 compartment
     qty_H2O_C1minusVap=-Inf,
@@ -353,10 +353,8 @@ function PlantSimEngine.run!(::FTSW, models, st, meteo, constants, mtg::MultiSca
     nothing
 end
 
-PlantSimEngine.inputs_(::FTSW{T}) where {T<:Organ} = NamedTuple()
-PlantSimEngine.outputs_(::FTSW{T}) where {T<:Organ} = (
-    ftsw=-Inf,
-)
+PlantSimEngine.inputs_(::FTSW) = NamedTuple()
+PlantSimEngine.outputs_(::FTSW) = (ftsw=-Inf,)
 
 # Method to run the FTSW model from the root system:
 function PlantSimEngine.run!(::FTSW{RootSystem}, models, st, meteo, constants, mtg::MultiScaleTreeGraph.Node)

@@ -4,7 +4,7 @@ struct MaleCarbonDemandModel{T} <: AbstractCarbon_DemandModel
     duration_flowering_male::T
 end
 
-PlantSimEngine.inputs_(::MaleCarbonDemandModel) = (final_potential_biomass=-Inf, TEff=-Inf, state="undetermined", sex="undetermined")
+PlantSimEngine.inputs_(::MaleCarbonDemandModel) = (final_potential_biomass=-Inf, TEff=-Inf, state="undetermined",)
 PlantSimEngine.outputs_(::MaleCarbonDemandModel) = (carbon_demand=-Inf,)
 
 function PlantSimEngine.run!(m::MaleCarbonDemandModel, models, status, meteo, constants, extra=nothing)
