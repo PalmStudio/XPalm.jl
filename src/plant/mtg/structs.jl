@@ -160,7 +160,7 @@ function default_parameters()
                 :T_ref => 25.0,
                 :P_alive => 0.90,
             ),
-            :Bunch => Dict(
+            :Female => Dict(
                 :Q10 => 2.1,
                 :Rm_base => 0.0022, # Kraalingen et al. 1989, AFM
                 :T_ref => 25.0,
@@ -234,7 +234,8 @@ function default_parameters()
             )
         ),
         :inflo => Dict(
-            :TT_flowering => 6300.0,
+            # :TT_flowering => 6300.0,
+            :TT_flowering => 500.0,
             :duration_sex_determination => 1350.0,
             :duration_abortion => 540.0,
             :sex_ratio_min => 0.2,
@@ -262,6 +263,8 @@ function default_parameters()
             :oil_content => 0.25,
             :TT_harvest => 12150.0,
             :fraction_period_oleosynthesis => 0.8,
+            :stalk_max_biomass => 2100.0,
+            :fraction_period_stalk => 0.2,
         ),
     )
     push!(p,
