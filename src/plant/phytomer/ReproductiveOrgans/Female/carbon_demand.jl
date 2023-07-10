@@ -49,6 +49,8 @@ PlantSimEngine.outputs_(::FemaleCarbonDemandModel) = (carbon_demand=-Inf, carbon
 function PlantSimEngine.run!(m::FemaleCarbonDemandModel, models, status, meteo, constants, extra=nothing)
     # If it is harvested or there are no fruits, there is no carbon demand
     if status.state == "Harvested" || status.fruits_number == -Inf
+        status.carbon_demand_non_oil = 0.0
+        status.carbon_demand_oil = 0.0
         status.carbon_demand = 0.0
         return
     end
@@ -56,6 +58,8 @@ function PlantSimEngine.run!(m::FemaleCarbonDemandModel, models, status, meteo, 
     # As soon as we have fruits:
     if status.TT_since_init >= m.TT_harvest - m.duration_dev_bunch
         status.carbon_demand_non_oil = status.fruits_number * status.final_potential_fruit_biomass * (1.0 - m.oil_content) * m.respiration_cost * (status.TEff / m.duration_dev_bunch)
+    else
+        status.carbon_demand_non_oil = 0.0
     end
 
     status.carbon_demand = status.carbon_demand_non_oil

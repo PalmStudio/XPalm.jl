@@ -5,8 +5,8 @@ using DataFrames, CSV, Statistics
 using CairoMakie
 using XPalm
 
-# meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/Exemple_meteo.csv"), DataFrame)
-meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/Meteo_extract_BDD_SMSE.txt"), DataFrame)
+meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/Exemple_meteo.csv"), DataFrame)
+# meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/Meteo_extract_BDD_SMSE.txt"), DataFrame)
 rename!(
     meteo,
     :TMin => :Tmin,
@@ -25,15 +25,14 @@ transform!(
     :Rg => (x -> x .* 0.48) => :Ri_PAR_f,
 )
 
-dropmissing!(meteo)
-
-meteo = first(meteo, 1000)
+# dropmissing!(meteo)
+# meteo = first(meteo, 1000)
 
 p = Palm(nsteps=nrow(meteo))
 
 XPalm.run_XPalm(p, meteo)
 
-@profview XPalm.run_XPalm(p, first(meteo, 10))
+# @profview XPalm.run_XPalm(p, first(meteo, 10))
 
 begin
     scene = p.mtg
@@ -45,7 +44,10 @@ begin
     internode1 = get_node(p.mtg, 7)
     leaf2 = get_node(p.mtg, 11)
     female = get_node(scene, 171)
+    male = get_node(scene, 13)
 end
+
+maximum(male[:models].status.biomass)
 
 plant[:models].status.carbon_demand
 lines(plant[:models].status.carbon_assimilation - plant[:models].status.carbon_demand)

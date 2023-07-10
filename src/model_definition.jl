@@ -218,6 +218,9 @@ function main_models_definition(p, nsteps)
                     p[:carbon_demand][:male][:respiration_cost]
                 ),
                 carbon_allocation=OrgansCarbonAllocationModel{Male}(),
+                biomass=MaleBiomass(
+                    p[:carbon_demand][:male][:respiration_cost],
+                ),
                 variables_check=false,
                 nsteps=nsteps,
             ),
@@ -250,6 +253,10 @@ function main_models_definition(p, nsteps)
                     p[:female][:duration_fruit_setting],
                     p[:female][:oil_content],
                     p[:female][:fraction_period_oleosynthesis],
+                ),
+                biomass=FemaleBiomass(
+                    p[:carbon_demand][:female][:respiration_cost],
+                    p[:carbon_demand][:female][:respiration_cost_oleosynthesis],
                 ),
                 state=InfloStateModel(),
                 # maintenance_respiration=RmQ10{Female}(p[:Q10], p[:Rm_base], p[:T_ref]),

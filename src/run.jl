@@ -134,6 +134,10 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
             PlantSimEngine.run!(leaf[:models].models.leaf_area, leaf[:models].models, leaf[:models].status[i], meteo_, constants, nothing)
         end
 
+        MultiScaleTreeGraph.traverse(plant, symbol=["Male", "Female"]) do organ
+            PlantSimEngine.run!(organ[:models].models.biomass, organ[:models].models, organ[:models].status[i], meteo_, constants, nothing)
+        end
+
         PlantSimEngine.run!(plant[:models].models.biomass, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
         PlantSimEngine.run!(plant[:models].models.reserve_filling, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
 
