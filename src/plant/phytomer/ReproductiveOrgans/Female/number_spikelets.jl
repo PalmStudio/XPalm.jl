@@ -13,7 +13,7 @@ struct NumberSpikelets{T} <: AbstractNumber_SpikeletsModel
     duration_dev_spikelets::T
 end
 
-PlantSimEngine.inputs_(::NumberSpikelets) = (carbon_offer_after_rm=-Inf, carbon_demand_organs=-Inf, potential_fruits_number=-Inf)
+PlantSimEngine.inputs_(::NumberSpikelets) = (carbon_offer_after_rm=-Inf, carbon_demand_organs=-Inf, potential_fruits_number=-9999)
 PlantSimEngine.outputs_(::NumberSpikelets) = (spikelets_number=-Inf, carbon_demand_spikelets=-Inf, carbon_offer_spikelets=-Inf,)
 
 # applied at the female inflorescence level

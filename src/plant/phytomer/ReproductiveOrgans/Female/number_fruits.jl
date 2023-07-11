@@ -24,14 +24,14 @@ struct NumberFruits{T} <: AbstractNumber_FruitsModel
     duration_fruit_setting::T
 end
 
-PlantSimEngine.inputs_(::NumberFruits) = (carbon_offer_after_rm=-Inf, potential_fruits_number=-Inf, carbon_demand_plant=-Inf, carbon_offer_plant=-Inf,)
-PlantSimEngine.outputs_(::NumberFruits) = (fruits_number=-Inf,)
+PlantSimEngine.inputs_(::NumberFruits) = (carbon_offer_after_rm=-Inf, potential_fruits_number=-9999, carbon_demand_plant=-Inf, carbon_offer_plant=-Inf,)
+PlantSimEngine.outputs_(::NumberFruits) = (fruits_number=-9999,)
 
 # applied at the female inflorescence level
 function PlantSimEngine.run!(m::NumberFruits, models, status, meteo, constants, node::MultiScaleTreeGraph.Node)
 
-    status.fruits_number = prev_value(status, :fruits_number, default=-Inf) # We initialise at the previous value
-    status.fruits_number !== -Inf && return # if it has a number of fruits, no need to compute it again
+    status.fruits_number = prev_value(status, :fruits_number, default=-9999) # We initialise at the previous value
+    status.fruits_number !== -9999 && return # if it has a number of fruits, no need to compute it again
 
     # We only look into the period of abortion :
     if status.TT_since_init >= m.TT_flowering
@@ -64,7 +64,7 @@ function PlantSimEngine.run!(m::NumberFruits, models, status, meteo, constants, 
         # We compute a trophic state of the female inflorescence, with a maximum at 1.0 (no stress)
         trophic_status_fruits = min(1.0, status.carbon_offer_plant / status.carbon_demand_plant)
         # We assume that the number of fruits is proportional to the trophic status of the plant:
-        status.fruits_number = trophic_status_fruits * status.potential_fruits_number
+        status.fruits_number = round(Int, trophic_status_fruits * status.potential_fruits_number)
         #! this computation is only done once because at the end of the day the status will change to "Flowering"
     end
 end

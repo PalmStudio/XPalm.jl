@@ -50,7 +50,7 @@ function FemaleCarbonDemandModel(
     )
 end
 
-PlantSimEngine.inputs_(::FemaleCarbonDemandModel) = (potential_fruits_number=-Inf, final_potential_fruit_biomass=-Inf, TEff=-Inf, state="undetermined",)
+PlantSimEngine.inputs_(::FemaleCarbonDemandModel) = (final_potential_fruit_biomass=-Inf, TEff=-Inf, state="undetermined",)
 PlantSimEngine.outputs_(::FemaleCarbonDemandModel) = (carbon_demand=-Inf, carbon_demand_oil=-Inf, carbon_demand_non_oil=-Inf, carbon_demand_stalk=-Inf,)
 
 function PlantSimEngine.run!(m::FemaleCarbonDemandModel, models, status, meteo, constants, extra=nothing)
@@ -67,7 +67,7 @@ function PlantSimEngine.run!(m::FemaleCarbonDemandModel, models, status, meteo, 
     status.carbon_demand = 0.0
 
     # If there are no fruits, there is no carbon demand
-    if status.fruits_number == -Inf
+    if status.fruits_number == -9999
         status.carbon_demand_non_oil = 0.0
         status.carbon_demand_oil = 0.0
     else
