@@ -46,5 +46,4 @@ To add a new model and process, you need to:
 - add harvest management: remove fruits, remove leaves
 - [x] Review how maintenance respiration is computed (add Male and Female)
 - Compute the trophic status of the phytomer and females as a proper process (see number_fruits + sex_determination)
-- Don't forget to put back thermal time of flowering to 6300 when we're finished prototyping (and when it runs faster!!!!)
 - Add litter (when leaves are removed) + male inflorescences

@@ -234,8 +234,7 @@ function default_parameters()
             )
         ),
         :inflo => Dict(
-            # :TT_flowering => 6300.0,
-            :TT_flowering => 500.0,
+            :TT_flowering => 6300.0,
             :duration_sex_determination => 1350.0,
             :duration_abortion => 540.0,
             :sex_ratio_min => 0.2,
@@ -243,9 +242,6 @@ function default_parameters()
             :abortion_rate_max => 0.8,
             :abortion_rate_ref => 0.2,
             :random_seed => 1,
-            # :age_max_coefficient => 8.0 * 365.0,
-            # :min_coefficient => 0.3,
-            # :max_coefficient => 1.0,
         ),
         :male => Dict(
             :duration_flowering_male => 1800.0,
