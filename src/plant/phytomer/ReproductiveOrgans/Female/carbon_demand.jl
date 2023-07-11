@@ -54,34 +54,31 @@ PlantSimEngine.inputs_(::FemaleCarbonDemandModel) = (final_potential_fruit_bioma
 PlantSimEngine.outputs_(::FemaleCarbonDemandModel) = (carbon_demand=-Inf, carbon_demand_oil=-Inf, carbon_demand_non_oil=-Inf, carbon_demand_stalk=-Inf,)
 
 function PlantSimEngine.run!(m::FemaleCarbonDemandModel, models, status, meteo, constants, extra=nothing)
+
+    # We initialize the carbon demand at 0.0 because we add to it with some conditions below
+
     # If it is harvested or there are no fruits, there is no carbon demand
+    status.carbon_demand_stalk = 0.0
+    status.carbon_demand_non_oil = 0.0
+    status.carbon_demand_oil = 0.0
+    status.carbon_demand = 0.0
+
     if status.state == "Harvested" || status.state == "Aborted"
-        status.carbon_demand_stalk = 0.0
-        status.carbon_demand_non_oil = 0.0
-        status.carbon_demand_oil = 0.0
-        status.carbon_demand = 0.0
         return
     end
 
-    # We initialize the carbon demand at 0.0 because we add to it with some conditions below
-    status.carbon_demand = 0.0
-
     # If there are no fruits, there is no carbon demand
-    if status.fruits_number == -9999
-        status.carbon_demand_non_oil = 0.0
-        status.carbon_demand_oil = 0.0
-    else
+    if status.fruits_number != -9999
         # As soon as we have fruits:
         if status.TT_since_init >= m.TT_harvest - m.duration_dev_bunch
             status.carbon_demand_non_oil = status.fruits_number * status.final_potential_fruit_biomass * (1.0 - m.oil_content) * m.respiration_cost * (status.TEff / m.duration_dev_bunch)
-        else
-            status.carbon_demand_non_oil = 0.0
         end
 
         status.carbon_demand += status.carbon_demand_non_oil
 
         if status.state == "Oleosynthesis"
             final_potential_oil_mass = status.fruits_number * status.final_potential_fruit_biomass * m.oil_content
+            @show final_potential_oil_mass
             status.carbon_demand_oil = final_potential_oil_mass * m.respiration_cost_oleosynthesis * (status.TEff / m.duration_dev_oleo)
             status.carbon_demand += status.carbon_demand_oil
         end
