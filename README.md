@@ -47,3 +47,13 @@ To add a new model and process, you need to:
 - [x] Review how maintenance respiration is computed (add Male and Female)
 - Compute the trophic status of the phytomer and females as a proper process (see number_fruits + sex_determination)
 - Add litter (when leaves are removed) + male inflorescences
+
+
+### Optimisations
+
+Ideas for optimizing the code:
+
+- [ ] Use `@inline` for functions that are called a lot
+- [ ] Use `@simd` for loops that can be vectorized
+- [ ] don't enter the functions when the organ is dead (harvested / senescent). To do so, we could update the status of the organ in the type of organ in the node, and add a dispatch method on nodes that are e.g. harvested
+- [ ] use only one time-step (a status?) for the simulation, and extract only the variables that we need at the end of the day ? 

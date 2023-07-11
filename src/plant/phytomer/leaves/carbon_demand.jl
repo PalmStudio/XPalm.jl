@@ -24,6 +24,10 @@ PlantSimEngine.inputs_(::LeafCarbonDemandModelPotentialArea) = (potential_area=-
 PlantSimEngine.outputs_(::LeafCarbonDemandModelPotentialArea) = (carbon_demand=-Inf,)
 
 function PlantSimEngine.run!(m::LeafCarbonDemandModelPotentialArea, models, status, meteo, constants, extra=nothing)
+    if prev_value(status, :state, default="undetermined") == "Harvested"
+        status.carbon_demand = zero(eltype(status.carbon_demand))
+        return # if it is harvested, no carbon demand
+    end
     increment_potential_area = status.potential_area - prev_value(status, :potential_area, default=0.0)
     status.carbon_demand = increment_potential_area * (m.lma_min * m.respiration_cost) / m.leaflets_biomass_contribution
 end
