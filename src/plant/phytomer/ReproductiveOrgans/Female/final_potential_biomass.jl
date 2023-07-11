@@ -24,9 +24,10 @@ at maturity (dimensionless)
 ```jl
 using PlantSimEngine
 using MultiScaleTreeGraph
+using XPalm 
 
 node = Node(NodeMTG("/", "Plant", 1, 1))
-pot_model = FemaleFinalPotentialFruits(8.0 * 365, 0.3, 2000.0, 6.5, 2100.0)
+pot_model = XPalm.FemaleFinalPotentialFruits(8.0 * 365, 0.3, 2000.0, 6.5, 2100.0)
 
 m = ModelList(
     pot_model,
@@ -34,7 +35,7 @@ m = ModelList(
 )
 
 meteo = Atmosphere(T = 20.0, Wind = 1.0, P = 101.3, Rh = 0.65)
-run!(m, meteo, node)
+run!(m, meteo, PlantMeteo.Constants(), node)
 
 m[:potential_fruits_number]
 ```
