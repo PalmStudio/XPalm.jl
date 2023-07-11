@@ -26,7 +26,7 @@ function AbortionRate(TT_flowering, duration_abortion)
 end
 
 PlantSimEngine.inputs_(::AbortionRate) = (carbon_offer_after_rm=-Inf, carbon_demand_organs=-Inf)
-PlantSimEngine.outputs_(::AbortionRate) = (state="undetermined", carbon_demand_abortion=-Inf, carbon_offer_abortion=-Inf,)
+PlantSimEngine.outputs_(::AbortionRate) = (state="undetermined", carbon_demand_plant=-Inf, carbon_offer_plant=-Inf,)
 
 function PlantSimEngine.run!(m::AbortionRate, models, status, meteo, constants, extra=nothing)
 
@@ -35,27 +35,27 @@ function PlantSimEngine.run!(m::AbortionRate, models, status, meteo, constants, 
     # We only look into the period of abortion :
     if status.TT_since_init > (m.TT_flowering - m.duration_abortion)
         # Propagate the values:
-        status.carbon_offer_abortion =
-            prev_value(status, :carbon_offer_abortion, default=0.0)
+        status.carbon_offer_plant =
+            prev_value(status, :carbon_offer_plant, default=0.0)
 
-        if status.carbon_offer_abortion == -Inf
-            status.carbon_offer_abortion = 0.0
+        if status.carbon_offer_plant == -Inf
+            status.carbon_offer_plant = 0.0
         end
 
-        status.carbon_demand_abortion =
-            prev_value(status, :carbon_demand_abortion, default=0.0)
+        status.carbon_demand_plant =
+            prev_value(status, :carbon_demand_plant, default=0.0)
 
-        if status.carbon_demand_abortion == -Inf
-            status.carbon_demand_abortion = 0.0
+        if status.carbon_demand_plant == -Inf
+            status.carbon_demand_plant = 0.0
         end
 
-        status.carbon_offer_abortion += status.carbon_offer_after_rm
-        status.carbon_demand_abortion += status.carbon_demand
+        status.carbon_offer_plant += status.carbon_offer_after_rm
+        status.carbon_demand_plant += status.carbon_demand
     end
 
     # Here we have to determine if there is abortion or not:
     if status.TT_since_init > m.TT_flowering
-        trophic_status_abortion = status.carbon_offer_abortion / status.carbon_demand_abortion
+        trophic_status_abortion = status.carbon_offer_plant / status.carbon_demand_plant
 
         # draws a number between 0 and 1 in a uniform distribution:
         random_abort = rand(MersenneTwister(m.random_seed))

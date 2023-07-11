@@ -4,7 +4,7 @@ struct FemaleBiomass{T} <: AbstractBiomassModel
     respiration_cost_oleosynthesis::T
 end
 
-PlantSimEngine.inputs_(::FemaleBiomass) = (carbon_allocation=-Inf, carbon_allocation_stalk=-Inf, carbon_demand_non_oil=-Inf, carbon_demand_oil=-Inf,)
+PlantSimEngine.inputs_(::FemaleBiomass) = (carbon_allocation=-Inf, carbon_demand_stalk=-Inf, carbon_demand_non_oil=-Inf, carbon_demand_oil=-Inf,)
 PlantSimEngine.outputs_(::FemaleBiomass) = (biomass=-Inf, biomass_stalk=-Inf, biomass_fruits=-Inf,)
 
 # Applied at the Female inflorescence scale:
