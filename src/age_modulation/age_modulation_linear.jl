@@ -8,8 +8,8 @@ Value that depends on the plant age.
 - `age`: the current age of the plant
 - `age_min_value`: the age at which minimum value is reached (ages below this age will hage `min_value`)
 - `age_max_value`: the age at which the value is at the maximum value (ages above this age will hage `max_value`)
-- `min_value`: the minimum value, below or at `age_min_value`
-- `max_value`: the maximum value, at or above `age_max_value`
+- `min_value`: the value below or at `age_min_value`
+- `max_value`: the value at or above `age_max_value`
 
 # Examples 
 

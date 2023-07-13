@@ -7,6 +7,7 @@ using CSV, DataFrames, Statistics
 # Import the meteo data once:
 
 meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/Exemple_meteo.csv"), DataFrame)
+
 rename!(
     meteo,
     :TMin => :Tmin,
@@ -25,20 +26,28 @@ transform!(
     :Rg => (x -> x .* 0.48) => :Ri_PAR_f,
 )
 
+dirtest = joinpath(dirname(dirname(pathof(XPalm))), "test/")
+
+@testset "Age_modulation" begin
+    include(joinpath(dirtest, "test-age_modulation_linear.jl"))
+    include(joinpath(dirtest, "test-age_modulation_logistic.jl"))
+end
+
 @testset "Palm" begin
-    include("test-palm.jl")
+    include(joinpath(dirtest, "test-palm.jl"))
 end
 
 @testset "ET0" begin
-    include("test-et0.jl")
+    include(joinpath(dirtest, "test-et0.jl"))
 end
 
 @testset "Soil" begin
-    include("test-FTSW.jl")
+    include(joinpath(dirtest, "test-FTSW_BP.jl"))
+    include(joinpath(dirtest, "test-FTSW.jl"))
 end
 
 @testset "Roots" begin
-    include("test-roots.jl")
+    include(joinpath(dirtest, "test-roots.jl"))
 end
 
 @testset "Test utils" begin

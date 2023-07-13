@@ -102,8 +102,8 @@ include("run.jl")
 export Palm
 
 # exports for prototyping
-export FTSW, FTSW_BP, soil_init_default
-export DailyDegreeDays
+export FTSW, FTSW_BP, soil_init_default, age_relative_value, age_modulation_logistic
+export DailyDegreeDays, DegreeDaysFTSW
 export RootGrowthFTSW
 export ET0_BP
 end

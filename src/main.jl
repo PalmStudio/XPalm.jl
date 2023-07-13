@@ -97,7 +97,7 @@ function main_models_definition()
             reserves=Reserves(),
         ),
         "Soil" => ModelList(
-            soil_model=FTSW(), #! Add parameters here
+            soil_model=FTSW_BP(), #! Add parameters here
         ),
         "Phytomer" =>
             ModelList(

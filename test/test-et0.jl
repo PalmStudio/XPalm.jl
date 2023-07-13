@@ -1,4 +1,4 @@
-@testset "ET0" begin
+@testset "ET0_BP" begin
     m = ModelList(ET0_BP())
     run!(m, meteo[1, :])
 
