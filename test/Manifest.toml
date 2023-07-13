@@ -2,7 +2,7 @@
 
 julia_version = "1.9.0"
 manifest_format = "2.0"
-project_hash = "78b522f3d445750304536412e789ea9310c6b2c2"
+project_hash = "117c48b8b024bc14d7cd8a52cfff257af4fea07b"
 
 [[deps.AbstractTrees]]
 git-tree-sha1 = "faa260e4cb5aba097a73fab382dd4b5819d8ec8c"
@@ -742,12 +742,6 @@ deps = ["Artifacts", "JLLWrappers", "Libdl", "Libiconv_jll", "Pkg", "Zlib_jll"]
 git-tree-sha1 = "93c41695bc1c08c46c5899f4fe06d6ead504bb73"
 uuid = "02c8fc9c-b97f-50b9-bbe4-9be30ff0a78a"
 version = "2.10.3+0"
-
-[[deps.XPalm]]
-deps = ["Dates", "MultiScaleTreeGraph", "PlantMeteo", "PlantSimEngine", "Random", "Statistics", "Tables", "XPalm"]
-path = ".."
-uuid = "6b523e1e-d512-416c-8e51-a8fbef0064e7"
-version = "0.1.0"
 
 [[deps.YAML]]
 deps = ["Base64", "Dates", "Printf", "StringEncodings"]
