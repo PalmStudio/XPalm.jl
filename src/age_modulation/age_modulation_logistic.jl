@@ -1,13 +1,26 @@
-function age_modulation_logistic(age, inflexion_age, min_value, max_value, k)
-    # Computes a logistic function of age starting at min_value and ending at max_value
-    # The inflexion point is at inflexion_age
-    # k is the slope of the logistic function
-    # age is the age of the palm in days
-    # min_value and max_value are in m2
-    # inflexion_age is in days
-    # k is in 1/day
+"""
+age_modulation_logistic(age, inflexion_age, min_value, max_value, k)
 
-    # max_value / (1 + exp(k * (inflexion_age - age))) + min_value
+Value that depends on the plant age with a logsitic pattern. Computes a logistic function of age starting at min_value and ending at max_value
+
+# Arguments
+
+- `age`: the current age of the plant (in days)
+- `inflexion_age`: age ath wich the slope is maximal (inflexion point)
+- `min_value`: the starting value 
+- `max_value`: the maximum value (treshold)
+- `k`: slope at the inflexion point
+
+
+# Examples 
+
+```jldoctest
+>julia age_modulation_logistic(2, 3, 0, 10, 1) 
+2.6894142136999513
+```
+"""
+
+function age_modulation_logistic(age, inflexion_age, min_value, max_value, k)
     return min_value + (max_value - min_value) / (1 + exp(-k * (age - inflexion_age)))
 end
 

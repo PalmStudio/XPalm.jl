@@ -7,21 +7,23 @@ end
 @testset "RootGrowthFTSW + FTSW" begin
     ini_root_depth = 300.0
     m = ModelList(
-        FTSW(ini_root_depth=ini_root_depth),
+        FTSW_BP(ini_root_depth=ini_root_depth),
         RootGrowthFTSW(ini_root_depth=ini_root_depth),
     )
 
-    @test to_initialize(m) == (soil_water=(:ET0, :aPPFD), root_growth=(:TEff,))
+    @test to_initialize(m) == (soil_water=(:ET0, :tree_ei), root_growth=(:soil_depth, :TEff))
 
     m = ModelList(
-        FTSW(ini_root_depth=ini_root_depth),
+        FTSW_BP(ini_root_depth=ini_root_depth),
         RootGrowthFTSW(ini_root_depth=ini_root_depth),
-        status=(ET0=1.0, aPPFD=1.0, TEff=fill(9.0, nrow(meteo)))
+        status=(ET0=2.5, tree_ei=0.8, soil_depth=fill(2000, nrow(meteo)), TEff=fill(9.0, nrow(meteo)))
     )
+    status = (ET0=2.5, tree_ei=0.8, root_depth=fill(ini_root_depth, nrow(meteo)))
 
     run!(m, meteo, executor=SequentialEx())
 
     @test m[:ftsw][1] ≈ 0.5953044330938972
+
     @test m[:ftsw][end] ≈ 0.9365282961879335
 
     @test m[:root_depth][1] == 302.7

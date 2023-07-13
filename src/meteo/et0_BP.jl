@@ -10,6 +10,17 @@ Compute root growth depending on thermal time and water stress (ftsw)
 
 - `LATITUDE`: latitude (radian)
 - `ALTITUDE`: altitude (m)
+
+# Example
+
+```jldoctest
+m = ModelList(ET0_BP())
+    run!(m, meteo[1, :])
+
+    m[:ET0][1] 
+    2.82260378306658
+```
+
 """
 struct ET0_BP{T} <: AbstractPotential_EvapotranspirationModel
     LATITUDE::T

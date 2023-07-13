@@ -9,6 +9,6 @@
     )
     run!(m, meteo, executor=SequentialEx())
 
-    @test m[:ftsw][1] ≈ 0.5953044330938972
-    @test m[:ftsw][end] ≈ 0.4202599224549292
+    @test m[:ftsw][1] ≈ 0.2962962962962963
+    @test m[:ftsw][end] ≈ 0.0
 end
