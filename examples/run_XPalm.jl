@@ -32,7 +32,7 @@ p = Palm(nsteps=nrow(meteo))
 
 XPalm.run_XPalm(p, meteo)
 
-# @profview XPalm.run_XPalm(p, first(meteo, 10))
+@profview XPalm.run_XPalm(p, first(meteo, 10))
 
 begin
     scene = p.mtg
@@ -52,6 +52,13 @@ unique(male[:models].status.carbon_allocation)
 unique(female[:models].status.biomass)
 unique(female[:models].status.biomass_harvested)
 unique(female[:models].status.carbon_allocation)
+
+lines(filter(x -> x !== -Inf, female[:models].status.biomass_fruits))
+lines(filter(x -> x !== -Inf, female[:models].status.biomass))
+lines(filter(x -> x !== -Inf, female[:models].status.carbon_demand_oil))
+lines(filter(x -> x !== -Inf, female[:models].status.biomass_harvested))
+
+lines(filter(x -> x !== -Inf, male[:models].status.biomass))
 
 df = DataFrame(female[:models].status)
 
