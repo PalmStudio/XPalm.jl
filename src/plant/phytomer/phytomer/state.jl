@@ -38,6 +38,8 @@ function PlantSimEngine.run!(m::InfloStateModel, models, status, meteo, constant
 
         if status.TT_since_init >= m.TT_harvest
             status.state = "Harvested"
+            # Give the information to the leaf:
+            mtg[1][1][:models].status[timestep].state = "Harvested"
         elseif status.TT_since_init >= m.TT_ini_oleo
             status.state = "Oleosynthesis"
         elseif status.TT_since_init >= m.TT_flowering
