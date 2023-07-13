@@ -202,7 +202,7 @@ function soil_init_default(m)
         root_depth=-Inf, ini_root_depth=-Inf, aPPFD=-Inf, ET0=-Inf, qty_H2O_Vap=-Inf,
         qty_H2O_C1=-Inf, qty_H2O_C1minusVap=-Inf, qty_H2O_C2=-Inf, qty_H2O_C=-Inf, FractionC1=-Inf,
         FractionC2=-Inf, SizeC1=-Inf, SizeC2=-Inf, SizeC=-Inf, SizeVap=-Inf, SizeC1minusVap=-Inf,
-        ftsw=-Inf, rain_remain=-Inf, rain_effective=-Inf, runoff=-Inf, soil_depth=-Inf
+        ftsw=-Inf, rain_remain=-Inf, rain_effective=-Inf, runoff=-Inf, soil_depth=-Inf, transpiration=-Inf
     )
     ## init compartments size
     status.root_depth = m.ini_root_depth
