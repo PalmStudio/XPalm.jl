@@ -19,6 +19,7 @@ struct RootGrowthFTSW{T} <: AbstractRoot_GrowthModel
 end
 
 PlantSimEngine.inputs_(::RootGrowthFTSW) = (
+    ftsw=-Inf,
     TEff=-Inf, # daily efficient temperature for plant growth (degree C days)
     soil_depth=-Inf, # soil depth (cm)
 )
@@ -46,7 +47,7 @@ Compute root growth
 - ftsw:  fraction of transpirable soil water (unitless [0:1])
 - TEff:  daily efficient temperature for plant growth (degree C days) 
 
-# Returns
+# Outputs
 
 - `root_depth`: root depth (cm)
 """

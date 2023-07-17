@@ -12,6 +12,11 @@ Compute thermal time from daily meteo data
 - `TOpt2`: ending optimal temperature for thermal time calculation (degree Celsius)
 - `TBase`: Tbase temperature for thermal time calculation (degree Celsius)
 - `TLim`: limit temperature for thermal time calculation (degree Celsius)
+
+
+# Outputs
+
+- `TEff`: daily efficient temperature for plant growth (degree C days) 
 """
 struct DailyDegreeDays{T} <: AbstractThermal_TimeModel
     TOpt1::T
@@ -37,17 +42,6 @@ function DailyDegreeDays(;
     DailyDegreeDays(promote(TOpt1, TOpt2, TBase, TLim)...)
 end
 
-"""
-Compute degree days
-
-# Arguments
-
-- `m`: DailyDegreeDays model
-
-# Returns
-
-- `TEff`: daily efficient temperature for plant growth (degree C days) 
-"""
 function PlantSimEngine.run!(m::DailyDegreeDays, models, status, meteo, constants, extra=nothing)
 
     Tmin = meteo.Tmin

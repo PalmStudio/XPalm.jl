@@ -7,6 +7,36 @@ struct FinalPotentialInternodeDimensionModel{A,L} <: AbstractInternode_Final_Pot
     max_radius::L
 end
 
+
+"""
+FinalPotentialInternodeDimensionModel(age_max_height,age_max_radius,min_height,min_radius,max_height,max_radius)
+FinalPotentialInternodeDimensionModel(age_max_height= 8 * 365,age_max_radius= 8 * 365,min_height=2e-3,min_radius=2e-3,max_height=0.03,max_radius=0.30)
+
+
+Compute final potential height and radius of internode according to plant age at internode initiation
+
+# Arguments
+
+- `age_max_height`: plant age at which the height is at the maximum value max_height (ages above this age will have `max_height`)
+- `age_max_radius`: the age at which the radius is at the maximum value max_radius (ages above this age will have `max_radius`)
+- `min_height`: first internode height (at age =0)
+- `min_radius`:first internode radius (at age =0)
+- `max_height`: maximum value of internode height
+- `max_radius`: maximum value of internode radius
+
+# outputs
+final_potential_radius
+final_potential_height 
+
+# Example
+
+```jldoctest
+
+```
+
+"""
+
+
 PlantSimEngine.inputs_(::FinalPotentialInternodeDimensionModel) = (initiation_age=-Inf,)
 
 PlantSimEngine.outputs_(::FinalPotentialInternodeDimensionModel) = (

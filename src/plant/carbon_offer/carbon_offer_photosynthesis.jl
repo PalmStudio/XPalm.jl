@@ -2,6 +2,8 @@
     CarbonOfferPhotosynthesis()
 
 A model that computes carbon offer as the `carbon_assimilation`.
+
+
 """
 struct CarbonOfferPhotosynthesis <: AbstractCarbon_OfferModel end
 

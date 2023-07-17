@@ -3,6 +3,27 @@ struct InternodeCarbonDemandModel{T} <: AbstractCarbon_DemandModel
     respiration_cost::T
 end
 
+
+"""
+InternodeCarbonDemandModel(stem_apparent_density,respiration_cost)
+InternodeCarbonDemandModel(stem_apparent_density=3000.0,respiration_cost=1.44)
+
+Compute internode carbon demand from potential dimensions
+
+# Arguments
+
+- `respiration_cost`: repisration cost  (g g-1)
+- `stem_apparent_density`: stem apparent density  (g m-3)
+
+# Example
+
+```jldoctest
+
+```
+
+"""
+
+
 PlantSimEngine.inputs_(::InternodeCarbonDemandModel) = (
     potential_height=-Inf,
     potential_radius=-Inf,

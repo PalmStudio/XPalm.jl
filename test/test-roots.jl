@@ -13,17 +13,17 @@ end
     init.aPPFD = 1.0
 
     m = ModelList(
-        FTSW(ini_root_depth=ini_root_depth),
-        RootGrowthFTSW(ini_root_depth=ini_root_depth),
+        soil_water=FTSW(ini_root_depth=ini_root_depth),
+        root_growth=RootGrowthFTSW(ini_root_depth=ini_root_depth),
         # status=TimeStepTable{PlantSimEngine.Status}([init for i in eachrow(meteo)])
-        status=(soil_depth=fill(2000, nrow(meteo)), TEff=fill(9.0, nrow(meteo)), ftsw=fill(0.5, nrow(meteo)))
-    )
+        status=(soil_depth=fill(2000, nrow(meteo)), TEff=fill(9.0, nrow(meteo))))
+
     # @test to_initialize(m) == (root_growth=(:soil_depth, :TEff),)
 
 
     run!(m, meteo, executor=SequentialEx())
 
-    @test m[:ftsw][1] ≈ 0.6111111111111112
+    @test m[:ftsw][1] ≈ 0.6111111111111112 ##!!! averifier pourquoi fsw n'est pas mise à jour
 
     @test m[:ftsw][end] ≈ 0.9365282961879335
 

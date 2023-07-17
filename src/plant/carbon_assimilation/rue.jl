@@ -2,6 +2,18 @@
     ConstantRUEModel(rue)
 
 Computes the `carbon_assimilation` using a constant radiation use efficiency (`rue`).
+
+# Arguments
+
+- `rue`: radiation use efficiency (g.MJ-1)
+
+
+# Examples 
+
+```jldoctest
+
+```
+
 """
 struct ConstantRUEModel{T} <: AbstractCarbon_AssimilationModel
     rue::T
