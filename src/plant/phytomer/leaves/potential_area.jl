@@ -1,5 +1,6 @@
 """
     PotentialAreaModel(inflexion_index, slope)
+    PotentialAreaModel(inflexion_index=  560.0, slope=100.0)
 
 Computes the instantaneous potential area at a given cumulative thermal time using 
 a [logistic function](https://en.wikipedia.org/wiki/Logistic_function). In other words,

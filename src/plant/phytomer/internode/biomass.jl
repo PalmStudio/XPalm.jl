@@ -1,7 +1,4 @@
 
-struct InternodeBiomass{T} <: AbstractBiomassModel
-    respiration_cost::T
-end
 
 
 """
@@ -22,6 +19,9 @@ Compute internode biomass from daily carbon allocation
 ```
 
 """
+struct InternodeBiomass{T} <: AbstractBiomassModel
+    respiration_cost::T
+end
 
 
 PlantSimEngine.inputs_(::InternodeBiomass) = (carbon_allocation=-Inf,)

@@ -5,7 +5,7 @@ end
 """
 OrgansCarbonAllocationModel()
 
-Compute the carbon to allocate to organs from the carbon offer from photosysthesis (after maintenance respiration) and reserve mobilization
+Compute the carbon to allocate to organs from photosysthesis and reserve mobilization (after maintenance respiration) 
 
 
 # Arguments

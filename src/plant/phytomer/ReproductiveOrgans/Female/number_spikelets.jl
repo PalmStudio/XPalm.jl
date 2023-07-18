@@ -1,5 +1,6 @@
 """
     NumberSpikelets(TT_flowering, duration_dev_spikelets)
+    NumberSpikelets(TT_flowering=6300.0, duration_dev_spikelets=675.0)
 
 Determines the number of spikelets on the fruit bunch.
 

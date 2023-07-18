@@ -1,8 +1,35 @@
+"""
+FinalPotentialAreaModel(age_first_mature_leaf,leaf_area_first_leaf,leaf_area_mature_leaf)
+FinalPotentialAreaModel(age_first_mature_leaf= 8 * 365,    leaf_area_first_leaf
+= 0.0015,leaf_area_mature_leaf=12.0)
+
+
+Compute final potential area of the leaf according to plant age at leaf initiation
+
+# Arguments
+
+- `age_first_mature_leaf`: plant age at which leaf area reach its maximum potential value (days)
+- `leaf_area_first_leaf`: area of the first leaf (age=0)
+- `leaf_area_mature_leaf`: area of the mature leaf (when age>age_first_mature_leaf)
+
+
+# outputs
+final_potential_area: potential area of the leaf at emmission (rank1 and above) 
+
+# Example
+
+```jldoctest
+
+```
+
+"""
+
 struct FinalPotentialAreaModel{A,L} <: AbstractLeaf_Final_Potential_AreaModel
     age_first_mature_leaf::A
     leaf_area_first_leaf::L
     leaf_area_mature_leaf::L
 end
+
 
 PlantSimEngine.inputs_(::FinalPotentialAreaModel) = (initiation_age=-Inf,)
 

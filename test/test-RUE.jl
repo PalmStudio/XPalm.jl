@@ -12,7 +12,7 @@ end
         carbon_assimilation=XPalm.ConstantRUEModel(4.8),
         status=(lai=fill(2.0, nrow(meteo)),))
 
-    run!(m, meteo)
+    run!(m, meteo, executor=SequentialEx())
 
     @test m[:carbon_assimilation][1] ≈ 23.244236049954306
     @test m[:carbon_assimilation][end] ≈ 22.967373313544766

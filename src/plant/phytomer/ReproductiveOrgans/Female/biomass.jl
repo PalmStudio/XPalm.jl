@@ -1,10 +1,40 @@
 
+"""
+FemaleBiomass(respiration_cost,respiration_cost_oleosynthesis)
+FemaleBiomass(respiration_cost=1.44,respiration_cost_oleosynthesis=3.2)
+
+Compute female biomass (inflo and bunch) from daily carbon allocation
+
+# Arguments
+
+- `respiration_cost`: respiration cost  (g g-1)
+- `respiration_cost_oleosynthesis`: respiration cost of fruits oil  (g g-1)
+
+# inputs
+- `carbon_allocation`: carbon allocated to female inflo
+- `carbon_demand_stalk`: carbon demand of the stalk
+- `carbon_demand_non_oil`: carbon demand of non oil components of fruits
+- `carbon_demand_oil`: carbon demand of fruits oil
+
+# outputs
+- `biomass`: total ifnlo/bunch biomass
+- `biomass_stalk`: stalk biomass
+- `biomass_fruits`: fruits biomass
+
+
+# Example
+
+```jldoctest
+
+```
+
+"""
 struct FemaleBiomass{T} <: AbstractBiomassModel
     respiration_cost::T
     respiration_cost_oleosynthesis::T
 end
 
-PlantSimEngine.inputs_(::FemaleBiomass) = (carbon_allocation=-Inf, carbon_demand_stalk=-Inf, carbon_demand_non_oil=-Inf, carbon_demand_oil=-Inf,)
+PlantSimEngine.inputs_(::FemaleBiomass) = (carbon_allocation=-Inf,)
 PlantSimEngine.outputs_(::FemaleBiomass) = (biomass=-Inf, biomass_stalk=-Inf, biomass_fruits=-Inf,)
 
 # Applied at the Female inflorescence scale:
