@@ -51,7 +51,7 @@ initialisations for `lai` (m² m⁻²): the leaf area index.
 
 ```julia
 using PlantSimEngine, PlantBiophysics, PlantMeteo
-m = ModelList(light_interception=Beer(0.5), status=(LAI=2.0,))
+m = ModelList(light_interception=Beer(0.5), status=(lai=2.0,))
 
 meteo = Atmosphere(T=20.0, Wind=1.0, P=101.3, Rh=0.65, Ri_PAR_f=300.0)
 
@@ -72,8 +72,9 @@ function PlantSimEngine.run!(::Beer{T,Plant}, models, status, meteo, constants, 
     rn = max(1, rownumber(status) - 1) # take the row number (cannot be < 1)
 
     scene_node = get_root(mtg)
-    plant_leaf_area = MultiScaleTreeGraph.traverse(scene_node, symbol="Plant") do node
-        node[:models].status[rn][:leaf_area]
+    plant_leaf_area = Vector{typeof(status.leaf_area)}()
+    MultiScaleTreeGraph.traverse!(scene_node, symbol="Plant") do node
+        push!(plant_leaf_area, node[:models].status[rn][:leaf_area])
     end
 
     relative_leaf_area = mtg[:models].status[rn].leaf_area / sum(plant_leaf_area)

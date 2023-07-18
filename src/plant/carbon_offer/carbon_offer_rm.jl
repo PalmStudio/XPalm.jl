@@ -18,7 +18,7 @@ end
 function PlantSimEngine.run!(::CarbonOfferRm, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node)
     scene = get_root(mtg)
     timestep = rownumber(status)
-    MultiScaleTreeGraph.traverse(scene, symbol="Plant") do plant
+    MultiScaleTreeGraph.traverse!(scene, symbol="Plant") do plant
         status.carbon_offer_after_rm = plant[:models].status[timestep].carbon_offer_after_rm
     end
 end

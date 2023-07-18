@@ -22,11 +22,10 @@ function PlantSimEngine.run!(::ReproductiveOrganEmission, models, status, meteo,
     repro_organ = addchild!(
         internode, # parent
         scene[:mtg_node_count], # unique ID
-        MultiScaleTreeGraph.MutableNodeMTG("+", status.sex, scene[:mtg_node_count], 4), # MTG
+        MultiScaleTreeGraph.NodeMTG("+", status.sex, scene[:mtg_node_count], 4), # MTG
         Dict{Symbol,Any}(
             :models => copy(scene[:all_models][status.sex]),
         ), # Attributes
-        type=status.sex == "Female" ? Female() : Male(),
     )
 
     # Initialisations:

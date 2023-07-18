@@ -20,7 +20,7 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
         PlantSimEngine.run!(scene[:models].models.lai_dynamic, scene[:models].models, scene[:models].status[i], meteo_, constants, nothing)
 
         # Call the model that propagates the value of the rank to the next day:
-        MultiScaleTreeGraph.traverse(plant, symbol="Phytomer") do phytomer
+        MultiScaleTreeGraph.traverse!(plant, symbol="Phytomer") do phytomer
             PlantSimEngine.run!(phytomer[:models].models.leaf_rank, phytomer[:models].models, phytomer[:models].status[i], meteo_, constants, nothing)
         end
 
@@ -62,7 +62,7 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
         PlantSimEngine.run!(plant[:models].models.carbon_offer, plant[:models].models, plant[:models].status[i], meteo_, constants, nothing)
 
         # Compute models for the internodes:
-        MultiScaleTreeGraph.traverse(plant, symbol="Internode") do internode
+        MultiScaleTreeGraph.traverse!(plant, symbol="Internode") do internode
             PlantSimEngine.run!(internode[:models].models.soil_water, internode[:models].models, internode[:models].status[i], meteo_, constants, internode)
             # Thermal time since initiation:
             PlantSimEngine.run!(internode[:models].models.thermal_time, internode[:models].models, internode[:models].status[i], meteo_, constants, internode)
@@ -74,7 +74,7 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
         end
 
         # Run models at leaf scale:
-        MultiScaleTreeGraph.traverse(plant, symbol="Leaf") do leaf
+        MultiScaleTreeGraph.traverse!(plant, symbol="Leaf") do leaf
             # Give the ftsw value to the leaf:
             PlantSimEngine.run!(leaf[:models].models.soil_water, leaf[:models].models, leaf[:models].status[i], meteo_, constants, leaf)
 
@@ -96,7 +96,7 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
         # note: update to a full model when several organs are computed for the carbon demand here.
 
         # Compute models for the Male inflorescences:
-        MultiScaleTreeGraph.traverse(plant, symbol="Male") do male
+        MultiScaleTreeGraph.traverse!(plant, symbol="Male") do male
             PlantSimEngine.run!(male[:models].models.soil_water, male[:models].models, male[:models].status[i], meteo_, constants, male)
             # Thermal time since initiation:
             PlantSimEngine.run!(male[:models].models.thermal_time, male[:models].models, male[:models].status[i], meteo_, constants, male)
@@ -106,7 +106,7 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
             PlantSimEngine.run!(male[:models].models.carbon_demand, male[:models].models, male[:models].status[i], meteo_, constants, male)
         end
 
-        MultiScaleTreeGraph.traverse(plant, symbol="Female") do female
+        MultiScaleTreeGraph.traverse!(plant, symbol="Female") do female
             PlantSimEngine.run!(female[:models].models.soil_water, female[:models].models, female[:models].status[i], meteo_, constants, female)
             # Thermal time since initiation:
             PlantSimEngine.run!(female[:models].models.thermal_time, female[:models].models, female[:models].status[i], meteo_, constants, female)
@@ -121,7 +121,7 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
         # Compute the carbon allocation to the organs:
         PlantSimEngine.run!(plant[:models].models.carbon_allocation, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
 
-        MultiScaleTreeGraph.traverse(plant, symbol="Internode") do internode
+        MultiScaleTreeGraph.traverse!(plant, symbol="Internode") do internode
             PlantSimEngine.run!(internode[:models].models.biomass, internode[:models].models, internode[:models].status[i], meteo_, constants, internode)
             PlantSimEngine.run!(internode[:models].models.internode_dimensions, internode[:models].models, internode[:models].status[i], meteo_, constants, nothing)
         end
@@ -129,19 +129,19 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
         # Sum the internode biomass into the stem:
         PlantSimEngine.run!(stem[:models].models.biomass, stem[:models].models, stem[:models].status[i], meteo_, constants, stem)
 
-        MultiScaleTreeGraph.traverse(plant, symbol="Leaf") do leaf
+        MultiScaleTreeGraph.traverse!(plant, symbol="Leaf") do leaf
             PlantSimEngine.run!(leaf[:models].models.biomass, leaf[:models].models, leaf[:models].status[i], meteo_, constants, nothing)
             PlantSimEngine.run!(leaf[:models].models.leaf_area, leaf[:models].models, leaf[:models].status[i], meteo_, constants, nothing)
         end
 
-        MultiScaleTreeGraph.traverse(plant, symbol=["Male", "Female"]) do organ
+        MultiScaleTreeGraph.traverse!(plant, symbol=["Male", "Female"]) do organ
             PlantSimEngine.run!(organ[:models].models.biomass, organ[:models].models, organ[:models].status[i], meteo_, constants, nothing)
         end
 
         PlantSimEngine.run!(plant[:models].models.biomass, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
         PlantSimEngine.run!(plant[:models].models.reserve_filling, plant[:models].models, plant[:models].status[i], meteo_, constants, plant)
 
-        MultiScaleTreeGraph.traverse(plant, symbol="Phytomer") do phytomer
+        MultiScaleTreeGraph.traverse!(plant, symbol="Phytomer") do phytomer
             #! these models only go and get the values from other scales:
             # Give the ftsw value to the phytomer:
             PlantSimEngine.run!(phytomer[:models].models.soil_water, phytomer[:models].models, phytomer[:models].status[i], meteo_, constants, phytomer)
@@ -159,7 +159,7 @@ function run_XPalm(p::Palm, meteo, constants=PlantMeteo.Constants())
         end
 
         # Compute the harvest:
-        MultiScaleTreeGraph.traverse(plant, symbol="Female") do female
+        MultiScaleTreeGraph.traverse!(plant, symbol="Female") do female
             PlantSimEngine.run!(female[:models].models.harvest, female[:models].models, female[:models].status[i], meteo_, constants, nothing)
         end
 

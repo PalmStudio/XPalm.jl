@@ -24,11 +24,10 @@ function PlantSimEngine.run!(::PhytomerEmission, models, status, meteo, constant
     phyto = addchild!(
         mtg[:last_phytomer], # parent
         scene[:mtg_node_count], # unique ID
-        MultiScaleTreeGraph.MutableNodeMTG("<", "Phytomer", scene[:mtg_node_count], 3), # MTG
+        MultiScaleTreeGraph.NodeMTG("<", "Phytomer", scene[:mtg_node_count], 3), # MTG
         Dict{Symbol,Any}(
             :models => copy(scene[:all_models]["Phytomer"]),
         ), # Attributes
-        type=Phytomer(),
     )
 
     # Compute the initiation age of the phytomer:
@@ -41,11 +40,10 @@ function PlantSimEngine.run!(::PhytomerEmission, models, status, meteo, constant
     internode = addchild!(
         phyto, # parent
         scene[:mtg_node_count], # unique ID
-        MultiScaleTreeGraph.MutableNodeMTG("/", "Internode", mtg[:phytomer_count], 4), # MTG
+        MultiScaleTreeGraph.NodeMTG("/", "Internode", mtg[:phytomer_count], 4), # MTG
         Dict{Symbol,Any}(
             :models => copy(scene[:all_models]["Internode"]),
         ), # Attributes
-        type=Internode(),
     )
 
     # Compute the initiation age of the internode:
@@ -56,11 +54,10 @@ function PlantSimEngine.run!(::PhytomerEmission, models, status, meteo, constant
     leaf = addchild!(
         internode, # parent
         scene[:mtg_node_count], # unique ID
-        MultiScaleTreeGraph.MutableNodeMTG("+", "Leaf", mtg[:phytomer_count], 4), # MTG
+        MultiScaleTreeGraph.NodeMTG("+", "Leaf", mtg[:phytomer_count], 4), # MTG
         Dict{Symbol,Any}(
             :models => copy(scene[:all_models]["Leaf"]),
         ), # Attributes
-        type=Leaf(),
     )
 
     PlantSimEngine.run!(leaf[:models].models.initiation_age, leaf[:models].models, leaf[:models].status[current_step], meteo, constants, leaf)

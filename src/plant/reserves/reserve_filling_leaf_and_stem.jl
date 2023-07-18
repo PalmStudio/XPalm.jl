@@ -36,19 +36,21 @@ function PlantSimEngine.run!(m::OrganReserveFilling, models, st, meteo, constant
 
     @assert mtg.MTG.symbol == "Plant" "The node should be a Plant but is a $(mtg.MTG.symbol)"
 
-    organ_reserve_potential = MultiScaleTreeGraph.traverse(mtg, symbol=["Leaf", "Internode"]) do organ
+    organ_reserve_potential = Vector{typeof(st.carbon_offer_after_allocation)}()
+
+    MultiScaleTreeGraph.traverse!(mtg, symbol=["Leaf", "Internode"]) do organ
         st_organ = organ[:models].status[timestep]
 
         if organ.MTG.symbol == "Leaf"
-            if organ.type.state == Opened()
+            if st_organ.leaf_state == "Opened"
                 organ_reserve_max = (m.lma_max - m.lma_min) * st_organ.leaf_area / m.leaflets_biomass_contribution
-                return organ_reserve_max - st_organ.reserve
+                push!(organ_reserve_potential, organ_reserve_max - st_organ.reserve)
             else
-                0.0
+                push!(organ_reserve_potential, 0.0)
             end
         else
             # This is the potential reserve for the internode:
-            return st_organ.biomass * m.nsc_max - st_organ.reserve
+            push!(organ_reserve_potential, st_organ.biomass * m.nsc_max - st_organ.reserve)
         end
     end
 
@@ -65,8 +67,11 @@ function PlantSimEngine.run!(m::OrganReserveFilling, models, st, meteo, constant
         carbon_reserve_organ = zeros(typeof(organ_reserve_potential[1]), length(organ_reserve_potential))
     end
 
-    total_reserves = MultiScaleTreeGraph.traverse(mtg, symbol=["Leaf", "Internode"]) do organ
+    total_reserves = Vector{typeof(st.carbon_offer_after_allocation)}()
+    sizehint!(total_reserves, length(carbon_reserve_organ))
+    MultiScaleTreeGraph.traverse!(mtg, symbol=["Leaf", "Internode"]) do organ
         organ[:models].status[timestep].reserve += popfirst!(carbon_reserve_organ)
+        push!(total_reserves, organ[:models].status[timestep].reserve)
         # Note: the reserve from the day before was already propagated to the current day just above so we 
         # can just add the new allocated reserve
     end

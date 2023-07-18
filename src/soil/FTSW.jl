@@ -347,7 +347,7 @@ end
 function PlantSimEngine.run!(::FTSW, models, st, meteo, constants, mtg::MultiScaleTreeGraph.Node)
     scene = get_root(mtg)
     timestep = rownumber(st)
-    MultiScaleTreeGraph.traverse(scene, symbol="Soil") do soil
+    MultiScaleTreeGraph.traverse!(scene, symbol="Soil") do soil
         st.ftsw = soil[:models].status[timestep].ftsw
     end
     nothing
@@ -360,7 +360,7 @@ PlantSimEngine.outputs_(::FTSW) = (ftsw=-Inf,)
 function PlantSimEngine.run!(::FTSW{RootSystem}, models, st, meteo, constants, mtg::MultiScaleTreeGraph.Node)
     scene = get_root(mtg)
     timestep = rownumber(st)
-    MultiScaleTreeGraph.traverse(scene, symbol="Soil") do soil
+    MultiScaleTreeGraph.traverse!(scene, symbol="Soil") do soil
         soil_st = soil[:models].status[timestep]
         st.ftsw = soil_st.ftsw
         st.soil_depth = soil_st.soil_depth

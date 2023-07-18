@@ -19,8 +19,10 @@ function PlantSimEngine.run!(m::OrgansCarbonAllocationModel{Plant}, models, stat
 
     #! provide Float64 as the type of returned vector here? Or maybe get the type from the status
     # Carbon demand of the organs (internode + leaves):
-    carbon_demand_organs = MultiScaleTreeGraph.traverse(mtg, symbol=["Leaf", "Internode", "Male", "Female"]) do node
-        node[:models].status[timestep][:carbon_demand]
+    carbon_demand_organs = Vector{typeof(status.carbon_demand)}()
+
+    MultiScaleTreeGraph.traverse!(mtg, symbol=["Leaf", "Internode", "Male", "Female"]) do node
+        push!(carbon_demand_organs, node[:models].status[timestep][:carbon_demand])
     end
 
     status.carbon_demand = sum(carbon_demand_organs)
@@ -105,7 +107,7 @@ end
 function PlantSimEngine.run!(::OrgansCarbonAllocationModel{Phytomer}, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node)
     scene = get_root(mtg)
     timestep = rownumber(status)
-    MultiScaleTreeGraph.traverse(scene, symbol="Plant") do plant
+    MultiScaleTreeGraph.traverse!(scene, symbol="Plant") do plant
         status.carbon_demand = plant[:models].status[timestep].carbon_demand
     end
 end

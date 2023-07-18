@@ -29,8 +29,11 @@ end
 # Plant scale:
 function PlantSimEngine.run!(::LeafBiomass, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node)
     @assert mtg.MTG.symbol == "Plant" "The node should be a Plant but is a $(mtg.MTG.symbol)"
+    biomass = Vector{typeof(status.biomass)}()
 
-    status.biomass = MultiScaleTreeGraph.traverse(mtg, symbol="Leaf") do leaf
-        leaf[:models].status[rownumber(status)][:biomass]
-    end |> sum
+    MultiScaleTreeGraph.traverse!(mtg, symbol="Leaf") do leaf
+        push!(biomass, leaf[:models].status[rownumber(status)][:biomass])
+    end
+
+    status.biomass = sum(biomass)
 end

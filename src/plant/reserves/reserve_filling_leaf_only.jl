@@ -13,13 +13,14 @@ function PlantSimEngine.run!(m::LeafReserveFilling, models, st, meteo, constants
 
     @assert mtg.MTG.symbol == "Plant" "The node should be a Plant but is a $(mtg.MTG.symbol)"
 
-    leaf_reserve_potential = MultiScaleTreeGraph.traverse(mtg, symbol="Leaf") do leaf
-        if leaf.type.state == Opened()
-            st_leaf = leaf[:models].status[timestep]
+    leaf_reserve_potential = Vector{typeof(st.leaf_reserve_potential)}()
+    MultiScaleTreeGraph.traverse!(mtg, symbol="Leaf") do leaf
+        st_leaf = leaf[:models].status[timestep]
+        if st_leaf.leaf_state == "Opened"
             leaf_reserve_max = (m.lma_max - m.lma_min) * st_leaf.leaf_area / m.leaflets_biomass_contribution
-            leaf_reserve_max - st_leaf.reserve
+            push!(leaf_reserve_potential, leaf_reserve_max - st_leaf.reserve)
         else
-            0.0
+            push!(leaf_reserve_potential, 0.0)
         end
     end
 

@@ -13,8 +13,9 @@ end
 
 # Applied at the plant scale:
 function PlantSimEngine.run!(::LeafAreaModel, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node)
-    leaf_area = MultiScaleTreeGraph.traverse(mtg, symbol="Leaf") do node
-        node[:models].status[rownumber(status)][:leaf_area]
+    leaf_area = Vector{typeof(status.leaf_area)}()
+    MultiScaleTreeGraph.traverse!(mtg, symbol="Leaf") do node
+        push!(leaf_area, node[:models].status[rownumber(status)][:leaf_area])
     end
 
     status.leaf_area = sum(leaf_area)
