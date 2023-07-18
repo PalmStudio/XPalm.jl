@@ -2,6 +2,25 @@ struct OrgansCarbonAllocationModel{O} <: AbstractCarbon_AllocationModel
     cost_reserve_mobilization # 1.667
 end
 
+"""
+OrgansCarbonAllocationModel()
+
+Compute the carbon to allocate to organs from photosysthesis and reserve mobilization (after maintenance respiration) 
+
+
+# Arguments
+
+- `cost_reserve_mobilization`: carbon cost to mobilize carbon reserve from stem or leaves
+
+# Examples 
+
+```jldoctest
+>julia 
+
+```
+"""
+
+
 OrgansCarbonAllocationModel(cost_reserve_mobilization) = OrgansCarbonAllocationModel{Any}(cost_reserve_mobilization)
 OrgansCarbonAllocationModel{O}(; cost_reserve_mobilization=1.667) where {O} = OrgansCarbonAllocationModel{O}(cost_reserve_mobilization)
 

@@ -3,6 +3,11 @@
 
 Beer-Lambert law for light interception.
 
+# Arguments
+
+- `k`: extinction coefficient of light
+
+
 Required inputs: `LAI` in m² m⁻².
 Required meteorology data: `Ri_PAR_f`, the incident flux of atmospheric radiation in the
 PAR, in W m[soil]⁻² (== J m[soil]⁻² s⁻¹).
@@ -54,16 +59,14 @@ using PlantSimEngine, PlantBiophysics, PlantMeteo
 m = ModelList(light_interception=Beer(0.5), status=(lai=2.0,))
 
 meteo = Atmosphere(T=20.0, Wind=1.0, P=101.3, Rh=0.65, Ri_PAR_f=300.0)
-
 run!(m, meteo)
-
 m[:aPPFD]
 ```
 """
-function PlantSimEngine.run!(::Beer, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::Beer, models, status, meteo, constants, extra=nothing)
     status.aPPFD =
         meteo.Ri_PAR_f *
-        (1 - exp(-models.light_interception.k * status.lai)) *
+        (1 - exp(-m.k * status.lai)) *
         constants.J_to_umol
 end
 

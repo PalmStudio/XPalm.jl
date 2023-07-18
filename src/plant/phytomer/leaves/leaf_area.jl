@@ -1,3 +1,23 @@
+"""
+LeafAreaModel(lma_min, leaflets_biomass_contribution)
+LeafAreaModel(lma_min=  80.0, leaflets_biomass_contribution=0.35)
+
+Computes leaf area from the leaf biomass
+
+# Arguments
+
+- `lma_min`: minimal leaf mass area (when there is no reserve in leaf)
+- `leaflets_biomass_contribution`: ratio of leaflets biomass to the  total leaf biomass (including rachis and petiole) ([0,1])
+
+
+# Inputs
+- `biomass`: leaf biomass (g)
+
+# Outputs
+
+- `leaf_area`: leaf area (m2)
+
+"""
 struct LeafAreaModel{T} <: AbstractLeaf_AreaModel
     lma_min::T
     leaflets_biomass_contribution::T

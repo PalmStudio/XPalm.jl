@@ -48,7 +48,7 @@ Compute LAI growth
 
 # Returns
 
-- `LAI`: root depth (cm)
+- `LAI`: leaf area index (m2 leaf .m-2 ground)
 """
 function PlantSimEngine.run!(m::LAIGrowth, models, status, meteo, constants, extra=nothing)
 

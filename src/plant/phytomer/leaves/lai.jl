@@ -1,3 +1,20 @@
+"""
+LAIModel()
+
+Compute LAI from every leaf area of the MTG
+
+# Arguments
+
+# inputs
+
+- `leaf_area`: leaf area of each leaf
+-`mtg`: MultiScaleTreeGraph of a scene with a ground area
+
+# outputs
+- `lai`: leaf area index (m2.m-2)
+"""
+
+
 struct LAIModel <: AbstractLai_DynamicModel end
 
 PlantSimEngine.inputs_(::LAIModel) = (leaf_area=-Inf,)

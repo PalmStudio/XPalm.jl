@@ -2,9 +2,30 @@ struct InternodeDimensionModel{T} <: AbstractInternode_DimensionsModel
     stem_apparent_density::T
 end
 
+"""
+InternodeDimensionModel(stem_apparent_density)
+InternodeDimensionModel(stem_apparent_density=300000.0)
+
+Compute internode dimensions (height and radius) from the biomass, with the proportions given by potential dimensions( potential_height and potential_radius)
+
+# Arguments
+
+- `stem_apparent_density`: apparent density  (g m-3)
+
+
+# Example
+
+```jldoctest
+
+```
+
+"""
+
+
 PlantSimEngine.inputs_(::InternodeDimensionModel) = (
     potential_height=-Inf,
     potential_radius=-Inf,
+    biomass=-Inf
 )
 PlantSimEngine.outputs_(::InternodeDimensionModel) = (
     height=-Inf,
