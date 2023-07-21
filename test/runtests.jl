@@ -72,10 +72,14 @@ end
 @testset "Biomass" begin
     include(joinpath(dirtest, "test-biomass_internode.jl"))
     include(joinpath(dirtest, "test-biomass_leaf.jl"))
+    include(joinpath(dirtest, "test-biomass_female.jl"))
+    include(joinpath(dirtest, "test-biomass_male.jl"))
 end
 
-@testset "Carbon_demand" begin
 
+@testset "Carbon_demand" begin
+    include(joinpath(dirtest, "test-carbon_demand_internode.jl"))
+    include(joinpath(dirtest, "test-carbon_demand_leaf.jl"))
 end
 
 

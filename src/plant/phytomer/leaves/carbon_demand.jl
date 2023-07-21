@@ -1,6 +1,6 @@
 """
     LeafCarbonDemandModelPotentialArea(lma_min, respiration_cost, leaflets_biomass_contribution)
-
+    LeafCarbonDemandModelPotentialArea(lma_min= 80.0, respiration_cost=1.44, leaflets_biomass_contribution=0.35)
 Carbon demand of the leaf based on the potential leaf area increment of the day.
 
 This model assumes that leaf demand, and hence leaf growth, can be reduced by stresses 
@@ -13,7 +13,16 @@ See also [`LeafCarbonDemandModelArea`](@ref).
 - `lma_min`: minimum leaf mass area (g m⁻²)
 - `respiration_cost`: growth respiration cost (g g⁻¹)
 - `leaflets_biomass_contribution`: contribution of the leaflet biomass to the total leaf biomass (including rachis)
+
+# Inputs
+- `potential_area`: potential leaf area (m2) 
+- `state`: state of the leaf
+
+# Outputs
+- `carbon_demand`: daily leaf carbon demand
+
 """
+
 struct LeafCarbonDemandModelPotentialArea{T} <: AbstractCarbon_DemandModel
     lma_min::T
     respiration_cost::T

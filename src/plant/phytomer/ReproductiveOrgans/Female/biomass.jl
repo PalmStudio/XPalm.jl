@@ -3,7 +3,7 @@
 FemaleBiomass(respiration_cost,respiration_cost_oleosynthesis)
 FemaleBiomass(respiration_cost=1.44,respiration_cost_oleosynthesis=3.2)
 
-Compute female biomass (inflo and bunch) from daily carbon allocation
+Compute female biomass (inflo and bunch) from daily carbon allocation. Allocation to the different components of the bunch (stalk adnd fruit) is proportional to their carbon demand.
 
 # Arguments
 
@@ -15,6 +15,7 @@ Compute female biomass (inflo and bunch) from daily carbon allocation
 - `carbon_demand_stalk`: carbon demand of the stalk
 - `carbon_demand_non_oil`: carbon demand of non oil components of fruits
 - `carbon_demand_oil`: carbon demand of fruits oil
+- `state`: state of the inflorescence 
 
 # outputs
 - `biomass`: total ifnlo/bunch biomass
@@ -39,21 +40,27 @@ PlantSimEngine.outputs_(::FemaleBiomass) = (biomass=-Inf, biomass_stalk=-Inf, bi
 
 # Applied at the Female inflorescence scale:
 function PlantSimEngine.run!(m::FemaleBiomass, models, st, meteo, constants, extra=nothing)
-    prev_day = prev_row(st)
+    # prev_day = prev_row(st)
 
-    state = prev_day.state
+    # state = prev_day.state
+    state = prev_value(st, :state, default="undetermined")
+
     state == "Aborted" || state == "Harvested" && return # if it is aborted, no need to compute 
 
-    if prev_day.biomass_stalk == -Inf
+    # if prev_day.biomass_stalk == -Inf
+    if prev_value(st, :biomass_stalk, default=st.biomass_stalk) == -Inf
         prev_biomass_stalk = 0.0
     else
-        prev_biomass_stalk = prev_day.biomass_stalk
+        # prev_biomass_stalk = prev_day.biomass_stalk
+        prev_biomass_stalk = prev_value(st, :biomass_stalk, default=st.biomass_stalk)
     end
 
-    if prev_day.biomass_fruits == -Inf
+    # if prev_day.biomass_fruits == -Inf
+    if prev_value(st, :biomass_fruits, default=st.biomass_fruits) == -Inf
         prev_biomass_fruits = 0.0
     else
-        prev_biomass_fruits = prev_day.biomass_fruits
+        # prev_biomass_fruits = prev_day.biomass_fruits
+        prev_biomass_fruits = prev_value(st, :biomass_fruits, default=st.biomass_fruits)
     end
 
     demand_tot = st.carbon_demand_non_oil + st.carbon_demand_oil + st.carbon_demand_stalk

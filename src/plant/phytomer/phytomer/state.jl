@@ -1,3 +1,28 @@
+"""
+InfloStateModel(stem_apparent_density,respiration_cost)
+InfloStateModel(stem_apparent_density=3000.0,respiration_cost=1.44)
+
+Give the phenological state to the phytomer and the inflorescence depending on thermal time since phytomer appearance
+
+# Arguments
+
+- `TT_flowering`: thermal time for flowering since phytomer appearence (degree days).
+- `duration_abortion`: duration used for computing abortion rate before flowering (degree days).
+- `duration_flowering_male`: duration between male flowering and senescence (degree days).
+- `duration_fruit_setting`: period of thermal time after flowering that determines the number of flowers in the bunch that become fruits, *i.e.* fruit set (degree days).
+- `TT_harvest`:Thermal time since phytomer appearance when the bunch is harvested (degree days)
+- `fraction_period_oleosynthesis`: fraction of the duration between flowering and harvesting when oleosynthesis occurs
+- `TT_ini_oleo`:thermal time for initializing oleosynthesis since phytomer appearence (degree days)
+
+
+# Example
+
+```jldoctest
+
+```
+
+"""
+
 struct InfloStateModel{T} <: AbstractStateModel
     TT_flowering::T
     duration_abortion::T

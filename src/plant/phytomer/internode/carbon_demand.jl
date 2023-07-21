@@ -1,8 +1,3 @@
-struct InternodeCarbonDemandModel{T} <: AbstractCarbon_DemandModel
-    stem_apparent_density::T
-    respiration_cost::T
-end
-
 
 """
 InternodeCarbonDemandModel(stem_apparent_density,respiration_cost)
@@ -22,6 +17,10 @@ Compute internode carbon demand from potential dimensions
 ```
 
 """
+struct InternodeCarbonDemandModel{T} <: AbstractCarbon_DemandModel
+    stem_apparent_density::T
+    respiration_cost::T
+end
 
 
 PlantSimEngine.inputs_(::InternodeCarbonDemandModel) = (

@@ -1,3 +1,32 @@
+"""
+FemaleCarbonDemandModel(lma_min, respiration_cost, leaflets_biomass_contribution)
+FemaleCarbonDemandModel(lma_min= 80.0, respiration_cost=1.44, leaflets_biomass_contribution=0.35)
+    
+Carbon demand of the female inflorescence based on the final_potential_fruit_biomass and final_potential_stalk_biomass
+
+# Arguments
+
+- `respiration_cost`: growth respiration cost (g g⁻¹)
+-`respiration_cost_oleosynthesis`:
+-`TT_flowering`:
+-`TT_harvest`:
+- `duration_fruit_setting`: period of thermal time after flowering that determines the number of flowers in the bunch that become fruits, *i.e.* fruit set (degree days).
+-`oil_content`:
+-`fraction_period_oleosynthesis`:- `fraction_period_oleosynthesis`: fraction of the duration between flowering and harvesting when oleosynthesis occurs
+-`fraction_period_stalk`:
+
+- `lma_min`: minimum leaf mass area (g m⁻²)
+
+- `leaflets_biomass_contribution`: contribution of the leaflet biomass to the total leaf biomass (including rachis)
+
+# Inputs
+- `potential_area`: potential leaf area (m2) 
+- `state`: state of the leaf
+
+# Outputs
+- `carbon_demand`: daily leaf carbon demand
+
+"""
 struct FemaleCarbonDemandModel{T} <: AbstractCarbon_DemandModel
     respiration_cost::T
     respiration_cost_oleosynthesis::T
@@ -50,7 +79,7 @@ function FemaleCarbonDemandModel(
     )
 end
 
-PlantSimEngine.inputs_(::FemaleCarbonDemandModel) = (final_potential_fruit_biomass=-Inf, TEff=-Inf, state="undetermined",)
+PlantSimEngine.inputs_(::FemaleCarbonDemandModel) = (final_potential_fruit_biomass=-Inf, final_potential_biomass_stalk=-Inf, TEff=-Inf, state="undetermined",)
 PlantSimEngine.outputs_(::FemaleCarbonDemandModel) = (carbon_demand=-Inf, carbon_demand_oil=-Inf, carbon_demand_non_oil=-Inf, carbon_demand_stalk=-Inf,)
 
 function PlantSimEngine.run!(m::FemaleCarbonDemandModel, models, status, meteo, constants, extra=nothing)
