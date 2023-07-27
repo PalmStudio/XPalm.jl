@@ -31,6 +31,7 @@ dirtest = joinpath(dirname(dirname(pathof(XPalm))), "test/")
 @testset "Age_modulation" begin
     include(joinpath(dirtest, "test-age_modulation_linear.jl"))
     include(joinpath(dirtest, "test-age_modulation_logistic.jl"))
+    include(joinpath(dirtest, "test-palm_age_increment.jl"))
 end
 
 @testset "Light" begin
@@ -91,8 +92,6 @@ end
 @testset "Roots" begin
     include(joinpath(dirtest, "test-roots.jl"))
 end
-
-
 
 @testset "Palm" begin
     include(joinpath(dirtest, "test-palm.jl"))

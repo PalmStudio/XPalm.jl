@@ -1,9 +1,3 @@
-struct PhytomerEmission <: AbstractPhytomer_EmissionModel end
-
-PlantSimEngine.inputs_(::PhytomerEmission) = NamedTuple()
-
-PlantSimEngine.outputs_(::PhytomerEmission) = NamedTuple()
-
 """
     add_phytomer!(palm, initiation_age)
 
@@ -14,6 +8,14 @@ Add a new phytomer to the palm
 - `palm`: a Palm
 - `initiation_age::Dates.Date`: date of initiation of the phytomer 
 """
+
+struct PhytomerEmission <: AbstractPhytomer_EmissionModel end
+
+PlantSimEngine.inputs_(::PhytomerEmission) = NamedTuple()
+
+PlantSimEngine.outputs_(::PhytomerEmission) = NamedTuple()
+
+
 function PlantSimEngine.run!(::PhytomerEmission, models, status, meteo, constants, mtg)
     current_step = rownumber(status)
     mtg[:phytomer_count] += 1

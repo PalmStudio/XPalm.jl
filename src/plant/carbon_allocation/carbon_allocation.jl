@@ -1,7 +1,3 @@
-struct OrgansCarbonAllocationModel{O} <: AbstractCarbon_AllocationModel
-    cost_reserve_mobilization # 1.667
-end
-
 """
 OrgansCarbonAllocationModel()
 
@@ -9,9 +5,16 @@ Compute the carbon to allocate to organs from photosysthesis and reserve mobiliz
 
 
 # Arguments
-
 - `cost_reserve_mobilization`: carbon cost to mobilize carbon reserve from stem or leaves
 
+# Inputs
+- `carbon_offer_after_rm`: carbon offer from phtosynthesis and reserves after computing maintenance respiration
+
+# Outputs
+- `carbon_allocation_organs`: carbon allocated to organs (g)
+- `respiration_reserve_mobilization`: amount of carbon mobilized from the reserve pool (g)
+- `carbon_offer_after_allocation`: remaining carbon offer when alocation is done
+- `carbon_demand`: total carbon demand of the plant (use to get the fraction of demand per organ)
 # Examples 
 
 ```jldoctest
@@ -19,13 +22,15 @@ Compute the carbon to allocate to organs from photosysthesis and reserve mobiliz
 
 ```
 """
-
+struct OrgansCarbonAllocationModel{O} <: AbstractCarbon_AllocationModel
+    cost_reserve_mobilization # 1.667
+end
 
 OrgansCarbonAllocationModel(cost_reserve_mobilization) = OrgansCarbonAllocationModel{Any}(cost_reserve_mobilization)
 OrgansCarbonAllocationModel{O}(; cost_reserve_mobilization=1.667) where {O} = OrgansCarbonAllocationModel{O}(cost_reserve_mobilization)
 
 PlantSimEngine.inputs_(::OrgansCarbonAllocationModel) = (carbon_offer_after_rm=-Inf,)#, reserve=-Inf,)
-PlantSimEngine.outputs_(::OrgansCarbonAllocationModel) = (carbon_allocation_organs=-Inf, respiration_reserve_mobilization=-Inf, trophic_status=-Inf, carbon_offer_after_allocation=-Inf, carbon_demand=-Inf)
+PlantSimEngine.outputs_(::OrgansCarbonAllocationModel) = (carbon_allocation_organs=-Inf, respiration_reserve_mobilization=-Inf, carbon_offer_after_allocation=-Inf, carbon_demand=-Inf)
 PlantSimEngine.outputs_(::OrgansCarbonAllocationModel{T}) where {T<:Union{Leaf,Internode,Male,Female}} = (carbon_allocation=-Inf,)
 PlantSimEngine.outputs_(::OrgansCarbonAllocationModel{Phytomer}) = (carbon_demand=-Inf,)
 
@@ -43,10 +48,6 @@ function PlantSimEngine.run!(m::OrgansCarbonAllocationModel{Plant}, models, stat
     end
 
     status.carbon_demand = sum(carbon_demand_organs)
-
-    # Trophic status, based on the carbon offer / demand ratio. Note that maintenance respiration 
-    # was already removed from the carbon offer here:
-    # status.trophic_status = status.carbon_offer_after_rm / status.carbon_demand
 
     # If the total demand is positive, we try allocating carbon:
     if status.carbon_demand > 0.0

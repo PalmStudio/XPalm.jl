@@ -1,3 +1,17 @@
+"""
+LeafRankModel()
+
+Compute the current rank of the leaf. Change at every new leaf emmision
+
+# Arguments
+
+# Inputs
+
+# Outputs 
+- `rank`: leaf rank
+
+"""
+
 struct LeafRankModel <: AbstractLeaf_RankModel end
 
 PlantSimEngine.inputs_(::LeafRankModel) = NamedTuple()

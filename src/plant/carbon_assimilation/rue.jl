@@ -7,6 +7,12 @@ Computes the `carbon_assimilation` using a constant radiation use efficiency (`r
 
 - `rue`: radiation use efficiency (g.MJ-1)
 
+# Inputs
+- `aPPFD`: the absorbed Photosynthetic Photon Flux Density in μmol[PAR] m[leaf]⁻² s⁻¹.
+
+# Outputs
+- `carbon_assimilation`: carbon offer from photosynthesis
+
 
 # Examples 
 

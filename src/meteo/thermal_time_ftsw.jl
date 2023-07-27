@@ -12,6 +12,14 @@ Compute thermal time from daily meteo data, corrected by FTSW
 - `TLim`: limit temperature for thermal time calculation (degree Celsius)
 - `threshold_ftsw_stress`: threshold value under which we apply an FTSW stress
 
+
+# Inputs
+- `ftsw`: fraction of transpirable soil water (unitless)
+
+# Ouputs
+- `TEff`: daily efficient temperature for plant growth (degree C days) 
+- `TT_since_init`: cumulated thermal time from the first day (degree C days)
+
 # Example
 
 ```jldoctest
@@ -45,18 +53,7 @@ function DegreeDaysFTSW(;
     DegreeDaysFTSW(TOpt1, TOpt2, TBase, TLim, threshold_ftsw_stress)
 end
 
-"""
-Compute degree days corrected by FTSW
 
-# Arguments
-
-- `m`: DegreeDaysFTSW model
-
-# Returns
-
-- `TEff`: daily efficient temperature for plant growth (degree C days) 
-- `TT_since_init`: cumulated thermal time from the first day (degree C days)
-"""
 function PlantSimEngine.run!(m::DegreeDaysFTSW, models, st, meteo, constants, extra=nothing)
     Tmin = meteo.Tmin
     Tmax = meteo.Tmax

@@ -15,11 +15,12 @@ longer the time to reach the inflexion point.
 - `slope`: the slope of the relationship at the inflexion point.
 
 # Inputs
-
-The model needs two input variables:
-
 - `final_potential_area`: the final potential area when the leaf is fully developed
 - `TT_since_init`: the cumulated thermal time since leaf initiation
+
+# Outputs
+- `potential_area`: potential area of the leaf (m2)
+- `maturity`: maturity is true when the leaf reaches its final length
 
 """
 struct PotentialAreaModel{T} <: AbstractLeaf_Potential_AreaModel

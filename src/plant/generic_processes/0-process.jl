@@ -4,3 +4,5 @@
 @process "carbon_allocation" verbose = false
 @process "biomass" verbose = false
 @process "state" verbose = false
+@process "potential_evapotranspiration" verbose = false
+@process "thermal_time" verbose = false

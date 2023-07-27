@@ -8,8 +8,14 @@ InternodeBiomass(respiration_cost=1.44)
 Compute internode biomass from daily carbon allocation
 
 # Arguments
-
 - `respiration_cost`: repisration cost  (g g-1)
+
+# Inputs
+- `carbon_allocation`:carbon allocated to the internode
+
+# Outputs
+- `biomass`:current biomass of the internode
+
 
 
 # Example

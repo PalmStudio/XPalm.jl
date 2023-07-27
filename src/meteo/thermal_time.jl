@@ -1,4 +1,3 @@
-@process "thermal_time" verbose = false
 
 """
     DailyDegreeDays(TOpt1, TOpt2, TBase, TLim)
@@ -15,8 +14,8 @@ Compute thermal time from daily meteo data
 
 
 # Outputs
-
 - `TEff`: daily efficient temperature for plant growth (degree C days) 
+
 """
 struct DailyDegreeDays{T} <: AbstractThermal_TimeModel
     TOpt1::T

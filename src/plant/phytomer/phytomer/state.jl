@@ -14,6 +14,12 @@ Give the phenological state to the phytomer and the inflorescence depending on t
 - `fraction_period_oleosynthesis`: fraction of the duration between flowering and harvesting when oleosynthesis occurs
 - `TT_ini_oleo`:thermal time for initializing oleosynthesis since phytomer appearence (degree days)
 
+# Inputs
+- `TT_since_init`: cumulated thermal time from the first day (degree C days)
+
+# Outputs 
+- `state`: phytomer state (undetermined,Aborted,Flowering,...)
+
 
 # Example
 

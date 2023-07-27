@@ -10,7 +10,7 @@ Determines the number of fruits on the bunch.
 
 # Inputs 
 
-- `carbon_offer_after_rm`: carbon offer maintenance respiration (gC/plant).
+- `carbon_offer_after_rm`: carbon offer after maintenance respiration (gC/plant).
 - `potential_fruits_number`: potential number of fruits (number/bunch).
 - `carbon_demand_plant`: carbon demand of the plant (gC/plant), used to compute the plant trophic status.
 - `carbon_offer_plant`: carbon offer of the plant (gC/plant), used to compute the plant trophic status.

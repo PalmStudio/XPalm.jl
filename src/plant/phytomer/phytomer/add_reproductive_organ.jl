@@ -1,14 +1,16 @@
+"""
+    add_reproductive_organ!(...)
+
+Add a new reproductive organ to a phytomer.
+"""
+
 struct ReproductiveOrganEmission <: AbstractReproductive_Organ_EmissionModel end
 
 PlantSimEngine.inputs_(::ReproductiveOrganEmission) = NamedTuple()
 
 PlantSimEngine.outputs_(::ReproductiveOrganEmission) = NamedTuple()
 
-"""
-    add_reproductive_organ!(...)
 
-Add a new reproductive organ to a phytomer.
-"""
 function PlantSimEngine.run!(::ReproductiveOrganEmission, models, status, meteo, constants, mtg)
     @assert mtg.MTG.symbol == "Phytomer" "The function should be applied to a Phytomer, but is applied to a $(mtg.MTG.symbol)"
     current_step = rownumber(status)

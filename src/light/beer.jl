@@ -7,12 +7,13 @@ Beer-Lambert law for light interception.
 
 - `k`: extinction coefficient of light
 
-
-Required inputs: `LAI` in m² m⁻².
-Required meteorology data: `Ri_PAR_f`, the incident flux of atmospheric radiation in the
+# Inputs
+- `LAI`: leaf area index (m² m⁻²)
+- `Ri_PAR_f`: the incident flux of atmospheric radiation in the
 PAR, in W m[soil]⁻² (== J m[soil]⁻² s⁻¹).
 
-Output: aPPFD, the absorbed Photosynthetic Photon Flux Density in μmol[PAR] m[leaf]⁻² s⁻¹.
+# Output
+- `aPPFD`: the absorbed Photosynthetic Photon Flux Density in μmol[PAR] m[leaf]⁻² s⁻¹.
 """
 struct Beer{T,O} <: AbstractLight_InterceptionModel
     k::T
