@@ -11,13 +11,6 @@ Compute thermal time from daily meteo data, corrected by FTSW
 - `TBase`: Tbase temperature for thermal time calculation (degree Celsius)
 - `TLim`: limit temperature for thermal time calculation (degree Celsius)
 - `threshold_ftsw_stress`: threshold value under which we apply an FTSW stress
-
-# Example
-
-```jldoctest
-
-```
-
 """
 struct DegreeDaysFTSW{T} <: AbstractThermal_TimeModel
     TOpt1::T
@@ -32,7 +25,7 @@ PlantSimEngine.inputs_(::DegreeDaysFTSW) = (ftsw=-Inf,)
 
 PlantSimEngine.outputs_(::DegreeDaysFTSW) = (
     TEff=-Inf,
-    TT_since_init=-Inf,
+    TT_since_init=0.0,
 )
 
 function DegreeDaysFTSW(;
@@ -110,13 +103,5 @@ function PlantSimEngine.run!(m::DegreeDaysFTSW, models, st, meteo, constants, ex
     expansion_stress = st.ftsw > m.threshold_ftsw_stress ? 1 : st.ftsw / m.threshold_ftsw_stress
     st.TEff = st.TEff * expansion_stress
     # We apply an expansion stress to the thermal time based on FTSW:
-    prevTT = prev_value(st, :TT_since_init, default=0.0)
-
-    #! here we check if the previous value was -Inf because the leaf can appear at any day 
-    #! since begining of the simulation, so at initialisation the previous value is -Inf
-    if prevTT == -Inf
-        prevTT = 0.0
-    end
-
-    st.TT_since_init = prevTT + st.TEff
+    st.TT_since_init += st.TEff
 end

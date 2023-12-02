@@ -28,7 +28,7 @@ PlantSimEngine.inputs_(::InternodeCarbonDemandModel) = (
     potential_height=-Inf,
     potential_radius=-Inf,
 )
-PlantSimEngine.outputs_(::InternodeCarbonDemandModel) = (carbon_demand=-Inf,)
+PlantSimEngine.outputs_(::InternodeCarbonDemandModel) = (carbon_demand=0.0,)
 
 function PlantSimEngine.run!(m::InternodeCarbonDemandModel, models, status, meteo, constants, extra=nothing)
     potential_volume_prev = prev_value(status, :potential_height, default=status.potential_height) * π *

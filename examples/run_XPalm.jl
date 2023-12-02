@@ -30,9 +30,33 @@ transform!(
 
 p = Palm(nsteps=nrow(meteo))
 
-XPalm.run_XPalm(p, meteo)
+@time XPalm.run_XPalm(p, meteo);
+
+p = Palm(nsteps=nrow(meteo))
+nts = 916
+t = zeros(nts)
+for i in 1:nts
+    t[i] = @elapsed XPalm.run_XPalm(p, meteo[i:i, :])
+end
+sum(t)
+p
 
 @profview XPalm.run_XPalm(p, first(meteo, 10))
+
+
+function traverse_phytomer(f, node; symbol=nothing)
+    if !isleaf(node)
+        if node.MTG.symbol == symbol
+            f(node)
+        end
+        for chnode in children(node)
+            traverse_phytomer(
+                f,
+                chnode,
+            )
+        end
+    end
+end
 
 begin
     scene = p.mtg

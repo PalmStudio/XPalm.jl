@@ -65,7 +65,7 @@ function PlantSimEngine.run!(m::ET0_BP, models, status, meteo, constants, extra=
     Rg = meteo.Rg
     windspeed = meteo.Wind
 
-    tDay = Dates.datetime2julian.(Dates.DateTime.(meteo.ObservationDate))
+    tDay = Dates.datetime2julian.(Dates.DateTime.(meteo.Date))
 
     TMoy = (Tmax + Tmin) / 2
     HMoy = (RHmin + RHmax) / 2

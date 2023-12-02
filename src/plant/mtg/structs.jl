@@ -138,6 +138,7 @@ abstract type InitState end
 
 function default_parameters()
     p = Dict(
+        :scene_area => 10000 / 136.0, # scene area in m-2 
         :k => 0.5, # light extinction coefficient
         :RUE => 4.8, # Radiation use efficiency (gC MJ[PAR]-1)
         :SRL => 0.4, # Specific Root Length (m g-1)
@@ -278,32 +279,32 @@ function Palm(;
     nsteps=1,
     initiation_age=0,
     parameters=default_parameters(),
-    model_list=main_models_definition(parameters, nsteps)
+    # model_list=main_models_definition(parameters, nsteps)
 )
 
     scene = MultiScaleTreeGraph.Node(
         1,
         NodeMTG("/", "Scene", 1, 0),
         Dict{Symbol,Any}(
-            :models => copy(model_list["Scene"]),
-            :area => 10000 / 136.0, # scene area, m2
-            :all_models => model_list,
+        # :models => copy(model_list["Scene"]),
+        # :area => 10000 / 136.0, # scene area, m2
+        # :all_models => model_list,
         ),
     )
 
     soil = MultiScaleTreeGraph.Node(
         scene,
         NodeMTG("+", "Soil", 1, 1),
-        Dict{Symbol,Any}(
-            :models => copy(model_list["Soil"]),
-        ),
+        # Dict{Symbol,Any}(
+        #     :models => copy(model_list["Soil"]),
+        # ),
     )
 
     plant = MultiScaleTreeGraph.Node(
         scene,
         NodeMTG("+", "Plant", 1, 1),
         Dict{Symbol,Any}(
-            :models => copy(model_list["Plant"]),
+            # :models => copy(model_list["Plant"]),
             :parameters => parameters,
         ),
     )
@@ -314,7 +315,7 @@ function Palm(;
         Dict{Symbol,Any}(
             :initiation_age => initiation_age,
             :depth => parameters[:RL0], # total exploration depth m
-            :models => copy(model_list["RootSystem"]),
+            # :models => copy(model_list["RootSystem"]),
         ),
     )
 
@@ -323,56 +324,47 @@ function Palm(;
         NodeMTG("+", "Stem", 1, 2),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
-            :models => copy(model_list["Stem"]),
+            # :models => copy(model_list["Stem"]),
         ),
     )
 
     phyto = MultiScaleTreeGraph.Node(stem, NodeMTG("/", "Phytomer", 1, 3),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
-            :models => copy(model_list["Phytomer"]),
+            # :models => copy(model_list["Phytomer"]),
         ),
     )
 
     internode = MultiScaleTreeGraph.Node(phyto, NodeMTG("/", "Internode", 1, 4),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
-            :models => copy(model_list["Internode"]),
+            # :models => copy(model_list["Internode"]),
         ),
     )
 
     leaf = MultiScaleTreeGraph.Node(internode, NodeMTG("+", "Leaf", 1, 4),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
-            :models => copy(model_list["Leaf"]),
+            # :models => copy(model_list["Leaf"]),
         ),
     )
 
-    # Initilialise the number of phytomers:
-    plant[:models].status[1].phytomers = 1
+    # # Initialise the LAI:
+    # scene[:models].status[1].lai = leaf[:models].status[1].leaf_area / scene[:area] # m2 leaf / m2 soil
 
-    # Initialise the final potential area of the first leaf (this computation is done only once in the model):
-    leaf[:models].status[1].final_potential_area = parameters[:potential_area][:leaf_area_first_leaf]
-    # And compute the leaf area as one percent of the potential area:
-    leaf[:models].status[1].leaf_area = leaf[:models].status[1].final_potential_area * 0.01
+    # leaf[:models].status[1].biomass =
+    #     leaf[:models].status[1].leaf_area * parameters[:lma_min] /
+    #     parameters[:leaflets_biomass_contribution]
 
-    plant[:models].status[1].leaf_area = leaf[:models].status[1].leaf_area
-    # Initialise the LAI:
-    scene[:models].status[1].lai = leaf[:models].status[1].leaf_area / scene[:area] # m2 leaf / m2 soil
+    # internode[:models].status[1].biomass = 0.0 # Just for Rm, it is then recomputed
 
-    leaf[:models].status[1].biomass =
-        leaf[:models].status[1].leaf_area * parameters[:lma_min] /
-        parameters[:leaflets_biomass_contribution]
-
-    internode[:models].status[1].biomass = 0.0 # Just for Rm, it is then recomputed
-
-    leaf[:models].status[1].reserve = 0.0
-    # Put the reserves from the seed at sowing:
-    internode[:models].status[1].reserve = parameters[:seed_reserve]
-    # stem[:models].status[1].reserve = 0.0
-    plant[:models].status[1].reserve = 0.0
-    internode[:models].status[1].final_potential_height = parameters[:potential_dimensions][:min_height]
-    internode[:models].status[1].final_potential_radius = parameters[:potential_dimensions][:min_radius]
+    # leaf[:models].status[1].reserve = 0.0
+    # # Put the reserves from the seed at sowing:
+    # internode[:models].status[1].reserve = parameters[:seed_reserve]
+    # # stem[:models].status[1].reserve = 0.0
+    # plant[:models].status[1].reserve = 0.0
+    # internode[:models].status[1].final_potential_height = parameters[:potential_dimensions][:min_height]
+    # internode[:models].status[1].final_potential_radius = parameters[:potential_dimensions][:min_radius]
 
     plant[:phytomer_count] = 1
     scene[:mtg_node_count] = length(scene)

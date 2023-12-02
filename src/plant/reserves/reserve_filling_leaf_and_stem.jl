@@ -24,11 +24,11 @@ function OrganReserveFilling{O}(
 end
 
 PlantSimEngine.inputs_(::OrganReserveFilling) = (carbon_offer_after_allocation=-Inf,)
-PlantSimEngine.outputs_(::OrganReserveFilling) = (reserve=-Inf, carbon_allocation_reserve=-Inf, carbon_offer_after_storage=-Inf,)
+PlantSimEngine.outputs_(::OrganReserveFilling) = (reserve=0.0, carbon_allocation_reserve=-Inf, carbon_offer_after_storage=-Inf,)
 
 # The model makes computations for the organs from the Plant scale, so we only need the output for them:
 PlantSimEngine.inputs_(::OrganReserveFilling{T}) where {T<:Union{Leaf,Stem}} = NamedTuple()
-PlantSimEngine.outputs_(::OrganReserveFilling{T}) where {T<:Union{Leaf,Stem}} = (reserve=-Inf,)
+PlantSimEngine.outputs_(::OrganReserveFilling{T}) where {T<:Union{Leaf,Stem}} = (reserve=0.0,)
 
 # Applied at the plant scale:
 function PlantSimEngine.run!(m::OrganReserveFilling, models, st, meteo, constants, mtg::MultiScaleTreeGraph.Node)

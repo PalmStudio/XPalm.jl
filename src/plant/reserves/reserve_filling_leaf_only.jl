@@ -5,7 +5,7 @@ struct LeafReserveFilling{T} <: AbstractReserve_FillingModel
 end
 
 PlantSimEngine.inputs_(::LeafReserveFilling) = (carbon_offer=-Inf, leaf_reserve_potential=-Inf,)
-PlantSimEngine.outputs_(::LeafReserveFilling) = (reserve=-Inf, carbon_allocation_reserve_leaves=-Inf, total_reserve_potential_leaves=-Inf)
+PlantSimEngine.outputs_(::LeafReserveFilling) = (reserve=0.0, carbon_allocation_reserve_leaves=-Inf, total_reserve_potential_leaves=-Inf)
 
 # Applied at the plant scale:
 function PlantSimEngine.run!(m::LeafReserveFilling, models, st, meteo, constants, mtg::MultiScaleTreeGraph.Node)

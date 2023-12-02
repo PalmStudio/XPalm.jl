@@ -21,7 +21,7 @@ struct LeafCarbonDemandModelPotentialArea{T} <: AbstractCarbon_DemandModel
 end
 
 PlantSimEngine.inputs_(::LeafCarbonDemandModelPotentialArea) = (potential_area=-Inf, state="undetermined")
-PlantSimEngine.outputs_(::LeafCarbonDemandModelPotentialArea) = (carbon_demand=-Inf,)
+PlantSimEngine.outputs_(::LeafCarbonDemandModelPotentialArea) = (carbon_demand=0.0,)
 
 function PlantSimEngine.run!(m::LeafCarbonDemandModelPotentialArea, models, status, meteo, constants, extra=nothing)
     if prev_value(status, :state, default="undetermined") == "Harvested"
@@ -69,7 +69,7 @@ struct LeafCarbonDemandModelArea{T} <: AbstractCarbon_DemandModel
 end
 
 PlantSimEngine.inputs_(::LeafCarbonDemandModelArea) = (potential_area=-Inf,)
-PlantSimEngine.outputs_(::LeafCarbonDemandModelArea) = (carbon_demand=-Inf,)
+PlantSimEngine.outputs_(::LeafCarbonDemandModelArea) = (carbon_demand=0.0,)
 
 function PlantSimEngine.run!(m::LeafCarbonDemandModelArea, models, status, meteo, constants, extra=nothing)
     increment_potential_area = status.potential_area - prev_value(status, :leaf_area, default=0.0)

@@ -20,7 +20,7 @@ struct BiomassFromArea{T} <: AbstractBiomass_From_AreaModel
 end
 
 PlantSimEngine.inputs_(::BiomassFromArea) = (leaf_area=-Inf,)
-PlantSimEngine.outputs_(::BiomassFromArea) = (biomass=-Inf,)
+PlantSimEngine.outputs_(::BiomassFromArea) = (biomass=0.0,)
 
 # Applied at the leaf scale:
 function PlantSimEngine.run!(m::BiomassFromArea, models, st, meteo, constants, extra=nothing)
@@ -50,7 +50,7 @@ struct LeafBiomass{T} <: AbstractBiomassModel
 end
 
 PlantSimEngine.inputs_(::LeafBiomass) = (carbon_allocation=-Inf,)
-PlantSimEngine.outputs_(::LeafBiomass) = (biomass=-Inf,)
+PlantSimEngine.outputs_(::LeafBiomass) = (biomass=0.0,)
 
 # Applied at the leaf scale:
 function PlantSimEngine.run!(m::LeafBiomass, models, st, meteo, constants, extra=nothing)

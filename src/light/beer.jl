@@ -88,9 +88,3 @@ function PlantSimEngine.run!(::Beer{T,Plant}, models, status, meteo, constants, 
         scene_node[:area] *
         relative_leaf_area
 end
-
-# At the soil scale:
-function PlantSimEngine.run!(::Beer{T,Soil}, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node) where {T}
-    timestep = rownumber(status)
-    status.aPPFD = get_root(mtg)[:models].status[timestep].aPPFD
-end

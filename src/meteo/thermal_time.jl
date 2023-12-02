@@ -25,12 +25,11 @@ struct DailyDegreeDays{T} <: AbstractThermal_TimeModel
     TLim::T
 end
 
-
 PlantSimEngine.inputs_(::DailyDegreeDays) = NamedTuple()
 
 PlantSimEngine.outputs_(::DailyDegreeDays) = (
     TEff=-Inf,
-    TT_since_init=-Inf,
+    TT_since_init=0.0,
 )
 
 function DailyDegreeDays(;
@@ -93,14 +92,24 @@ function PlantSimEngine.run!(m::DailyDegreeDays, models, status, meteo, constant
         end
     end
 
-    status.TT_since_init = prev_value(status, :TT_since_init, default=0.0) + status.TEff
+    status.TT_since_init += status.TEff
 end
 
 
-function PlantSimEngine.run!(::DailyDegreeDays, models, st, meteo, constants, mtg::MultiScaleTreeGraph.Node)
-    scene = get_root(mtg)
-    scene_status = PlantSimEngine.status(scene[:models])[rownumber(st)]
-    st.TEff = scene_status.TEff
-    prev_TT = prev_value(st, :TT_since_init, default=0.0)
-    st.TT_since_init = prev_TT == -Inf ? 0.0 : prev_TT + st.TEff
+"""
+    DailyDegreeDaysSinceInit()
+
+Compute thermal time since organ initiation using `:TEff`.
+
+# Outputs
+
+- `TT_since_init`: daily efficient temperature for organ growth (degree C days)
+"""
+struct DailyDegreeDaysSinceInit <: AbstractThermal_TimeModel end
+
+PlantSimEngine.inputs_(::DailyDegreeDaysSinceInit) = (TEff=-Inf,)
+PlantSimEngine.outputs_(::DailyDegreeDaysSinceInit) = (TT_since_init=0.0,)
+
+function PlantSimEngine.run!(m::DailyDegreeDaysSinceInit, models, status, meteo, constants, extra=nothing)
+    status.TT_since_init += status.TEff
 end

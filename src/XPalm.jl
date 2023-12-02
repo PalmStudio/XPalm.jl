@@ -1,12 +1,12 @@
 module XPalm
 
 import MultiScaleTreeGraph
-import MultiScaleTreeGraph: NodeMTG, addchild!, get_root
+import MultiScaleTreeGraph: NodeMTG#, addchild!, get_root
 import Dates
 import PlantSimEngine
 import PlantMeteo
-import PlantMeteo: prev_value, rownumber, prev_row
-import PlantSimEngine: @process
+# import PlantMeteo: prev_value, rownumber, prev_row
+import PlantSimEngine: @process, add_organ!
 import Tables
 import Statistics: mean
 import Random: MersenneTwister, AbstractRNG
@@ -40,6 +40,7 @@ include("soil/FTSW.jl")
 include("soil/FTSW_BP.jl")
 include("plant/roots/root_growth.jl")
 
+include("plant/phytomer/phytomer/phytomer_count.jl")
 include("plant/phytomer/phytomer/add_phytomer.jl")
 include("plant/phytomer/leaves/phyllochron.jl")
 include("plant/phytomer/leaves/final_potential_area.jl")
@@ -104,7 +105,7 @@ export Palm
 
 # exports for prototyping
 export FTSW, FTSW_BP, soil_init_default, age_relative_value, age_modulation_logistic
-export DailyDegreeDays, DegreeDaysFTSW
+export DailyDegreeDays, DegreeDaysFTSW, DailyDegreeDaysSinceInit
 export RootGrowthFTSW
 export ET0_BP
 end

@@ -5,7 +5,7 @@ struct MaleCarbonDemandModel{T} <: AbstractCarbon_DemandModel
 end
 
 PlantSimEngine.inputs_(::MaleCarbonDemandModel) = (final_potential_biomass=-Inf, TEff=-Inf, state="undetermined",)
-PlantSimEngine.outputs_(::MaleCarbonDemandModel) = (carbon_demand=-Inf,)
+PlantSimEngine.outputs_(::MaleCarbonDemandModel) = (carbon_demand=0.0,)
 
 function PlantSimEngine.run!(m::MaleCarbonDemandModel, models, status, meteo, constants, extra=nothing)
     state = prev_value(status, :state, default="undetermined")

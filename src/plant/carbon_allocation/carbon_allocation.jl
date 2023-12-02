@@ -24,10 +24,10 @@ Compute the carbon to allocate to organs from photosysthesis and reserve mobiliz
 OrgansCarbonAllocationModel(cost_reserve_mobilization) = OrgansCarbonAllocationModel{Any}(cost_reserve_mobilization)
 OrgansCarbonAllocationModel{O}(; cost_reserve_mobilization=1.667) where {O} = OrgansCarbonAllocationModel{O}(cost_reserve_mobilization)
 
-PlantSimEngine.inputs_(::OrgansCarbonAllocationModel) = (carbon_offer_after_rm=-Inf,)#, reserve=-Inf,)
-PlantSimEngine.outputs_(::OrgansCarbonAllocationModel) = (carbon_allocation_organs=-Inf, respiration_reserve_mobilization=-Inf, trophic_status=-Inf, carbon_offer_after_allocation=-Inf, carbon_demand=-Inf)
+PlantSimEngine.inputs_(::OrgansCarbonAllocationModel) = (carbon_offer_after_rm=-Inf,)
+PlantSimEngine.outputs_(::OrgansCarbonAllocationModel) = (carbon_allocation_organs=-Inf, respiration_reserve_mobilization=-Inf, trophic_status=-Inf, carbon_offer_after_allocation=-Inf, carbon_demand=0.0)
 PlantSimEngine.outputs_(::OrgansCarbonAllocationModel{T}) where {T<:Union{Leaf,Internode,Male,Female}} = (carbon_allocation=-Inf,)
-PlantSimEngine.outputs_(::OrgansCarbonAllocationModel{Phytomer}) = (carbon_demand=-Inf,)
+PlantSimEngine.outputs_(::OrgansCarbonAllocationModel{Phytomer}) = (carbon_demand=0.0,)
 
 # At the plant scale:
 function PlantSimEngine.run!(m::OrgansCarbonAllocationModel{Plant}, models, status, meteo, constants, mtg)
