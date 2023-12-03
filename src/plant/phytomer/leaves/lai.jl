@@ -20,9 +20,10 @@ struct LAIModel{T} <: AbstractLai_DynamicModel
 end
 
 PlantSimEngine.inputs_(::LAIModel) = (leaf_area=[-Inf],)
-PlantSimEngine.outputs_(::LAIModel) = (lai=-Inf,)
+PlantSimEngine.outputs_(::LAIModel) = (lai=-Inf, scene_leaf_area=-Inf)
 
 # Applied at the scene scale:
 function PlantSimEngine.run!(m::LAIModel, models, st, meteo, constants, extra=nothing)
-    st.lai = sum(st.leaf_area) / m.area # m2 leaf / m2 soil
+    st.scene_leaf_area = sum(st.leaf_area)
+    st.lai = st.scene_leaf_area / m.area # m2 leaf / m2 soil
 end

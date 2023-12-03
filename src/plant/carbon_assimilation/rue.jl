@@ -23,6 +23,6 @@ PlantSimEngine.inputs_(::ConstantRUEModel) = (aPPFD=-Inf,)
 PlantSimEngine.outputs_(::ConstantRUEModel) = (carbon_assimilation=-Inf,)
 
 function PlantSimEngine.run!(m::ConstantRUEModel, models, status, meteo, constants, extra=nothing)
-    status.carbon_assimilation = status.aPPFD / constants.J_to_umol * m.rue
-    # aPPFD is in mol d-1 plant-1, we need MJ d-1 plant-1 first, and then use RUE
+    status.carbon_assimilation = status.aPPFD_plant / constants.J_to_umol * m.rue
+    # aPPFD is in mol[PAR] plant⁻¹ d⁻¹, we need MJ[PAR] plant⁻¹ d⁻¹ first, and then use RUE
 end
