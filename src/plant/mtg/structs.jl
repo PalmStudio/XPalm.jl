@@ -157,7 +157,8 @@ function default_parameters()
             ),
             :Leaf => Dict(
                 :Q10 => 2.1,
-                :Rm_base => 0.083, # Dufrene et al. (1990), Oleagineux.
+                #! :Rm_base => 0.083, # Dufrene et al. (1990), Oleagineux.
+                :Rm_base => 0.0083,
                 :T_ref => 25.0,
                 :P_alive => 0.90,
             ),
@@ -367,7 +368,7 @@ function Palm(;
     # internode[:models].status[1].final_potential_radius = parameters[:potential_dimensions][:min_radius]
 
     plant[:phytomer_count] = 1
-    scene[:mtg_node_count] = length(scene)
+    scene[:graph_node_count] = length(scene)
     plant[:last_phytomer] = phyto
 
     return Palm(scene, initiation_age, parameters)

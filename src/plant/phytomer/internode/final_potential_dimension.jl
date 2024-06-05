@@ -31,7 +31,7 @@ Compute final potential height and radius of internode according to plant age at
 """
 
 
-PlantSimEngine.inputs_(::FinalPotentialInternodeDimensionModel) = (initiation_age=-Inf,)
+PlantSimEngine.inputs_(::FinalPotentialInternodeDimensionModel) = (initiation_age=-9999,)
 
 PlantSimEngine.outputs_(::FinalPotentialInternodeDimensionModel) = (
     final_potential_height=-Inf,

@@ -40,7 +40,7 @@ include("soil/FTSW.jl")
 include("soil/FTSW_BP.jl")
 include("plant/roots/root_growth.jl")
 
-include("plant/phytomer/phytomer/phytomer_count.jl")
+include("plant/mtg_node_count.jl")
 include("plant/phytomer/phytomer/add_phytomer.jl")
 include("plant/phytomer/leaves/phyllochron.jl")
 include("plant/phytomer/leaves/final_potential_area.jl")

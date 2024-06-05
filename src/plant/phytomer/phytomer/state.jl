@@ -15,15 +15,14 @@ function InfloStateModel(; TT_flowering=6300.0, duration_abortion=540.0, duratio
 end
 
 PlantSimEngine.inputs_(::InfloStateModel) = (TT_since_init=-Inf,)
-PlantSimEngine.outputs_(::InfloStateModel) = (state="undetermined",)
+PlantSimEngine.outputs_(::InfloStateModel) = (state="undetermined", state_repro="undetermined")
+PlantSimEngine.dep(::InfloStateModel) = (abortion=AbstractAbortionModel,)
 
 # At phytomer scale
-function PlantSimEngine.run!(m::InfloStateModel, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node)
-
-    status.state = prev_value(status, :state, default="undetermined")
+function PlantSimEngine.run!(m::InfloStateModel, models, status, meteo, constants, extra=nothing)
     status.state == "Aborted" && return # if the inflo is aborted, no need to compute 
 
-    PlantSimEngine.run!(models.abortion, models, status, meteo, constants, mtg)
+    PlantSimEngine.run!(models.abortion, models, status, meteo, constants, extra)
 
     if status.sex == "Male"
         if status.TT_since_init > m.TT_flowering + m.duration_flowering_male
@@ -35,7 +34,6 @@ function PlantSimEngine.run!(m::InfloStateModel, models, status, meteo, constant
         timestep = rownumber(status)
         mtg[1][2][:models].status[timestep].state = status.state
     elseif status.sex == "Female"
-
         if status.TT_since_init >= m.TT_harvest
             status.state = "Harvested"
             # Give the information to the leaf:

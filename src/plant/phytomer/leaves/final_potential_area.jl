@@ -28,7 +28,7 @@ struct FinalPotentialAreaModel{A,L} <: AbstractLeaf_Final_Potential_AreaModel
 end
 
 
-PlantSimEngine.inputs_(::FinalPotentialAreaModel) = (initiation_age=-Inf,)
+PlantSimEngine.inputs_(::FinalPotentialAreaModel) = (initiation_age=-9999,)
 
 PlantSimEngine.outputs_(m::FinalPotentialAreaModel) = (
     final_potential_area=m.leaf_area_first_leaf, # Potential area of the leaf at full development

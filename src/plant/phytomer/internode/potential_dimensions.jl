@@ -18,13 +18,6 @@ Compute internode potential dimensions (height and radius) from the biomass, wit
 - `slope_height`: daily increment in height at inflexion_point_height (cm. days-1)
 - `inflexion_point_radius`: age when increase in radius is maximal (days)
 - `slope_radius`:daily increment in radius at inflexion_point_height (cm. days-1)
-
-# Example
-
-```jldoctest
-
-```
-
 """
 
 PlantSimEngine.inputs_(::PotentialInternodeDimensionModel) = (
@@ -39,7 +32,6 @@ PlantSimEngine.outputs_(::PotentialInternodeDimensionModel) = (
 )
 
 function PlantSimEngine.run!(m::PotentialInternodeDimensionModel, models, status, meteo, constants, extra=nothing)
-
     status.potential_height =
         status.final_potential_height / (1.0 + exp(-(status.TT_since_init - m.inflexion_point_height) / m.slope_height))
 

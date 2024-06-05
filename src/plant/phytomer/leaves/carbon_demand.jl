@@ -20,30 +20,40 @@ struct LeafCarbonDemandModelPotentialArea{T} <: AbstractCarbon_DemandModel
     leaflets_biomass_contribution::T
 end
 
-PlantSimEngine.inputs_(::LeafCarbonDemandModelPotentialArea) = (potential_area=-Inf, state="undetermined")
+PlantSimEngine.inputs_(::LeafCarbonDemandModelPotentialArea) = (increment_potential_area=-Inf, state=["undetermined"])
 PlantSimEngine.outputs_(::LeafCarbonDemandModelPotentialArea) = (carbon_demand=0.0,)
 
 function PlantSimEngine.run!(m::LeafCarbonDemandModelPotentialArea, models, status, meteo, constants, extra=nothing)
-    if prev_value(status, :state, default="undetermined") == "Harvested"
+    # Get the index of the leaf in the organ list (we added the organ index in the organ list as the index of the MTG):
+    i = status.node.MTG.index
+    if status.state[i] == "Harvested" #! replace by the state of the leaf directly (leaf_state)?
         status.carbon_demand = zero(eltype(status.carbon_demand))
         return # if it is harvested, no carbon demand
     end
-    increment_potential_area = status.potential_area - prev_value(status, :potential_area, default=0.0)
-    status.carbon_demand = increment_potential_area * (m.lma_min * m.respiration_cost) / m.leaflets_biomass_contribution
+
+    status.carbon_demand = status.increment_potential_area * (m.lma_min * m.respiration_cost) / m.leaflets_biomass_contribution
 end
 
 # Plant scale:
-function PlantSimEngine.run!(::LeafCarbonDemandModelPotentialArea, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node)
-    @assert mtg.MTG.symbol == "Plant" "The node should be a Plant but is a $(mtg.MTG.symbol)"
+# function PlantSimEngine.run!(::LeafCarbonDemandModelPotentialArea, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node)
+#     @assert mtg.MTG.symbol == "Plant" "The node should be a Plant but is a $(mtg.MTG.symbol)"
 
-    carbon_demand = Vector{typeof(status.carbon_demand)}()
-    MultiScaleTreeGraph.traverse!(mtg, symbol="Leaf") do leaf
-        push!(carbon_demand, leaf[:models].status[rownumber(status)][:carbon_demand])
-    end
-    status.carbon_demand = sum(carbon_demand)
+#     carbon_demand = Vector{typeof(status.carbon_demand)}()
+#     MultiScaleTreeGraph.traverse!(mtg, symbol="Leaf") do leaf
+#         push!(carbon_demand, leaf[:models].status[rownumber(status)][:carbon_demand])
+#     end
+#     status.carbon_demand = sum(carbon_demand)
+# end
+
+struct PlantTotalLeafCarbonDemand{T} <: AbstractCarbon_DemandModel end
+
+PlantSimEngine.inputs_(::PlantTotalLeafCarbonDemand) = (carbon_demand=[-Inf],)
+PlantSimEngine.outputs_(::PlantTotalLeafCarbonDemand) = (plant_total_leaf_carbon_demand=0.0,)
+
+function PlantSimEngine.run!(m::PlantTotalLeafCarbonDemand, models, status, meteo, constants, extra=nothing)
+    @assert status.node.MTG.symbol == "Plant" "The node should be a Plant but is a $(status.node.MTG.symbol)"
+    status.plant_total_leaf_carbon_demand = sum(status.carbon_demand)
 end
-
-
 
 """
     LeafCarbonDemandModelArea(lma_min, respiration_cost, leaflets_biomass_contribution)
@@ -68,10 +78,10 @@ struct LeafCarbonDemandModelArea{T} <: AbstractCarbon_DemandModel
     leaflets_biomass_contribution::T
 end
 
-PlantSimEngine.inputs_(::LeafCarbonDemandModelArea) = (potential_area=-Inf,)
+PlantSimEngine.inputs_(::LeafCarbonDemandModelArea) = (potential_area=-Inf, leaf_area=-Inf)
 PlantSimEngine.outputs_(::LeafCarbonDemandModelArea) = (carbon_demand=0.0,)
 
 function PlantSimEngine.run!(m::LeafCarbonDemandModelArea, models, status, meteo, constants, extra=nothing)
-    increment_potential_area = status.potential_area - prev_value(status, :leaf_area, default=0.0)
+    increment_potential_area = status.potential_area - status.leaf_area
     status.carbon_demand = increment_potential_area * (m.lma_min * m.respiration_cost) / m.leaflets_biomass_contribution
 end

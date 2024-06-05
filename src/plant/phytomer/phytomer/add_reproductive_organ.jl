@@ -14,15 +14,15 @@ function PlantSimEngine.run!(::ReproductiveOrganEmission, models, status, meteo,
     current_step = rownumber(status)
 
     scene = get_root(mtg)
-    scene[:mtg_node_count] += 1
+    scene[:graph_node_count] += 1
 
     internode = mtg[1]
 
     # Create the new phytomer as a child of the last one (younger one):
     repro_organ = addchild!(
         internode, # parent
-        scene[:mtg_node_count], # unique ID
-        MultiScaleTreeGraph.NodeMTG("+", status.sex, scene[:mtg_node_count], 4), # MTG
+        scene[:graph_node_count], # unique ID
+        MultiScaleTreeGraph.NodeMTG("+", status.sex, scene[:graph_node_count], 4), # MTG
         Dict{Symbol,Any}(
             :models => copy(scene[:all_models][status.sex]),
         ), # Attributes
