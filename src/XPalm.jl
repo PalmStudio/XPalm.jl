@@ -53,8 +53,9 @@ include("plant/phytomer/leaves/leaf_rank.jl")
 include("plant/phytomer/leaves/leaf_pruning.jl")
 include("plant/phytomer/leaves/carbon_demand.jl")
 include("plant/phytomer/leaves/biomass.jl")
-include("plant/reserves/reserve_filling_leaf_only.jl")
 include("plant/reserves/reserve_filling_leaf_and_stem.jl")
+include("plant/reserves/potential_reserve_leaf.jl")
+include("plant/reserves/potential_reserve_internode.jl")
 
 # Internode:
 include("plant/phytomer/internode/final_potential_dimension.jl")
