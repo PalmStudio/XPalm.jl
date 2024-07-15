@@ -368,7 +368,6 @@ function Palm(;
     # internode[:models].status[1].final_potential_radius = parameters[:potential_dimensions][:min_radius]
 
     plant[:phytomer_count] = 1
-    scene[:graph_node_count] = length(scene)
     plant[:last_phytomer] = phyto
 
     return Palm(scene, initiation_age, parameters)
