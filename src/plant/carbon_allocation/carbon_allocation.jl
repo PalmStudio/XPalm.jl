@@ -19,7 +19,7 @@ PlantSimEngine.inputs_(::OrgansCarbonAllocationModel) = (carbon_offer_after_rm=-
 PlantSimEngine.outputs_(::OrgansCarbonAllocationModel) = (carbon_allocation=-Inf, carbon_allocation_organs=[-Inf], reserve_organs=[-Inf], espiration_reserve_mobilization=-Inf, trophic_status=-Inf, carbon_offer_after_allocation=-Inf, carbon_demand=0.0)
 
 # At the plant scale:
-function PlantSimEngine.run!(m::OrgansCarbonAllocationModel{Plant}, models, status, meteo, constants, mtg)
+function PlantSimEngine.run!(m::OrgansCarbonAllocationModel, models, status, meteo, constants, mtg)
     status.carbon_demand = sum(status.carbon_demand_organs)
     # Trophic status, based on the carbon offer / demand ratio. Note that maintenance respiration 
     # was already removed from the carbon offer here:

@@ -20,40 +20,29 @@ struct LeafCarbonDemandModelPotentialArea{T} <: AbstractCarbon_DemandModel
     leaflets_biomass_contribution::T
 end
 
-PlantSimEngine.inputs_(::LeafCarbonDemandModelPotentialArea) = (increment_potential_area=-Inf, state=["undetermined"])
+PlantSimEngine.inputs_(::LeafCarbonDemandModelPotentialArea) = (increment_potential_area=-Inf, state="undetermined")
 PlantSimEngine.outputs_(::LeafCarbonDemandModelPotentialArea) = (carbon_demand=0.0,)
 
 function PlantSimEngine.run!(m::LeafCarbonDemandModelPotentialArea, models, status, meteo, constants, extra=nothing)
     # Get the index of the leaf in the organ list (we added the organ index in the organ list as the index of the MTG):
-    i = status.node.MTG.index
-    if status.state[i] == "Harvested" #! replace by the state of the leaf directly (leaf_state)?
+    if status.state == "Harvested" #! No no need for that no? `increment_potential_area` should be 0.0 when the leaf is mature
         status.carbon_demand = zero(eltype(status.carbon_demand))
         return # if it is harvested, no carbon demand
+    else
+        status.carbon_demand = status.increment_potential_area * (m.lma_min * m.respiration_cost) / m.leaflets_biomass_contribution
     end
 
-    status.carbon_demand = status.increment_potential_area * (m.lma_min * m.respiration_cost) / m.leaflets_biomass_contribution
+    return nothing
 end
 
-# Plant scale:
-# function PlantSimEngine.run!(::LeafCarbonDemandModelPotentialArea, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node)
-#     @assert mtg.MTG.symbol == "Plant" "The node should be a Plant but is a $(mtg.MTG.symbol)"
-
-#     carbon_demand = Vector{typeof(status.carbon_demand)}()
-#     MultiScaleTreeGraph.traverse!(mtg, symbol="Leaf") do leaf
-#         push!(carbon_demand, leaf[:models].status[rownumber(status)][:carbon_demand])
-#     end
-#     status.carbon_demand = sum(carbon_demand)
+#? This model is not used anymore, it is directly computed in `OrgansCarbonAllocationModel`.
+# struct PlantTotalLeafCarbonDemand <: AbstractCarbon_DemandModel end
+# PlantSimEngine.inputs_(::PlantTotalLeafCarbonDemand) = (carbon_demand=[-Inf],)
+# PlantSimEngine.outputs_(::PlantTotalLeafCarbonDemand) = (plant_total_leaf_carbon_demand=0.0,)
+# function PlantSimEngine.run!(m::PlantTotalLeafCarbonDemand, models, status, meteo, constants, extra=nothing)
+#     # @assert status.node.MTG.symbol == "Plant" "The node should be a Plant but is a $(status.node.MTG.symbol)"
+#     status.plant_total_leaf_carbon_demand = sum(status.carbon_demand)
 # end
-
-struct PlantTotalLeafCarbonDemand{T} <: AbstractCarbon_DemandModel end
-
-PlantSimEngine.inputs_(::PlantTotalLeafCarbonDemand) = (carbon_demand=[-Inf],)
-PlantSimEngine.outputs_(::PlantTotalLeafCarbonDemand) = (plant_total_leaf_carbon_demand=0.0,)
-
-function PlantSimEngine.run!(m::PlantTotalLeafCarbonDemand, models, status, meteo, constants, extra=nothing)
-    @assert status.node.MTG.symbol == "Plant" "The node should be a Plant but is a $(status.node.MTG.symbol)"
-    status.plant_total_leaf_carbon_demand = sum(status.carbon_demand)
-end
 
 """
     LeafCarbonDemandModelArea(lma_min, respiration_cost, leaflets_biomass_contribution)

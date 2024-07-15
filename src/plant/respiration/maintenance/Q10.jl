@@ -20,8 +20,6 @@ struct RmQ10FixedN{T} <: AbstractMaintenance_RespirationModel
     nitrogen_content::T
 end
 
-# RmQ10FixedN{O}(Q10, Rm_base, T_ref=25.0) where {O<:Organ} = RmQ10FixedN{O,typeof(Q10)}(Q10, Rm_base, T_ref)
-
 PlantSimEngine.inputs_(::RmQ10FixedN) = (biomass=0.0,)
 PlantSimEngine.outputs_(::RmQ10FixedN) = (Rm=-Inf,)
 

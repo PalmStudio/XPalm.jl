@@ -63,9 +63,7 @@ function PlantSimEngine.run!(m::FemaleCarbonDemandModel, models, status, meteo, 
     status.carbon_demand_oil = 0.0
     status.carbon_demand = 0.0
 
-    state = prev_value(status, :state, default="undetermined")
-
-    if state == "Harvested" || state == "Aborted"
+    if status.state == "Harvested" || status.state == "Aborted"
         return
     end
 
@@ -77,7 +75,7 @@ function PlantSimEngine.run!(m::FemaleCarbonDemandModel, models, status, meteo, 
             status.carbon_demand += status.carbon_demand_non_oil
         end
 
-        if state == "Oleosynthesis"
+        if status.state == "Oleosynthesis"
             final_potential_oil_mass = status.fruits_number * status.final_potential_fruit_biomass * m.oil_content
             status.carbon_demand_oil = final_potential_oil_mass * m.respiration_cost_oleosynthesis * (status.TEff / m.duration_dev_oleo)
             status.carbon_demand += status.carbon_demand_oil
