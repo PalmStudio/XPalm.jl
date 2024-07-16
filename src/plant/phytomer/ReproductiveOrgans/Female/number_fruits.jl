@@ -11,7 +11,7 @@ Determines the number of fruits on the bunch.
 
 # Inputs 
 
-- `carbon_offer_after_rm`: carbon offer maintenance respiration (gC/plant).
+- `carbon_offer_plant`: carbon offer maintenance respiration (gC/plant).
 - `potential_fruits_number`: potential number of fruits (number/bunch).
 - `carbon_demand_plant`: carbon demand of the plant (gC/plant), used to compute the plant trophic status.
 - `carbon_offer_plant`: carbon offer of the plant (gC/plant), used to compute the plant trophic status.
@@ -28,7 +28,7 @@ end
 
 NumberFruits(; TT_flowering=6300.0, duration_fruit_setting=405.0) = NumberFruits(TT_flowering, duration_fruit_setting, Ref(false))
 
-PlantSimEngine.inputs_(::NumberFruits) = (carbon_offer_after_rm=0.0, potential_fruits_number=-9999, carbon_demand_plant=0.0, carbon_offer_plant=-Inf,)
+PlantSimEngine.inputs_(::NumberFruits) = (carbon_offer_plant=0.0, potential_fruits_number=-9999, carbon_demand_plant=0.0)
 PlantSimEngine.outputs_(::NumberFruits) = (fruits_number=-9999, carbon_offer_flowering=-Inf, carbon_demand_flowering=-Inf,)
 
 # applied at the female inflorescence level
@@ -38,7 +38,7 @@ function PlantSimEngine.run!(m::NumberFruits, models, status, meteo, constants, 
     # We only look into the period of abortion :
     if status.TT_since_init >= m.TT_flowering
         # We get the total plant carbon offer and demand from the day before:
-        status.carbon_offer_flowering += status.carbon_offer_after_rm
+        status.carbon_offer_flowering += status.carbon_offer_plant
         status.carbon_demand_flowering += status.carbon_demand_plant
         #? Note: carbon_demand_plant is the total carbon demand of all organs in the plant 
         #? from the day before, cumulated between flowering and fruit appearance.

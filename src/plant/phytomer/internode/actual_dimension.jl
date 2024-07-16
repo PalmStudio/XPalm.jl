@@ -6,19 +6,22 @@ end
 InternodeDimensionModel(stem_apparent_density)
 InternodeDimensionModel(stem_apparent_density=300000.0)
 
-Compute internode dimensions (height and radius) from the biomass, with the proportions given by potential dimensions( potential_height and potential_radius)
+Compute internode dimensions (height and radius) from the biomass, with the proportions given by potential dimensions (`potential_height` and `potential_radius`)
 
 # Arguments
 
 - `stem_apparent_density`: apparent density  (g m-3)
 
+# Inputs
 
-# Example
+- `potential_height`: potential height of the internode (m)
+- `potential_radius`: potential radius of the internode (m)
+- `biomass`: biomass of the internode (g)
 
-```jldoctest
+# Outputs
 
-```
-
+- `height`: actual height of the internode (m)
+- `radius`: actual radius of the internode (m)
 """
 
 
