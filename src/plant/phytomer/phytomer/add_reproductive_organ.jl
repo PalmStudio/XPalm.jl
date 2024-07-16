@@ -1,39 +1,47 @@
-struct ReproductiveOrganEmission <: AbstractReproductive_Organ_EmissionModel end
+struct ReproductiveOrganEmission <: AbstractReproductive_Organ_EmissionModel
+    last_phytomer_init::MultiScaleTreeGraph.Node
+    phytomer_count_init::Int
+    graph_node_count_init::Int
+    phytomer_symbol::String
+end
 
-PlantSimEngine.inputs_(::ReproductiveOrganEmission) = NamedTuple()
+function ReproductiveOrganEmission(mtg::MultiScaleTreeGraph.Node; phytomer_symbol="Phytomer")
+    phytomers = MultiScaleTreeGraph.descendants(mtg, symbol=phytomer_symbol, self=true)
+    ReproductiveOrganEmission(phytomers[end], length(phytomers), length(mtg), phytomer_symbol)
+end
+
+PlantSimEngine.inputs_(m::ReproductiveOrganEmission) = (
+    last_phytomer=m.last_phytomer_init,
+    graph_node_count=m.graph_node_count_init, # Also modified in the model, but can't be an output, other models have it too
+    phytomer_count=m.phytomer_count_init,
+)
 
 PlantSimEngine.outputs_(::ReproductiveOrganEmission) = NamedTuple()
-
+PlantSimEngine.dep(::ReproductiveOrganEmission) = (
+    initiation_age=AbstractInitiation_AgeModel,
+    final_potential_biomass=AbstractFinal_Potential_BiomassModel,
+)
 """
     add_reproductive_organ!(...)
 
 Add a new reproductive organ to a phytomer.
 """
-function PlantSimEngine.run!(::ReproductiveOrganEmission, models, status, meteo, constants, mtg)
-    @assert mtg.MTG.symbol == "Phytomer" "The function should be applied to a Phytomer, but is applied to a $(mtg.MTG.symbol)"
-    current_step = rownumber(status)
+function PlantSimEngine.run!(::ReproductiveOrganEmission, models, status, meteo, constants, sim_object)
+    @assert symbol(status.node) == "Phytomer" "The function should be applied to a Phytomer, but is applied to a $(symbol(status.node))"
 
-    scene = get_root(mtg)
-    scene[:graph_node_count] += 1
+    status.graph_node_count += 1
 
-    internode = mtg[1]
-
-    # Create the new phytomer as a child of the last one (younger one):
-    repro_organ = addchild!(
-        internode, # parent
-        scene[:graph_node_count], # unique ID
-        MultiScaleTreeGraph.NodeMTG("+", status.sex, scene[:graph_node_count], 4), # MTG
-        Dict{Symbol,Any}(
-            :models => copy(scene[:all_models][status.sex]),
-        ), # Attributes
+    # Create the new organ as a child of the phytomer:
+    st_repro_organ = add_organ!(
+        status.last_phytomer, # parent, 
+        sim_object,  # The simulation object, so we can add the new status 
+        "+", status.sex, 4;
+        index=status.phytomer_count,
+        id=status.graph_node_count,
+        attributes=Dict{Symbol,Any}()
     )
 
-    # Initialisations:
-
     # Compute the initiation age of the organ:
-    PlantSimEngine.run!(repro_organ[:models].models.initiation_age, repro_organ[:models].models, repro_organ[:models].status[current_step], meteo, constants, repro_organ)
-    PlantSimEngine.run!(repro_organ[:models].models.final_potential_biomass, repro_organ[:models].models, repro_organ[:models].status[current_step], meteo, constants, repro_organ)
-
-    # repro_organ[:models].status[current_step].biomass = 0.0
-    # repro_organ[:models].status[current_step].carbon_demand = 0.0
+    PlantSimEngine.run!(sim_object.models[status.sex].initiation_age, sim_object.models[status.sex], st_repro_organ, meteo, constants, sim_object)
+    PlantSimEngine.run!(sim_object.models[status.sex].final_potential_biomass, sim_object.models[status.sex], st_repro_organ, meteo, constants, sim_object)
 end
