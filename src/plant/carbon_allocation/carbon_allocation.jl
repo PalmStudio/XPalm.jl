@@ -15,8 +15,8 @@ end
 
 OrgansCarbonAllocationModel(; cost_reserve_mobilization=1.667) = OrgansCarbonAllocationModel(cost_reserve_mobilization)
 
-PlantSimEngine.inputs_(::OrgansCarbonAllocationModel) = (carbon_offer_after_rm=-Inf, carbon_demand_organs=[-Inf], reserve=0.0, reserve_organs=[0.0],)
-PlantSimEngine.outputs_(::OrgansCarbonAllocationModel) = (carbon_allocation=-Inf, carbon_allocation_organs=[-Inf], espiration_reserve_mobilization=-Inf, trophic_status=-Inf, carbon_offer_after_allocation=-Inf, carbon_demand=0.0)
+PlantSimEngine.inputs_(::OrgansCarbonAllocationModel) = (carbon_offer_after_rm=-Inf, carbon_demand_organs=[-Inf], reserve=0.0, reserve_organs_all=[0.0],)
+PlantSimEngine.outputs_(::OrgansCarbonAllocationModel) = (carbon_allocation=-Inf, carbon_allocation_organs=[-Inf], respiration_reserve_mobilization=-Inf, trophic_status=-Inf, carbon_offer_after_allocation=-Inf, carbon_demand=0.0)
 
 # At the plant scale:
 function PlantSimEngine.run!(m::OrgansCarbonAllocationModel, models, status, meteo, constants, mtg)
@@ -71,7 +71,7 @@ function PlantSimEngine.run!(m::OrgansCarbonAllocationModel, models, status, met
 
 
     if status.reserve != 0.0
-        status.reserve_organs .-= reserve_mobilized .* status.reserve_organs ./ status.reserve
+        status.reserve_organs_all .-= reserve_mobilized .* status.reserve_organs_all ./ status.reserve
     end
 
     # We remove the reserve we mobilized from the reserve pool:
