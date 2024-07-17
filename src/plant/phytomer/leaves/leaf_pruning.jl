@@ -9,7 +9,7 @@ PlantSimEngine.outputs_(::RankLeafPruning) = (litter_leaf=-Inf, leaf_state="unde
 function PlantSimEngine.run!(m::RankLeafPruning, models, status, meteo, constants, extra=nothing)
     # Get the index of the organ in the organ list:
     # (we added the index of the organ in the organ list as the index of the MTG)
-    i = status.node.MTG.index
+    i = index(status.node)
 
     # The rank and state variables are given for the phytomer. We can retreive the phytomer of the 
     # leaf by using its index. If the phytomer has a higher rank than m.rank or it is harvested, then
