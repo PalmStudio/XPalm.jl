@@ -98,4 +98,7 @@ end
     include("test-run.jl")
 end
 
+@testset "PlantSimEngine" begin
+    include("test-PlantSimEngine.jl")
+end
 
