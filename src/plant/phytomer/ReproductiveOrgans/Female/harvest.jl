@@ -37,5 +37,5 @@ function PlantSimEngine.run!(m::PlantBunchHarvest, models, st, meteo, constants,
     st.biomass_stalk_harvested = sum(st.biomass_stalk_harvested_organs)
     st.biomass_fruit_harvested = sum(st.biomass_fruit_harvested_organs)
 
-    st.bunches_harvested = length(filter(x -> x > zero(x), st.biomass_bunch_harvested_organs))
+    st.n_bunches_harvested = length(filter(x -> x > zero(x), st.biomass_bunch_harvested_organs))
 end
