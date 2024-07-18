@@ -66,7 +66,6 @@ mapping = Dict(
                 PreviousTimeStep(:reserve)
             ],
         ),
-        #     biomass=LeafBiomass(p.parameters[:carbon_demand][:leaf][:respiration_cost]), #! cannot be used anymore, need a new function that sums the biomass of all organs
         MultiScaleModel(
             model=XPalm.OrganReserveFilling(),
             mapping=[
@@ -93,9 +92,9 @@ mapping = Dict(
             model=XPalm.InitiationAgeFromPlantAge(),
             mapping=[:plant_age => "Plant",],
         ),
-        # thermal_time=DegreeDaysFTSW(
+        # DegreeDaysFTSW(
         #     threshold_ftsw_stress=p.parameters[:phyllochron][:threshold_ftsw_stress],
-        # ),
+        # ), #! we should use this one instead of DailyDegreeDaysSinceInit I think
         MultiScaleModel(
             model=DailyDegreeDaysSinceInit(),
             mapping=[:TEff => "Plant",], # Using TEff computed at plant scale
@@ -155,12 +154,15 @@ mapping = Dict(
                 model=DailyDegreeDaysSinceInit(),
                 mapping=[:TEff => "Plant",], # Using TEff computed at plant scale
             ),
-            XPalm.RmQ10FixedN(
-                p.parameters[:respiration][:Internode][:Q10],
-                p.parameters[:respiration][:Internode][:Rm_base],
-                p.parameters[:respiration][:Internode][:T_ref],
-                p.parameters[:respiration][:Internode][:P_alive],
-                p.parameters[:nitrogen_content][:Internode],
+            MultiScaleModel(
+                model=XPalm.RmQ10FixedN(
+                    p.parameters[:respiration][:Internode][:Q10],
+                    p.parameters[:respiration][:Internode][:Rm_base],
+                    p.parameters[:respiration][:Internode][:T_ref],
+                    p.parameters[:respiration][:Internode][:P_alive],
+                    p.parameters[:nitrogen_content][:Internode],
+                ),
+                mapping=[PreviousTimeStep(:biomass),],
             ),
             XPalm.FinalPotentialInternodeDimensionModel(
                 p.parameters[:potential_dimensions][:age_max_height],
@@ -213,23 +215,29 @@ mapping = Dict(
         ),
         MultiScaleModel(
             model=XPalm.RankLeafPruning(p.parameters[:rank_leaf_pruning]),
-            mapping=[:rank => ["Phytomer"], :state => ["Phytomer"]],
+            mapping=[:rank_phytomers => ["Phytomer" => :rank], :state_phytomers => ["Phytomer" => :state]],
         ),
         MultiScaleModel(
             model=XPalm.InitiationAgeFromPlantAge(),
             mapping=[:plant_age => "Plant",],
         ),
-        XPalm.LeafAreaModel(
-            p.parameters[:lma_min],
-            p.parameters[:leaflets_biomass_contribution],
-            p.parameters[:potential_area][:leaf_area_first_leaf],
+        MultiScaleModel(
+            model=XPalm.LeafAreaModel(
+                p.parameters[:lma_min],
+                p.parameters[:leaflets_biomass_contribution],
+                p.parameters[:potential_area][:leaf_area_first_leaf],
+            ),
+            mapping=[PreviousTimeStep(:biomass),],
         ),
-        XPalm.RmQ10FixedN(
-            p.parameters[:respiration][:Leaf][:Q10],
-            p.parameters[:respiration][:Leaf][:Rm_base],
-            p.parameters[:respiration][:Leaf][:T_ref],
-            p.parameters[:respiration][:Leaf][:P_alive],
-            p.parameters[:nitrogen_content][:Leaf]
+        MultiScaleModel(
+            model=XPalm.RmQ10FixedN(
+                p.parameters[:respiration][:Leaf][:Q10],
+                p.parameters[:respiration][:Leaf][:Rm_base],
+                p.parameters[:respiration][:Leaf][:T_ref],
+                p.parameters[:respiration][:Leaf][:P_alive],
+                p.parameters[:nitrogen_content][:Leaf]
+            ),
+            mapping=[PreviousTimeStep(:biomass),],
         ),
         XPalm.LeafCarbonDemandModelPotentialArea(
             p.parameters[:lma_min],
@@ -264,14 +272,16 @@ mapping = Dict(
             p.parameters[:male][:age_mature_male],
             p.parameters[:male][:fraction_biomass_first_male],
         ),
-        XPalm.RmQ10FixedN(
-            p.parameters[:respiration][:Male][:Q10],
-            p.parameters[:respiration][:Male][:Rm_base],
-            p.parameters[:respiration][:Male][:T_ref],
-            p.parameters[:respiration][:Male][:P_alive],
-            p.parameters[:nitrogen_content][:Male],
+        MultiScaleModel(
+            model=XPalm.RmQ10FixedN(
+                p.parameters[:respiration][:Male][:Q10],
+                p.parameters[:respiration][:Male][:Rm_base],
+                p.parameters[:respiration][:Male][:T_ref],
+                p.parameters[:respiration][:Male][:P_alive],
+                p.parameters[:nitrogen_content][:Male],
+            ),
+            mapping=[PreviousTimeStep(:biomass),],
         ),
-        XPalm.InfloStateModel(),
         XPalm.MaleCarbonDemandModel(
             p.parameters[:male][:duration_flowering_male],
             p.parameters[:inflo][:TT_flowering],
@@ -290,12 +300,15 @@ mapping = Dict(
             model=DailyDegreeDaysSinceInit(),
             mapping=[:TEff => "Plant",],
         ),
-        XPalm.RmQ10FixedN(
-            p.parameters[:respiration][:Female][:Q10],
-            p.parameters[:respiration][:Female][:Rm_base],
-            p.parameters[:respiration][:Female][:T_ref],
-            p.parameters[:respiration][:Female][:P_alive],
-            p.parameters[:nitrogen_content][:Female],
+        MultiScaleModel(
+            model=XPalm.RmQ10FixedN(
+                p.parameters[:respiration][:Female][:Q10],
+                p.parameters[:respiration][:Female][:Rm_base],
+                p.parameters[:respiration][:Female][:T_ref],
+                p.parameters[:respiration][:Female][:P_alive],
+                p.parameters[:nitrogen_content][:Female],
+            ),
+            mapping=[PreviousTimeStep(:biomass),],
         ),
         XPalm.FemaleFinalPotentialFruits(
             p.parameters[:female][:age_mature_female],
@@ -332,7 +345,6 @@ mapping = Dict(
             p.parameters[:carbon_demand][:female][:respiration_cost],
             p.parameters[:carbon_demand][:female][:respiration_cost_oleosynthesis],
         ),
-        XPalm.InfloStateModel(),
         XPalm.BunchHarvest(),
     ),
     "RootSystem" => (
