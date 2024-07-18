@@ -2,8 +2,8 @@ struct RankLeafPruning <: AbstractLeaf_PruningModel
     rank
 end
 
-PlantSimEngine.inputs_(::RankLeafPruning) = (rank=[-9999], state=["undetermined"], biomass=-Inf) # Coming from the phytomers
-PlantSimEngine.outputs_(::RankLeafPruning) = (litter_leaf=-Inf, leaf_state="undetermined", leaf_area=-Inf)
+PlantSimEngine.inputs_(::RankLeafPruning) = (rank_phytomers=[-9999], state_phytomers=["undetermined"], biomass=-Inf) # Coming from the phytomers
+PlantSimEngine.outputs_(::RankLeafPruning) = (litter_leaf=-Inf,)
 
 # Applied at the leaf scale:
 function PlantSimEngine.run!(m::RankLeafPruning, models, status, meteo, constants, extra=nothing)
