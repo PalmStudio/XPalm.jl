@@ -14,7 +14,7 @@ function PlantSimEngine.run!(m::RankLeafPruning, models, status, meteo, constant
     # The rank and state variables are given for the phytomer. We can retreive the phytomer of the 
     # leaf by using its index. If the phytomer has a higher rank than m.rank or it is harvested, then
     # we put the leaf as pruned and define its biomass as litter.
-    if status.rank[i] > m.rank || status.state[i] == "Harvested"
+    if status.rank_phytomers[i] > m.rank || status.state_phytomers[i] == "Harvested"
         status.leaf_state = "Pruned"
         status.leaf_area = 0.0
         status.litter_leaf = status.biomass
