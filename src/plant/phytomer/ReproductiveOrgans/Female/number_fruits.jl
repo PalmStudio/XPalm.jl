@@ -32,7 +32,7 @@ PlantSimEngine.inputs_(::NumberFruits) = (carbon_offer_plant=0.0, potential_frui
 PlantSimEngine.outputs_(::NumberFruits) = (fruits_number=-9999, carbon_offer_flowering=-Inf, carbon_demand_flowering=-Inf,)
 
 # applied at the female inflorescence level
-function PlantSimEngine.run!(m::NumberFruits, models, status, meteo, constants, node::MultiScaleTreeGraph.Node)
+function PlantSimEngine.run!(m::NumberFruits, models, status, meteo, constants, extra=nothing)
     m.is_computed[] && return # if it has a number of fruits, no need to compute it again
 
     # We only look into the period of abortion :

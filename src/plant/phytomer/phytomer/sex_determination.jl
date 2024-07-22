@@ -50,7 +50,7 @@ PlantSimEngine.inputs_(::SexDetermination) = (TT_since_init=-Inf, carbon_offer_p
 PlantSimEngine.outputs_(::SexDetermination) = (sex="undetermined", carbon_demand_sex_determination=0.0, carbon_offer_sex_determination=0.0,)
 PlantSimEngine.dep(::SexDetermination) = (reproductive_organ_emission=AbstractReproductive_Organ_EmissionModel,)
 
-function PlantSimEngine.run!(m::SexDetermination, models, status, meteo, constants, mtg)
+function PlantSimEngine.run!(m::SexDetermination, models, status, meteo, constants, extra=nothing)
     status.sex != "undetermined" && return # if the sex is already determined, no need to compute it again
 
     # We only look into the period of sex determination:
@@ -81,6 +81,6 @@ function PlantSimEngine.run!(m::SexDetermination, models, status, meteo, constan
             status.sex = "Male"
         end
 
-        PlantSimEngine.run!(models.reproductive_organ_emission, models, status, meteo, constants, mtg)
+        PlantSimEngine.run!(models.reproductive_organ_emission, models, status, meteo, constants, extra)
     end
 end

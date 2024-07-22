@@ -66,12 +66,3 @@ function PlantSimEngine.run!(m::RootGrowthFTSW, models, st, meteo, constants, ex
         st.root_depth += coef_water_stress * m.ROOTS_GROWTH_DEPTH * st.TEff
     end
 end
-
-# # Called by the soil to get the root_depth:
-# function PlantSimEngine.run!(::RootGrowthFTSW, models, st, meteo, constants, mtg::MultiScaleTreeGraph.Node)
-#     scene = get_root(mtg)
-#     timestep = rownumber(st)
-#     MultiScaleTreeGraph.traverse!(scene, symbol="RootSystem") do roots
-#         st.root_depth = roots[:models].status[timestep].root_depth
-#     end
-# end

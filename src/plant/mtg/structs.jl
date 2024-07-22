@@ -349,23 +349,5 @@ function Palm(;
             # :models => copy(model_list["Leaf"]),
         ),
     )
-
-    # # Initialise the LAI:
-    # scene[:models].status[1].lai = leaf[:models].status[1].leaf_area / scene[:area] # m2 leaf / m2 soil
-
-    # leaf[:models].status[1].biomass =
-    #     leaf[:models].status[1].leaf_area * parameters[:lma_min] /
-    #     parameters[:leaflets_biomass_contribution]
-
-    # internode[:models].status[1].biomass = 0.0 # Just for Rm, it is then recomputed
-
-    # leaf[:models].status[1].reserve = 0.0
-    # # Put the reserves from the seed at sowing:
-    # internode[:models].status[1].reserve = parameters[:seed_reserve]
-    # # stem[:models].status[1].reserve = 0.0
-    # plant[:models].status[1].reserve = 0.0
-    # internode[:models].status[1].final_potential_height = parameters[:potential_dimensions][:min_height]
-    # internode[:models].status[1].final_potential_radius = parameters[:potential_dimensions][:min_radius]
-
     return Palm(scene, initiation_age, parameters)
 end

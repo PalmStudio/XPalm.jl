@@ -18,7 +18,7 @@ function InfloStateModel(;
     InfloStateModel(TT_flowering, duration_abortion, duration_flowering_male, duration_fruit_setting, TT_harvest, fraction_period_oleosynthesis, TT_ini_oleo, TT_senescence_male)
 end
 
-PlantSimEngine.inputs_(::InfloStateModel) = (TT_since_init=-Inf,)
+PlantSimEngine.inputs_(::InfloStateModel) = (TT_since_init=-Inf, sex="undetermined")
 PlantSimEngine.outputs_(::InfloStateModel) = (state="undetermined", state_organs=["undetermined"],)
 PlantSimEngine.dep(::InfloStateModel) = (abortion=AbstractAbortionModel,)
 
@@ -37,7 +37,6 @@ function PlantSimEngine.run!(m::InfloStateModel, models, status, meteo, constant
 
         # Give the state to the reproductive organ (it is always the second child of the first child of the phytomer):
         status.node[1][2][:plantsimengine_status].state = status.state
-
     elseif status.sex == "Female"
         if status.TT_since_init >= m.TT_harvest
             status.state = "Harvested"

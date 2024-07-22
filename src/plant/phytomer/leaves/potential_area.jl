@@ -30,7 +30,7 @@ end
 PlantSimEngine.inputs_(::PotentialAreaModel) = (TT_since_init=-Inf, final_potential_area=-Inf,)
 
 PlantSimEngine.outputs_(::PotentialAreaModel) = (
-    potential_area=-Inf, # Potential area (during leaf development)
+    potential_area=0.0, # Potential area (during leaf development)
     increment_potential_area=-Inf,
     maturity=false,      # Leaf maturity state (true if the leaf is mature)
 )

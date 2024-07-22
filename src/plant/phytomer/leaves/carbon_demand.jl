@@ -67,7 +67,7 @@ struct LeafCarbonDemandModelArea{T} <: AbstractCarbon_DemandModel
     leaflets_biomass_contribution::T
 end
 
-PlantSimEngine.inputs_(::LeafCarbonDemandModelArea) = (potential_area=-Inf, leaf_area=-Inf)
+PlantSimEngine.inputs_(::LeafCarbonDemandModelArea) = (potential_area=0.0, leaf_area=-Inf)
 PlantSimEngine.outputs_(::LeafCarbonDemandModelArea) = (carbon_demand=0.0,)
 
 function PlantSimEngine.run!(m::LeafCarbonDemandModelArea, models, status, meteo, constants, extra=nothing)

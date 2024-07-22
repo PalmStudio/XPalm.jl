@@ -1,5 +1,4 @@
 struct ReproductiveOrganEmission <: AbstractReproductive_Organ_EmissionModel
-    last_phytomer_init::MultiScaleTreeGraph.Node
     phytomer_count_init::Int
     graph_node_count_init::Int
     phytomer_symbol::String
@@ -7,11 +6,10 @@ end
 
 function ReproductiveOrganEmission(mtg::MultiScaleTreeGraph.Node; phytomer_symbol="Phytomer")
     phytomers = MultiScaleTreeGraph.descendants(mtg, symbol=phytomer_symbol, self=true)
-    ReproductiveOrganEmission(phytomers[end], length(phytomers), length(mtg), phytomer_symbol)
+    ReproductiveOrganEmission(length(phytomers), length(mtg), phytomer_symbol)
 end
 
 PlantSimEngine.inputs_(m::ReproductiveOrganEmission) = (
-    last_phytomer=m.last_phytomer_init,
     graph_node_count=m.graph_node_count_init, # Also modified in the model, but can't be an output, other models have it too
     phytomer_count=m.phytomer_count_init,
 )
@@ -33,7 +31,7 @@ function PlantSimEngine.run!(::ReproductiveOrganEmission, models, status, meteo,
 
     # Create the new organ as a child of the phytomer:
     st_repro_organ = add_organ!(
-        status.last_phytomer, # parent, 
+        status.node[1], # The phytomer's internode is its first child 
         sim_object,  # The simulation object, so we can add the new status 
         "+", status.sex, 4;
         index=status.phytomer_count,

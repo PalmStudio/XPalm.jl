@@ -1,7 +1,7 @@
 module XPalm
 
 import MultiScaleTreeGraph
-import MultiScaleTreeGraph: NodeMTG, index#, addchild!, get_root
+import MultiScaleTreeGraph: NodeMTG, index, symbol#, addchild!, get_root
 import Dates
 import PlantSimEngine
 import PlantMeteo
