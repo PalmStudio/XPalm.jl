@@ -102,9 +102,3 @@ function PlantSimEngine.run!(m::ET0_BP, models, status, meteo, constants, extra=
     eaero = ((900 ./ (TMoy .+ 273.16)) .* ((esat .- ea) .* windspeed) .* Kpsy) ./ (pent_vap_sat .+ Kpsy .* (1.0 .+ 0.34 .* windspeed))
     status.ET0 = erad .+ eaero
 end
-
-function PlantSimEngine.run!(::ET0_BP, models, st, meteo, constants, mtg::MultiScaleTreeGraph.Node)
-    scene = get_root(mtg)
-    scene_status = PlantSimEngine.status(scene[:models])[rownumber(st)]
-    st.ET0 = scene_status.ET0
-end
