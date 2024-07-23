@@ -40,7 +40,7 @@ struct FTSW_BP <: AbstractFTSWModel
 end
 
 PlantSimEngine.inputs_(::FTSW_BP) = (
-    root_depth=-Inf,
+    root_depth=0.0,
     ET0=-Inf, #potential evapotranspiration
     tree_ei=-Inf, # light interception efficiency (ei=1-exp(-kLAI))
 )

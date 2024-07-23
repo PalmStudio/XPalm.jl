@@ -4,7 +4,7 @@ struct MaleBiomass{T} <: AbstractBiomassModel
 end
 
 PlantSimEngine.inputs_(::MaleBiomass) = (carbon_allocation=-Inf, state="undetermined")
-PlantSimEngine.outputs_(::MaleBiomass) = (biomass=-Inf, litter_male=-Inf,)
+PlantSimEngine.outputs_(::MaleBiomass) = (biomass=0.0, litter_male=-Inf,)
 
 # Applied at the male inflorescence scale:
 function PlantSimEngine.run!(m::MaleBiomass, models, st, meteo, constants, extra=nothing)
