@@ -9,7 +9,7 @@ meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), 
 meteo.T = meteo.Taverage
 meteo.Rh .= (meteo.Rh_max .- meteo.Rh_min) ./ 2 ./ 100
 
-nsteps = 916
+nsteps = 912
 m = Weather(meteo[1:nsteps, :])
 
 begin
@@ -26,19 +26,23 @@ begin
             XPalm.GraphNodeCount(length(p.mtg)), # to have the `graph_node_count` variable initialised in the status
         ),
         "Plant" => (
+            # MultiScaleModel(
+            #     model=DegreeDaysFTSW(
+            #         threshold_ftsw_stress=p.parameters[:phyllochron][:threshold_ftsw_stress],
+            #     ),
+            #     mapping=[:ftsw => "Soil",],
+            # ),
+            DailyDegreeDays(),#! replace by `DegreeDaysFTSW`
+            XPalm.DailyPlantAgeModel(),
             MultiScaleModel(
-                model=DegreeDaysFTSW(
-                    threshold_ftsw_stress=p.parameters[:phyllochron][:threshold_ftsw_stress],
+                model=XPalm.PhyllochronModel(
+                    p.parameters[:phyllochron][:age_palm_maturity],
+                    p.parameters[:phyllochron][:threshold_ftsw_stress],
+                    p.parameters[:phyllochron][:production_speed_initial],
+                    p.parameters[:phyllochron][:production_speed_mature],
+                    length(traverse(p.mtg, x -> true, filter_fun=node -> symbol(node) == "Phytomer")),
                 ),
                 mapping=[:ftsw => "Soil",],
-            ),
-            XPalm.DailyPlantAgeModel(),
-            XPalm.PhyllochronModel(
-                p.parameters[:phyllochron][:age_palm_maturity],
-                p.parameters[:phyllochron][:threshold_ftsw_stress],
-                p.parameters[:phyllochron][:production_speed_initial],
-                p.parameters[:phyllochron][:production_speed_mature],
-                length(traverse(p.mtg, x -> true, filter_fun=node -> symbol(node) == "Phytomer")),
             ),
             MultiScaleModel(
                 model=XPalm.PlantLeafAreaModel(),
@@ -378,12 +382,12 @@ begin
 
     outs = Dict{String,Any}(
         "Scene" => (:lai, :scene_leaf_area, :aPPFD, :TEff),
-        "Plant" => (:plant_age, :ftsw, :newPhytomerEmergence, :aPPFD_plant, :plant_leaf_area, :carbon_assimilation, :carbon_offer_after_rm, :Rm, :TT_since_init, :TEff),
+        "Plant" => (:plant_age, :newPhytomerEmergence, :aPPFD_plant, :plant_leaf_area, :carbon_assimilation, :carbon_offer_after_rm, :Rm, :TT_since_init, :TEff, :carbon_allocation, :carbon_demand_organs, :carbon_demand, :reserve, :carbon_offer_after_rm, :respiration_reserve_mobilization, :reserve_organs, :Rm_organs),
         # "Plant" => (:phytomers,),
-        "Leaf" => (:Rm, :potential_area, :TT_since_init, :TEff),
+        "Leaf" => (:Rm, :potential_area, :TT_since_init, :TEff, :biomass, :carbon_allocation, :carbon_demand, :leaf_area),
         "Internode" => (:Rm, :potential_height, :carbon_demand),
         # "Male" => (:Rm,),
-        # "Female" => (:Rm,),
+        "Female" => (:Rm, :TT_since_init, :TEff, :biomass, :carbon_allocation, :carbon_demand, :carbon_demand_non_oil, :carbon_demand_oil, :carbon_demand_stalk, :biomass_stalk, :biomass_fruits,),
         # "Leaf" => (:A, :carbon_demand, :carbon_allocation, :TT),
         # "Internode" => (:carbon_allocation,),
         "Soil" => (:TEff, :ftsw, :root_depth),
@@ -394,22 +398,96 @@ end
 sim = run!(p.mtg, model_mapping, m, outputs=outs, executor=SequentialEx());
 df = outputs(sim, DataFrame)
 
+df_scene = filter(row -> row.organ == "Scene", df)
+df_plant = filter(row -> row.organ == "Plant", df)
+df_leaf = filter(row -> row.organ == "Leaf", df)
+df_female = filter(row -> row.organ == "Female", df)
+df_internode = filter(row -> row.organ == "Internode", df)
+
+lines([df_plant.aPPFD_plant...])
+lines([df_scene.aPPFD...])
+lines([df_scene.lai...])
+lines([df_plant.plant_leaf_area...])
+lines([df_plant.carbon_assimilation...])
+lines([df_plant.Rm...] ./ [df_plant.carbon_assimilation...]) # Should be around 0.5
+lines([df_plant.reserve...]) #? always 0.0??
+
+leaf_1 = filter(x -> x.node == 8, df_leaf)
+
+lines([leaf_1.biomass...])
+lines([leaf_1.carbon_allocation...])
+lines([leaf_1.Rm...] ./ [leaf_1.carbon_allocation...])
+lines([leaf_1.carbon_demand...])
+lines([leaf_1.leaf_area...])
+
+leaf_104 = filter(x -> x.node == 104, df_leaf)
+
+lines([leaf_104.leaf_area...])
+
 # @time sim = run!(Palm(nsteps=nrow(m)).mtg, mapping, m[1], outputs=outs, executor=SequentialEx());
 # graph = PlantSimEngine.GraphSimulation(Palm(nsteps=nrow(m)).mtg, model_mapping, nsteps=length(m), check=true, outputs=outs);
 # @time sim = run!(graph, m, Constants(), nothing) # 0.5 millisecond per time-step
-
-
-graph.statuses["Leaf"][1]
-sim.statuses["Leaf"][1]
-
-
-graph.statuses["Internode"][1]
-
-
-df = outputs(sim, DataFrame)
+# graph.statuses["Leaf"][1]
+# sim.statuses["Leaf"][1]
+# graph.statuses["Internode"][1]
 
 df_scene = filter(row -> row.organ == "Scene", df)
 df_plant = filter(row -> row.organ == "Plant", df)
+df_leaf = filter(row -> row.organ == "Leaf", df)
+df_female = filter(row -> row.organ == "Female", df)
+df_internode = filter(row -> row.organ == "Internode", df)
+
+["Leaf", "Internode", "Male", "Female"]
+findfirst(isnan, df_plant.Rm)
+df_plant.Rm[273]
+df_plant[274, :]
+filter(row -> row.timestep == 274, df_leaf)
+filter(row -> row.timestep == 273, df_female)
+filter(row -> row.timestep == 274, df_female)
+
+
+select!(filter(row -> row.timestep == 272, df_female), Not([:aPPFD_plant, :plant_leaf_area, :reserve, :plant_age, :carbon_assimilation, :scene_leaf_area, :lai, :respiration_reserve_mobilization, :newPhytomerEmergence, :aPPFD, :potential_height]))
+
+
+filter(row -> row.timestep == 273, df_female)
+
+df_node = filter(x -> x.node == 8, df_leaf)
+select!(df_node, Not(names(df_node, Missing)))
+
+
+df_node[912, :]
+sum(outputs(sim)["Plant"][:Rm_organs][912][1])
+findfirst(isnan, outputs(sim)["Plant"][:Rm_organs][912][1])
+
+node = get_node(p.mtg, 128)
+node.plantsimengine_status.Rm
+
+traverse(p.mtg, node -> node, filter_fun=node -> hasproperty(node.plantsimengine_status, :Rm) ? isnan(node.plantsimengine_status.Rm) : false)
+node = get_node(p.mtg, 196)
+node.plantsimengine_status.Rm
+node.plantsimengine_status.biomass
+node.plantsimengine_status.carbon_allocation
+node.plantsimengine_status
+
+
+df_plant.biomass[912]
+df_internode
+df_plant.Rm[912]
+df_node.biomass[912]
+df_node.Rm[912]
+
+select!(df_node, Not([:carbon_offer_after_rm, :plant_age, :carbon_assimilation, :newPhytomerEmergence, :aPPFD, :potential_height]))
+
+df_plant[912, :carbon_demand]
+df_plant[912, :]
+
+sum(outputs(sim)["Plant"][:carbon_demand_organs][912][1])
+df_plant[912, :]
+
+carbon_demand_organs
 
 df_scene.lai
 data(df_plant) * AlgebraOfGraphics.mapping(:ftsw) |> draw()
+
+df_leaf[findfirst(x -> x === NaN, df_leaf.Rm), :]
+filter(x -> x.node == 8, df_leaf)
