@@ -29,7 +29,7 @@ end
 NumberFruits(; TT_flowering=6300.0, duration_fruit_setting=405.0) = NumberFruits(TT_flowering, duration_fruit_setting, Ref(false))
 
 PlantSimEngine.inputs_(::NumberFruits) = (carbon_offer_plant=0.0, potential_fruits_number=-9999, carbon_demand_plant=0.0)
-PlantSimEngine.outputs_(::NumberFruits) = (fruits_number=-9999, carbon_offer_flowering=-Inf, carbon_demand_flowering=-Inf,)
+PlantSimEngine.outputs_(::NumberFruits) = (fruits_number=-9999, carbon_offer_flowering=0.0, carbon_demand_flowering=0.0,)
 
 # applied at the female inflorescence level
 function PlantSimEngine.run!(m::NumberFruits, models, status, meteo, constants, extra=nothing)
