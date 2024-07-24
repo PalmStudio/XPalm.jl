@@ -96,21 +96,6 @@ end
 
 Female() = Female(Initiated())
 
-# """
-#     increment_rank!(palm::Palm)
-
-# Increment the rank of all phytomers on the palm. 
-# This is called whenever a new phytomer is emmitted.
-# """
-# function increment_rank!(palm::Palm)
-#     MultiScaleTreeGraph.transform!(
-#         palm.mtg,
-#         :rank => (x -> x + 1) => :rank
-#     )
-#     return nothing
-# end
-
-
 """
     Palm(;
         nsteps=1,
@@ -191,7 +176,7 @@ function default_parameters()
         ),
         :ini_root_depth => 100.0,
         :potential_area => Dict(
-            :leaf_area_first_leaf => 0.0015, # leaf potential area for the first leaf (m2)
+            :leaf_area_first_leaf => 0.02, # leaf potential area for the first leaf (m2)
             :leaf_area_mature_leaf => 12.0, # leaf potential area for a mature leaf (m2)
             :age_first_mature_leaf => 8 * 365, # age of the first mature leaf (days)
             :inflexion_index => 560.0,
@@ -277,35 +262,24 @@ function default_parameters()
 end
 
 function Palm(;
-    nsteps=1,
     initiation_age=0,
     parameters=default_parameters(),
-    # model_list=main_models_definition(parameters, nsteps)
 )
 
     scene = MultiScaleTreeGraph.Node(
         1,
         NodeMTG("/", "Scene", 1, 0),
         Dict{Symbol,Any}(
-        # :models => copy(model_list["Scene"]),
         # :area => 10000 / 136.0, # scene area, m2
-        # :all_models => model_list,
         ),
     )
 
-    soil = MultiScaleTreeGraph.Node(
-        scene,
-        NodeMTG("+", "Soil", 1, 1),
-        # Dict{Symbol,Any}(
-        #     :models => copy(model_list["Soil"]),
-        # ),
-    )
+    soil = MultiScaleTreeGraph.Node(scene, NodeMTG("+", "Soil", 1, 1),)
 
     plant = MultiScaleTreeGraph.Node(
         scene,
         NodeMTG("+", "Plant", 1, 1),
         Dict{Symbol,Any}(
-            # :models => copy(model_list["Plant"]),
             :parameters => parameters,
         ),
     )
@@ -316,7 +290,6 @@ function Palm(;
         Dict{Symbol,Any}(
             :initiation_age => initiation_age,
             :depth => parameters[:RL0], # total exploration depth m
-            # :models => copy(model_list["RootSystem"]),
         ),
     )
 
@@ -325,28 +298,24 @@ function Palm(;
         NodeMTG("+", "Stem", 1, 2),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
-            # :models => copy(model_list["Stem"]),
         ),
     )
 
     phyto = MultiScaleTreeGraph.Node(stem, NodeMTG("/", "Phytomer", 1, 3),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
-            # :models => copy(model_list["Phytomer"]),
         ),
     )
 
     internode = MultiScaleTreeGraph.Node(phyto, NodeMTG("/", "Internode", 1, 4),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
-            # :models => copy(model_list["Internode"]),
         ),
     )
 
     leaf = MultiScaleTreeGraph.Node(internode, NodeMTG("+", "Leaf", 1, 4),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
-            # :models => copy(model_list["Leaf"]),
         ),
     )
     return Palm(scene, initiation_age, parameters)
