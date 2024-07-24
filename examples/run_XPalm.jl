@@ -1,6 +1,7 @@
 # Import dependencies
 using PlantMeteo, PlantSimEngine, MultiScaleTreeGraph
 using CairoMakie, AlgebraOfGraphics
+using Dates
 using DataFrames, CSV, Statistics
 # using CairoMakie
 using XPalm
@@ -8,12 +9,13 @@ using XPalm
 meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), DataFrame)
 meteo.T = meteo.Taverage
 meteo.Rh .= (meteo.Rh_max .- meteo.Rh_min) ./ 2 ./ 100
-
+rename!(meteo, :Date => :date)
+meteo.duration .= Dates.Day(1)
 nsteps = 912
 m = Weather(meteo[1:nsteps, :])
 
 begin
-    p = Palm(nsteps=nrow(m))
+    p = Palm()
     model_mapping = Dict(
         "Scene" => (
             XPalm.ET0_BP(),
@@ -404,10 +406,10 @@ df_leaf = filter(row -> row.organ == "Leaf", df)
 df_female = filter(row -> row.organ == "Female", df)
 df_internode = filter(row -> row.organ == "Internode", df)
 
+lines([df_plant.plant_leaf_area...])
 lines([df_plant.aPPFD_plant...])
 lines([df_scene.aPPFD...])
 lines([df_scene.lai...])
-lines([df_plant.plant_leaf_area...])
 lines([df_plant.carbon_assimilation...])
 lines([df_plant.Rm...] ./ [df_plant.carbon_assimilation...]) # Should be around 0.5
 lines([df_plant.reserve...]) #? always 0.0??
@@ -421,11 +423,13 @@ lines([leaf_1.carbon_demand...])
 lines([leaf_1.leaf_area...])
 
 leaf_104 = filter(x -> x.node == 104, df_leaf)
-
 lines([leaf_104.leaf_area...])
+lines([leaf_104.potential_area...])
+lines([leaf_104.biomass...])
 
-# @time sim = run!(Palm(nsteps=nrow(m)).mtg, mapping, m[1], outputs=outs, executor=SequentialEx());
-# graph = PlantSimEngine.GraphSimulation(Palm(nsteps=nrow(m)).mtg, model_mapping, nsteps=length(m), check=true, outputs=outs);
+
+# @time sim = run!(Palm().mtg, mapping, m[1], outputs=outs, executor=SequentialEx());
+# graph = PlantSimEngine.GraphSimulation(Palm().mtg, model_mapping, nsteps=length(m), check=true, outputs=outs);
 # @time sim = run!(graph, m, Constants(), nothing) # 0.5 millisecond per time-step
 # graph.statuses["Leaf"][1]
 # sim.statuses["Leaf"][1]
