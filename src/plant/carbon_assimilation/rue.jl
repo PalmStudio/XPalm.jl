@@ -6,6 +6,12 @@ Computes the `carbon_assimilation` using a constant radiation use efficiency (`r
 # Arguments
 
 - `rue`: radiation use efficiency (gC MJ⁻¹)
+
+# Inputs
+- `aPPFD`: the absorbed Photosynthetic Photon Flux Density in mol[PAR] m[leaf]⁻² s⁻¹.
+
+# Outputs
+- `carbon_assimilation`: carbon offer from photosynthesis
 """
 struct ConstantRUEModel{T} <: AbstractCarbon_AssimilationModel
     rue::T

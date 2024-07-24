@@ -1,15 +1,20 @@
-@process "potential_evapotranspiration" verbose = false
 
 """
     ET0_BP(LATITUDE,ALTITUDE)
     ET0_BP(LATITUDE=0.97,ALTITUDE=50)
 
-Compute root growth depending on thermal time and water stress (ftsw)
+Compute potential evapotranspiration 
 
 # Arguments
 
 - `LATITUDE`: latitude (radian)
 - `ALTITUDE`: altitude (m)
+
+# Inputs
+- meteo
+
+# Outputs
+- `ET0`: potentiam evapotranpiration (mm)
 
 # Example
 
@@ -43,18 +48,6 @@ end
 
 PlantSimEngine.ObjectDependencyTrait(::Type{<:ET0_BP}) = PlantSimEngine.IsObjectDependent()
 PlantSimEngine.TimeStepDependencyTrait(::Type{<:ET0_BP}) = PlantSimEngine.IsTimeStepIndependent()
-
-"""
-Compute potential evapotranspiration
-
-# Arguments
-
-- `m`: potential evapotranspiration model
-
-# Returns
-
-- `ET0`: potential evapotranspiration (mm)
-"""
 
 function PlantSimEngine.run!(m::ET0_BP, models, status, meteo, constants, extra=nothing)
 

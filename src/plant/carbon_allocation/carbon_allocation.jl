@@ -5,7 +5,6 @@ Compute the carbon to allocate to organs from photosysthesis and reserve mobiliz
 
 
 # Arguments
-
 - `cost_reserve_mobilization`: carbon cost to mobilize carbon reserve from stem or leaves
 
 """
@@ -18,7 +17,6 @@ OrgansCarbonAllocationModel(; cost_reserve_mobilization=1.667) = OrgansCarbonAll
 PlantSimEngine.inputs_(::OrgansCarbonAllocationModel) = (carbon_offer_after_rm=-Inf, carbon_demand_organs=[-Inf], reserve=0.0, reserve_organs=[0.0],)
 PlantSimEngine.outputs_(::OrgansCarbonAllocationModel) = (carbon_allocation=-Inf, carbon_allocation_organs=[-Inf], respiration_reserve_mobilization=-Inf, carbon_offer_after_allocation=-Inf, carbon_demand=0.0)
 
-# At the plant scale:
 function PlantSimEngine.run!(m::OrgansCarbonAllocationModel, models, status, meteo, constants, extra=nothing)
     status.carbon_demand = sum(status.carbon_demand_organs)
     # Trophic status, based on the carbon offer / demand ratio. Note that maintenance respiration 

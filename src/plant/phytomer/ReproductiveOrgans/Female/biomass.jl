@@ -3,7 +3,7 @@
 FemaleBiomass(respiration_cost,respiration_cost_oleosynthesis)
 FemaleBiomass(respiration_cost=1.44,respiration_cost_oleosynthesis=3.2)
 
-Compute female biomass (inflo and bunch) from daily carbon allocation
+Compute female biomass (inflo and bunch) from daily carbon allocation. Allocation to the different components of the bunch (stalk adnd fruit) is proportional to their carbon demand.
 
 # Arguments
 
@@ -15,6 +15,7 @@ Compute female biomass (inflo and bunch) from daily carbon allocation
 - `carbon_demand_stalk`: carbon demand of the stalk
 - `carbon_demand_non_oil`: carbon demand of non oil components of fruits
 - `carbon_demand_oil`: carbon demand of fruits oil
+- `state`: state of the inflorescence 
 
 # outputs
 - `biomass`: total ifnlo/bunch biomass
@@ -42,7 +43,6 @@ function PlantSimEngine.run!(m::FemaleBiomass, models, st, meteo, constants, ext
     st.state == "Aborted" || st.state == "Harvested" && return # if it is aborted, no need to compute 
 
     st.carbon_allocation == 0.0 && return # no carbon allocation -> no biomass increase
-
 
     demand_tot = st.carbon_demand_non_oil + st.carbon_demand_oil + st.carbon_demand_stalk
     demand_tot == 0.0 && return # no carbon demand -> no biomass increase

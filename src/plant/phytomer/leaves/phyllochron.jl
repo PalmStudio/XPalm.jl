@@ -1,3 +1,28 @@
+"""
+PhyllochronModel(age_palm_maturity,threshold_ftsw_stress,production_speed_initial,production_speed_mature)
+
+Compute the phyllochron and initiate a new phytomer at every new emergence
+
+# Arguments
+
+- `age_palm_maturity`: age of the plant when maturity is establiched (days)
+- `threshold_ftsw_stress`:ftsw treshold below which the phyllochron is reduce
+- `production_speed_initial`: initial phyllochron (for seedlings) (leaf.degreeC days-1)
+- `production_speed_mature`: phyllochron at plant maturity (leaf.degreeC days-1)
+- `ini_phytomer`: the initialisation for the number of phytomers in the plant (it is incremented each time there is a new one).
+
+# Inputs
+- `plant_age`= plant age (days)
+- `TEff`: daily efficient temperature for plant growth (degree C days) 
+- `ftsw`= fraction of tranpirable soil water (unitless)
+
+# Outputs 
+- `newPhytomerEmergence`: fraction of time during two successive phytomer (at 1 the new phytomer emerge)
+- `production_speed`= phyllochron at the current plant age (leaf.degreeC days-1)
+- `phylo_slow`= coefficient of reduction of the phyllochron du to ftsw
+- `phytomers`= number of phytomers emmitted since simulation starts
+
+"""
 struct PhyllochronModel{I,T} <: AbstractPhyllochronModel
     age_palm_maturity::I
     threshold_ftsw_stress::T

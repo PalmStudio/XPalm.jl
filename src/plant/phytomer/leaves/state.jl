@@ -1,3 +1,18 @@
+"""
+LeafStateModel()
+
+Give the state of the leaf 
+
+# Arguments
+
+# Inputs
+- `maturity`: a leaf is mature when it reaches its final length
+
+# Outputs 
+- `state`: leaf state
+
+"""
+
 struct LeafStateModel <: AbstractStateModel end
 
 PlantSimEngine.inputs_(::LeafStateModel) = (maturity=false,)

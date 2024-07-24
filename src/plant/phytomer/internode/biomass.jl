@@ -14,7 +14,7 @@ Compute internode biomass from daily carbon allocation
 
 # Inputs
 
-- `carbon_allocation`: carbon allocated to the internode (g)
+- `carbon_allocation`:carbon allocated to the internode
 
 # Outputs
 

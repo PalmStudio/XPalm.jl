@@ -1,3 +1,8 @@
+"""
+    add_reproductive_organ!(...)
+
+Add a new reproductive organ to a phytomer.
+"""
 struct ReproductiveOrganEmission <: AbstractReproductive_Organ_EmissionModel
     phytomer_count_init::Int
     graph_node_count_init::Int

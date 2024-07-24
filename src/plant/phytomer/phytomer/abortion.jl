@@ -10,6 +10,16 @@ Determines if the inflorescence will abort based on the trophic state of the pla
 - `TT_flowering`: thermal time for flowering since phytomer appearence (degree days).
 - `duration_abortion`: duration used for computing abortion rate before flowering (degree days).
 
+# Inputs
+- `carbon_offer_after_rm`: carbon offer after maintenance respiration (gC/plant).
+- `carbon_demand_organs`: carbon demand of all organs (gC/plant).
+
+
+# Outputs 
+- `carbon_demand_plant`: total carbon demand of the plant (gC/plant).
+- `carbon_offer_plant`: total carbon offer of the plant (gC/plant).
+- `state`: phytomer state (undetermined,Aborted,...)
+
 # Note
 
 The abortion is determined at `TT_flowering` based on the `trophic_status` of the plant during a period of time before this date. The hypothesis is that a trophic stress can trigger more abortion in the plant.

@@ -1,4 +1,3 @@
-
 """
     PhytomerEmission(mtg; phytomer_symbol="Phytomer", internode_symbol="Internode", leaf_symbol="Leaf") <: AbstractPhytomer_EmissionModel
     
@@ -44,6 +43,7 @@ PlantSimEngine.dep(::PhytomerEmission) = (
     leaf_potential_area=AbstractLeaf_Potential_AreaModel,
     initiation_age=AbstractInitiation_AgeModel,
 )
+
 
 """
     add_phytomer!(palm, initiation_age)

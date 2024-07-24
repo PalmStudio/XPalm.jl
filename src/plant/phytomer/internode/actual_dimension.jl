@@ -9,7 +9,6 @@ InternodeDimensionModel(stem_apparent_density=300000.0)
 Compute internode dimensions (height and radius) from the biomass, with the proportions given by potential dimensions (`potential_height` and `potential_radius`)
 
 # Arguments
-
 - `stem_apparent_density`: apparent density  (g m-3)
 
 # Inputs

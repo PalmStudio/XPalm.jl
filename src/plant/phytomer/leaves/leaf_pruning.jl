@@ -1,3 +1,19 @@
+"""
+RankLeafPruning(rank)
+
+Function to remove leaf biomass and area when the phytomer has an harvested bunch or when the leaf reaches a treshold rank (below rank of harvested bunches) 
+
+# Arguments
+- `rank`: leaf rank treshold below whith the leaf is cutted
+
+# Inputs
+- `state`: phytomer state
+
+# Outputs 
+- `litter_leaf`: leaf biomass removed from the plantand going to the litter
+
+"""
+
 struct RankLeafPruning <: AbstractLeaf_PruningModel
     rank
 end
