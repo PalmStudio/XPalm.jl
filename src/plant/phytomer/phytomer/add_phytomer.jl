@@ -37,13 +37,12 @@ end
 
 PlantSimEngine.inputs_(m::PhytomerEmission) = (graph_node_count=m.graph_node_count_init,)
 PlantSimEngine.outputs_(m::PhytomerEmission) = (last_phytomer=m.last_phytomer_init, phytomer_count=m.phytomer_count_init,)
-PlantSimEngine.dep(::PhytomerEmission) = (
-    internode_final_potential_dimensions=AbstractInternode_Final_Potential_DimensionsModel,
-    leaf_final_potential_area=AbstractLeaf_Final_Potential_AreaModel,
-    leaf_potential_area=AbstractLeaf_Potential_AreaModel,
-    initiation_age=AbstractInitiation_AgeModel,
+PlantSimEngine.dep(m::PhytomerEmission) = (
+    internode_final_potential_dimensions=AbstractInternode_Final_Potential_DimensionsModel => [m.internode_symbol],
+    leaf_final_potential_area=AbstractLeaf_Final_Potential_AreaModel => [m.leaf_symbol],
+    leaf_potential_area=AbstractLeaf_Potential_AreaModel => [m.leaf_symbol],
+    initiation_age=AbstractInitiation_AgeModel => [m.phytomer_symbol, m.internode_symbol, m.leaf_symbol],
 )
-
 
 """
     add_phytomer!(palm, initiation_age)
