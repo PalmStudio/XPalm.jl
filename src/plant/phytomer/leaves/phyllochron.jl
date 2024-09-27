@@ -12,11 +12,13 @@ Compute the phyllochron and initiate a new phytomer at every new emergence
 - `ini_phytomer`: the initialisation for the number of phytomers in the plant (it is incremented each time there is a new one).
 
 # Inputs
+
 - `plant_age`= plant age (days)
 - `TEff`: daily efficient temperature for plant growth (degree C days) 
 - `ftsw`= fraction of tranpirable soil water (unitless)
 
 # Outputs 
+
 - `newPhytomerEmergence`: fraction of time during two successive phytomer (at 1 the new phytomer emerge)
 - `production_speed`= phyllochron at the current plant age (leaf.degreeC days-1)
 - `phylo_slow`= coefficient of reduction of the phyllochron du to ftsw
@@ -29,6 +31,11 @@ struct PhyllochronModel{I,T} <: AbstractPhyllochronModel
     production_speed_initial::T
     production_speed_mature::T
     ini_phytomer::I
+end
+
+function PhyllochronModel(; age_palm_maturity=2920, threshold_ftsw_stress=0.3, production_speed_initial=0.0111, production_speed_mature=0.0074, ini_phytomer=1)
+    @assert ini_phytomer >= 0 "PhyllochronModel: `ini_phytomer` is the initial phytomer count in the plant, it must be >= 0"
+    PhyllochronModel(age_palm_maturity, threshold_ftsw_stress, production_speed_initial, production_speed_mature, ini_phytomer)
 end
 
 PlantSimEngine.inputs_(::PhyllochronModel) = (
