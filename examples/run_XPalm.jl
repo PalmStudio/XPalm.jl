@@ -1,6 +1,6 @@
 # Import dependencies
 using PlantMeteo, PlantSimEngine, MultiScaleTreeGraph
-using CairoMakie, AlgebraOfGraphics
+# using CairoMakie, AlgebraOfGraphics
 using Dates
 using DataFrames, CSV, Statistics
 # using CairoMakie
@@ -38,11 +38,11 @@ begin
             XPalm.DailyPlantAgeModel(),
             MultiScaleModel(
                 model=XPalm.PhyllochronModel(
-                    p.parameters[:phyllochron][:age_palm_maturity],
-                    p.parameters[:phyllochron][:threshold_ftsw_stress],
-                    p.parameters[:phyllochron][:production_speed_initial],
-                    p.parameters[:phyllochron][:production_speed_mature],
-                    length(traverse(p.mtg, x -> true, filter_fun=node -> symbol(node) == "Phytomer")),
+                    age_palm_maturity=p.parameters[:phyllochron][:age_palm_maturity],
+                    threshold_ftsw_stress=p.parameters[:phyllochron][:threshold_ftsw_stress],
+                    production_speed_initial=p.parameters[:phyllochron][:production_speed_initial],
+                    production_speed_mature=p.parameters[:phyllochron][:production_speed_mature],
+                    ini_phytomer=length(traverse(p.mtg, x -> true, filter_fun=node -> symbol(node) == "Phytomer")),
                 ),
                 mapping=[:ftsw => "Soil",],
             ),
@@ -386,7 +386,7 @@ begin
         "Scene" => (:lai, :scene_leaf_area, :aPPFD, :TEff),
         "Plant" => (:plant_age, :newPhytomerEmergence, :aPPFD_plant, :plant_leaf_area, :carbon_assimilation, :carbon_offer_after_rm, :Rm, :TT_since_init, :TEff, :carbon_allocation, :carbon_demand_organs, :carbon_demand, :reserve, :carbon_offer_after_rm, :respiration_reserve_mobilization, :reserve_organs, :Rm_organs),
         # "Plant" => (:phytomers,),
-        "Leaf" => (:Rm, :potential_area, :TT_since_init, :TEff, :biomass, :carbon_allocation, :carbon_demand, :leaf_area),
+        "Leaf" => (:Rm, :final_potential_area, :potential_area, :TT_since_init, :TEff, :biomass, :carbon_allocation, :carbon_demand, :leaf_area),
         "Internode" => (:Rm, :potential_height, :carbon_demand),
         # "Male" => (:Rm,),
         "Female" => (:Rm, :TT_since_init, :TEff, :biomass, :carbon_allocation, :carbon_demand, :carbon_demand_non_oil, :carbon_demand_oil, :carbon_demand_stalk, :biomass_stalk, :biomass_fruits,),
@@ -397,7 +397,7 @@ begin
 
     # @time sim = run!(p.mtg, mapping, meteo, outputs=outs, executor=SequentialEx());
 end
-sim = run!(p.mtg, model_mapping, m, outputs=outs, executor=SequentialEx());
+sim = run!(p.mtg, model_mapping, m, outputs=outs, executor=SequentialEx(), check=false);
 df = outputs(sim, DataFrame)
 
 df_scene = filter(row -> row.organ == "Scene", df)
@@ -405,6 +405,32 @@ df_plant = filter(row -> row.organ == "Plant", df)
 df_leaf = filter(row -> row.organ == "Leaf", df)
 df_female = filter(row -> row.organ == "Female", df)
 df_internode = filter(row -> row.organ == "Internode", df)
+
+final_area_mod = only(PlantSimEngine.get_model_nodes(sim.dependency_graph, XPalm.FinalPotentialAreaModel))
+final_area_mod.parent
+final_area_mod.inputs
+final_area_mod.outputs
+init_age_mod = only(final_area_mod.parent)
+
+d = PlantSimEngine.dep(model_mapping);
+d.roots
+PlantSimEngine.get_model_nodes(d, :initiation_age)
+hd = PlantSimEngine.hard_dependencies(model_mapping);
+hd.roots["Plant"].soft_dep_graph
+hd.roots["Plant"].inputs
+hd.roots["Plant"].outputs
+
+hd_leaf = hd.roots["Leaf"]
+hd.not_found
+hd_leaf.soft_dep_graph
+hd_ini = hd_leaf.soft_dep_graph[:initiation_age]
+hd_ini.hard_dependency
+
+hd_leaf = hd.roots["Plant"]
+hd.not_found
+hd_leaf.soft_dep_graph
+hd_ini = hd_leaf.soft_dep_graph[:phyllochron]
+hd_ini.hard_dependency
 
 lines([df_plant.plant_leaf_area...])
 lines([df_plant.aPPFD_plant...])
@@ -421,12 +447,14 @@ lines([leaf_1.carbon_allocation...])
 lines([leaf_1.Rm...] ./ [leaf_1.carbon_allocation...])
 lines([leaf_1.carbon_demand...])
 lines([leaf_1.leaf_area...])
+lines([leaf_1.final_potential_area...]) #! should be a constant value along the leaf lifespan 
+
 
 leaf_104 = filter(x -> x.node == 104, df_leaf)
 lines([leaf_104.leaf_area...])
 lines([leaf_104.potential_area...])
 lines([leaf_104.biomass...])
-
+lines([leaf_104.final_potential_area...])
 
 # @time sim = run!(Palm().mtg, mapping, m[1], outputs=outs, executor=SequentialEx());
 # graph = PlantSimEngine.GraphSimulation(Palm().mtg, model_mapping, nsteps=length(m), check=true, outputs=outs);
