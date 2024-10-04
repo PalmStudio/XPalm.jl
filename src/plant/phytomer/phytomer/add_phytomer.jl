@@ -40,7 +40,6 @@ PlantSimEngine.outputs_(m::PhytomerEmission) = (last_phytomer=m.last_phytomer_in
 PlantSimEngine.dep(m::PhytomerEmission) = (
     internode_final_potential_dimensions=AbstractInternode_Final_Potential_DimensionsModel => [m.internode_symbol],
     leaf_final_potential_area=AbstractLeaf_Final_Potential_AreaModel => [m.leaf_symbol],
-    leaf_potential_area=AbstractLeaf_Potential_AreaModel => [m.leaf_symbol],
     initiation_age=AbstractInitiation_AgeModel => [m.phytomer_symbol, m.internode_symbol, m.leaf_symbol],
 )
 
@@ -102,7 +101,6 @@ function PlantSimEngine.run!(m::PhytomerEmission, models, status, meteo, constan
 
     # Compute the leaf_potential_area model over the new leaf:
     PlantSimEngine.run!(sim_object.models[m.leaf_symbol].leaf_final_potential_area, sim_object.models[m.leaf_symbol], st_leaf, meteo, constants, sim_object)
-    PlantSimEngine.run!(sim_object.models[m.leaf_symbol].leaf_potential_area, sim_object.models[m.leaf_symbol], st_leaf, meteo, constants, sim_object)
 
     return nothing
 end
