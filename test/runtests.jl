@@ -1,4 +1,4 @@
-# using XPalm
+using XPalm
 using Test
 using Dates
 using MultiScaleTreeGraph, PlantMeteo, PlantSimEngine
@@ -6,25 +6,25 @@ using CSV, DataFrames, Statistics
 
 # Import the meteo data once:
 
-meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/Exemple_meteo.csv"), DataFrame)
+meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), DataFrame)
 
-rename!(
-    meteo,
-    :TMin => :Tmin,
-    :TMax => :Tmax,
-    :HRMin => :Rh_min,
-    :HRMax => :Rh_max,
-    :Rainfall => :Precipitations,
-    :WindSpeed => :Wind,
-)
+# rename!(
+#     meteo,
+#     :TMin => :Tmin,
+#     :TMax => :Tmax,
+#     :HRMin => :Rh_min,
+#     :HRMax => :Rh_max,
+#     :Rainfall => :Precipitations,
+#     :WindSpeed => :Wind,
+# )
 
 # prevent missing values
-replace!(meteo.Wind, missing => mean(skipmissing(meteo.Wind)))
-replace!(meteo.Rg, missing => mean(skipmissing(meteo.Rg)))
-transform!(
-    meteo,
-    :Rg => (x -> x .* 0.48) => :Ri_PAR_f,
-)
+# replace!(meteo.Wind, missing => mean(skipmissing(meteo.Wind)))
+# replace!(meteo.Rg, missing => mean(skipmissing(meteo.Rg)))
+# transform!(
+#     meteo,
+#     :Rg => (x -> x .* 0.48) => :Ri_PAR_f,
+# )
 
 dirtest = joinpath(dirname(dirname(pathof(XPalm))), "test/")
 
@@ -101,4 +101,7 @@ end
     include("test-run.jl")
 end
 
+@testset "PlantSimEngine" begin
+    include("test-PlantSimEngine.jl")
+end
 

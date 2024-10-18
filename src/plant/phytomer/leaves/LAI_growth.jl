@@ -24,7 +24,7 @@ PlantSimEngine.inputs_(::LAIGrowth) = (
 )
 
 PlantSimEngine.outputs_(::LAIGrowth) = (
-    LAI=-Inf, # leaf area index (m2 m-2)
+    LAI=0.0, # leaf area index (m2 m-2)
 )
 
 
@@ -51,14 +51,10 @@ Compute LAI growth
 - `LAI`: leaf area index (m2 leaf .m-2 ground)
 """
 function PlantSimEngine.run!(m::LAIGrowth, models, status, meteo, constants, extra=nothing)
-
-    ftsw = prev_value(status, :ftsw; default=status.ftsw)
-    status.LAI = prev_value(status, :LAI; default=status.LAI)
-
-    if (ftsw > m.TRESH_FTSW_SLOW_LAI)
+    if (status.ftsw > m.TRESH_FTSW_SLOW_LAI)
         coef_water_stress = 1
     else
-        coef_water_stress = ftsw / m.TRESH_FTSW_SLOW_LAI
+        coef_water_stress = status.ftsw / m.TRESH_FTSW_SLOW_LAI
     end
 
     if (status.LAI + coef_water_stress * m.LAI_growth_rate * status.TEff > m.LAI_max)

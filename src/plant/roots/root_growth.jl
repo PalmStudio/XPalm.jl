@@ -24,8 +24,8 @@ PlantSimEngine.inputs_(::RootGrowthFTSW) = (
     soil_depth=-Inf, # soil depth (cm)
 )
 
-PlantSimEngine.outputs_(::RootGrowthFTSW) = (
-    root_depth=-Inf, # root depth (cm)
+PlantSimEngine.outputs_(m::RootGrowthFTSW) = (
+    root_depth=m.ini_root_depth, # root depth (cm)
 )
 
 function RootGrowthFTSW(;
@@ -35,8 +35,6 @@ function RootGrowthFTSW(;
 )
     RootGrowthFTSW(ini_root_depth, ROOTS_GROWTH_DEPTH, TRESH_FTSW_SLOW_ROOTS)
 end
-
-PlantSimEngine.dep(::RootGrowthFTSW) = (soil_water=AbstractFTSWModel,) # This model must return a value for ftsw, Z1 and Z2
 
 """
 Compute root growth
@@ -53,26 +51,18 @@ Compute root growth
 """
 function PlantSimEngine.run!(m::RootGrowthFTSW, models, st, meteo, constants, extra=nothing)
 
-    st.root_depth = prev_value(st, :root_depth; default=m.ini_root_depth)
-
-    if (st.ftsw > m.TRESH_FTSW_SLOW_ROOTS)
-        coef_water_stress = 1
-    else
+    if st.ftsw > m.TRESH_FTSW_SLOW_ROOTS
+        coef_water_stress = 1.0
+    elseif st.ftsw > 0.0
         coef_water_stress = st.ftsw / m.TRESH_FTSW_SLOW_ROOTS
+    else
+        coef_water_stress = 0.0
     end
 
+    # st.root_depth == 100 || st.root_depth == -Inf && @show st.root_depth st.ftsw
     if (st.root_depth + coef_water_stress * m.ROOTS_GROWTH_DEPTH * st.TEff > st.soil_depth)
         st.root_depth = st.soil_depth
     else
         st.root_depth += coef_water_stress * m.ROOTS_GROWTH_DEPTH * st.TEff
-    end
-end
-
-# Called by the soil to get the root_depth:
-function PlantSimEngine.run!(::RootGrowthFTSW, models, st, meteo, constants, mtg::MultiScaleTreeGraph.Node)
-    scene = get_root(mtg)
-    timestep = rownumber(st)
-    MultiScaleTreeGraph.traverse(scene, symbol="RootSystem") do roots
-        st.root_depth = roots[:models].status[timestep].root_depth
     end
 end

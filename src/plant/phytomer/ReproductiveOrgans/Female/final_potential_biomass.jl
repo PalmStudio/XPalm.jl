@@ -51,22 +51,10 @@ end
 PlantSimEngine.inputs_(::FemaleFinalPotentialFruits) = (initiation_age=-9999,)
 PlantSimEngine.outputs_(::FemaleFinalPotentialFruits) = (potential_fruits_number=-9999, final_potential_fruit_biomass=-Inf, final_potential_biomass_stalk=-Inf,)
 
-function PlantSimEngine.run!(m::FemaleFinalPotentialFruits, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node)
-    coeff_dev = age_relative_value(
-        status.initiation_age,
-        0.0,
-        m.age_mature_female,
-        m.fraction_first_female,
-        1.0
-    )
+function PlantSimEngine.run!(m::FemaleFinalPotentialFruits, models, st, meteo, constants, extra=nothing)
+    coeff_dev = age_relative_value(st.initiation_age, 0.0, m.age_mature_female, m.fraction_first_female, 1.0)
 
-    status.potential_fruits_number = floor(Int, coeff_dev * m.potential_fruit_number_at_maturity)
-    status.final_potential_fruit_biomass = coeff_dev * m.potential_fruit_weight_at_maturity
-    status.final_potential_biomass_stalk = coeff_dev * m.stalk_max_biomass
-end
-
-function PlantSimEngine.run!(m::FemaleFinalPotentialFruits, models, status, meteo, constants, extra=nothing)
-    status.potential_fruits_number = prev_value(status, :potential_fruits_number, default=0)
-    status.final_potential_fruit_biomass = prev_value(status, :final_potential_fruit_biomass, default=0.0)
-    status.final_potential_biomass_stalk = prev_value(status, :final_potential_biomass_stalk, default=0.0)
+    st.potential_fruits_number = floor(Int, coeff_dev * m.potential_fruit_number_at_maturity)
+    st.final_potential_fruit_biomass = coeff_dev * m.potential_fruit_weight_at_maturity
+    st.final_potential_biomass_stalk = coeff_dev * m.stalk_max_biomass
 end

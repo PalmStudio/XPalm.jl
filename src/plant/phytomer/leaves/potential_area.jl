@@ -31,7 +31,8 @@ end
 PlantSimEngine.inputs_(::PotentialAreaModel) = (TT_since_init=-Inf, final_potential_area=-Inf,)
 
 PlantSimEngine.outputs_(::PotentialAreaModel) = (
-    potential_area=-Inf, # Potential area (during leaf development)
+    potential_area=0.0, # Potential area (during leaf development)
+    increment_potential_area=-Inf,
     maturity=false,      # Leaf maturity state (true if the leaf is mature)
 )
 
@@ -39,10 +40,13 @@ function PlantSimEngine.run!(m::PotentialAreaModel, models, status, meteo, const
     # This is the daily potential area of the leaf (should be computed once only...)
     inflexion_point = max(status.final_potential_area * m.inflexion_index, 27.0)
 
-    status.potential_area =
+    new_potential_area =
         status.final_potential_area / (1.0 + exp(-(status.TT_since_init - inflexion_point) / m.slope))
     # Note: TT_since_init is the one from the leaf, it may be corrected by stresses (e.g. ftsw)
     # see the model used for the thermal_time process for the leaf
+
+    status.increment_potential_area = new_potential_area - status.potential_area
+    status.potential_area = new_potential_area
     if status.TT_since_init > inflexion_point * 2.0
         status.maturity = true
     end
