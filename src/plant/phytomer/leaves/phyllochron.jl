@@ -9,7 +9,6 @@ Compute the phyllochron and initiate a new phytomer at every new emergence
 - `threshold_ftsw_stress`:ftsw treshold below which the phyllochron is reduce
 - `production_speed_initial`: initial phyllochron (for seedlings) (leaf.degreeC days-1)
 - `production_speed_mature`: phyllochron at plant maturity (leaf.degreeC days-1)
-- `ini_phytomer`: the initialisation for the number of phytomers in the plant (it is incremented each time there is a new one).
 
 # Inputs
 
@@ -22,7 +21,6 @@ Compute the phyllochron and initiate a new phytomer at every new emergence
 - `newPhytomerEmergence`: fraction of time during two successive phytomer (at 1 the new phytomer emerge)
 - `production_speed`= phyllochron at the current plant age (leaf.degreeC days-1)
 - `phylo_slow`= coefficient of reduction of the phyllochron du to ftsw
-- `phytomers`= number of phytomers emmitted since simulation starts
 
 """
 struct PhyllochronModel{I,T} <: AbstractPhyllochronModel
@@ -30,12 +28,10 @@ struct PhyllochronModel{I,T} <: AbstractPhyllochronModel
     threshold_ftsw_stress::T
     production_speed_initial::T
     production_speed_mature::T
-    ini_phytomer::I
 end
 
-function PhyllochronModel(; age_palm_maturity=2920, threshold_ftsw_stress=0.3, production_speed_initial=0.0111, production_speed_mature=0.0074, ini_phytomer=1)
-    @assert ini_phytomer >= 0 "PhyllochronModel: `ini_phytomer` is the initial phytomer count in the plant, it must be >= 0"
-    PhyllochronModel(age_palm_maturity, threshold_ftsw_stress, production_speed_initial, production_speed_mature, ini_phytomer)
+function PhyllochronModel(; age_palm_maturity=2920, threshold_ftsw_stress=0.3, production_speed_initial=0.0111, production_speed_mature=0.0074)
+    PhyllochronModel(age_palm_maturity, threshold_ftsw_stress, production_speed_initial, production_speed_mature)
 end
 
 PlantSimEngine.inputs_(::PhyllochronModel) = (
@@ -49,7 +45,6 @@ PlantSimEngine.outputs_(m::PhyllochronModel) = (
     phyllochron=-Inf,
     production_speed=-Inf,
     phylo_slow=-Inf,
-    phytomers=m.ini_phytomer,
 )
 
 PlantSimEngine.dep(::PhyllochronModel) = (phytomer_emission=AbstractPhytomer_EmissionModel,)
@@ -70,7 +65,6 @@ function PlantSimEngine.run!(m::PhyllochronModel, models, status, meteo, constan
 
     if status.newPhytomerEmergence >= 1.0
         status.newPhytomerEmergence -= 1.0 # NB: -=1 because it can be > 1 so we pass along the remainder
-        status.phytomers += 1
         # Add a new phytomer to the palm using a phytomer emission model:
         PlantSimEngine.run!(models.phytomer_emission, models, status, meteo, constants, extra)
     end
