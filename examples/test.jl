@@ -1,13 +1,29 @@
 # Import dependencies
 using PlantMeteo, PlantSimEngine, MultiScaleTreeGraph
-# using PlantGeom, CairoMakie, AlgebraOfGraphics
+using CairoMakie, AlgebraOfGraphics
 using DataFrames, CSV, Statistics
-# using CairoMakie
+using Dates
 using XPalm
 
-meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), DataFrame)
-meteo.T = meteo.Taverage
+# meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), DataFrame)
+meteo_raw = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/Meteo_extract_BDD_PR.txt"), DataFrame)
+
+meteo = select(
+    meteo_raw,
+    :ObservationDate => :date,
+    :ObservationDate => (x -> Day(1)) => :duration,
+    :TAverage => (x -> replace(x, missing => mean(skipmissing(x)))) => :T,
+    :TMax => (x -> replace(x, missing => mean(skipmissing(x)))) => :Tmax,
+    :TMin => (x -> replace(x, missing => mean(skipmissing(x)))) => :Tmin,
+    :Rg => (x -> replace(x, missing => mean(skipmissing(x))) .* 0.48) => :Rg,
+    :Rg => (x -> replace(x, missing => mean(skipmissing(x))) .* 0.48) => :Ri_PAR_f,
+    :HRMin => (x -> replace(x, missing => mean(skipmissing(x)))) => :Rh_min,
+    :HRMax => (x -> replace(x, missing => mean(skipmissing(x)))) => :Rh_max,
+    :Rainfall => (x -> replace(x, missing => mean(skipmissing(x)))) => :Precipitations,
+    :WindSpeed => (x -> replace(x, missing => mean(skipmissing(x)))) => :Wind,
+)
 meteo.Rh .= (meteo.Rh_max .- meteo.Rh_min) ./ 2 ./ 100
+
 m = Weather(meteo)
 
 p = Palm()
@@ -36,7 +52,6 @@ mapping = Dict(
             p.parameters[:phyllochron][:threshold_ftsw_stress],
             p.parameters[:phyllochron][:production_speed_initial],
             p.parameters[:phyllochron][:production_speed_mature],
-            length(traverse(p.mtg, x -> true, filter_fun=node -> symbol(node) == "Phytomer")),
         ),
         MultiScaleModel(
             model=XPalm.PlantLeafAreaModel(),
@@ -373,51 +388,9 @@ mapping = Dict(
 dep(mapping);
 to_initialize(mapping, p.mtg)
 
-# soft_dep_graphs_roots = PlantSimEngine.hard_dependencies(mapping; verbose=true);
-# node = soft_dep_graphs_roots.roots["Plant"]
-# var = Pair{Symbol,NamedTuple}[]
-# organ = "Plant"
-# full_vars_mapping = Dict(first(mod) => Dict(PlantSimEngine.get_mapping(last(mod))) for mod in mapping)
-
-#! this is probably why it's not working:
-# julia> full_vars_mapping[organ]
-# Dict{Union{Symbol, PreviousTimeStep}, Union{Pair{String, Symbol}, Vector{Pair{String, Symbol}}}} with 15 entries:
-#   :biomass_stalk_harvested_organs                       => ["Female"=>:biomass_stalk_harvested]
-#   :carbon_allocation_organs                             => ["Leaf"=>:carbon_allocation, "Internode"=>:carbon_allocation, "Male"=>:carbon_allocation, "Female"=>:carbon_allocation]
-#   :reserve_organs                                       => ["Internode"=>:reserve, "Leaf"=>:reserve]
-#   :carbon_demand_organs                                 => ["Leaf"=>:carbon_demand, "Internode"=>:carbon_demand, "Male"=>:carbon_demand, "Female"=>:carbon_demand]
-#   :ftsw                                                 => "Soil"=>:ftsw
-#   :biomass_fruit_harvested_organs                       => ["Female"=>:biomass_fruit_harvested]
-#   :Rm_organs                                            => ["Leaf"=>:Rm, "Internode"=>:Rm, "Male"=>:Rm, "Female"=>:Rm]
-#   PreviousTimeStep(:reserve, :carbon_allocation)        => ""=>:reserve
-#   PreviousTimeStep(:reserve_organs, :carbon_allocation) => ["Leaf"=>:reserve, "Internode"=>:reserve]
-#   :scene_leaf_area                                      => "Scene"=>:scene_leaf_area
-#   :graph_node_count                                     => "Scene"=>:graph_node_count
-#   :aPPFD                                                => "Scene"=>:aPPFD
-#   :leaf_area                                            => ["Leaf"=>:leaf_area]
-#   :potential_reserve_organs                             => ["Internode"=>:potential_reserve, "Leaf"=>:potential_reserve]
-#   :biomass_bunch_harvested_organs                       => ["Female"=>:biomass_bunch_harvested]
-#! the variable `:reserve_organs` appears twice, once mapped as is, and once mapped to the values from the previous day.
-#! this is because the model `XPalm.OrganReserveFilling` needs the current values, while `OrgansCarbonAllocationModel` needs the values from 
-#! the previous day to avoid a cyclic dependency.
-
-# full_vars_mapping[organ]
-# PlantSimEngine.traverse_dependency_graph!(node, x -> PlantSimEngine.variables_multiscale(x, organ, full_vars_mapping, NamedTuple()), var)
-# dep_graph = PlantSimEngine.soft_dependencies_multiscale(soft_dep_graphs_roots, mapping)
-# mapped_vars = PlantSimEngine.mapped_variables(mapping, soft_dep_graphs_roots, verbose=false)
-# rev_mapping = PlantSimEngine.reverse_mapping(mapped_vars, all=false)
-# organ = "Plant";
-# soft_dep_graph, ins, outs = soft_dep_graphs_roots.roots[organ];
-# proc = :carbon_allocation;
-# i = soft_dep_graph[proc];
-# soft_deps = PlantSimEngine.search_inputs_in_output(proc, ins, outs)
-
-# :reserve => 0.0
-# :reserve_organs => MappedVar{MultiNodeMapping,Symbol,Vector{Symbol},Float64}(MultiNodeMapping(["Internode", "Leaf"]), :reserve_organs, [:reserve, :reserve], 0.0)
-
 outs = Dict{String,Any}(
     "Scene" => (:lai, :scene_leaf_area, :aPPFD, :TEff),
-    "Plant" => (:plant_age, :ftsw, :newPhytomerEmergence, :aPPFD_plant, :plant_leaf_area, :carbon_assimilation, :carbon_offer_after_rm, :Rm, :TT_since_init, :TEff),
+    "Plant" => (:plant_age, :ftsw, :newPhytomerEmergence, :aPPFD_plant, :plant_leaf_area, :carbon_assimilation, :carbon_offer_after_rm, :Rm, :TT_since_init, :TEff, :phytomer_count, :newPhytomerEmergence),
     # "Plant" => (:phytomers,),
     "Leaf" => (:Rm, :potential_area, :TT_since_init, :TEff),
     "Internode" => (:Rm, :potential_height, :carbon_demand),
@@ -428,123 +401,54 @@ outs = Dict{String,Any}(
     "Soil" => (:TEff, :ftsw, :root_depth),
 )
 
-p = Palm()
+
+
+# p = Palm()
 # @time sim = run!(p.mtg, mapping, meteo, outputs=outs, executor=SequentialEx());
 @time sim = run!(p.mtg, mapping, m, outputs=outs, executor=SequentialEx());
 
-df = outputs(sim, DataFrame)
+df = outputs(sim, DataFrame, no_value=missing)
 df_Internode = filter(row -> row.organ == "Internode", df)
 df_scene = filter(row -> row.organ == "Scene", df)
 df_plant = filter(row -> row.organ == "Plant", df)
 df_soil = filter(row -> row.organ == "Soil", df)
 df_leaf = filter(row -> row.organ == "Leaf", df)
 
-df_scene.TEff
-df_plant.TEff
 
-sim.dependency_graph.roots["Scene"=>:thermal_time].simulation_id
-sim.dependency_graph.roots["Scene"=>:thermal_time].children[1]
-
-node = sim.dependency_graph.roots["Scene"=>:thermal_time].children[1]
-any([p.simulation_id[1] <= node.simulation_id[1] for p in node.parent])
-
-sim.dependency_graph.roots["Scene"=>:thermal_time].children[1].children[2]
-
-sim.dependency_graph.roots["Scene"=>:thermal_time].children[1].children[2].simulation_id
-
-df_soil.ftsw
-df_plant.ftsw
-df_plant.plant_age
-df_plant.TEff
-df_plant.TT_since_init
-df_plant.newPhytomerEmergence
-df_plant.plant_leaf_area
-df_leaf.potential_area
-df_leaf.TT_since_init
-df_leaf.TEff
-df_Internode.carbon_demand
+lines(df_plant.phytomer_count)
 
 
-df_scene.scene_leaf_area
-df_scene.TEff
-
-df_plant.carbon_assimilation
-df_plant.Rm_plant
-df_plant.carbon_offer_after_rm
-
-print(df_plant.plant_leaf_area[1:2])
-print(df_plant.Rm[1])
-print(df_plant.carbon_assimilation[1:2])
-print(df_plant.Rm_plant[1:2])
-print(df_plant.carbon_offer_after_rm[1:2])
+lines(df_scene.scene_leaf_area)
+lines(df_scene.lai)
+lines(df_scene.scene_leaf_area)
+lines(df_scene.TEff)
+lines(df_plant.carbon_assimilation)
 
 
-df_leaf = filter(row -> row.organ == "Leaf", df)
-df_leaf.Rm[1:2]
-df_plant.Rm_plant[1:2]
+lines(df_plant.aPPFD_plant) # mol[PAR] plant⁻¹ d⁻¹
+lines(df_plant.plant_leaf_area) # m2 leaves
 
-df_plant.aPPFD_plant # mol[PAR] plant⁻¹ d⁻¹
-df_plant.plant_leaf_area # m2 leaves
-
-df_plant.aPPFD_plant ./ df_plant.plant_leaf_area # mol[PAR] m[leaf]⁻² d⁻¹
+lines(df_plant.aPPFD_plant ./ df_plant.plant_leaf_area) # mol[PAR] m[leaf]⁻² d⁻¹
 # μmol[PAR] m[leaf]⁻² s⁻¹:
 A = (df_plant.aPPFD_plant ./ df_plant.plant_leaf_area) * 1e6 / (60 * 60 * 24)
-
+lines(A)
 nleaves = length(traverse(p.mtg, x -> true, filter_fun=node -> symbol(node) == "Leaf"))
-nleaves
 
+nleaves / (length(m) / 365) / 12
 
-@edit PlantSimEngine.init_simulation(p.mtg, mapping; nsteps=1, outputs=outs, type_promotion=nothing, check=true, verbose=true)
+lines(df_plant.phytomer_count)
 
-statuses, status_templates, map_other_scales, var_need_init = PlantSimEngine.init_statuses(p.mtg, mapping; type_promotion=nothing, check=true)
-statuses
-
-statuses["Scene"][1].TEff = 2.0
-statuses["Soil"][1].TEff
-
-statuses["Leaf"][1].leaf_area = 2.0
-statuses["Scene"][1].leaf_area
-
-status_templates["Scene"]
-status_templates["Scene"][:TEff]
-status_templates["Soil"][:TEff][] = 5.0
-status_templates["RootSystem"][:TEff]
-
-status_templates["Leaf"][:TEff]
-status_templates["Plant"][:TEff]
-status_templates["Internode"][:TEff]
-
-status_templates["Leaf"][:TEff][] = 2.0
-status_templates["Internode"][:TEff] = 3.0
-
-
-organs_mapping, var_outputs_from_mapping = PlantSimEngine.compute_mapping(mapping, nothing)
-
-organs_mapping["Scene"]["Scene"].TEff
-organs_mapping["Soil"]["Scene"]
-organs_mapping["RootSystem"]["Scene"]
-
-organs_mapping["Plant"]
-organs_mapping["Leaf"]
-organs_mapping["Internode"]
-
-
-organs_statuses_dict = Dict{String,Dict{Symbol,Any}}()
-dict_mapped_vars = Dict{Pair,Any}()
-
-
-organ = "Soil"
-node_models = PlantSimEngine.parse_models(PlantSimEngine.get_models(mapping[organ]))
-st = PlantSimEngine.get_status(mapping[organ]) # User status
-
-if isnothing(st)
-    st = NamedTuple()
-else
-    st = NamedTuple(st)
+i = 1
+@edit PlantSimEngine.traverse_dependency_graph!(sim.dependency_graph, visit_hard_dep=false) do node
+    global i += 1
 end
 
-# Add the variables that are defined as multiscale (coming from other scales):
-if haskey(organs_mapping, organ)
-    st_vars_mapped = (; zip(PlantSimEngine.vars_from_mapping(organs_mapping[organ]), PlantSimEngine.vars_type_from_mapping(organs_mapping[organ]))...)
-    !isnothing(st_vars_mapped) && (st = merge(st, st_vars_mapped))
+
+sim.dependency_graph.roots["Leaf"=>:maintenance_respiration].simulation_id
+
+sim_ids = Int[]
+PlantSimEngine.traverse_dependency_graph!(sim.dependency_graph, visit_hard_dep=false) do node
+    push!(sim_ids, node.simulation_id[1])
 end
+
+unique(sim_ids)
