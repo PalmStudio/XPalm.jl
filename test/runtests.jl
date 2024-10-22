@@ -28,10 +28,8 @@ meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), 
 
 dirtest = joinpath(dirname(dirname(pathof(XPalm))), "test/")
 
-@testset "Age_modulation" begin
-    include(joinpath(dirtest, "test-age_modulation_linear.jl"))
-    include(joinpath(dirtest, "test-age_modulation_logistic.jl"))
-    include(joinpath(dirtest, "test-palm_age_increment.jl"))
+@testset "Age" begin
+    include(joinpath(dirtest, "test-age.jl"))
 end
 
 @testset "Light" begin
