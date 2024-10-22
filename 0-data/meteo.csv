@@ -1,4 +1,4 @@
-Site,Date,Tmin,Tmax,Taverage,Rh_min,Rh_max,Rh_average,Wind,Precipitations,Rg,Ri_PAR_f
+Site,date,Tmin,Tmax,Taverage,Rh_min,Rh_max,Rh_average,Wind,Precipitations,Rg,Ri_PAR_f
 PR,2015-07-01,22.4,31.6,26.22,75.0,93.0,87.75,0.63,0.0,15.96,7.6608
 PR,2015-07-02,22.3,25.7,24.57,90.0,94.0,91.83,0.06,20.47,5.52,2.6495999999999995
 PR,2015-07-03,24.1,28.4,25.69,86.0,94.0,90.54,0.11,0.0,9.15,4.392

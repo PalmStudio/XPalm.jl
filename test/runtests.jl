@@ -36,10 +36,8 @@ end
     include(joinpath(dirtest, "test-beer.jl"))
 end
 
-@testset "Meteo" begin
-    include(joinpath(dirtest, "test-et0.jl"))
-    include(joinpath(dirtest, "test-thermal_time.jl"))
-    include(joinpath(dirtest, "test-thermal_time_ftsw.jl"))
+@testset "Micrometeorology" begin
+    include(joinpath(dirtest, "test-micrometeo.jl"))
 end
 
 @testset "Carbon_allocation" begin
