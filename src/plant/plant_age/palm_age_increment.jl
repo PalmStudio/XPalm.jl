@@ -20,18 +20,11 @@ function DailyPlantAgeModel(; initiation_age=0)
 end
 
 PlantSimEngine.inputs_(::DailyPlantAgeModel) = NamedTuple()
-PlantSimEngine.outputs_(::DailyPlantAgeModel) = (age=-9999,)
+PlantSimEngine.outputs_(m::DailyPlantAgeModel) = (plant_age=m.initiation_age,)
 PlantSimEngine.ObjectDependencyTrait(::Type{<:DailyPlantAgeModel}) = PlantSimEngine.IsObjectIndependent()
 PlantSimEngine.TimeStepDependencyTrait(::Type{<:DailyPlantAgeModel}) = PlantSimEngine.IsTimeStepIndependent()
 
 
 function PlantSimEngine.run!(m::DailyPlantAgeModel, models, status, meteo, constants, extra=nothing)
-    status.age = rownumber(status) + m.initiation_age
-    # could also be written as (TODO: check which is faster):
-    # status.age = prev_value(status, :age; default=m.initiation_age)
-end
-
-# Other method when the model is called with a mtg node:
-function PlantSimEngine.run!(m::DailyPlantAgeModel, models, st, meteo, constants, mtg::MultiScaleTreeGraph.Node)
-    st.age = MultiScaleTreeGraph.ancestors(mtg, :models, symbol="Plant")[1].status[rownumber(st)][:age]
+    status.plant_age += 1
 end

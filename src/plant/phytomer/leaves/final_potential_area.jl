@@ -1,7 +1,10 @@
 """
-FinalPotentialAreaModel(age_first_mature_leaf,leaf_area_first_leaf,leaf_area_mature_leaf)
-FinalPotentialAreaModel(age_first_mature_leaf= 8 * 365,    leaf_area_first_leaf
-= 0.0015,leaf_area_mature_leaf=12.0)
+    FinalPotentialAreaModel(age_first_mature_leaf,leaf_area_first_leaf,leaf_area_mature_leaf)
+    FinalPotentialAreaModel(
+        age_first_mature_leaf=8 * 365,    
+        leaf_area_first_leaf=0.0015,
+        leaf_area_mature_leaf=12.0
+    )
 
 
 Compute final potential area of the leaf according to plant age at leaf initiation
@@ -14,14 +17,8 @@ Compute final potential area of the leaf according to plant age at leaf initiati
 
 
 # outputs
-final_potential_area: potential area of the leaf at emmission (rank1 and above) 
 
-# Example
-
-```jldoctest
-
-```
-
+`final_potential_area`: potential area of the leaf at emmission (rank1 and above)
 """
 
 struct FinalPotentialAreaModel{A,L} <: AbstractLeaf_Final_Potential_AreaModel
@@ -30,11 +27,14 @@ struct FinalPotentialAreaModel{A,L} <: AbstractLeaf_Final_Potential_AreaModel
     leaf_area_mature_leaf::L
 end
 
+function FinalPotentialAreaModel(; age_first_mature_leaf=2920, leaf_area_first_leaf=0.02, leaf_area_mature_leaf=12.0)
+    FinalPotentialAreaModel(age_first_mature_leaf, leaf_area_first_leaf, leaf_area_mature_leaf)
+end
 
-PlantSimEngine.inputs_(::FinalPotentialAreaModel) = (initiation_age=-Inf,)
+PlantSimEngine.inputs_(::FinalPotentialAreaModel) = (initiation_age=-9999,)
 
-PlantSimEngine.outputs_(::FinalPotentialAreaModel) = (
-    final_potential_area=-Inf, # Potential area of the leaf at full development
+PlantSimEngine.outputs_(m::FinalPotentialAreaModel) = (
+    final_potential_area=m.leaf_area_first_leaf, # Potential area of the leaf at full development
 )
 
 function PlantSimEngine.run!(m::FinalPotentialAreaModel, models, status, meteo, constants, extra=nothing)
@@ -47,8 +47,4 @@ function PlantSimEngine.run!(m::FinalPotentialAreaModel, models, status, meteo, 
             m.leaf_area_first_leaf,
             m.leaf_area_mature_leaf
         )
-end
-
-function PlantSimEngine.run!(::FinalPotentialAreaModel, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node)
-    status.final_potential_area = prev_value(status, :final_potential_area, default=status.final_potential_area)
 end
