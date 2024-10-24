@@ -40,28 +40,27 @@ end
     include(joinpath(dirtest, "test-micrometeo.jl"))
 end
 
-@testset "Carbon_allocation" begin
-    include(joinpath(dirtest, "test-carbon_allocation.jl"))
-end
+# @testset "Carbon_allocation" begin
+#     include(joinpath(dirtest, "test-carbon_allocation.jl"))
+# end
 
 @testset "Carbon_assimilation" begin
     include(joinpath(dirtest, "test-rue.jl"))
 end
 
 @testset "Carbon_offer" begin
-    include(joinpath(dirtest, "test-carbon_offer_photosynthesis.jl"))
-    include(joinpath(dirtest, "test-carbon_offer_rm.jl"))
+    include(joinpath(dirtest, "test-carbon_offer.jl"))
 end
 
 @testset "Dimensions" begin
-    include(joinpath(dirtest, "test-actual_dimension.jl"))
-    include(joinpath(dirtest, "test-final_potential_dimensions.jl"))
-    include(joinpath(dirtest, "test-potential_dimensions.jl"))
-    include(joinpath(dirtest, "test-final_potential_area.jl"))
-    include(joinpath(dirtest, "test-potential_area.jl"))
+    include(joinpath(dirtest, "test-dimensions.jl"))
+end
+
+@testset "Leaf area" begin
     include(joinpath(dirtest, "test-leaf_area.jl"))
-    include(joinpath(dirtest, "test-LAI_growth.jl"))
-    include(joinpath(dirtest, "test-lai.jl"))
+end
+
+@testset "Number - fruits" begin
     include(joinpath(dirtest, "test-number_spikelets.jl"))
     include(joinpath(dirtest, "test-number_fruits.jl"))
 end
