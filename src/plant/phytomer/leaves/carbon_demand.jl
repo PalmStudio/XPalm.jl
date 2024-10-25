@@ -19,8 +19,7 @@ See also [`LeafCarbonDemandModelArea`](@ref).
 - `state`: state of the leaf
 
 # Outputs
-- `carbon_demand`: daily leaf carbon demand
-
+- `carbon_demand`: daily leaf carbon demand (gC)
 """
 
 struct LeafCarbonDemandModelPotentialArea{T} <: AbstractCarbon_DemandModel
@@ -34,7 +33,7 @@ PlantSimEngine.outputs_(::LeafCarbonDemandModelPotentialArea) = (carbon_demand=0
 
 function PlantSimEngine.run!(m::LeafCarbonDemandModelPotentialArea, models, status, meteo, constants, extra=nothing)
     # Get the index of the leaf in the organ list (we added the organ index in the organ list as the index of the MTG):
-    if status.state == "Harvested" #! No no need for that no? `increment_potential_area` should be 0.0 when the leaf is mature
+    if status.state == "Harvested" #! No need for that no? `increment_potential_area` should be 0.0 when the leaf is mature
         status.carbon_demand = zero(eltype(status.carbon_demand))
         return # if it is harvested, no carbon demand
     else
@@ -43,15 +42,6 @@ function PlantSimEngine.run!(m::LeafCarbonDemandModelPotentialArea, models, stat
 
     return nothing
 end
-
-#? This model is not used anymore, it is directly computed in `OrgansCarbonAllocationModel`.
-# struct PlantTotalLeafCarbonDemand <: AbstractCarbon_DemandModel end
-# PlantSimEngine.inputs_(::PlantTotalLeafCarbonDemand) = (carbon_demand=[-Inf],)
-# PlantSimEngine.outputs_(::PlantTotalLeafCarbonDemand) = (plant_total_leaf_carbon_demand=0.0,)
-# function PlantSimEngine.run!(m::PlantTotalLeafCarbonDemand, models, status, meteo, constants, extra=nothing)
-#     # @assert status.node.MTG.symbol == "Plant" "The node should be a Plant but is a $(status.node.MTG.symbol)"
-#     status.plant_total_leaf_carbon_demand = sum(status.carbon_demand)
-# end
 
 """
     LeafCarbonDemandModelArea(lma_min, respiration_cost, leaflets_biomass_contribution)
