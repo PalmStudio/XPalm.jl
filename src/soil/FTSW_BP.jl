@@ -1,3 +1,5 @@
+#! Do not use, this is a prototype model
+
 """
     FTSW_BP(H_FC::Float64, H_WP_Z1::Float64,Z1::Float64,H_WP_Z2::Float64,Z2::Float64,H_0::Float64,KC::Float64,TRESH_EVAP::Float64,TRESH_FTSW_TRANSPI::Float64)
 
@@ -219,20 +221,6 @@ end
 function PlantSimEngine.run!(m::FTSW_BP, models, st, meteo, constants, extra=nothing)
     rain = meteo.Precipitations
 
-    # Initialize the water content to the values from the previous time step
-    st.qty_H2O_C1minusVap = prev_value(st, :qty_H2O_C1minusVap; default=m.ini_qty_H2O_C1minusVap)
-    st.qty_H2O_C2 = prev_value(st, :qty_H2O_C2; default=m.ini_qty_H2O_C2)
-    st.qty_H2O_C = prev_value(st, :qty_H2O_C; default=m.ini_qty_H2O_C)
-    st.qty_H2O_C1 = prev_value(st, :qty_H2O_C1; default=m.ini_qty_H2O_C1)
-    st.qty_H2O_Vap = prev_value(st, :qty_H2O_Vap; default=m.ini_qty_H2O_Vap)
-
-    st.qty_H2O_C1_Roots = PlantMeteo.prev_value(st, :qty_H2O_C1_Roots; default=m.ini_qty_H2O_C1_Roots)
-    st.qty_H2O_Vap_Roots = PlantMeteo.prev_value(st, :qty_H2O_Vap_Roots; default=m.ini_qty_H2O_Vap_Roots)
-    st.qty_H2O_C2_Roots = PlantMeteo.prev_value(st, :qty_H2O_C2_Roots; default=m.ini_qty_H2O_C2_Roots)
-    st.qty_H2O_C_Roots = PlantMeteo.prev_value(st, :qty_H2O_C_Roots; default=m.ini_qty_H2O_C_Roots)
-
-    # Note: if we are computing the first time step, the previous values are the values already in the variables (=initial values)
-
     compute_compartment_size(m, st)
 
     EvapMax = (1 - st.tree_ei) * st.ET0 * m.KC
@@ -283,8 +271,7 @@ function PlantSimEngine.run!(m::FTSW_BP, models, st, meteo, constants, extra=not
     end
     st.qty_H2O_C = st.qty_H2O_C1minusVap + st.qty_H2O_C2
 
-    #    compute roots water balance after rain
-
+    # compute roots water balance after rain
     if ((st.qty_H2O_Vap_Roots + st.rain_effective) >= st.roots_SizeVap)
         st.rain_remain = st.rain_remain + st.qty_H2O_Vap_Roots - st.roots_SizeVap
         st.qty_H2O_Vap_Roots = st.roots_SizeVap
