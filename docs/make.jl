@@ -6,7 +6,7 @@ DocMeta.setdocmeta!(XPalm, :DocTestSetup, :(using XPalm); recursive=true)
 makedocs(;
     modules=[XPalm],
     authors="Rémi Vezy <VEZY@users.noreply.github.com> and contributors",
-    repo="https://github.com/PalmStudio/XPalm.jl/blob/{commit}{path}#{line}",
+    repo=Documenter.Remotes.GitHub("PalmStudio", "XPalm.jl"),
     sitename="XPalm.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",

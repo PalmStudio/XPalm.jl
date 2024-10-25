@@ -1,101 +1,3 @@
-abstract type OrganState end
-
-struct Initiated <: OrganState end
-struct Spear <: OrganState end
-struct Opened <: OrganState end
-struct Pruned <: OrganState end
-struct Scenescent <: OrganState end
-struct Aborted <: OrganState end
-struct Flowering <: OrganState end
-struct Bunch <: OrganState end
-struct OleoSynthesis <: OrganState end
-struct Growing <: OrganState end
-struct Snag <: OrganState end
-
-abstract type Organ end
-
-struct Soil end
-struct Plant end
-struct RootSystem <: Organ end
-struct Stem <: Organ end
-
-"""
-    Phytomer(state)
-
-A phytomer
-"""
-struct Phytomer <: Organ end
-
-"""
-    Internode(state)
-
-An internode, which has a state of type [`InternodeState`](@ref) that can be either:
-
-- `Growing`: has both growth and maintenance respiration
-- `Snag`: has maintenance respiration only, and no leaf 
-or reproductive organs
-"""
-mutable struct Internode{S} <: Organ where {S<:OrganState}
-    state::S
-end
-
-Internode() = Internode(Growing())
-
-"""
-    Leaf(state)
-
-A leaf, which has a state of type [`LeafState`](@ref) that can be either:
-
-- `Initiated`: in initiation phase (cell division until begining of elongation)
-- `Spear`: spear phase, almost fully developped, but leaflets are not yet deployed
-- `Opened`: deployed and photosynthetically active
-- `Pruned`: dead and removed from the plant
-- `Scenescent`: dead but still on the plant
-"""
-mutable struct Leaf <: Organ
-    state::OrganState
-end
-Leaf() = Leaf(Initiated())
-
-abstract type ReproductiveOrgan <: Organ end
-
-"""
-    Male(state)
-
-A male inflorescence, which has a state that can be either:
-
-- `Initiated`: in initiation phase (cell division)
-- `Aborted`
-- `Flowering`
-- `Scenescent`: dead but still on the plant
-- `Pruned`: removed from the plant
-"""
-mutable struct Male <: ReproductiveOrgan
-    state::OrganState
-end
-
-Male() = Male(Initiated())
-
-
-"""
-    Female(state)
-
-A female inflorescence, which has a state that can be either:
-
-- `Initiated`: in initiation phase (cell division)
-- `Aborted`
-- `Flowering`
-- `Bunch`: the bunch of fruits is developping
-- `OleoSynthesis`: the inflorescence is in the process of oleosynthesis
-- `Scenescent`: dead but still on the plant
-- `Pruned`: removed from the plant (*e.g.* harvested)
-"""
-mutable struct Female
-    state::OrganState
-end
-
-Female() = Female(Initiated())
-
 """
     Palm(;
         nsteps=1,
@@ -113,13 +15,11 @@ Create a new scene with one Palm plant.
 - `parameters`: a dictionary of parameters (default: `default_parameters()`)
 - `model_list`: a dictionary of models (default: `main_models_definition(parameters, nsteps)`)
 """
-mutable struct Palm{T} <: Organ
+mutable struct Palm{T}
     mtg::MultiScaleTreeGraph.Node
     initiation_age::Int
     parameters::T
 end
-
-abstract type InitState end
 
 function default_parameters()
     p = Dict(

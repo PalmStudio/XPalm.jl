@@ -15,16 +15,6 @@ Compute potential evapotranspiration
 
 # Outputs
 - `ET0`: potentiam evapotranpiration (mm)
-
-# Example
-
-```jldoctest
-julia> m = ModelList(ET0_BP())
-julia> run!(m, meteo[1, :])
-julia> m[:ET0][1] 
-2.82260378306658
-```
-
 """
 struct ET0_BP{T} <: AbstractPotential_EvapotranspirationModel
     LATITUDE::T

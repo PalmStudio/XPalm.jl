@@ -52,7 +52,7 @@ potential leaf area.
 This model assumes that the leaf is always trying to catch its potential growth, so 
 leaf demand can increase more than the daily potential to alleviate any previous stress effect.
 
-See also [`LeafCarbonDemandModelPotentialArea`](@ref).
+See also `LeafCarbonDemandModelPotentialArea`.
 
 # Arguments
 
