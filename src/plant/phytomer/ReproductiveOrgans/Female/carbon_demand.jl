@@ -115,7 +115,7 @@ function PlantSimEngine.run!(m::FemaleCarbonDemandModel, models, status, meteo, 
     if status.TT_since_init >= m.duration_dev_stalk
         status.carbon_demand_stalk = 0.0
     else
-        status.carbon_demand_stalk = (status.final_potential_biomass_stalk * (status.TEff / m.duration_dev_stalk)) / m.respiration_cost
+        status.carbon_demand_stalk = (status.final_potential_biomass_stalk * (status.TEff / m.duration_dev_stalk)) * m.respiration_cost
         status.carbon_demand += status.carbon_demand_stalk
     end
 end

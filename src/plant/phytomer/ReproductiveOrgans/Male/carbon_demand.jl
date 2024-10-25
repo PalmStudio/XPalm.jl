@@ -11,6 +11,6 @@ function PlantSimEngine.run!(m::MaleCarbonDemandModel, models, st, meteo, consta
     if st.state == "Aborted" || st.state == "Senescent" # if abortion no more carbon demand
         st.carbon_demand = 0.0
     else
-        st.carbon_demand = (st.final_potential_biomass * (st.TEff / (m.TT_flowering + m.duration_flowering_male))) / m.respiration_cost
+        st.carbon_demand = (st.final_potential_biomass * (st.TEff / (m.TT_flowering + m.duration_flowering_male))) * m.respiration_cost
     end
 end
