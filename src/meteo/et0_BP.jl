@@ -19,11 +19,10 @@ Compute potential evapotranspiration
 # Example
 
 ```jldoctest
-m = ModelList(ET0_BP())
-    run!(m, meteo[1, :])
-
-    m[:ET0][1] 
-    2.82260378306658
+julia> m = ModelList(ET0_BP())
+julia> run!(m, meteo[1, :])
+julia> m[:ET0][1] 
+2.82260378306658
 ```
 
 """

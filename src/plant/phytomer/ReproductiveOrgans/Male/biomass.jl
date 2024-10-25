@@ -16,13 +16,6 @@ Compute male biomass  from daily carbon allocation
 # outputs
 - `biomass`: inflo biomass
 - `litter_male`: biomass of scenescent inflorescent that goes to the litter 
-
-# Example
-
-```jldoctest
-
-```
-
 """
 struct MaleBiomass{T} <: AbstractBiomassModel
     respiration_cost::T

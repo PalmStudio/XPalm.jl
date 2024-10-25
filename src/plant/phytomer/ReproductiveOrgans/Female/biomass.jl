@@ -21,14 +21,6 @@ Compute female biomass (inflo and bunch) from daily carbon allocation. Allocatio
 - `biomass`: total ifnlo/bunch biomass
 - `biomass_stalk`: stalk biomass
 - `biomass_fruits`: fruits biomass
-
-
-# Example
-
-```jldoctest
-
-```
-
 """
 struct FemaleBiomass{T} <: AbstractBiomassModel
     respiration_cost::T
