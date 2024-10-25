@@ -175,11 +175,6 @@ function main_models_definition(p, nsteps)
             ),
             #! only to have the variable initialised in the status (we put the values from another scale):
             carbon_allocation=OrgansCarbonAllocationModel{Leaf}(),
-            # Used at init only:
-            # biomass_from_area=BiomassFromArea(
-            #     p[:lma_min],
-            #     p[:leaflets_biomass_contribution]
-            # ),
             # Used after init:
             biomass=LeafBiomass(p[:carbon_demand][:leaf][:respiration_cost]), variables_check=false,
             reserve_filling=OrganReserveFilling{Leaf}(),

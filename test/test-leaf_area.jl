@@ -28,13 +28,32 @@ end
     @test m[:leaf_area][1] ≈ 8.75
 end
 
-@testset "LAIGrowth" begin
+@testset "LAIModel" begin
     m = ModelList(
-        lai_dynamic=XPalm.LAIGrowth(LAI_max=5.0, LAI_growth_rate=3 * 10^-5, TRESH_FTSW_SLOW_LAI=0.5),
-        status=(ftsw=[0.01:0.001:1;], TEff=fill(9.0, 991), LAI=fill(0.0, 991))
+        XPalm.LAIModel(30.0),
+        status=(leaf_area=12.0,)
     )
 
     run!(m, executor=SequentialEx())
-    @test m[:LAI][100] ≈ 0.0031595400000000006
-    @test m[:LAI][900] ≈ 0.1777760999999999
+    @test m[:lai][1] == 0.4
+end
+
+
+@testset "LAIModel" begin
+    mtg = Palm().mtg
+    mapping = Dict(
+        "Leaf" => (
+            XPalm.LeafBiomass(),
+            XPalm.LeafAreaModel(80.0, 0.35, 0.0),
+            Status(carbon_allocation=10.0),
+        ),
+        "Scene" => (
+            MultiScaleModel(XPalm.LAIModel(30.0), [:leaf_area => "Leaf"]),
+        )
+    )
+    vars = Dict{String,Any}("Scene" => (:lai, :scene_leaf_area), "Leaf" => (:leaf_area,))
+    out = run!(mtg, mapping, meteo, outputs=vars, executor=SequentialEx())
+    df = filter(row -> row.organ == "Scene", outputs(out, DataFrame))
+    @test df.lai[1] ≈ 0.0010127314814814814
+    @test df.lai[end] ≈ 0.9276620370370258
 end

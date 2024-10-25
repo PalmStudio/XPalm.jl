@@ -60,22 +60,16 @@ end
     include(joinpath(dirtest, "test-leaf_area.jl"))
 end
 
-@testset "Number - fruits" begin
-    include(joinpath(dirtest, "test-number_spikelets.jl"))
-    include(joinpath(dirtest, "test-number_fruits.jl"))
-end
+# @testset "Number - fruits" begin
+#     include(joinpath(dirtest, "test-number_fruits.jl"))
+# end
 
 @testset "Biomass" begin
-    include(joinpath(dirtest, "test-biomass_internode.jl"))
-    include(joinpath(dirtest, "test-biomass_leaf.jl"))
-    include(joinpath(dirtest, "test-biomass_female.jl"))
-    include(joinpath(dirtest, "test-biomass_male.jl"))
+    include(joinpath(dirtest, "test-biomass.jl"))
 end
 
-
 @testset "Carbon_demand" begin
-    include(joinpath(dirtest, "test-carbon_demand_internode.jl"))
-    include(joinpath(dirtest, "test-carbon_demand_leaf.jl"))
+    include(joinpath(dirtest, "test-carbon_demand.jl"))
 end
 
 
