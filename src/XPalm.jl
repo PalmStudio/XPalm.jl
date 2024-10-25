@@ -6,7 +6,7 @@ import Dates
 import PlantSimEngine
 import PlantMeteo
 # import PlantMeteo: prev_value, rownumber, prev_row
-import PlantSimEngine: @process, add_organ!
+import PlantSimEngine: @process, add_organ!, MultiScaleModel, PreviousTimeStep
 import Tables
 import Statistics: mean
 import Random: MersenneTwister, AbstractRNG
@@ -99,13 +99,5 @@ include("plant/phytomer/ReproductiveOrgans/Female/harvest.jl")
 
 include("run.jl")
 
-
-
-export Palm
-
-# exports for prototyping
-export FTSW, FTSW_BP, soil_init_default, age_relative_value, age_modulation_logistic
-export DailyDegreeDays, DegreeDaysFTSW, DailyDegreeDaysSinceInit
-export RootGrowthFTSW
-export ET0_BP
+export xpalm
 end
