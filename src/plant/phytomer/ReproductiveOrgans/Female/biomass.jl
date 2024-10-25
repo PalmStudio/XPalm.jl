@@ -35,6 +35,8 @@ struct FemaleBiomass{T} <: AbstractBiomassModel
     respiration_cost_oleosynthesis::T
 end
 
+FemaleBiomass(; respiration_cost=1.44, respiration_cost_oleosynthesis=3.2) = FemaleBiomass(respiration_cost, respiration_cost_oleosynthesis)
+
 PlantSimEngine.inputs_(::FemaleBiomass) = (carbon_allocation=0.0, state="undetermined", carbon_demand_non_oil=0.0, carbon_demand_oil=0.0, carbon_demand_stalk=0.0)
 PlantSimEngine.outputs_(::FemaleBiomass) = (biomass=0.0, biomass_stalk=0.0, biomass_fruits=0.0,)
 

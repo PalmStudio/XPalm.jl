@@ -28,8 +28,10 @@ struct MaleBiomass{T} <: AbstractBiomassModel
     respiration_cost::T
 end
 
+MaleBiomass(; respiration_cost=1.44) = MaleBiomass(respiration_cost)
+
 PlantSimEngine.inputs_(::MaleBiomass) = (carbon_allocation=-Inf, state="undetermined")
-PlantSimEngine.outputs_(::MaleBiomass) = (biomass=0.0, litter_male=-Inf,)
+PlantSimEngine.outputs_(::MaleBiomass) = (biomass=0.0, litter_male=0.0,)
 
 # Applied at the male inflorescence scale:
 function PlantSimEngine.run!(m::MaleBiomass, models, st, meteo, constants, extra=nothing)
