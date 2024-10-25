@@ -5,12 +5,15 @@ struct PotentialInternodeDimensionModel{T} <: AbstractInternode_Potential_Dimens
     slope_radius::T
 end
 
+
+PotentialInternodeDimensionModel(; inflexion_point_height=900.0, slope_height=150.0, inflexion_point_radius=900.0, slope_radius=150.0) = PotentialInternodeDimensionModel(inflexion_point_height, slope_height, inflexion_point_radius, slope_radius)
+
 """
 PotentialInternodeDimensionModel(inflexion_point_height,slope_height,inflexion_point_radius,slope_radius)
 PotentialInternodeDimensionModel(inflexion_point_height=900.0,slope_height=150.0,inflexion_point_radius=900.0,slope_radius=150.0)
 
 
-Compute internode potential dimensions (height and radius) from the biomass, with the proportions given by potential dimensions( potential_height and potential_radius)
+Compute internode potential dimensions (height and radius) from the biomass, with the proportions given by potential dimensions (potential_height and potential_radius)
 
 # Arguments
 
