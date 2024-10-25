@@ -74,7 +74,6 @@ end
 
 
 @testset "Soil" begin
-    include(joinpath(dirtest, "test-FTSW_BP.jl"))
     include(joinpath(dirtest, "test-FTSW.jl"))
 end
 

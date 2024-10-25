@@ -1,6 +1,6 @@
 
 @testset "Palm" begin
-    p = Palm(nsteps=nrow(meteo))
+    p = Palm()
 
     scene = p.mtg
     soil = scene[1]
