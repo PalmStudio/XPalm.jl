@@ -4,7 +4,7 @@ mtg_ref = joinpath(dirname(dirname(pathof(XPalm))), "test/references/palm.mtg")
 
 @testset "Palm initialisation" begin
     ref_mtg = MultiScaleTreeGraph.read_mtg(mtg_ref, Dict, MultiScaleTreeGraph.NodeMTG)
-    new_palm = Palm()
+    new_palm = XPalm.Palm()
 
     @test select(new_palm.mtg, :initiation_age) == select(ref_mtg, :initiation_age)
     @test new_palm.initiation_age == 0

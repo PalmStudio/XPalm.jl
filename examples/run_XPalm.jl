@@ -385,8 +385,8 @@ mapping = Dict(
     )
 )
 
-dep(mapping);
-to_initialize(mapping, p.mtg)
+# dep(mapping);
+# to_initialize(mapping, p.mtg)
 
 outs = Dict{String,Any}(
     "Scene" => (:lai, :scene_leaf_area, :aPPFD, :TEff),
@@ -401,8 +401,6 @@ outs = Dict{String,Any}(
     "Soil" => (:TEff, :ftsw, :root_depth),
 )
 
-
-
 # p = Palm()
 # @time sim = run!(p.mtg, mapping, meteo, outputs=outs, executor=SequentialEx());
 @time sim = run!(p.mtg, mapping, m, outputs=outs, executor=SequentialEx());
@@ -416,8 +414,6 @@ df_leaf = filter(row -> row.organ == "Leaf", df)
 
 
 lines(df_plant.phytomer_count)
-
-
 lines(df_scene.scene_leaf_area)
 lines(df_scene.lai)
 lines(df_scene.scene_leaf_area)
