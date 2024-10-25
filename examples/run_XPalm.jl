@@ -26,12 +26,12 @@ meteo.Rh .= (meteo.Rh_max .- meteo.Rh_min) ./ 2 ./ 100
 
 m = Weather(meteo)
 
-p = Palm()
+p = XPalm.Palm()
 
 mapping = Dict(
     "Scene" => (
         XPalm.ET0_BP(),
-        DailyDegreeDays(),
+        XPalm.DailyDegreeDays(),
         MultiScaleModel(
             model=XPalm.LAIModel(p.parameters[:scene_area]),
             mapping=[:leaf_area => ["Leaf"],],
@@ -41,7 +41,7 @@ mapping = Dict(
     ),
     "Plant" => (
         MultiScaleModel(
-            model=DegreeDaysFTSW(
+            model=XPalm.DegreeDaysFTSW(
                 threshold_ftsw_stress=p.parameters[:phyllochron][:threshold_ftsw_stress],
             ),
             mapping=[:ftsw => "Soil",],
@@ -111,7 +111,7 @@ mapping = Dict(
         #     threshold_ftsw_stress=p.parameters[:phyllochron][:threshold_ftsw_stress],
         # ), #! we should use this one instead of DailyDegreeDaysSinceInit I think
         MultiScaleModel(
-            model=DailyDegreeDaysSinceInit(),
+            model=XPalm.DailyDegreeDaysSinceInit(),
             mapping=[:TEff => "Plant",], # Using TEff computed at plant scale
         ),
         MultiScaleModel(
@@ -166,7 +166,7 @@ mapping = Dict(
                 mapping=[:plant_age => "Plant",],
             ),
             MultiScaleModel(
-                model=DailyDegreeDaysSinceInit(),
+                model=XPalm.DailyDegreeDaysSinceInit(),
                 mapping=[:TEff => "Plant",], # Using TEff computed at plant scale
             ),
             MultiScaleModel(
@@ -211,7 +211,7 @@ mapping = Dict(
         ),
     "Leaf" => (
         MultiScaleModel(
-            model=DailyDegreeDaysSinceInit(),
+            model=XPalm.DailyDegreeDaysSinceInit(),
             mapping=[:TEff => "Plant",], # Using TEff computed at plant scale
         ),
         XPalm.FinalPotentialAreaModel(
@@ -279,7 +279,7 @@ mapping = Dict(
             mapping=[:plant_age => "Plant",],
         ),
         MultiScaleModel(
-            model=DailyDegreeDaysSinceInit(),
+            model=XPalm.DailyDegreeDaysSinceInit(),
             mapping=[:TEff => "Plant",], # Using TEff computed at plant scale
         ),
         XPalm.MaleFinalPotentialBiomass(
@@ -312,7 +312,7 @@ mapping = Dict(
             mapping=[:plant_age => "Plant",],
         ),
         MultiScaleModel(
-            model=DailyDegreeDaysSinceInit(),
+            model=XPalm.DailyDegreeDaysSinceInit(),
             mapping=[:TEff => "Plant",],
         ),
         MultiScaleModel(
@@ -364,7 +364,7 @@ mapping = Dict(
     ),
     "RootSystem" => (
         MultiScaleModel(
-            model=DailyDegreeDaysSinceInit(),
+            model=XPalm.DailyDegreeDaysSinceInit(),
             mapping=[:TEff => "Scene",], # Using TEff computed at scene scale
         ),
         # root_growth=RootGrowthFTSW(ini_root_depth=p.parameters[:ini_root_depth]),
@@ -373,13 +373,13 @@ mapping = Dict(
     "Soil" => (
         # light_interception=Beer{Soil}(),
         MultiScaleModel(
-            model=FTSW(ini_root_depth=p.parameters[:ini_root_depth]),
+            model=XPalm.FTSW(ini_root_depth=p.parameters[:ini_root_depth]),
             mapping=[:ET0 => "Scene", :aPPFD => "Scene"], # Using TEff computed at scene scale
         ),
         #! Root growth should be in the roots part, but it is a hard-coupled model with 
         #! the FSTW, so we need it here for now. Make changes to PlantSimEngine accordingly.
         MultiScaleModel(
-            model=RootGrowthFTSW(ini_root_depth=p.parameters[:ini_root_depth]),
+            model=XPalm.RootGrowthFTSW(ini_root_depth=p.parameters[:ini_root_depth]),
             mapping=[:TEff => "Scene",], # Using TEff computed at scene scale
         ),
     )

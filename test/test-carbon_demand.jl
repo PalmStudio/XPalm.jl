@@ -1,7 +1,7 @@
 @testset "InternodeCarbonDemandModel" begin
     mtg = Palm().mtg
     m = Dict(
-        "Plant" => (XPalm.DailyPlantAgeModel(), DailyDegreeDays(),),
+        "Plant" => (XPalm.DailyPlantAgeModel(), XPalm.DailyDegreeDays(),),
         "Internode" =>
             (
                 MultiScaleModel(
@@ -9,7 +9,7 @@
                     mapping=[:plant_age => "Plant",],
                 ),
                 MultiScaleModel(
-                    model=DailyDegreeDaysSinceInit(),
+                    model=XPalm.DailyDegreeDaysSinceInit(),
                     mapping=[:TEff => "Plant",], # Using TEff computed at plant scale
                 ),
                 XPalm.FinalPotentialInternodeDimensionModel(),

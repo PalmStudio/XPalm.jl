@@ -1,6 +1,6 @@
 
 @testset "Palm" begin
-    p = Palm()
+    p = XPalm.Palm()
 
     scene = p.mtg
     soil = scene[1]
