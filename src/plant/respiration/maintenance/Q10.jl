@@ -20,28 +20,35 @@ struct RmQ10FixedN{T} <: AbstractMaintenance_RespirationModel
     nitrogen_content::T
 end
 
-# RmQ10FixedN{O}(Q10, Rm_base, T_ref=25.0) where {O<:Organ} = RmQ10FixedN{O,typeof(Q10)}(Q10, Rm_base, T_ref)
-
-PlantSimEngine.inputs_(::RmQ10FixedN) = (biomass=-Inf,)
+PlantSimEngine.inputs_(::RmQ10FixedN) = (biomass=0.0,)
 PlantSimEngine.outputs_(::RmQ10FixedN) = (Rm=-Inf,)
-
-function PlantSimEngine.run!(::RmQ10FixedN, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node)
-    timestep = rownumber(status)
-    status.Rm = 0.0
-    MultiScaleTreeGraph.traverse(mtg, symbol=["Leaf", "Internode", "Male", "Female"]) do organ
-        # MultiScaleTreeGraph.traverse(mtg, symbol=["Leaf", "Internode"]) do organ
-        PlantSimEngine.run!(organ[:models].models.maintenance_respiration, organ[:models].models, organ[:models].status[timestep], meteo, constants, nothing)
-        status.Rm += organ[:models].status[timestep].Rm
-    end
-end
 
 # Standard way of computing the Rm of an organ:
 function PlantSimEngine.run!(m::RmQ10FixedN, models, status, meteo, constants, extra=nothing)
-    biomass = prev_value(status, :biomass, default=status.biomass)
-    if biomass == -Inf
-        biomass = zero(eltype(biomass))
-    end
     status.Rm =
-        biomass * m.P_alive * m.nitrogen_content * m.Rm_base *
+        status.biomass * m.P_alive * m.nitrogen_content * m.Rm_base *
         m.Q10^(((meteo.Tmax + meteo.Tmin) / 2.0 - m.T_ref) / 10.0)
+end
+
+
+"""
+    PlantRm()
+
+Total plant maintenance respiration based on the sum of `Rm`.
+
+# Intputs
+
+- `Rm_organs`: a vector of maintenance respiration from all organs in the plant in gC d⁻¹
+
+# Outputs
+
+- `Rm`: the total plant maintenance respiration in gC d⁻¹
+"""
+struct PlantRm <: AbstractMaintenance_RespirationModel end
+
+PlantSimEngine.inputs_(::PlantRm) = (Rm_organs=[-Inf],)
+PlantSimEngine.outputs_(::PlantRm) = (Rm=-Inf,)
+
+function PlantSimEngine.run!(::PlantRm, models, status, meteo, constants, extra=nothing)
+    status.Rm = sum(status.Rm_organs)
 end

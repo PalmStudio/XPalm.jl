@@ -8,37 +8,29 @@ InternodeBiomass(respiration_cost=1.44)
 Compute internode biomass from daily carbon allocation
 
 # Arguments
+
+- `initial_biomass`: initial biomass of the internode (g)
 - `respiration_cost`: repisration cost  (g g-1)
 
 # Inputs
+
 - `carbon_allocation`:carbon allocated to the internode
 
 # Outputs
-- `biomass`:current biomass of the internode
 
-
-
-# Example
-
-```jldoctest
-
-```
-
+- `biomass`: internode biomass (g)
 """
 struct InternodeBiomass{T} <: AbstractBiomassModel
+    initial_biomass::T
     respiration_cost::T
 end
 
+InternodeBiomass(; initial_biomass=0.0, respiration_cost=1.44) = InternodeBiomass(initial_biomass, respiration_cost)
 
 PlantSimEngine.inputs_(::InternodeBiomass) = (carbon_allocation=-Inf,)
-PlantSimEngine.outputs_(::InternodeBiomass) = (biomass=-Inf,)
+PlantSimEngine.outputs_(m::InternodeBiomass) = (biomass=m.initial_biomass,)
 
 # Applied at the Internode scale:
 function PlantSimEngine.run!(m::InternodeBiomass, models, st, meteo, constants, extra=nothing)
-    prev_biomass = prev_value(st, :biomass, default=st.biomass)
-    if prev_biomass == -Inf
-        prev_biomass = 0.0
-    end
-
-    st.biomass = prev_biomass + st.carbon_allocation / m.respiration_cost
+    st.biomass += st.carbon_allocation / m.respiration_cost
 end

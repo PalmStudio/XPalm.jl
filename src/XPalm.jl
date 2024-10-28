@@ -1,12 +1,12 @@
 module XPalm
 
 import MultiScaleTreeGraph
-import MultiScaleTreeGraph: NodeMTG, addchild!, get_root
+import MultiScaleTreeGraph: NodeMTG, index, symbol#, addchild!, get_root
 import Dates
 import PlantSimEngine
 import PlantMeteo
-import PlantMeteo: prev_value, rownumber, prev_row
-import PlantSimEngine: @process
+# import PlantMeteo: prev_value, rownumber, prev_row
+import PlantSimEngine: @process, add_organ!, MultiScaleModel, PreviousTimeStep
 import Tables
 import Statistics: mean
 import Random: MersenneTwister, AbstractRNG
@@ -40,20 +40,21 @@ include("soil/FTSW.jl")
 include("soil/FTSW_BP.jl")
 include("plant/roots/root_growth.jl")
 
+include("plant/mtg_node_count.jl")
 include("plant/phytomer/phytomer/add_phytomer.jl")
 include("plant/phytomer/leaves/phyllochron.jl")
 include("plant/phytomer/leaves/final_potential_area.jl")
 include("plant/phytomer/leaves/potential_area.jl")
 include("plant/phytomer/leaves/leaf_area.jl")
 include("plant/phytomer/leaves/lai.jl")
-include("plant/phytomer/leaves/LAI_growth.jl")
 include("plant/phytomer/leaves/state.jl")
 include("plant/phytomer/leaves/leaf_rank.jl")
 include("plant/phytomer/leaves/leaf_pruning.jl")
 include("plant/phytomer/leaves/carbon_demand.jl")
 include("plant/phytomer/leaves/biomass.jl")
-include("plant/reserves/reserve_filling_leaf_only.jl")
 include("plant/reserves/reserve_filling_leaf_and_stem.jl")
+include("plant/reserves/potential_reserve_leaf.jl")
+include("plant/reserves/potential_reserve_internode.jl")
 
 # Internode:
 include("plant/phytomer/internode/final_potential_dimension.jl")
@@ -98,13 +99,5 @@ include("plant/phytomer/ReproductiveOrgans/Female/harvest.jl")
 
 include("run.jl")
 
-
-
-export Palm
-
-# exports for prototyping
-export FTSW, FTSW_BP, soil_init_default, age_relative_value, age_modulation_logistic
-export DailyDegreeDays, DegreeDaysFTSW
-export RootGrowthFTSW
-export ET0_BP
+export xpalm
 end

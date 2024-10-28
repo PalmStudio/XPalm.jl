@@ -1,41 +1,55 @@
 """
-LeafAreaModel(lma_min, leaflets_biomass_contribution)
-LeafAreaModel(lma_min=  80.0, leaflets_biomass_contribution=0.35)
+    LeafAreaModel(lma_min, leaflets_biomass_contribution, leaf_area_ini)
 
-Computes leaf area from the leaf biomass
+Leaf area from its biomass.
 
 # Arguments
 
-- `lma_min`: minimal leaf mass area (when there is no reserve in leaf)
-- `leaflets_biomass_contribution`: ratio of leaflets biomass to the  total leaf biomass (including rachis and petiole) ([0,1])
-
+- `lma_min`: minimal leaf mass area (when there is no reserve in the leaf)
+- `leaflets_biomass_contribution`: ratio of leaflets biomass to total leaf biomass including rachis and petiole (0-1)
 
 # Inputs
+
 - `biomass`: leaf biomass (g)
 
 # Outputs
 
 - `leaf_area`: leaf area (m2)
-
 """
 struct LeafAreaModel{T} <: AbstractLeaf_AreaModel
     lma_min::T
     leaflets_biomass_contribution::T
+    leaf_area_ini::T
 end
 
-PlantSimEngine.inputs_(::LeafAreaModel) = (biomass=-Inf,)
-PlantSimEngine.outputs_(::LeafAreaModel) = (leaf_area=-Inf,)
+PlantSimEngine.inputs_(::LeafAreaModel) = (biomass=0.0,)
+PlantSimEngine.outputs_(m::LeafAreaModel) = (leaf_area=m.leaf_area_ini,)
 
 # Applied at the phytomer scale:
 function PlantSimEngine.run!(m::LeafAreaModel, models, status, meteo, constants, extra=nothing)
     status.leaf_area = status.biomass * m.leaflets_biomass_contribution / m.lma_min
 end
 
-# Applied at the plant scale:
-function PlantSimEngine.run!(::LeafAreaModel, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node)
-    leaf_area = MultiScaleTreeGraph.traverse(mtg, symbol="Leaf") do node
-        node[:models].status[rownumber(status)][:leaf_area]
-    end
 
-    status.leaf_area = sum(leaf_area)
+"""
+    PlantLeafAreaModel()
+
+Sum of the leaf area at plant scale.
+
+# Inputs
+
+- `leaf_area`: a vector of leaf area (m²)
+
+# Outputs
+
+- `plant_leaf_area`: total leaf area of the plant (m²)
+"""
+struct PlantLeafAreaModel <: AbstractLeaf_AreaModel end
+
+PlantSimEngine.inputs_(::PlantLeafAreaModel) = (leaf_area=[-Inf],)
+PlantSimEngine.outputs_(::PlantLeafAreaModel) = (plant_leaf_area=-Inf,)
+
+# Applied at the plant / scene scale:
+function PlantSimEngine.run!(m::PlantLeafAreaModel, models, st, meteo, constants, extra=nothing)
+    st.plant_leaf_area = sum(st.leaf_area)
 end

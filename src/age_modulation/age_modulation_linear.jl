@@ -14,11 +14,17 @@ Value that depends on the plant age.
 # Examples 
 
 ```jldoctest
->julia age_relative_value(0, 1, 10, 0.1, 0.8)
+julia> XPalm.age_relative_value(0, 1, 10, 0.1, 0.8)
 0.1
->julia age_relative_value(5, 1, 10, 0.1, 0.8)
+```
+
+```jldoctest
+julia> XPalm.age_relative_value(5, 1, 10, 0.1, 0.8)
 0.4111111111111111
->julia age_relative_value(15, 1, 10, 0.1, 0.8)
+```
+
+```jldoctest
+julia> XPalm.age_relative_value(15, 1, 10, 0.1, 0.8)
 0.8
 ```
 """

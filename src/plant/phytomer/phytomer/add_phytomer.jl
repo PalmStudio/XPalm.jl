@@ -1,4 +1,49 @@
 """
+    PhytomerEmission(mtg; phytomer_symbol="Phytomer", internode_symbol="Internode", leaf_symbol="Leaf") <: AbstractPhytomer_EmissionModel
+    
+A `PhytomerEmission` model, which emits a new phytomer when called. The new phytomer is composed of an internode and a leaf, and is added as a child of the last phytomer.
+
+# Arguments
+
+- `mtg::MultiScaleTreeGraph.Node`: The multiscale tree graph of the plant.
+- `phytomer_symbol::String`: The symbol of the phytomer, default to "Phytomer".
+- `internode_symbol::String`: The symbol of the internode, default to "Internode".
+- `leaf_symbol::String`: The symbol of the leaf, default to "Leaf".
+
+# Inputs
+
+- `graph_node_count::Int`: The number of nodes in the graph.
+
+No other inputs, except for the simulation object (`sim_object`) as the last argument to `run!`.
+
+# Outputs
+
+- `last_phytomer::MultiScaleTreeGraph.Node`: The last phytomer of the palm, takes its values from the struct above as its first value.
+- `phytomer_count::Int`: The number of phytomers in the palm.
+"""
+struct PhytomerEmission <: AbstractPhytomer_EmissionModel
+    last_phytomer_init::MultiScaleTreeGraph.Node
+    phytomer_count_init::Int
+    graph_node_count_init::Int
+    phytomer_symbol::String
+    internode_symbol::String
+    leaf_symbol::String
+end
+
+function PhytomerEmission(mtg::MultiScaleTreeGraph.Node; phytomer_symbol="Phytomer", internode_symbol="Internode", leaf_symbol="Leaf")
+    phytomers = MultiScaleTreeGraph.descendants(mtg, symbol=phytomer_symbol, self=true)
+    PhytomerEmission(phytomers[end], length(phytomers), length(mtg), phytomer_symbol, internode_symbol, leaf_symbol)
+end
+
+PlantSimEngine.inputs_(m::PhytomerEmission) = (graph_node_count=m.graph_node_count_init,)
+PlantSimEngine.outputs_(m::PhytomerEmission) = (last_phytomer=m.last_phytomer_init, phytomer_count=m.phytomer_count_init,)
+PlantSimEngine.dep(m::PhytomerEmission) = (
+    internode_final_potential_dimensions=AbstractInternode_Final_Potential_DimensionsModel => [m.internode_symbol],
+    leaf_final_potential_area=AbstractLeaf_Final_Potential_AreaModel => [m.leaf_symbol],
+    initiation_age=AbstractInitiation_AgeModel => [m.phytomer_symbol, m.internode_symbol, m.leaf_symbol],
+)
+
+"""
     add_phytomer!(palm, initiation_age)
 
 Add a new phytomer to the palm
@@ -8,84 +53,54 @@ Add a new phytomer to the palm
 - `palm`: a Palm
 - `initiation_age::Dates.Date`: date of initiation of the phytomer 
 """
-
-struct PhytomerEmission <: AbstractPhytomer_EmissionModel end
-
-PlantSimEngine.inputs_(::PhytomerEmission) = NamedTuple()
-
-PlantSimEngine.outputs_(::PhytomerEmission) = NamedTuple()
-
-
-function PlantSimEngine.run!(::PhytomerEmission, models, status, meteo, constants, mtg)
-    current_step = rownumber(status)
-    mtg[:phytomer_count] += 1
-    scene = get_root(mtg)
-    scene[:mtg_node_count] += 1
-
+function PlantSimEngine.run!(m::PhytomerEmission, models, status, meteo, constants, sim_object)
+    status.phytomer_count += 1
+    status.graph_node_count += 1
     # Create the new phytomer as a child of the last one (younger one):
-    phyto = addchild!(
-        mtg[:last_phytomer], # parent
-        scene[:mtg_node_count], # unique ID
-        MultiScaleTreeGraph.MutableNodeMTG("<", "Phytomer", scene[:mtg_node_count], 3), # MTG
-        Dict{Symbol,Any}(
-            :models => copy(scene[:all_models]["Phytomer"]),
-        ), # Attributes
-        type=Phytomer(),
+    st_phyto = add_organ!(
+        status.last_phytomer, # parent, 
+        sim_object,  # The simulation object, so we can add the new status 
+        "<", m.phytomer_symbol, 3;
+        index=status.phytomer_count,
+        id=status.graph_node_count,
+        attributes=Dict{Symbol,Any}()
     )
-
     # Compute the initiation age of the phytomer:
-    PlantSimEngine.run!(phyto[:models].models.initiation_age, phyto[:models].models, phyto[:models].status[current_step], meteo, constants, phyto)
+    PlantSimEngine.run!(sim_object.models[m.phytomer_symbol].initiation_age, sim_object.models[m.phytomer_symbol], st_phyto, meteo, constants, sim_object)
 
-    mtg[:last_phytomer] = phyto
-
+    status.last_phytomer = st_phyto.node
     # Add an Internode as its child:
-    scene[:mtg_node_count] += 1
-    internode = addchild!(
-        phyto, # parent
-        scene[:mtg_node_count], # unique ID
-        MultiScaleTreeGraph.MutableNodeMTG("/", "Internode", mtg[:phytomer_count], 4), # MTG
-        Dict{Symbol,Any}(
-            :models => copy(scene[:all_models]["Internode"]),
-        ), # Attributes
-        type=Internode(),
+    status.graph_node_count += 1
+
+    st_internode = add_organ!(
+        st_phyto.node, # parent, 
+        sim_object,  # The simulation object, so we can add the new status 
+        "/", m.internode_symbol, 4;
+        index=status.phytomer_count,
+        id=status.graph_node_count,
+        attributes=Dict{Symbol,Any}()
     )
 
     # Compute the initiation age of the internode:
-    PlantSimEngine.run!(internode[:models].models.initiation_age, internode[:models].models, internode[:models].status[current_step], meteo, constants, internode)
+    PlantSimEngine.run!(sim_object.models[m.internode_symbol].initiation_age, sim_object.models[m.internode_symbol], st_internode, meteo, constants, sim_object)
+    PlantSimEngine.run!(sim_object.models[m.internode_symbol].internode_final_potential_dimensions, sim_object.models[m.internode_symbol], st_internode, meteo, constants, sim_object)
 
     # Add a leaf as its child:
-    scene[:mtg_node_count] += 1
-    leaf = addchild!(
-        internode, # parent
-        scene[:mtg_node_count], # unique ID
-        MultiScaleTreeGraph.MutableNodeMTG("+", "Leaf", mtg[:phytomer_count], 4), # MTG
-        Dict{Symbol,Any}(
-            :models => copy(scene[:all_models]["Leaf"]),
-        ), # Attributes
-        type=Leaf(),
+    status.graph_node_count += 1
+
+    st_leaf = add_organ!(
+        st_internode.node, # parent, 
+        sim_object,  # The simulation object, so we can add the new status 
+        "+", m.leaf_symbol, 4;
+        index=status.phytomer_count,
+        id=status.graph_node_count,
+        attributes=Dict{Symbol,Any}()
     )
 
-    PlantSimEngine.run!(leaf[:models].models.initiation_age, leaf[:models].models, leaf[:models].status[current_step], meteo, constants, leaf)
-    PlantSimEngine.run!(internode[:models].models.initiation_age, internode[:models].models, internode[:models].status[current_step], meteo, constants, internode)
+    PlantSimEngine.run!(sim_object.models[m.leaf_symbol].initiation_age, sim_object.models[m.leaf_symbol], st_leaf, meteo, constants, sim_object)
 
     # Compute the leaf_potential_area model over the new leaf:
-    PlantSimEngine.run!(leaf[:models].models.leaf_final_potential_area, leaf[:models].models, leaf[:models].status[current_step], meteo, constants, nothing)
-    PlantSimEngine.run!(leaf[:models].models.leaf_potential_area, leaf[:models].models, leaf[:models].status[current_step], meteo, constants, nothing)
+    PlantSimEngine.run!(sim_object.models[m.leaf_symbol].leaf_final_potential_area, sim_object.models[m.leaf_symbol], st_leaf, meteo, constants, sim_object)
 
-    # Initialise its leaf area:
-    leaf[:models].status[current_step].leaf_area = 0.0
-    # And biomass:
-    leaf[:models].status[current_step].biomass = 0.0
-
-    # Just for Rm at the begining of the day:
-    internode[:models].status[current_step].biomass = 0.0
-
-    # leaf[:models].status[max(1, current_step - 1)].reserve = 0.0
-    leaf[:models].status[current_step].reserve = 0.0
-    internode[:models].status[current_step].reserve = 0.0
-    leaf[:models].status[current_step].carbon_demand = 0.0
-    internode[:models].status[current_step].carbon_demand = 0.0
-
-    # Internode:
-    PlantSimEngine.run!(internode[:models].models.internode_final_potential_dimensions, internode[:models].models, internode[:models].status[current_step], meteo, constants, nothing)
+    return nothing
 end

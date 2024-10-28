@@ -21,55 +21,33 @@ Compute female biomass (inflo and bunch) from daily carbon allocation. Allocatio
 - `biomass`: total ifnlo/bunch biomass
 - `biomass_stalk`: stalk biomass
 - `biomass_fruits`: fruits biomass
-
-
-# Example
-
-```jldoctest
-
-```
-
 """
 struct FemaleBiomass{T} <: AbstractBiomassModel
     respiration_cost::T
     respiration_cost_oleosynthesis::T
 end
 
-PlantSimEngine.inputs_(::FemaleBiomass) = (carbon_allocation=-Inf,)
-PlantSimEngine.outputs_(::FemaleBiomass) = (biomass=-Inf, biomass_stalk=-Inf, biomass_fruits=-Inf,)
+FemaleBiomass(; respiration_cost=1.44, respiration_cost_oleosynthesis=3.2) = FemaleBiomass(respiration_cost, respiration_cost_oleosynthesis)
+
+PlantSimEngine.inputs_(::FemaleBiomass) = (carbon_allocation=0.0, state="undetermined", carbon_demand_non_oil=0.0, carbon_demand_oil=0.0, carbon_demand_stalk=0.0)
+PlantSimEngine.outputs_(::FemaleBiomass) = (biomass=0.0, biomass_stalk=0.0, biomass_fruits=0.0,)
 
 # Applied at the Female inflorescence scale:
 function PlantSimEngine.run!(m::FemaleBiomass, models, st, meteo, constants, extra=nothing)
-    # prev_day = prev_row(st)
+    st.state == "Aborted" || st.state == "Harvested" && return # if it is aborted, no need to compute 
 
-    # state = prev_day.state
-    state = prev_value(st, :state, default="undetermined")
-
-    state == "Aborted" || state == "Harvested" && return # if it is aborted, no need to compute 
-
-    # if prev_day.biomass_stalk == -Inf
-    if prev_value(st, :biomass_stalk, default=st.biomass_stalk) == -Inf
-        prev_biomass_stalk = 0.0
-    else
-        # prev_biomass_stalk = prev_day.biomass_stalk
-        prev_biomass_stalk = prev_value(st, :biomass_stalk, default=st.biomass_stalk)
-    end
-
-    # if prev_day.biomass_fruits == -Inf
-    if prev_value(st, :biomass_fruits, default=st.biomass_fruits) == -Inf
-        prev_biomass_fruits = 0.0
-    else
-        # prev_biomass_fruits = prev_day.biomass_fruits
-        prev_biomass_fruits = prev_value(st, :biomass_fruits, default=st.biomass_fruits)
-    end
+    st.carbon_allocation == 0.0 && return # no carbon allocation -> no biomass increase
 
     demand_tot = st.carbon_demand_non_oil + st.carbon_demand_oil + st.carbon_demand_stalk
-    allocation_nonoil = st.carbon_allocation * st.carbon_demand_non_oil / demand_tot
-    allocation_oil = st.carbon_allocation * st.carbon_demand_oil / demand_tot
-    allocation_stalk = st.carbon_allocation * st.carbon_demand_stalk / demand_tot
+    demand_tot == 0.0 && return # no carbon demand -> no biomass increase
 
-    st.biomass_stalk = prev_biomass_stalk + allocation_stalk / m.respiration_cost
-    st.biomass_fruits = prev_biomass_fruits + allocation_nonoil / m.respiration_cost + allocation_oil / m.respiration_cost_oleosynthesis
+
+    allocation_nonoil = st.carbon_demand_non_oil <= 0.0 ? 0.0 : st.carbon_allocation * st.carbon_demand_non_oil / demand_tot
+    allocation_oil = st.carbon_demand_oil <= 0.0 ? 0.0 : st.carbon_allocation * st.carbon_demand_oil / demand_tot
+    allocation_stalk = st.carbon_demand_stalk <= 0.0 ? 0.0 : st.carbon_allocation * st.carbon_demand_stalk / demand_tot
+
+    st.biomass_stalk += allocation_stalk / m.respiration_cost
+    st.biomass_fruits += allocation_nonoil / m.respiration_cost + allocation_oil / m.respiration_cost_oleosynthesis
 
     st.biomass = st.biomass_stalk + st.biomass_fruits
 end

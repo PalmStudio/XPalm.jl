@@ -1,382 +1,359 @@
-function main_models_definition(p, nsteps)
+function main_models_definition(p)
     Dict(
-        "Scene" => PlantSimEngine.ModelList(
-            potential_evapotranspiration=ET0_BP(),
-            thermal_time=DailyDegreeDays(),
-            lai_dynamic=LAIModel(),
-            light_interception=Beer(p[:k]),
-            nsteps=nsteps,
+        "Scene" => (
+            XPalm.ET0_BP(),
+            DailyDegreeDays(),
+            MultiScaleModel(
+                model=XPalm.LAIModel(p.parameters[:scene_area]),
+                mapping=[:leaf_area => ["Leaf"],],
+            ),
+            XPalm.Beer(k=p.parameters[:k]),
+            XPalm.GraphNodeCount(length(p.mtg)), # to have the `graph_node_count` variable initialised in the status
         ),
-        "Plant" => PlantSimEngine.ModelList(
-            # maintenance respiration of organs
-            thermal_time=DailyDegreeDays(),
-            plant_age=DailyPlantAgeModel(),
-            soil_water=FTSW{Plant}(ini_root_depth=p[:ini_root_depth]), # needed to get the ftsw value
-            phyllochron=PhyllochronModel(
-                p[:phyllochron][:age_palm_maturity],
-                p[:phyllochron][:threshold_ftsw_stress],
-                p[:phyllochron][:production_speed_initial],
-                p[:phyllochron][:production_speed_mature],
+        "Plant" => (
+            MultiScaleModel(
+                model=DegreeDaysFTSW(
+                    threshold_ftsw_stress=p.parameters[:phyllochron][:threshold_ftsw_stress],
+                ),
+                mapping=[:ftsw => "Soil",],
             ),
-            leaf_area=LeafAreaModel(
-                p[:lma_min],
-                p[:leaflets_biomass_contribution]
+            XPalm.DailyPlantAgeModel(),
+            XPalm.PhyllochronModel(
+                p.parameters[:phyllochron][:age_palm_maturity],
+                p.parameters[:phyllochron][:threshold_ftsw_stress],
+                p.parameters[:phyllochron][:production_speed_initial],
+                p.parameters[:phyllochron][:production_speed_mature],
             ),
-            phytomer_emission=PhytomerEmission(),
-            # Here we put the Rm but we only need it to have the variables at this scale:
-            maintenance_respiration=RmQ10FixedN(
-                p[:respiration][:Internode][:Q10],
-                p[:respiration][:Internode][:Rm_base],
-                p[:respiration][:Internode][:T_ref],
-                p[:respiration][:Internode][:P_alive],
-                p[:nitrogen_content][:Internode],
+            MultiScaleModel(
+                model=XPalm.PlantLeafAreaModel(),
+                mapping=[:leaf_area => ["Leaf"],],
             ),
-            light_interception=Beer{Plant}(p[:k]),
-            carbon_assimilation=ConstantRUEModel(p[:RUE]),
-            carbon_offer=CarbonOfferRm(),
-            # carbon_demand=LeafCarbonDemandModelPotentialArea(
-            #     p[:lma_min],
-            #     p[:carbon_demand][:leaf][:respiration_cost],
-            #     p[:leaflets_biomass_contribution]
-            # ),
-            carbon_allocation=OrgansCarbonAllocationModel{Plant}(p[:carbon_demand][:reserves][:cost_reserve_mobilization]),
-            biomass=LeafBiomass(p[:carbon_demand][:leaf][:respiration_cost]),
-            reserve_filling=OrganReserveFilling(
-                p[:lma_min],
-                p[:lma_max],
-                p[:leaflets_biomass_contribution],
-                p[:nsc_max]
+            MultiScaleModel(
+                model=XPalm.PhytomerEmission(p.mtg),
+                mapping=[:graph_node_count => "Scene",],
             ),
-            harvest=BunchHarvest{Plant}(),
-            variables_check=false,
-            nsteps=nsteps,
+            # XPalm.PhytomerCount(length(p.mtg)), #! maybe finish this ? It was to avoid putting the value inside the MTG nodes (same for graph_node_count -> GraphNodeCount), see add_phytomer
+            MultiScaleModel(
+                model=XPalm.PlantRm(),
+                mapping=[:Rm_organs => ["Leaf", "Internode", "Male", "Female"] .=> :Rm],
+            ),
+            MultiScaleModel(
+                model=XPalm.SceneToPlantLightPartitioning(),
+                mapping=[:aPPFD_scene => "Scene" => :aPPFD, :scene_leaf_area => "Scene"],
+            ),
+            XPalm.ConstantRUEModel(p.parameters[:RUE]),
+            XPalm.CarbonOfferRm(),
+            MultiScaleModel(
+                model=XPalm.OrgansCarbonAllocationModel(p.parameters[:carbon_demand][:reserves][:cost_reserve_mobilization]),
+                mapping=[
+                    :carbon_demand_organs => ["Leaf", "Internode", "Male", "Female"] .=> :carbon_demand,
+                    :carbon_allocation_organs => ["Leaf", "Internode", "Male", "Female"] .=> :carbon_allocation,
+                    PreviousTimeStep(:reserve_organs) => ["Leaf", "Internode"] .=> :reserve,
+                    PreviousTimeStep(:reserve)
+                ],
+            ),
+            MultiScaleModel(
+                model=XPalm.OrganReserveFilling(),
+                mapping=[
+                    :potential_reserve_organs => ["Internode", "Leaf"] .=> :potential_reserve,
+                    :reserve_organs => ["Internode", "Leaf"] .=> :reserve,
+                ],
+            ),
+            MultiScaleModel(
+                model=XPalm.PlantBunchHarvest(),
+                mapping=[
+                    :biomass_bunch_harvested_organs => ["Female"] .=> :biomass_bunch_harvested,
+                    :biomass_stalk_harvested_organs => ["Female"] .=> :biomass_stalk_harvested,
+                    :biomass_fruit_harvested_organs => ["Female"] .=> :biomass_fruit_harvested,
+                ],
+            ),
         ),
-        "Stem" => PlantSimEngine.ModelList(
-            biomass=StemBiomass(),
-            variables_check=false,
-            nsteps=nsteps,
-        ),
-        "Phytomer" =>
-            PlantSimEngine.ModelList(
-                #! these models are just taking values from other ones:
-                initiation_age=InitiationAgeFromPlantAge(),
-                soil_water=FTSW{Phytomer}(ini_root_depth=p[:ini_root_depth]), # needed to get the ftsw value
-                carbon_offer=CarbonOfferRm(),
-                carbon_allocation=OrgansCarbonAllocationModel{Phytomer}(p[:carbon_demand][:reserves][:cost_reserve_mobilization]),
-                #! the previous comment end here
-                thermal_time=DegreeDaysFTSW(
-                    threshold_ftsw_stress=p[:phyllochron][:threshold_ftsw_stress],
-                ),
-                leaf_rank=LeafRankModel(),
-                leaf_pruning=RankLeafPruning(p[:rank_leaf_pruning]),
-                sex_determination=SexDetermination(
-                    p[:inflo][:TT_flowering],
-                    p[:inflo][:duration_sex_determination],
-                    p[:inflo][:duration_abortion],
-                    p[:inflo][:sex_ratio_min],
-                    p[:inflo][:sex_ratio_ref],
-                    random_seed=p[:inflo][:random_seed],
-                ),
-                reproductive_organ_emission=ReproductiveOrganEmission(),
-                abortion=AbortionRate(
-                    p[:inflo][:TT_flowering],
-                    p[:inflo][:duration_abortion],
-                    p[:inflo][:abortion_rate_max],
-                    p[:inflo][:abortion_rate_ref],
-                    p[:inflo][:random_seed],
-                ),
-                state=InfloStateModel(
-                    TT_flowering=p[:inflo][:TT_flowering],
-                    duration_abortion=p[:inflo][:duration_abortion],
-                    duration_flowering_male=p[:male][:duration_flowering_male],
-                    duration_fruit_setting=p[:female][:duration_fruit_setting],
-                    TT_harvest=p[:female][:TT_harvest],
-                    fraction_period_oleosynthesis=p[:female][:fraction_period_oleosynthesis],
-                ),
-                variables_check=false,
-                status=(initiation_age=0,),
-                nsteps=nsteps,
+        # "Stem" => PlantSimEngine.ModelList(
+        #     biomass=StemBiomass(),
+        #     variables_check=false,
+        #     nsteps=nsteps,
+        # ),
+        "Phytomer" => (
+            MultiScaleModel(
+                model=XPalm.InitiationAgeFromPlantAge(),
+                mapping=[:plant_age => "Plant",],
             ),
+            # DegreeDaysFTSW(
+            #     threshold_ftsw_stress=p.parameters[:phyllochron][:threshold_ftsw_stress],
+            # ), #! we should use this one instead of DailyDegreeDaysSinceInit I think
+            MultiScaleModel(
+                model=DailyDegreeDaysSinceInit(),
+                mapping=[:TEff => "Plant",], # Using TEff computed at plant scale
+            ),
+            MultiScaleModel(
+                model=XPalm.SexDetermination(
+                    TT_flowering=p.parameters[:inflo][:TT_flowering],
+                    duration_abortion=p.parameters[:inflo][:duration_abortion],
+                    duration_sex_determination=p.parameters[:inflo][:duration_sex_determination],
+                    sex_ratio_min=p.parameters[:inflo][:sex_ratio_min],
+                    sex_ratio_ref=p.parameters[:inflo][:sex_ratio_ref],
+                    random_seed=p.parameters[:inflo][:random_seed],
+                ),
+                mapping=[
+                    PreviousTimeStep(:carbon_offer_plant) => "Plant" => :carbon_offer_after_rm,
+                    PreviousTimeStep(:carbon_demand_plant) => "Plant" => :carbon_demand,
+                ],
+            ),
+            MultiScaleModel(
+                model=XPalm.ReproductiveOrganEmission(p.mtg),
+                mapping=[:graph_node_count => "Scene", :phytomer_count => "Plant"],
+            ),
+            MultiScaleModel(
+                model=XPalm.AbortionRate(
+                    TT_flowering=p.parameters[:inflo][:TT_flowering],
+                    duration_abortion=p.parameters[:inflo][:duration_abortion],
+                    abortion_rate_max=p.parameters[:inflo][:abortion_rate_max],
+                    abortion_rate_ref=p.parameters[:inflo][:abortion_rate_ref],
+                    random_seed=p.parameters[:inflo][:random_seed],
+                ),
+                mapping=[
+                    PreviousTimeStep(:carbon_offer_plant) => "Plant" => :carbon_offer_after_rm,
+                    PreviousTimeStep(:carbon_demand_plant) => "Plant" => :carbon_demand,
+                ],
+            ),
+            MultiScaleModel(
+                model=XPalm.InfloStateModel(
+                    TT_flowering=p.parameters[:inflo][:TT_flowering],
+                    duration_abortion=p.parameters[:inflo][:duration_abortion],
+                    duration_flowering_male=p.parameters[:male][:duration_flowering_male],
+                    duration_fruit_setting=p.parameters[:female][:duration_fruit_setting],
+                    TT_harvest=p.parameters[:female][:TT_harvest],
+                    fraction_period_oleosynthesis=p.parameters[:female][:fraction_period_oleosynthesis],
+                ), # Compute the state of the phytomer
+                mapping=[:state_organs => ["Leaf", "Male", "Female"] .=> :state,],
+                #! note: the mapping is artificial, we compute the state of those organs in the function directly because we use the status of a phytomer to give it to its children
+                #! second note: the models should really be associated to the organs (female and male inflo + leaves)
+            )
+        ),
         "Internode" =>
-            PlantSimEngine.ModelList(
-                initiation_age=InitiationAgeFromPlantAge(),
-                thermal_time=DegreeDaysFTSW(
-                    threshold_ftsw_stress=p[:phyllochron][:threshold_ftsw_stress],
+            (
+                MultiScaleModel(
+                    model=XPalm.InitiationAgeFromPlantAge(),
+                    mapping=[:plant_age => "Plant",],
                 ),
-                soil_water=FTSW{Internode}(ini_root_depth=p[:ini_root_depth]), # needed to get the ftsw value
-                maintenance_respiration=RmQ10FixedN(
-                    p[:respiration][:Internode][:Q10],
-                    p[:respiration][:Internode][:Rm_base],
-                    p[:respiration][:Internode][:T_ref],
-                    p[:respiration][:Internode][:P_alive],
-                    p[:nitrogen_content][:Internode],
+                MultiScaleModel(
+                    model=DailyDegreeDaysSinceInit(),
+                    mapping=[:TEff => "Plant",], # Using TEff computed at plant scale
                 ),
-                internode_final_potential_dimensions=FinalPotentialInternodeDimensionModel(
-                    p[:potential_dimensions][:age_max_height],
-                    p[:potential_dimensions][:age_max_radius],
-                    p[:potential_dimensions][:min_height],
-                    p[:potential_dimensions][:min_radius],
-                    p[:potential_dimensions][:max_height],
-                    p[:potential_dimensions][:max_radius],
+                MultiScaleModel(
+                    model=XPalm.RmQ10FixedN(
+                        p.parameters[:respiration][:Internode][:Q10],
+                        p.parameters[:respiration][:Internode][:Rm_base],
+                        p.parameters[:respiration][:Internode][:T_ref],
+                        p.parameters[:respiration][:Internode][:P_alive],
+                        p.parameters[:nitrogen_content][:Internode],
+                    ),
+                    mapping=[PreviousTimeStep(:biomass),],
                 ),
-                internode_potential_dimensions=PotentialInternodeDimensionModel(
-                    p[:potential_dimensions][:inflexion_point_height],
-                    p[:potential_dimensions][:slope_height],
-                    p[:potential_dimensions][:inflexion_point_radius],
-                    p[:potential_dimensions][:slope_radius],
+                XPalm.FinalPotentialInternodeDimensionModel(
+                    p.parameters[:potential_dimensions][:age_max_height],
+                    p.parameters[:potential_dimensions][:age_max_radius],
+                    p.parameters[:potential_dimensions][:min_height],
+                    p.parameters[:potential_dimensions][:min_radius],
+                    p.parameters[:potential_dimensions][:max_height],
+                    p.parameters[:potential_dimensions][:max_radius],
                 ),
-                carbon_demand=InternodeCarbonDemandModel(
-                    p[:carbon_demand][:internode][:stem_apparent_density],
-                    p[:carbon_demand][:internode][:respiration_cost]
+                XPalm.PotentialInternodeDimensionModel(
+                    p.parameters[:potential_dimensions][:inflexion_point_height],
+                    p.parameters[:potential_dimensions][:slope_height],
+                    p.parameters[:potential_dimensions][:inflexion_point_radius],
+                    p.parameters[:potential_dimensions][:slope_radius],
                 ),
-                carbon_allocation=OrgansCarbonAllocationModel{Internode}(),
-                biomass=InternodeBiomass(p[:carbon_demand][:internode][:respiration_cost]),
-                internode_dimensions=InternodeDimensionModel(p[:carbon_demand][:internode][:stem_apparent_density]),
-                reserve_filling=OrganReserveFilling{Stem}(),
-                nsteps=nsteps,
-                variables_check=false,
-                status=(
-                    nitrogen_content=p[:nitrogen_content][:Internode],
-                    initiation_age=0
-                )
+                XPalm.InternodeCarbonDemandModel(
+                    p.parameters[:carbon_demand][:internode][:stem_apparent_density],
+                    p.parameters[:carbon_demand][:internode][:respiration_cost]
+                ),
+                MultiScaleModel(
+                    model=XPalm.PotentialReserveInternode(
+                        p.parameters[:nsc_max]
+                    ),
+                    mapping=[PreviousTimeStep(:biomass), PreviousTimeStep(:reserve)],
+                ),
+                XPalm.InternodeBiomass(
+                    initial_biomass=p.parameters[:potential_dimensions][:min_height] * p.parameters[:potential_dimensions][:min_radius] * p.parameters[:carbon_demand][:internode][:stem_apparent_density],
+                    respiration_cost=p.parameters[:carbon_demand][:internode][:respiration_cost]
+                ),
+                XPalm.InternodeDimensionModel(p.parameters[:carbon_demand][:internode][:stem_apparent_density]),
             ),
-        "Leaf" => PlantSimEngine.ModelList(
-            thermal_time=DegreeDaysFTSW(
-                threshold_ftsw_stress=p[:phyllochron][:threshold_ftsw_stress],
+        "Leaf" => (
+            MultiScaleModel(
+                model=DailyDegreeDaysSinceInit(),
+                mapping=[:TEff => "Plant",], # Using TEff computed at plant scale
             ),
-            leaf_final_potential_area=FinalPotentialAreaModel(
-                p[:potential_area][:age_first_mature_leaf],
-                p[:potential_area][:leaf_area_first_leaf],
-                p[:potential_area][:leaf_area_mature_leaf],
+            XPalm.FinalPotentialAreaModel(
+                p.parameters[:potential_area][:age_first_mature_leaf],
+                p.parameters[:potential_area][:leaf_area_first_leaf],
+                p.parameters[:potential_area][:leaf_area_mature_leaf],
             ),
-            leaf_potential_area=PotentialAreaModel(
-                p[:potential_area][:inflexion_index],
-                p[:potential_area][:slope],
+            XPalm.PotentialAreaModel(
+                p.parameters[:potential_area][:inflexion_index],
+                p.parameters[:potential_area][:slope],
             ),
-            soil_water=FTSW{Leaf}(ini_root_depth=p[:ini_root_depth]), # needed to get the ftsw value
-            state=LeafStateModel(),
-            leaf_rank=LeafRankModel(),
-            initiation_age=InitiationAgeFromPlantAge(),
-            leaf_area=LeafAreaModel(
-                p[:lma_min],
-                p[:leaflets_biomass_contribution]
+            XPalm.LeafStateModel(),
+            MultiScaleModel(
+                model=XPalm.LeafRankModel(),
+                mapping=[:rank => ["Phytomer"],],
             ),
-            maintenance_respiration=RmQ10FixedN(
-                p[:respiration][:Leaf][:Q10],
-                p[:respiration][:Leaf][:Rm_base],
-                p[:respiration][:Leaf][:T_ref],
-                p[:respiration][:Leaf][:P_alive],
-                p[:nitrogen_content][:Leaf]
+            MultiScaleModel(
+                model=XPalm.RankLeafPruning(p.parameters[:rank_leaf_pruning]),
+                mapping=[:rank_phytomers => ["Phytomer" => :rank], :state_phytomers => ["Phytomer" => :state]],
             ),
-            carbon_demand=LeafCarbonDemandModelPotentialArea(
-                p[:lma_min],
-                p[:carbon_demand][:leaf][:respiration_cost],
-                p[:leaflets_biomass_contribution]
+            MultiScaleModel(
+                model=XPalm.InitiationAgeFromPlantAge(),
+                mapping=[:plant_age => "Plant",],
             ),
-            #! only to have the variable initialised in the status (we put the values from another scale):
-            carbon_allocation=OrgansCarbonAllocationModel{Leaf}(),
-            # Used at init only:
-            # biomass_from_area=BiomassFromArea(
-            #     p[:lma_min],
-            #     p[:leaflets_biomass_contribution]
-            # ),
-            # Used after init:
-            biomass=LeafBiomass(p[:carbon_demand][:leaf][:respiration_cost]), variables_check=false,
-            reserve_filling=OrganReserveFilling{Leaf}(),
-            nsteps=nsteps,
-            status=(
-                nitrogen_content=p[:nitrogen_content][:Leaf],
-                initiation_age=0
-            )
+            MultiScaleModel(
+                model=XPalm.LeafAreaModel(
+                    p.parameters[:lma_min],
+                    p.parameters[:leaflets_biomass_contribution],
+                    p.parameters[:potential_area][:leaf_area_first_leaf],
+                ),
+                mapping=[PreviousTimeStep(:biomass),],
+            ),
+            MultiScaleModel(
+                model=XPalm.RmQ10FixedN(
+                    p.parameters[:respiration][:Leaf][:Q10],
+                    p.parameters[:respiration][:Leaf][:Rm_base],
+                    p.parameters[:respiration][:Leaf][:T_ref],
+                    p.parameters[:respiration][:Leaf][:P_alive],
+                    p.parameters[:nitrogen_content][:Leaf]
+                ),
+                mapping=[PreviousTimeStep(:biomass),],
+            ),
+            XPalm.LeafCarbonDemandModelPotentialArea(
+                p.parameters[:lma_min],
+                p.parameters[:carbon_demand][:leaf][:respiration_cost],
+                p.parameters[:leaflets_biomass_contribution]
+            ),
+            MultiScaleModel(
+                model=XPalm.PotentialReserveLeaf(
+                    p.parameters[:lma_min],
+                    p.parameters[:lma_max],
+                    p.parameters[:leaflets_biomass_contribution]
+                ),
+                mapping=[PreviousTimeStep(:leaf_area), PreviousTimeStep(:reserve)],
+            ),
+            XPalm.LeafBiomass(
+                initial_biomass=p.parameters[:potential_area][:leaf_area_first_leaf] * p.parameters[:lma_min] /
+                                p.parameters[:leaflets_biomass_contribution],
+                respiration_cost=p.parameters[:carbon_demand][:leaf][:respiration_cost],
+            ),
         ),
-        "Male" =>
-            PlantSimEngine.ModelList(
-                initiation_age=InitiationAgeFromPlantAge(),
-                # reproductive_development=ReproductiveDevelopment(
-                #     p[:bunch][:age_max_coefficient],
-                #     p[:bunch][:min_coefficient],
-                #     p[:bunch][:max_coefficient],
-                # ),
-                thermal_time=DegreeDaysFTSW(
-                    threshold_ftsw_stress=p[:phyllochron][:threshold_ftsw_stress],
-                ),
-                soil_water=FTSW{Male}(ini_root_depth=p[:ini_root_depth]), # needed to get the ftsw value
-                final_potential_biomass=MaleFinalPotentialBiomass(
-                    p[:male][:male_max_biomass],
-                    p[:male][:age_mature_male],
-                    p[:male][:fraction_biomass_first_male],
-                ),
-                maintenance_respiration=RmQ10FixedN(
-                    p[:respiration][:Male][:Q10],
-                    p[:respiration][:Male][:Rm_base],
-                    p[:respiration][:Male][:T_ref],
-                    p[:respiration][:Male][:P_alive],
-                    p[:nitrogen_content][:Male],
-                ),
-                state=InfloStateModel(),
-                carbon_demand=MaleCarbonDemandModel(
-                    p[:male][:duration_flowering_male],
-                    p[:inflo][:TT_flowering],
-                    p[:carbon_demand][:male][:respiration_cost]
-                ),
-                carbon_allocation=OrgansCarbonAllocationModel{Male}(),
-                biomass=MaleBiomass(
-                    p[:carbon_demand][:male][:respiration_cost],
-                ),
-                variables_check=false,
-                nsteps=nsteps,
+        "Male" => (
+            MultiScaleModel(
+                model=XPalm.InitiationAgeFromPlantAge(),
+                mapping=[:plant_age => "Plant",],
             ),
-        "Female" =>
-            PlantSimEngine.ModelList(
-                initiation_age=InitiationAgeFromPlantAge(),
-                thermal_time=DegreeDaysFTSW(
-                    threshold_ftsw_stress=p[:phyllochron][:threshold_ftsw_stress],
-                ),
-                maintenance_respiration=RmQ10FixedN(
-                    p[:respiration][:Female][:Q10],
-                    p[:respiration][:Female][:Rm_base],
-                    p[:respiration][:Female][:T_ref],
-                    p[:respiration][:Female][:P_alive],
-                    p[:nitrogen_content][:Female],
-                ),
-                soil_water=FTSW{Female}(ini_root_depth=p[:ini_root_depth]), # needed to get the ftsw value
-                final_potential_biomass=FemaleFinalPotentialFruits(
-                    p[:female][:age_mature_female],
-                    p[:female][:fraction_first_female],
-                    p[:female][:potential_fruit_number_at_maturity],
-                    p[:female][:potential_fruit_weight_at_maturity],
-                    p[:female][:stalk_max_biomass],
-                ),
-                number_spikelets=NumberSpikelets(
-                    p[:inflo][:TT_flowering],
-                    p[:female][:duration_dev_spikelets],
-                ),
-                number_fruits=NumberFruits(
-                    p[:inflo][:TT_flowering],
-                    p[:female][:duration_fruit_setting],
-                ),
-                carbon_demand=FemaleCarbonDemandModel(
-                    p[:carbon_demand][:female][:respiration_cost],
-                    p[:carbon_demand][:female][:respiration_cost_oleosynthesis],
-                    p[:inflo][:TT_flowering],
-                    p[:female][:TT_harvest],
-                    p[:female][:duration_fruit_setting],
-                    p[:female][:oil_content],
-                    p[:female][:fraction_period_oleosynthesis],
-                    p[:female][:fraction_period_stalk],
-                ),
-                biomass=FemaleBiomass(
-                    p[:carbon_demand][:female][:respiration_cost],
-                    p[:carbon_demand][:female][:respiration_cost_oleosynthesis],
-                ),
-                state=InfloStateModel(),
-                harvest=BunchHarvest(),
-                # maintenance_respiration=RmQ10{Female}(p[:Q10], p[:Rm_base], p[:T_ref]),
-                variables_check=false,
-                nsteps=nsteps,
-                status=(
-                    nitrogen_content=p[:nitrogen_content][:Female],
-                )
+            MultiScaleModel(
+                model=DailyDegreeDaysSinceInit(),
+                mapping=[:TEff => "Plant",], # Using TEff computed at plant scale
             ),
-        "RootSystem" =>
-            PlantSimEngine.ModelList(
-                potential_evapotranspiration=ET0_BP(),
-                thermal_time=DailyDegreeDays(),
-                root_growth=RootGrowthFTSW(ini_root_depth=p[:ini_root_depth]),
-                soil_water=FTSW{RootSystem}(ini_root_depth=p[:ini_root_depth]),
-                variables_check=false,
-                nsteps=nsteps,
-                status=(
-                    nitrogen_content=p[:nitrogen_content][:RootSystem],
-                )
+            XPalm.MaleFinalPotentialBiomass(
+                p.parameters[:male][:male_max_biomass],
+                p.parameters[:male][:age_mature_male],
+                p.parameters[:male][:fraction_biomass_first_male],
             ),
-        "Soil" =>
-            PlantSimEngine.ModelList(
-                light_interception=Beer{Soil}(),
-                soil_water=FTSW{Soil}(ini_root_depth=p[:ini_root_depth]),
-                root_growth=RootGrowthFTSW(ini_root_depth=p[:ini_root_depth]),
-                potential_evapotranspiration=ET0_BP(),
-                variables_check=false,
-                nsteps=nsteps,
-                status=(
-                    nitrogen_content=p[:nitrogen_content][:RootSystem],
-                )
-            )
+            MultiScaleModel(
+                model=XPalm.RmQ10FixedN(
+                    p.parameters[:respiration][:Male][:Q10],
+                    p.parameters[:respiration][:Male][:Rm_base],
+                    p.parameters[:respiration][:Male][:T_ref],
+                    p.parameters[:respiration][:Male][:P_alive],
+                    p.parameters[:nitrogen_content][:Male],
+                ),
+                mapping=[PreviousTimeStep(:biomass),],
+            ),
+            XPalm.MaleCarbonDemandModel(
+                p.parameters[:male][:duration_flowering_male],
+                p.parameters[:inflo][:TT_flowering],
+                p.parameters[:carbon_demand][:male][:respiration_cost]
+            ),
+            XPalm.MaleBiomass(
+                p.parameters[:carbon_demand][:male][:respiration_cost],
+            ),
+        ),
+        "Female" => (
+            MultiScaleModel(
+                model=XPalm.InitiationAgeFromPlantAge(),
+                mapping=[:plant_age => "Plant",],
+            ),
+            MultiScaleModel(
+                model=DailyDegreeDaysSinceInit(),
+                mapping=[:TEff => "Plant",],
+            ),
+            MultiScaleModel(
+                model=XPalm.RmQ10FixedN(
+                    p.parameters[:respiration][:Female][:Q10],
+                    p.parameters[:respiration][:Female][:Rm_base],
+                    p.parameters[:respiration][:Female][:T_ref],
+                    p.parameters[:respiration][:Female][:P_alive],
+                    p.parameters[:nitrogen_content][:Female],
+                ),
+                mapping=[PreviousTimeStep(:biomass),],
+            ),
+            XPalm.FemaleFinalPotentialFruits(
+                p.parameters[:female][:age_mature_female],
+                p.parameters[:female][:fraction_first_female],
+                p.parameters[:female][:potential_fruit_number_at_maturity],
+                p.parameters[:female][:potential_fruit_weight_at_maturity],
+                p.parameters[:female][:stalk_max_biomass],
+            ),
+            MultiScaleModel(
+                model=XPalm.NumberSpikelets(
+                    TT_flowering=p.parameters[:inflo][:TT_flowering],
+                    duration_dev_spikelets=p.parameters[:female][:duration_dev_spikelets],
+                ),
+                mapping=[PreviousTimeStep(:carbon_offer_plant) => "Plant" => :carbon_offer_after_rm, PreviousTimeStep(:carbon_demand_plant) => "Plant" => :carbon_demand],
+            ),
+            MultiScaleModel(
+                model=XPalm.NumberFruits(
+                    TT_flowering=p.parameters[:inflo][:TT_flowering],
+                    duration_fruit_setting=p.parameters[:female][:duration_fruit_setting],
+                ),
+                mapping=[PreviousTimeStep(:carbon_offer_plant) => "Plant" => :carbon_offer_after_rm, PreviousTimeStep(:carbon_demand_plant) => "Plant" => :carbon_demand],
+            ),
+            XPalm.FemaleCarbonDemandModel(
+                p.parameters[:carbon_demand][:female][:respiration_cost],
+                p.parameters[:carbon_demand][:female][:respiration_cost_oleosynthesis],
+                p.parameters[:inflo][:TT_flowering],
+                p.parameters[:female][:TT_harvest],
+                p.parameters[:female][:duration_fruit_setting],
+                p.parameters[:female][:oil_content],
+                p.parameters[:female][:fraction_period_oleosynthesis],
+                p.parameters[:female][:fraction_period_stalk],
+            ),
+            XPalm.FemaleBiomass(
+                p.parameters[:carbon_demand][:female][:respiration_cost],
+                p.parameters[:carbon_demand][:female][:respiration_cost_oleosynthesis],
+            ),
+            XPalm.BunchHarvest(),
+        ),
+        "RootSystem" => (
+            MultiScaleModel(
+                model=DailyDegreeDaysSinceInit(),
+                mapping=[:TEff => "Scene",], # Using TEff computed at scene scale
+            ),
+            # root_growth=RootGrowthFTSW(ini_root_depth=p.parameters[:ini_root_depth]),
+            # soil_water=FTSW{RootSystem}(ini_root_depth=p.parameters[:ini_root_depth]),
+        ),
+        "Soil" => (
+            # light_interception=Beer{Soil}(),
+            MultiScaleModel(
+                model=FTSW(ini_root_depth=p.parameters[:ini_root_depth]),
+                mapping=[:ET0 => "Scene", :aPPFD => "Scene"], # Using TEff computed at scene scale
+            ),
+            #! Root growth should be in the roots part, but it is a hard-coupled model with 
+            #! the FSTW, so we need it here for now. Make changes to PlantSimEngine accordingly.
+            MultiScaleModel(
+                model=RootGrowthFTSW(ini_root_depth=p.parameters[:ini_root_depth]),
+                mapping=[:TEff => "Scene",], # Using TEff computed at scene scale
+            ),
+        )
     )
 end
 
-# function main_models_definition()
-#     models = Dict(
-#         "Palm" => ModelList(
-#             # maintenance respiration of organs
-#             Rm=RmQ10{Palm}(),
-#             # Allocation of maintenance respiration (eventually with mortality)
-#             c_allocate_Rm=AllocateRm_palm(),
-#             # mortality of organs due to maintenance respiration not fullfilled
-#             Mortality_Rm=RmMortality(),
-#             # Offer in carbon for growth, photosynthesis - c_allocate_Rm
-#             c_offer=CarbonOffer_Phytomer(),
-#             # demand for carbon at the organ scale, then summed for each organ type:
-#             c_demand=Demand(),
-#             # allocation of carbon, min(Offer,Demand), with Offer == Photosynthesis
-#             # first use photosynthesis, then reserves if not enough:
-#             c_allocation=Allocation_common_pool(),
-#             Rg=Rg(), # growth respiration (construction cost, for each organ)
-#             NPP=NPP(), # Net Primary Production of the organ (daily biomass increment)
-#             biomass=Update_Biomass(), # Biomass + NPP, at organ scale
-#             # If some assimilated are left, we put them in the reserves:
-#             reserves=Reserves(),
-#         ),
-#         "Soil" => ModelList(
-#             soil_model=FTSW(), #! Add parameters here
-#         ),
-#         "Phytomer" =>
-#             ModelList(
-#                 Rm=Maintenance_Q10(),
-#                 c_demand=Demand(),
-#                 Rg=Rg(), # growth respiration (construction cost, for each organ)
-#                 NPP=NPP(), # Net Primary Production of the organ (daily biomass increment)
-#                 biomass=Update_Biomass(), # Biomass + NPP, at organ scale
-#                 status=(d=0.03,)
-#             ),
-#         :Internode =>
-#             ModelList(
-#                 Rm=Maintenance_Q10(),
-#                 c_demand=Demand(),
-#                 Rg=Rg(), # growth respiration (construction cost, for each organ)
-#                 NPP=NPP(), # Net Primary Production of the organ (daily biomass increment)
-#                 biomass=Update_Biomass(), # Biomass + NPP, at organ scale
-#                 status=(d=0.03,)
-#             ),
-#         "Leaf" =>
-#             ModelList(
-#                 energy_balance=Monteith(),
-#                 photosynthesis=Fvcb(),
-#                 stomatal_conductance=Medlyn(0.03, 12.0),
-#                 Rm=Maintenance_Q10(),
-#                 c_demand=Demand(),
-#                 Rg=Rg(), # growth respiration (construction cost, for each organ)
-#                 NPP=NPP(), # Net Primary Production of the organ (daily biomass increment)
-#                 biomass=Update_Biomass(), # Biomass + NPP, at organ scale
-#                 status=(d=0.03,)
-#             ),
-#         "Male" =>
-#             ModelList(
-#                 Rm=Maintenance_Q10(),
-#                 c_demand=Demand(),
-#                 Rg=Rg(), # growth respiration (construction cost, for each organ)
-#                 NPP=NPP(), # Net Primary Production of the organ (daily biomass increment)
-#                 biomass=Update_Biomass(), # Biomass + NPP, at organ scale
-#                 status=(d=0.03,)
-#             ),
-#         :Female =>
-#             ModelList(
-#                 Rm=Maintenance_Q10(),
-#                 c_demand=Demand(),
-#                 Rg=Rg(), # growth respiration (construction cost, for each organ)
-#                 NPP=NPP(), # Net Primary Production of the organ (daily biomass increment)
-#                 biomass=Update_Biomass(), # Biomass + NPP, at organ scale
-#                 status=(d=0.03,)
-#             )
-#     )
-# end

@@ -1,116 +1,3 @@
-abstract type OrganState end
-
-struct Initiated <: OrganState end
-struct Spear <: OrganState end
-struct Opened <: OrganState end
-struct Pruned <: OrganState end
-struct Scenescent <: OrganState end
-struct Aborted <: OrganState end
-struct Flowering <: OrganState end
-struct Bunch <: OrganState end
-struct OleoSynthesis <: OrganState end
-struct Growing <: OrganState end
-struct Snag <: OrganState end
-
-abstract type Organ end
-
-struct Soil end
-struct Plant end
-struct RootSystem <: Organ end
-struct Stem <: Organ end
-
-"""
-    Phytomer(state)
-
-A phytomer
-"""
-struct Phytomer <: Organ end
-
-"""
-    Internode(state)
-
-An internode, which has a state of type [`InternodeState`](@ref) that can be either:
-
-- `Growing`: has both growth and maintenance respiration
-- `Snag`: has maintenance respiration only, and no leaf 
-or reproductive organs
-"""
-mutable struct Internode{S} <: Organ where {S<:OrganState}
-    state::S
-end
-
-Internode() = Internode(Growing())
-
-"""
-    Leaf(state)
-
-A leaf, which has a state of type [`LeafState`](@ref) that can be either:
-
-- `Initiated`: in initiation phase (cell division until begining of elongation)
-- `Spear`: spear phase, almost fully developped, but leaflets are not yet deployed
-- `Opened`: deployed and photosynthetically active
-- `Pruned`: dead and removed from the plant
-- `Scenescent`: dead but still on the plant
-"""
-mutable struct Leaf <: Organ
-    state::OrganState
-end
-Leaf() = Leaf(Initiated())
-
-abstract type ReproductiveOrgan <: Organ end
-
-"""
-    Male(state)
-
-A male inflorescence, which has a state that can be either:
-
-- `Initiated`: in initiation phase (cell division)
-- `Aborted`
-- `Flowering`
-- `Scenescent`: dead but still on the plant
-- `Pruned`: removed from the plant
-"""
-mutable struct Male <: ReproductiveOrgan
-    state::OrganState
-end
-
-Male() = Male(Initiated())
-
-
-"""
-    Female(state)
-
-A female inflorescence, which has a state that can be either:
-
-- `Initiated`: in initiation phase (cell division)
-- `Aborted`
-- `Flowering`
-- `Bunch`: the bunch of fruits is developping
-- `OleoSynthesis`: the inflorescence is in the process of oleosynthesis
-- `Scenescent`: dead but still on the plant
-- `Pruned`: removed from the plant (*e.g.* harvested)
-"""
-mutable struct Female
-    state::OrganState
-end
-
-Female() = Female(Initiated())
-
-# """
-#     increment_rank!(palm::Palm)
-
-# Increment the rank of all phytomers on the palm. 
-# This is called whenever a new phytomer is emmitted.
-# """
-# function increment_rank!(palm::Palm)
-#     MultiScaleTreeGraph.transform!(
-#         palm.mtg,
-#         :rank => (x -> x + 1) => :rank
-#     )
-#     return nothing
-# end
-
-
 """
     Palm(;
         nsteps=1,
@@ -128,16 +15,15 @@ Create a new scene with one Palm plant.
 - `parameters`: a dictionary of parameters (default: `default_parameters()`)
 - `model_list`: a dictionary of models (default: `main_models_definition(parameters, nsteps)`)
 """
-mutable struct Palm{T} <: Organ
+mutable struct Palm{T}
     mtg::MultiScaleTreeGraph.Node
     initiation_age::Int
     parameters::T
 end
 
-abstract type InitState end
-
 function default_parameters()
     p = Dict(
+        :scene_area => 10000 / 136.0, # scene area in m-2 
         :k => 0.5, # light extinction coefficient
         :RUE => 4.8, # Radiation use efficiency (gC MJ[PAR]-1)
         :SRL => 0.4, # Specific Root Length (m g-1)
@@ -156,7 +42,8 @@ function default_parameters()
             ),
             :Leaf => Dict(
                 :Q10 => 2.1,
-                :Rm_base => 0.083, # Dufrene et al. (1990), Oleagineux.
+                #! :Rm_base => 0.083, # Dufrene et al. (1990), Oleagineux.
+                :Rm_base => 0.0083,
                 :T_ref => 25.0,
                 :P_alive => 0.90,
             ),
@@ -189,7 +76,7 @@ function default_parameters()
         ),
         :ini_root_depth => 100.0,
         :potential_area => Dict(
-            :leaf_area_first_leaf => 0.0015, # leaf potential area for the first leaf (m2)
+            :leaf_area_first_leaf => 0.02, # leaf potential area for the first leaf (m2)
             :leaf_area_mature_leaf => 12.0, # leaf potential area for a mature leaf (m2)
             :age_first_mature_leaf => 8 * 365, # age of the first mature leaf (days)
             :inflexion_index => 560.0,
@@ -275,40 +162,26 @@ function default_parameters()
 end
 
 function Palm(;
-    nsteps=1,
     initiation_age=0,
     parameters=default_parameters(),
-    model_list=main_models_definition(parameters, nsteps)
 )
 
     scene = MultiScaleTreeGraph.Node(
         1,
         NodeMTG("/", "Scene", 1, 0),
         Dict{Symbol,Any}(
-            :models => copy(model_list["Scene"]),
-            :area => 10000 / 136.0, # scene area, m2
-            :all_models => model_list,
+        # :area => 10000 / 136.0, # scene area, m2
         ),
-        # type=Scene()
     )
 
-    soil = MultiScaleTreeGraph.Node(
-        scene,
-        NodeMTG("+", "Soil", 1, 1),
-        Dict{Symbol,Any}(
-            :models => copy(model_list["Soil"]),
-        ),
-        type=Plant()
-    )
+    soil = MultiScaleTreeGraph.Node(scene, NodeMTG("+", "Soil", 1, 1),)
 
     plant = MultiScaleTreeGraph.Node(
         scene,
         NodeMTG("+", "Plant", 1, 1),
         Dict{Symbol,Any}(
-            :models => copy(model_list["Plant"]),
             :parameters => parameters,
         ),
-        type=Plant()
     )
 
     roots = MultiScaleTreeGraph.Node(
@@ -317,9 +190,7 @@ function Palm(;
         Dict{Symbol,Any}(
             :initiation_age => initiation_age,
             :depth => parameters[:RL0], # total exploration depth m
-            :models => copy(model_list["RootSystem"]),
         ),
-        type=RootSystem()
     )
 
     stem = MultiScaleTreeGraph.Node(
@@ -327,64 +198,25 @@ function Palm(;
         NodeMTG("+", "Stem", 1, 2),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
-            :models => copy(model_list["Stem"]),
         ),
-        type=Stem()
     )
 
     phyto = MultiScaleTreeGraph.Node(stem, NodeMTG("/", "Phytomer", 1, 3),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
-            :models => copy(model_list["Phytomer"]),
         ),
-        type=Phytomer(),
     )
 
     internode = MultiScaleTreeGraph.Node(phyto, NodeMTG("/", "Internode", 1, 4),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
-            :models => copy(model_list["Internode"]),
         ),
-        type=Internode(),
     )
 
     leaf = MultiScaleTreeGraph.Node(internode, NodeMTG("+", "Leaf", 1, 4),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
-            :models => copy(model_list["Leaf"]),
         ),
-        type=Leaf(),
     )
-
-    # Initilialise the number of phytomers:
-    plant[:models].status[1].phytomers = 1
-
-    # Initialise the final potential area of the first leaf (this computation is done only once in the model):
-    leaf[:models].status[1].final_potential_area = parameters[:potential_area][:leaf_area_first_leaf]
-    # And compute the leaf area as one percent of the potential area:
-    leaf[:models].status[1].leaf_area = leaf[:models].status[1].final_potential_area * 0.01
-
-    plant[:models].status[1].leaf_area = leaf[:models].status[1].leaf_area
-    # Initialise the LAI:
-    scene[:models].status[1].lai = leaf[:models].status[1].leaf_area / scene[:area] # m2 leaf / m2 soil
-
-    leaf[:models].status[1].biomass =
-        leaf[:models].status[1].leaf_area * parameters[:lma_min] /
-        parameters[:leaflets_biomass_contribution]
-
-    internode[:models].status[1].biomass = 0.0 # Just for Rm, it is then recomputed
-
-    leaf[:models].status[1].reserve = 0.0
-    # Put the reserves from the seed at sowing:
-    internode[:models].status[1].reserve = parameters[:seed_reserve]
-    # stem[:models].status[1].reserve = 0.0
-    plant[:models].status[1].reserve = 0.0
-    internode[:models].status[1].final_potential_height = parameters[:potential_dimensions][:min_height]
-    internode[:models].status[1].final_potential_radius = parameters[:potential_dimensions][:min_radius]
-
-    plant[:phytomer_count] = 1
-    scene[:mtg_node_count] = length(scene)
-    plant[:last_phytomer] = phyto
-
     return Palm(scene, initiation_age, parameters)
 end

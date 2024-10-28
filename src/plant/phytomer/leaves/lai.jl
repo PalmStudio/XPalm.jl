@@ -1,37 +1,29 @@
 """
 LAIModel()
 
-Compute LAI from every leaf area of the MTG
+Compute the leaf area index (LAI) using all leaves in the scene and the scene surface area.
 
 # Arguments
 
-# inputs
+- `area`: the surface area of the scene.
 
-- `leaf_area`: leaf area of each leaf
--`mtg`: MultiScaleTreeGraph of a scene with a ground area
+# Inputs
 
-# outputs
-- `lai`: leaf area index (m2.m-2)
+- `leaf_area`: a vector of all leaf area values in the scene
+
+# Outputs
+
+- `lai`: the leaf area index (m² m⁻²)
 """
-
-
-struct LAIModel <: AbstractLai_DynamicModel end
-
-PlantSimEngine.inputs_(::LAIModel) = (leaf_area=-Inf,)
-PlantSimEngine.outputs_(::LAIModel) = (lai=-Inf,)
-
-# Applied at the scene scale:
-function PlantSimEngine.run!(::LAIModel, models, st, meteo, constants, mtg::MultiScaleTreeGraph.Node)
-    leaf_area = typeof(st.leaf_area)[]
-    MultiScaleTreeGraph.traverse(mtg, symbol="Leaf") do leaf
-        # if leaf.type.state == Opened()
-        push!(leaf_area, leaf[:models].status[rownumber(st)][:leaf_area])
-        # end
-    end
-    st.lai = sum(leaf_area) / mtg[:area] # m2 leaf / m2 soil
+struct LAIModel{T} <: AbstractLai_DynamicModel
+    area::T
 end
 
-# Propagate the value from the day before:
-function PlantSimEngine.run!(::LAIModel, models, st, meteo, constants, extra=nothing)
-    st.lai = prev_value(st, :lai, default=st.lai)
+PlantSimEngine.inputs_(::LAIModel) = (leaf_area=[-Inf],)
+PlantSimEngine.outputs_(::LAIModel) = (lai=-Inf, scene_leaf_area=-Inf)
+
+# Applied at the scene scale:
+function PlantSimEngine.run!(m::LAIModel, models, st, meteo, constants, extra=nothing)
+    st.scene_leaf_area = sum(st.leaf_area)
+    st.lai = st.scene_leaf_area / m.area # m2 leaf / m2 soil
 end

@@ -1,32 +1,41 @@
 @testset "RootGrowthFTSW" begin
     ini_root_depth = 30.0
-    roots = RootGrowthFTSW(ini_root_depth=ini_root_depth)
+    roots = XPalm.RootGrowthFTSW(ini_root_depth=ini_root_depth)
     @test [getfield(roots, i) for i in fieldnames(typeof(roots))] == [30.0, 0.3, 0.2]
-
 end
 
 @testset "RootGrowthFTSW + FTSW" begin
     ini_root_depth = 300.0
-    soil = FTSW(ini_root_depth=ini_root_depth)
-    init = soil_init_default(soil)
+    soil = XPalm.FTSW(ini_root_depth=ini_root_depth)
+    init = XPalm.soil_init_default(soil)
     init.ET0 = 2.5
     init.aPPFD = 1.0
 
-    m = ModelList(
-        soil_water=FTSW(ini_root_depth=ini_root_depth),
-        root_growth=RootGrowthFTSW(ini_root_depth=ini_root_depth),
-        # status=TimeStepTable{PlantSimEngine.Status}([init for i in eachrow(meteo)])
-        status=(soil_depth=fill(2000, nrow(meteo)), TEff=fill(9.0, nrow(meteo))))
+    @testset "ModelList" begin
+        m = ModelList(
+            soil_water=XPalm.FTSW(ini_root_depth=ini_root_depth),
+            root_growth=XPalm.RootGrowthFTSW(ini_root_depth=ini_root_depth),
+            status=(NamedTuple(init)..., soil_depth=2000.0, TEff=9.0)
+        )
+        run!(m, meteo[1, :], executor=SequentialEx())
+        @test m[:ftsw][1] ≈ 0.5610089099455698
+        @test m[:root_depth][1] == 302.7
+    end
 
-    # @test to_initialize(m) == (root_growth=(:soil_depth, :TEff),)
-
-
-    run!(m, meteo, executor=SequentialEx())
-
-    @test m[:ftsw][1] ≈ 0.6111111111111112 ##!!! averifier pourquoi fsw n'est pas mise à jour
-
-    @test m[:ftsw][end] ≈ 0.9365282961879335
-
-    @test m[:root_depth][1] == 302.7
-    @test m[:root_depth][end] == 2000.0
+    @testset "Mapping" begin
+        mtg = Palm().mtg
+        m = Dict(
+            "Soil" => (
+                XPalm.RootGrowthFTSW(ini_root_depth=ini_root_depth),
+                XPalm.FTSW(ini_root_depth=ini_root_depth),
+                Status(; NamedTuple(init)..., soil_depth=2000.0, TEff=9.0)
+            )
+        )
+        vars = Dict{String,Any}("Soil" => (:root_depth, :ftsw))
+        out = run!(mtg, m, meteo, outputs=vars, executor=SequentialEx())
+        df = outputs(out, DataFrame)
+        @test df.root_depth[1] ≈ 302.7
+        @test df.root_depth[end] ≈ 2200.0
+        @test df.ftsw[1] ≈ 0.5610089099455698
+    end
 end

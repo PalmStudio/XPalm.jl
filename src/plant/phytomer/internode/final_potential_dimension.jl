@@ -8,6 +8,10 @@ struct FinalPotentialInternodeDimensionModel{A,L} <: AbstractInternode_Final_Pot
 end
 
 
+function FinalPotentialInternodeDimensionModel(age_max_height=8 * 365, age_max_radius=8 * 365, min_height=2e-3, min_radius=2e-3, max_height=0.03, max_radius=0.30)
+    FinalPotentialInternodeDimensionModel(age_max_height, age_max_radius, min_height, min_radius, max_height, max_radius)
+end
+
 """
 FinalPotentialInternodeDimensionModel(age_max_height,age_max_radius,min_height,min_radius,max_height,max_radius)
 FinalPotentialInternodeDimensionModel(age_max_height= 8 * 365,age_max_radius= 8 * 365,min_height=2e-3,min_radius=2e-3,max_height=0.03,max_radius=0.30)
@@ -19,25 +23,19 @@ Compute final potential height and radius of internode according to plant age at
 
 - `age_max_height`: plant age at which the height is at the maximum value max_height (ages above this age will have `max_height`)
 - `age_max_radius`: the age at which the radius is at the maximum value max_radius (ages above this age will have `max_radius`)
-- `min_height`: first internode height (at age =0)
-- `min_radius`:first internode radius (at age =0)
-- `max_height`: maximum value of internode height
-- `max_radius`: maximum value of internode radius
+- `min_height`: first internode height (at age=0, m)
+- `min_radius`:first internode radius (at age=0, m)
+- `max_height`: maximum value of internode height (m)
+- `max_radius`: maximum value of internode radius (m)
 
-# outputs
-final_potential_radius
-final_potential_height 
+# Outputs
 
-# Example
-
-```jldoctest
-
-```
-
+- `final_potential_radius`: potential radius of the internode once fully developped (m)
+- `final_potential_height`: potential height of the internode once fully developped (m)
 """
 
 
-PlantSimEngine.inputs_(::FinalPotentialInternodeDimensionModel) = (initiation_age=-Inf,)
+PlantSimEngine.inputs_(::FinalPotentialInternodeDimensionModel) = (initiation_age=-9999,)
 
 PlantSimEngine.outputs_(::FinalPotentialInternodeDimensionModel) = (
     final_potential_height=-Inf,
@@ -45,7 +43,6 @@ PlantSimEngine.outputs_(::FinalPotentialInternodeDimensionModel) = (
 )
 
 function PlantSimEngine.run!(m::FinalPotentialInternodeDimensionModel, models, status, meteo, constants, extra=nothing)
-    # This is the potential area of the leaf (should be computed once only...)
     status.final_potential_height =
         age_relative_value(
             status.initiation_age,
@@ -63,9 +60,4 @@ function PlantSimEngine.run!(m::FinalPotentialInternodeDimensionModel, models, s
             m.min_radius,
             m.max_radius
         )
-end
-
-function PlantSimEngine.run!(::FinalPotentialInternodeDimensionModel, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node)
-    status.final_potential_height = prev_value(status, :final_potential_height, default=status.final_potential_height)
-    status.final_potential_radius = prev_value(status, :final_potential_radius, default=status.final_potential_radius)
 end

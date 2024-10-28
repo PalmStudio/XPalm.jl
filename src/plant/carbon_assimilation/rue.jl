@@ -5,21 +5,13 @@ Computes the `carbon_assimilation` using a constant radiation use efficiency (`r
 
 # Arguments
 
-- `rue`: radiation use efficiency (g.MJ-1)
+- `rue`: radiation use efficiency (gC MJ⁻¹)
 
 # Inputs
-- `aPPFD`: the absorbed Photosynthetic Photon Flux Density in μmol[PAR] m[leaf]⁻² s⁻¹.
+- `aPPFD`: the absorbed Photosynthetic Photon Flux Density in mol[PAR] m[leaf]⁻² s⁻¹.
 
 # Outputs
 - `carbon_assimilation`: carbon offer from photosynthesis
-
-
-# Examples 
-
-```jldoctest
-
-```
-
 """
 struct ConstantRUEModel{T} <: AbstractCarbon_AssimilationModel
     rue::T
@@ -30,5 +22,6 @@ PlantSimEngine.outputs_(::ConstantRUEModel) = (carbon_assimilation=-Inf,)
 
 function PlantSimEngine.run!(m::ConstantRUEModel, models, status, meteo, constants, extra=nothing)
     status.carbon_assimilation = status.aPPFD / constants.J_to_umol * m.rue
-    # aPPFD is in mol d-1 plant-1, we need MJ d-1 plant-1 first, and then use RUE
+    # aPPFD is in mol[PAR] plant⁻¹ d⁻¹, we need MJ[PAR] plant⁻¹ d⁻¹ first, and then use RUE
+    # This gives carbon_assimilation in gC plant⁻¹ d⁻¹
 end

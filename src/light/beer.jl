@@ -7,30 +7,27 @@ Beer-Lambert law for light interception.
 
 - `k`: extinction coefficient of light
 
-# Inputs
-- `LAI`: leaf area index (m² m⁻²)
-- `Ri_PAR_f`: the incident flux of atmospheric radiation in the
-PAR, in W m[soil]⁻² (== J m[soil]⁻² s⁻¹).
+# Inputs 
 
-# Output
-- `aPPFD`: the absorbed Photosynthetic Photon Flux Density in μmol[PAR] m[leaf]⁻² s⁻¹.
+- `lai` in m² m⁻².
+
+# Required meteorology data
+
+- `Ri_PAR_f`: incident flux of atmospheric radiation in the PAR, in MJ m⁻² d⁻¹.
+
+# Outputs
+
+- `aPPFD`: absorbed Photosynthetic Photon Flux Density in mol[PAR] m[soil]⁻² d⁻¹.
 """
-struct Beer{T,O} <: AbstractLight_InterceptionModel
+struct Beer{T} <: AbstractLight_InterceptionModel
     k::T
 end
 
-Beer{O}(k::T=0.6) where {O,T} = Beer{T,O}(k)
-Beer(k::T=0.6) where {T} = Beer{T,Any}(k)
+Beer(; k=0.6) = Beer(k)
 
 function PlantSimEngine.inputs_(::Beer)
     (lai=-Inf,)
 end
-
-function PlantSimEngine.inputs_(::Beer{T,Plant}) where {T}
-    (leaf_area=-Inf,)
-end
-
-PlantSimEngine.inputs_(::Beer{T,Soil}) where {T} = NamedTuple()
 
 function PlantSimEngine.outputs_(::Beer)
     (aPPFD=-Inf,)
@@ -56,39 +53,50 @@ initialisations for `lai` (m² m⁻²): the leaf area index.
 # Examples
 
 ```julia
+using PlantSimEngine, PlantBiophysics, PlantMeteo
 m = ModelList(light_interception=Beer(0.5), status=(lai=2.0,))
+
 meteo = Atmosphere(T=20.0, Wind=1.0, P=101.3, Rh=0.65, Ri_PAR_f=300.0)
 run!(m, meteo)
 m[:aPPFD]
 ```
 """
 function PlantSimEngine.run!(m::Beer, models, status, meteo, constants, extra=nothing)
-    status.aPPFD =
-        meteo.Ri_PAR_f *
-        (1 - exp(-m.k * status.lai)) *
+    status.aPPFD = # in mol[PAR] m[soil]⁻² d⁻¹
+        meteo.Ri_PAR_f * # in MJ m[soil]⁻² d⁻¹
+        (1.0 - exp(-models.light_interception.k * status.lai)) *
         constants.J_to_umol
 end
 
-# At the plant scale
-function PlantSimEngine.run!(::Beer{T,Plant}, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node) where {T}
-    rn = max(1, rownumber(status) - 1) # take the row number (cannot be < 1)
 
-    scene_node = get_root(mtg)
-    plant_leaf_area = MultiScaleTreeGraph.traverse(scene_node, symbol="Plant") do node
-        node[:models].status[rn][:leaf_area]
-    end
+"""
+    SceneToPlantLightPartitioning()
 
-    relative_leaf_area = mtg[:models].status[rn].leaf_area / sum(plant_leaf_area)
+Partitioning from aPPFD at the scene scale to the plant scale based on the relative 
+leaf area of the plant.
 
-    # aPPFD in MJ d-1 plant-1:
-    status.aPPFD =
-        scene_node[:models].status[rn].aPPFD *
-        scene_node[:area] *
-        relative_leaf_area
+# Inputs 
+
+- `aPPFD`: absorbed Photosynthetic Photon Flux Density in mol[PAR] m[soil]⁻² d⁻¹ (scene scale).
+- `plant_leaf_area`: the target plant leaf area
+- `scene_leaf_area`: the total scene leaf area
+
+# Outputs
+
+- `aPPFD`: absorbed Photosynthetic Photon Flux Density in mol[PAR] plant⁻¹ s⁻¹.
+"""
+struct SceneToPlantLightPartitioning <: AbstractLight_InterceptionModel end
+
+function PlantSimEngine.inputs_(::SceneToPlantLightPartitioning)
+    (aPPFD_scene=-Inf, plant_leaf_area=-Inf, scene_leaf_area=-Inf)
 end
 
-# At the soil scale:
-function PlantSimEngine.run!(::Beer{T,Soil}, models, status, meteo, constants, mtg::MultiScaleTreeGraph.Node) where {T}
-    timestep = rownumber(status)
-    status.aPPFD = get_root(mtg)[:models].status[timestep].aPPFD
+function PlantSimEngine.outputs_(::SceneToPlantLightPartitioning)
+    (aPPFD=-Inf,)
+end
+
+# Partitioning between plants:
+function PlantSimEngine.run!(::SceneToPlantLightPartitioning, models, status, meteo, constants, extra=nothing)
+    # aPPFD in mol[PAR] plant⁻¹ d⁻¹, from aPPFD in mol[PAR] m[soil]⁻² d⁻¹ and the plant's relative leaf area:
+    status.aPPFD = status.aPPFD_scene * status.plant_leaf_area / status.scene_leaf_area
 end
