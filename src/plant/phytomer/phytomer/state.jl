@@ -55,9 +55,9 @@ PlantSimEngine.dep(::InfloStateModel) = (abortion=AbstractAbortionModel,)
 
 # At phytomer scale
 function PlantSimEngine.run!(m::InfloStateModel, models, status, meteo, constants, extra=nothing)
-    status.state == "Aborted" && return # if the inflo is aborted, no need to compute 
-
     PlantSimEngine.run!(models.abortion, models, status, meteo, constants, extra)
+
+    status.state == "Aborted" && return # if the inflo is aborted, no need to compute 
 
     if status.sex == "Male"
         if status.TT_since_init > m.TT_senescence_male
