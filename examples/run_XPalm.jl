@@ -8,25 +8,8 @@ using DataFrames, CSV, Statistics
 using Dates
 using XPalm
 
-# meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), DataFrame)
-meteo_raw = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/Meteo_Nigeria_PR.txt"), DataFrame)
-
-meteo = select(
-    meteo_raw,
-    :ObservationDate => :date,
-    :ObservationDate => (x -> Day(1)) => :duration,
-    :TAverage => (x -> replace(x, missing => mean(skipmissing(x)))) => :T,
-    :TMax => (x -> replace(x, missing => mean(skipmissing(x)))) => :Tmax,
-    :TMin => (x -> replace(x, missing => mean(skipmissing(x)))) => :Tmin,
-    :Rg => (x -> replace(x, missing => mean(skipmissing(x))) .* 0.48) => :Rg,
-    :Rg => (x -> replace(x, missing => mean(skipmissing(x))) .* 0.48) => :Ri_PAR_f,
-    :HRMin => (x -> replace(x, missing => mean(skipmissing(x)))) => :Rh_min,
-    :HRMax => (x -> replace(x, missing => mean(skipmissing(x)))) => :Rh_max,
-    :Rainfall => (x -> replace(x, missing => mean(skipmissing(x)))) => :Precipitations,
-    :WindSpeed => (x -> replace(x, missing => mean(skipmissing(x)))) => :Wind,
-)
-meteo.Rh .= (meteo.Rh_max .- meteo.Rh_min) ./ 2 ./ 100
-
+meteo = CSV.read("0-data/Meteo_Nigeria_PR.txt", DataFrame)
+meteo.duration = [Dates.Day(i[1:1]) for i in meteo.duration]
 m = Weather(meteo)
 
 out_vars = Dict{String,Any}(
