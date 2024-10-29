@@ -1,7 +1,12 @@
 """
-    notebook()
+    notebook(; copyto::String, force::Bool)
 
-Open XPalm in a template Pluto notebook.
+Create a new XPalm notebook from a template in `copyto`, and run the notebook.
+
+# Arguments
+
+- `copyto::String=joinpath(pwd(), "xpalm_notebook.jl")`: The path to the new notebook file.
+- `force::Bool=false`: If `true`, overwrite the file at `copyto`.
 
 # Example
 
@@ -10,10 +15,11 @@ using XPalm, Pluto
 XPalm.notebook()
 ```
 """
-function notebook()
-    ext = Base.get_extension(@__MODULE__, :XPamlPluto)
+function notebook(; copyto=joinpath(pwd(), "xpalm_notebook.jl"), force=false)
+    ext = Base.get_extension(@__MODULE__, :XPalmPluto)
     if !isnothing(ext)
-        return ext.template_pluto_notebook()
+        isfile(copyto) && !force && error("File already exists at $copyto. Use `force=true` to overwrite it, or change its name.")
+        return ext.template_pluto_notebook(copyto)
     else
         error("Please install and load Pluto to use this function: `] add Pluto; using Pluto`")
     end

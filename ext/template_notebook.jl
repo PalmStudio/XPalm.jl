@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.0
+# v0.20.3
 
 using Markdown
 using InteractiveUtils
@@ -42,6 +42,7 @@ md"""
 # ╔═╡ 1fa0b119-26fe-4807-8aea-50cdbd591656
 meteo = let 
 	m = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/Meteo_Nigeria_PR.txt"), DataFrame)
+	m.duration = [Dates.Day(i[1:1]) for i in m.duration]
 	Weather(m)
 end
 
@@ -99,7 +100,7 @@ end
 # ╟─77aae20b-6310-4e34-8599-e08d01b28c9f
 # ╟─f8a57cfe-960e-11ef-3974-3d60ebc34f7b
 # ╟─7fc8085f-fb74-4171-8df1-527ee1edfa73
-# ╠═1fa0b119-26fe-4807-8aea-50cdbd591656
+# ╟─1fa0b119-26fe-4807-8aea-50cdbd591656
 # ╟─7165746e-cc57-4392-bb6b-705cb7221c24
 # ╠═5333c864-eb66-4575-a495-ed35f0fe9566
 # ╠═73f8cf85-cb03-444e-bf9e-c65363e9ffb8
