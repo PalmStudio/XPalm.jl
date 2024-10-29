@@ -34,6 +34,33 @@ meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), 
 df = xpalm(meteo; vars= Dict("Scene" => (:lai,)), sink=DataFrame)
 ```
 
+!!! note
+    You need to install the `CSV` and `DataFrames` packages to run the example above. You can install them by running `] add CSV DataFrames`.
+
+We can also run the model with a custom configuration file for the parameter values. The configuration file may be in any format that can be parsed into a dictionary, such as JSON, YAML or TOML.
+
+For example, to run the model with a JSON configuration file:
+
+```julia
+using JSON
+params = open("examples/xpalm_parameters.json", "r") do io
+    JSON.parse(io; dicttype=Dict{Symbol,Any}, inttype=Int64)
+end
+p = XPalm.Palm(parameters=params)
+df = xpalm(meteo; palm=p, vars=Dict("Scene" => (:lai,)), sink=DataFrame)
+```
+
+Or with a YAML file:
+
+```julia
+using YAML
+params = YAML.load_file(joinpath(dirname(dirname(pathof(XPalm))), "examples/xpalm_parameters.yml"), dicttype=Dict{Symbol,Any})
+df = xpalm(meteo; palm=XPalm.Palm(parameters=params), vars=out_vars, sink=DataFrame)
+```
+
+!!! note
+    The configuration file must contain all the parameters required by the model. Template files are available from the `examples` folder.
+
 ## Funding
 
 This work is supported by the PalmStudio research project, funded by the [SMART Research Institute](https://smartri.id/) and [CIRAD](https://www.cirad.fr/en).
