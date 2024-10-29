@@ -1,7 +1,7 @@
 
 
 """
-    XPalm(meteo; outputs, initiation_age=0, parameters=default_parameters())
+    xpalm(meteo; vars=Dict("Scene" => (:lai,)), palm=Palm(initiation_age=0, parameters=XPalm.default_parameters()), sink=NamedTuple)
 
 Run the XPalm model with the given meteo data and return the results in a DataFrame.
 
@@ -24,9 +24,8 @@ meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), 
 df = xpalm(meteo; vars= Dict("Scene" => (:lai,)), sink=DataFrame)
 ```
 """
-function xpalm(meteo; vars=Dict("Scene" => (:lai,)), initiation_age=0, parameters=default_parameters(), sink=NamedTuple)
-    p = Palm(initiation_age=initiation_age, parameters=parameters)
-    models = main_models_definition(p)
-    out = PlantSimEngine.run!(p.mtg, models, meteo, outputs=vars, executor=PlantSimEngine.SequentialEx(), check=false)
-    return PlantSimEngine.outputs(out, sink)
+function xpalm(meteo; vars=Dict("Scene" => (:lai,)), palm=Palm(initiation_age=0, parameters=default_parameters()), sink=NamedTuple)
+    models = main_models_definition(palm)
+    out = PlantSimEngine.run!(palm.mtg, models, meteo, outputs=vars, executor=PlantSimEngine.SequentialEx(), check=false)
+    return PlantSimEngine.outputs(out, sink, no_value=missing)
 end
