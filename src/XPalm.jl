@@ -98,6 +98,7 @@ include("plant/phytomer/ReproductiveOrgans/Female/biomass.jl")
 include("plant/phytomer/ReproductiveOrgans/Female/harvest.jl")
 
 include("run.jl")
+include("notebook.jl")
 
 export xpalm
 end
