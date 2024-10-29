@@ -161,6 +161,21 @@ function default_parameters()
     return p
 end
 
+"""
+    Palm(; initiation_age=0, parameters=default_parameters())
+
+
+Create a new scene with one Palm plant. The scene contains a soil, a plant, a root system, a stem, a phytomer, an internode, and a leaf.
+
+# Arguments
+
+- `initiation_age`: days elapsed since the first phytomer initiation (default: 0)
+- `parameters`: a dictionary of parameters (default: `default_parameters()`)
+
+# Returns
+
+- a `Palm` object
+"""
 function Palm(;
     initiation_age=0,
     parameters=default_parameters(),
@@ -219,4 +234,10 @@ function Palm(;
         ),
     )
     return Palm(scene, initiation_age, parameters)
+end
+
+# Print the Palm structure nicely:
+function Base.show(io::IO, p::Palm)
+    println(io, "Scene with a palm density of $(1 / p.parameters[:scene_area] * 10000) palms ha⁻¹. \nGraph:")
+    println(io, p.mtg)
 end
