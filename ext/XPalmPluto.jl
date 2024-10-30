@@ -9,7 +9,7 @@ function template_pluto_notebook(copyto; force=false)
         @info "Notebook already exists at $copyto, opening. Use `force=true` to overwrite it instead."
     else
         cp(joinpath(@__DIR__, "template_notebook.jl"), copyto; force=force)
-        chmod(copyto, 777)
+        chmod(copyto, 0o777)
         @info "New XPalm notebook created at $copyto"
     end
 
