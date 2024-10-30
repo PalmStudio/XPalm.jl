@@ -18,7 +18,6 @@ XPalm.notebook()
 function notebook(; copyto=joinpath(pwd(), "xpalm_notebook.jl"), force=false)
     ext = Base.get_extension(@__MODULE__, :XPalmPluto)
     if !isnothing(ext)
-        isfile(copyto) && !force && error("File already exists at $copyto. Use `force=true` to overwrite it, or change its name.")
         return ext.template_pluto_notebook(copyto; force=force)
     else
         error("Please install and load Pluto to use this function: `] add Pluto; using Pluto`")
