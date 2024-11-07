@@ -24,8 +24,14 @@ meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), 
 df = xpalm(meteo; vars= Dict("Scene" => (:lai,)), sink=DataFrame)
 ```
 """
-function xpalm(meteo; vars=Dict("Scene" => (:lai,)), palm=Palm(initiation_age=0, parameters=default_parameters()), sink=NamedTuple)
+function xpalm(meteo; vars=Dict("Scene" => (:lai,)), palm=Palm(initiation_age=0, parameters=default_parameters()), sink)
     models = model_mapping(palm)
     out = PlantSimEngine.run!(palm.mtg, models, meteo, outputs=vars, executor=PlantSimEngine.SequentialEx(), check=false)
     return PlantSimEngine.outputs(out, sink, no_value=missing)
+end
+
+function xpalm(meteo; vars=Dict("Scene" => (:lai,)), palm=Palm(initiation_age=0, parameters=default_parameters()))
+    models = model_mapping(palm)
+    out = PlantSimEngine.run!(palm.mtg, models, meteo, outputs=vars, executor=PlantSimEngine.SequentialEx(), check=false)
+    return PlantSimEngine.outputs(out)
 end
