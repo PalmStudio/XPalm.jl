@@ -3,7 +3,7 @@
         nsteps=1,
         initiation_age=0,
         parameters=default_parameters(),
-        model_list=main_models_definition(parameters, nsteps)
+        model_list=model_mapping(parameters, nsteps)
     )
 
 Create a new scene with one Palm plant.
@@ -13,7 +13,7 @@ Create a new scene with one Palm plant.
 - `nsteps`: number of time steps to run the simulation for (default: 1, should match the number of rows in the meteo data)
 - `initiation_age`: date of the first phytomer initiation (default: 0)
 - `parameters`: a dictionary of parameters (default: `default_parameters()`)
-- `model_list`: a dictionary of models (default: `main_models_definition(parameters, nsteps)`)
+- `model_list`: a dictionary of models (default: `model_mapping(parameters, nsteps)`)
 """
 mutable struct Palm{T}
     mtg::MultiScaleTreeGraph.Node

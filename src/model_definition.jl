@@ -1,4 +1,19 @@
-function main_models_definition(p)
+
+
+"""
+    model_mapping(p)
+
+Defines the list of sub-models used in XPalm.
+
+# Arguments
+
+- `p`: A palm object with the parameters of the model (*e.g.* p = Palm()).
+
+# Returns
+
+- A multiscale list of models, as a dictionary of scale (keys) and list of models (values).
+"""
+function model_mapping(p)
     Dict(
         "Scene" => (
             XPalm.ET0_BP(),
@@ -32,7 +47,6 @@ function main_models_definition(p)
                 model=XPalm.PhytomerEmission(p.mtg),
                 mapping=[:graph_node_count => "Scene",],
             ),
-            # XPalm.PhytomerCount(length(p.mtg)), #! maybe finish this ? It was to avoid putting the value inside the MTG nodes (same for graph_node_count -> GraphNodeCount), see add_phytomer
             MultiScaleModel(
                 model=XPalm.PlantRm(),
                 mapping=[:Rm_organs => ["Leaf", "Internode", "Male", "Female"] .=> :Rm],
@@ -348,7 +362,7 @@ function main_models_definition(p)
                 mapping=[:ET0 => "Scene", :aPPFD => "Scene"], # Using TEff computed at scene scale
             ),
             #! Root growth should be in the roots part, but it is a hard-coupled model with 
-            #! the FSTW, so we need it here for now. Make changes to PlantSimEngine accordingly.
+            #! the FSTW, so we need it here for now.
             MultiScaleModel(
                 model=RootGrowthFTSW(ini_root_depth=p.parameters[:ini_root_depth]),
                 mapping=[:TEff => "Scene",], # Using TEff computed at scene scale
