@@ -28,6 +28,10 @@ Compute final potential height and radius of internode according to plant age at
 - `max_height`: maximum value of internode height (m)
 - `max_radius`: maximum value of internode radius (m)
 
+# Inputs
+
+- `initiation_age`: plant age at internode initiation (days)
+
 # Outputs
 
 - `final_potential_radius`: potential radius of the internode once fully developped (m)
@@ -60,4 +64,6 @@ function PlantSimEngine.run!(m::FinalPotentialInternodeDimensionModel, models, s
             m.min_radius,
             m.max_radius
         )
+
+    return nothing
 end

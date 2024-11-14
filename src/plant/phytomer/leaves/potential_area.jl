@@ -50,4 +50,6 @@ function PlantSimEngine.run!(m::PotentialAreaModel, models, status, meteo, const
     if status.TT_since_init > inflexion_point * 2.0
         status.maturity = true
     end
+
+    return nothing
 end
