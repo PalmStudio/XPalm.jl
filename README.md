@@ -31,7 +31,7 @@ The model can be run using the `xpalm` function. The function takes a table as i
 ```julia
 using XPalm, CSV, DataFrames
 meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), DataFrame)
-df = xpalm(meteo; vars= Dict("Scene" => (:lai,)), sink=DataFrame)
+df = xpalm(meteo, DataFrame; vars= Dict("Scene" => (:lai,)))
 ```
 
 !!! note
@@ -47,7 +47,7 @@ params = open("examples/xpalm_parameters.json", "r") do io
     JSON.parse(io; dicttype=Dict{Symbol,Any}, inttype=Int64)
 end
 p = XPalm.Palm(parameters=params)
-df = xpalm(meteo; palm=p, vars=Dict("Scene" => (:lai,)), sink=DataFrame)
+df = xpalm(meteo, DataFrame; palm=p, vars=Dict("Scene" => (:lai,)))
 ```
 
 Or with a YAML file:
@@ -55,7 +55,7 @@ Or with a YAML file:
 ```julia
 using YAML # You first need to install the YAML package by running `] add YAML`
 params = YAML.load_file(joinpath(dirname(dirname(pathof(XPalm))), "examples/xpalm_parameters.yml"), dicttype=Dict{Symbol,Any})
-df = xpalm(meteo; palm=XPalm.Palm(parameters=params), vars=Dict("Scene" => (:lai,)), sink=DataFrame)
+df = xpalm(meteo, DataFrame; palm=XPalm.Palm(parameters=params), vars=Dict("Scene" => (:lai,)))
 ```
 
 !!! note

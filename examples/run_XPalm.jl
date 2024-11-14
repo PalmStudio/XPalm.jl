@@ -25,14 +25,14 @@ out_vars = Dict{String,Any}(
 )
 
 # Example 1: Run the model with the default parameters (but output as a DataFrame):
-df = xpalm(m; vars=out_vars, sink=DataFrame)
+df = xpalm(m, DataFrame; vars=out_vars)
 
 # Example 2.1: Run the model with custom parameter values from a YAML file:
 using YAML, OrderedCollections
 params = YAML.load_file(joinpath(dirname(dirname(pathof(XPalm))), "examples/xpalm_parameters.yml"), dicttype=OrderedDict{Symbol,Any})
 params[:k] = 0.6
 p = XPalm.Palm(parameters=params)
-df = xpalm(m; palm=p, vars=out_vars, sink=DataFrame)
+df = xpalm(m, DataFrame; palm=p, vars=out_vars)
 
 # Example 2.2: Run the model with custom parameter values from a JSON file:
 using JSON, OrderedCollections
@@ -41,7 +41,7 @@ params = open("examples/xpalm_parameters.json", "r") do io
 end
 params[:k] = 0.6
 p = XPalm.Palm(parameters=params)
-df = xpalm(m; palm=p, vars=out_vars, sink=DataFrame)
+df = xpalm(m, DataFrame; palm=p, vars=out_vars)
 
 # Making some plots with the results:
 df_Internode = filter(row -> row.organ == "Internode", df)
