@@ -35,5 +35,6 @@ function PlantSimEngine.run!(m::RankLeafPruning, models, status, meteo, constant
         status.leaf_area = 0.0
         status.litter_leaf = status.biomass
         status.biomass = 0.0
+        status.reserve = 0.0
     end
 end
