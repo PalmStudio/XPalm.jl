@@ -23,7 +23,7 @@ end
 
 function default_parameters()
     p = Dict(
-        :scene_area => 10000 / 136.0, # scene area in m-2 
+        :scene_area => 10000 / 136.0, # scene area in m-2, area occupied for one plant
         :k => 0.5, # light extinction coefficient
         :RUE => 4.8, # Radiation use efficiency (gC MJ[PAR]-1)
         :SRL => 0.4, # Specific Root Length (m g-1)
