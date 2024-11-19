@@ -23,17 +23,16 @@ Determines the number of fruits on the bunch.
 struct NumberFruits{T} <: AbstractNumber_FruitsModel
     TT_flowering::T
     duration_fruit_setting::T
-    is_computed::Ref{Bool}  # Mutable flag using Ref to indicate if the model has been computed already
 end
 
-NumberFruits(; TT_flowering=6300.0, duration_fruit_setting=405.0) = NumberFruits(TT_flowering, duration_fruit_setting, Ref(false))
+NumberFruits(; TT_flowering=6300.0, duration_fruit_setting=405.0) = NumberFruits(TT_flowering, duration_fruit_setting)
 
 PlantSimEngine.inputs_(::NumberFruits) = (carbon_offer_plant=0.0, potential_fruits_number=-9999, carbon_demand_plant=0.0)
-PlantSimEngine.outputs_(::NumberFruits) = (fruits_number=-9999, carbon_offer_flowering=0.0, carbon_demand_flowering=0.0,)
+PlantSimEngine.outputs_(::NumberFruits) = (fruits_number=-9999, carbon_offer_flowering=0.0, carbon_demand_flowering=0.0, nb_fruits_flag=false)
 
 # applied at the female inflorescence level
 function PlantSimEngine.run!(m::NumberFruits, models, status, meteo, constants, extra=nothing)
-    m.is_computed[] && return # if it has a number of fruits, no need to compute it again
+    status.nb_fruits_flag && return # if it has a number of fruits, no need to compute it again
 
     # We only look into the period of abortion :
     if status.TT_since_init >= m.TT_flowering
@@ -53,6 +52,6 @@ function PlantSimEngine.run!(m::NumberFruits, models, status, meteo, constants, 
         status.fruits_number = round(Int, trophic_status_fruits * status.potential_fruits_number)
 
         # This computation should be done only once because as soon as we know the number of fruits, it is set for the life of the infrutescence
-        m.is_computed[] = true  # Update the flag
+        status.nb_fruits_flag = true  # Update the flag
     end
 end

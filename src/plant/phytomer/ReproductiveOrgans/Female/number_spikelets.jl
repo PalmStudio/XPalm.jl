@@ -11,17 +11,16 @@ Determines the number of spikelets on the fruit bunch.
 struct NumberSpikelets{T} <: AbstractNumber_SpikeletsModel
     TT_flowering::T
     duration_dev_spikelets::T
-    is_computed::Ref{Bool}  # Mutable flag using Ref to indicate if the model has been computed already
 end
 
-NumberSpikelets(; TT_flowering=6300.0, duration_dev_spikelets=675.0) = NumberSpikelets(TT_flowering, duration_dev_spikelets, Ref(false))
+NumberSpikelets(; TT_flowering=6300.0, duration_dev_spikelets=675.0) = NumberSpikelets(TT_flowering, duration_dev_spikelets)
 
 PlantSimEngine.inputs_(::NumberSpikelets) = (carbon_offer_plant=0.0, carbon_demand_plant=0.0, potential_fruits_number=-9999)
-PlantSimEngine.outputs_(::NumberSpikelets) = (spikelets_number=-Inf, carbon_demand_spikelets=0.0, carbon_offer_spikelets=0.0,)
+PlantSimEngine.outputs_(::NumberSpikelets) = (spikelets_number=-Inf, carbon_demand_spikelets=0.0, carbon_offer_spikelets=0.0, nb_spikelets_flag=false)
 
 # applied at the female inflorescence level
 function PlantSimEngine.run!(m::NumberSpikelets, models, status, meteo, constants, extra=nothing)
-    m.is_computed[] && return # We only compute it once
+    status.nb_spikelets_flag && return # We only compute it once
 
     # We only look into the period of spikelets development :
     if status.TT_since_init >= (m.TT_flowering - m.duration_dev_spikelets)
@@ -42,6 +41,6 @@ function PlantSimEngine.run!(m::NumberSpikelets, models, status, meteo, constant
         status.spikelets_number = trophic_status_spikelets * status.potential_fruits_number
 
         # This computation should be done only once because as soon as we know the number of spikelets, it is set for the life of the infrutescence
-        m.is_computed[] = true  # Update the flag
+        status.nb_spikelets_flag = true  # Update the flag
     end
 end
