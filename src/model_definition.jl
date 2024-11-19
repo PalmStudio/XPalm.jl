@@ -52,7 +52,7 @@ function model_mapping(p)
                 mapping=[:Rm_organs => ["Leaf", "Internode", "Male", "Female"] .=> :Rm],
             ),
             MultiScaleModel(
-                model=XPalm.SceneToPlantLightPartitioning(),
+                model=XPalm.SceneToPlantLightPartitioning(p.parameters[:scene_area]),
                 mapping=[:aPPFD_scene => "Scene" => :aPPFD, :scene_leaf_area => "Scene"],
             ),
             XPalm.ConstantRUEModel(p.parameters[:RUE]),
@@ -283,9 +283,9 @@ function model_mapping(p)
                 mapping=[PreviousTimeStep(:biomass),],
             ),
             XPalm.MaleCarbonDemandModel(
-                p.parameters[:male][:duration_flowering_male],
+                p.parameters[:carbon_demand][:male][:respiration_cost],
                 p.parameters[:inflo][:TT_flowering],
-                p.parameters[:carbon_demand][:male][:respiration_cost]
+                p.parameters[:male][:duration_flowering_male],
             ),
             XPalm.MaleBiomass(
                 p.parameters[:carbon_demand][:male][:respiration_cost],
