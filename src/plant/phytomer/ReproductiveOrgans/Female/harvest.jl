@@ -14,6 +14,10 @@ function PlantSimEngine.run!(m::BunchHarvest, models, st, meteo, constants, extr
         st.biomass_stalk = 0.0
         st.biomass_fruits = 0.0
         st.is_harvested = true
+    else # The biomass harvested should only appear on the day of harvest, otherwise it is 0 (before and after harvest)
+        st.biomass_bunch_harvested = 0.0
+        st.biomass_stalk_harvested = 0.0
+        st.biomass_fruit_harvested = 0.0
     end
 end
 
