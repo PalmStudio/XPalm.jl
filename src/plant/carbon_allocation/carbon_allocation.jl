@@ -23,6 +23,9 @@ function PlantSimEngine.run!(m::OrgansCarbonAllocationModel, models, status, met
     # was already removed from the carbon offer here:
     # status.trophic_status = status.carbon_offer_after_rm / status.carbon_demand
 
+    # Reserve at the plant scale is the sum of all reserves in the organs:
+    status.reserve = sum(status.reserve_organs)
+
     # If the total demand is positive, we try allocating carbon:
     if status.carbon_demand > 0.0
         # Proportion of the demand of each leaf compared to the total leaf demand: 

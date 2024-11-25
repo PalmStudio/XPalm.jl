@@ -66,6 +66,7 @@ function PlantSimEngine.run!(m::Beer, models, status, meteo, constants, extra=no
         meteo.Ri_PAR_f * # in MJ m[soil]⁻² d⁻¹
         (1.0 - exp(-models.light_interception.k * status.lai)) *
         constants.J_to_umol
+    return nothing
 end
 
 
@@ -74,6 +75,10 @@ end
 
 Partitioning from aPPFD at the scene scale to the plant scale based on the relative 
 leaf area of the plant.
+
+# Arguments
+
+- `scene_area`: the surface area of the scene (m⁻²) occupied by the plant.
 
 # Inputs 
 
@@ -85,7 +90,9 @@ leaf area of the plant.
 
 - `aPPFD`: absorbed Photosynthetic Photon Flux Density in mol[PAR] plant⁻¹ s⁻¹.
 """
-struct SceneToPlantLightPartitioning <: AbstractLight_InterceptionModel end
+struct SceneToPlantLightPartitioning{T} <: AbstractLight_InterceptionModel
+    scene_area::T
+end
 
 function PlantSimEngine.inputs_(::SceneToPlantLightPartitioning)
     (aPPFD_scene=-Inf, plant_leaf_area=-Inf, scene_leaf_area=-Inf)
@@ -96,7 +103,7 @@ function PlantSimEngine.outputs_(::SceneToPlantLightPartitioning)
 end
 
 # Partitioning between plants:
-function PlantSimEngine.run!(::SceneToPlantLightPartitioning, models, status, meteo, constants, extra=nothing)
-    # aPPFD in mol[PAR] plant⁻¹ d⁻¹, from aPPFD in mol[PAR] m[soil]⁻² d⁻¹ and the plant's relative leaf area:
-    status.aPPFD = status.aPPFD_scene * status.plant_leaf_area / status.scene_leaf_area
+function PlantSimEngine.run!(m::SceneToPlantLightPartitioning, models, status, meteo, constants, extra=nothing)
+    # aPPFD in mol[PAR] plant⁻¹ d⁻¹, from aPPFD in mol[PAR] m[scene]⁻² d⁻¹ and the plant's relative leaf area:
+    status.aPPFD = status.aPPFD_scene * m.scene_area * status.plant_leaf_area / status.scene_leaf_area
 end

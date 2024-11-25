@@ -26,6 +26,22 @@ using XPalm
 
 ## Running the model
 
+### The easiest way of running the model
+
+The easiest way to run the model is to use the template notebook provided by the package. To run the notebook, you need to install the Pluto package first by running `] add Pluto`. Then, you can run the notebook by running the following commands in the Julia REPL:
+
+```julia
+using Pluto, XPalm
+Pluto.run(joinpath(dirname(pathof(XPalm)), "..", "notebooks", "XPalm.jl")
+XPalm.notebook("xpalm_notebook.jl")
+```
+
+This command will create a new Pluto notebook (named "xpalm_notebook.jl") in the current directory, and open it automatically for you.
+
+Once cosed, you can re-open this notebook by running the same command again. If the file already exists, it will be opened automatically.
+
+### Programmatically running the model
+
 The model can be run using the `xpalm` function. The function takes a table as input and returns a table with the same format as result. The `vars` argument is a dictionary that maps the names of the columns in the input table to the names of the variables in the model. The `sink` argument specifies the type of the output table such as a `DataFrame`, or any table implementing the `Tables.jl` interface (*e.g.* [XSLX](https://github.com/felipenoris/XLSX.jl), [SQLite](https://github.com/JuliaDatabases/SQLite.jl), [Arrow](https://github.com/apache/arrow-julia), see here [for all integrations](https://github.com/JuliaData/Tables.jl/blob/main/INTEGRATIONS.md)).
 
 ```julia

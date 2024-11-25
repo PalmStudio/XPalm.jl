@@ -14,8 +14,8 @@ Function to remove leaf biomass and area when the phytomer has an harvested bunc
 
 """
 
-struct RankLeafPruning <: AbstractLeaf_PruningModel
-    rank
+struct RankLeafPruning{T} <: AbstractLeaf_PruningModel
+    rank::T
 end
 
 PlantSimEngine.inputs_(::RankLeafPruning) = (rank_phytomers=[-9999], state_phytomers=["undetermined"], biomass=-Inf, leaf_area=-Inf, leaf_state="undetermined") # Coming from the phytomers
@@ -35,5 +35,6 @@ function PlantSimEngine.run!(m::RankLeafPruning, models, status, meteo, constant
         status.leaf_area = 0.0
         status.litter_leaf = status.biomass
         status.biomass = 0.0
+        status.reserve = 0.0
     end
 end
