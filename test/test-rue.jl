@@ -24,6 +24,9 @@ end
 end
 
 @testset "Beer+RUE" begin
+    leaf_area_plant = 1.0
+    plant_area = 10000.0 / 136.0
+    scene_leaf_area = leaf_area_plant * plant_area
     mtg = Palm().mtg
     m = Dict(
         "Scene" => (
@@ -31,9 +34,9 @@ end
             Status(lai=2.0,),
         ),
         "Plant" => (
-            MultiScaleModel(XPalm.SceneToPlantLightPartitioning(), [:aPPFD_scene => "Scene" => :aPPFD]),
+            MultiScaleModel(XPalm.SceneToPlantLightPartitioning(plant_area), [:aPPFD_scene => "Scene" => :aPPFD]),
             XPalm.ConstantRUEModel(4.8),
-            Status(plant_leaf_area=1.0, scene_leaf_area=1.0,)
+            Status(plant_leaf_area=leaf_area_plant, scene_leaf_area=scene_leaf_area,)
         )
     )
     vars = Dict{String,Any}("Plant" => (:carbon_assimilation,))
