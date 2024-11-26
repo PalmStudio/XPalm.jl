@@ -14,9 +14,10 @@ Compute the current rank of the leaf. Change at every new leaf emmision
 
 struct LeafRankModel <: AbstractLeaf_RankModel end
 
-PlantSimEngine.inputs_(::LeafRankModel) = NamedTuple()
-PlantSimEngine.outputs_(::LeafRankModel) = (rank=[0],)
+PlantSimEngine.inputs_(::LeafRankModel) = (rank_phytomers=[0],)
+PlantSimEngine.outputs_(::LeafRankModel) = (rank=0,)
 
 function PlantSimEngine.run!(::LeafRankModel, models, status, meteo, constants, extra=nothing)
-    status.rank .+= 1 # We increase the rank of all phytomers here (this is supposed to be a multiscale model, with rank coming from the phytomers)
+    i = index(status.node) # index of the leaf
+    status.rank = status.rank_phytomers[i] # the rank of the leaf is the rank of its phytomer
 end

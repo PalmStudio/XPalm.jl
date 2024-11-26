@@ -208,15 +208,15 @@ function model_mapping(p)
                 p.parameters[:potential_area][:inflexion_index],
                 p.parameters[:potential_area][:slope],
             ),
-            XPalm.LeafStateModel(),
+            MultiScaleModel(
+                model=XPalm.LeafStateModel(),
+                mapping=[:rank_phytomers => ["Phytomer" => :rank], :state_phytomers => ["Phytomer" => :state],],
+            ),
             MultiScaleModel(
                 model=XPalm.LeafRankModel(),
-                mapping=[:rank => ["Phytomer"],],
+                mapping=[:rank_phytomers => ["Phytomer" => :rank],],
             ),
-            MultiScaleModel(
-                model=XPalm.RankLeafPruning(p.parameters[:rank_leaf_pruning]),
-                mapping=[:rank_phytomers => ["Phytomer" => :rank], :state_phytomers => ["Phytomer" => :state]],
-            ),
+            XPalm.RankLeafPruning(p.parameters[:rank_leaf_pruning]),
             MultiScaleModel(
                 model=XPalm.InitiationAgeFromPlantAge(),
                 mapping=[:plant_age => "Plant",],
