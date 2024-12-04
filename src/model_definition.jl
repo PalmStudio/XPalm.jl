@@ -79,6 +79,7 @@ function model_mapping(p)
                     :biomass_bunch_harvested_organs => ["Female"] .=> :biomass_bunch_harvested,
                     :biomass_stalk_harvested_organs => ["Female"] .=> :biomass_stalk_harvested,
                     :biomass_fruit_harvested_organs => ["Female"] .=> :biomass_fruit_harvested,
+                    :biomass_bunch_harvested_cum_organs => ["Female"] .=> :biomass_bunch_harvested_cum,
                 ],
             ),
         ),
