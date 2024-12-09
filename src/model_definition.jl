@@ -158,10 +158,9 @@ function model_mapping(p)
                 MultiScaleModel(
                     model=XPalm.RmQ10FixedN(
                         p.parameters[:respiration][:Internode][:Q10],
-                        p.parameters[:respiration][:Internode][:Rm_base],
+                        p.parameters[:respiration][:Internode][:Mr],
                         p.parameters[:respiration][:Internode][:T_ref],
                         p.parameters[:respiration][:Internode][:P_alive],
-                        p.parameters[:nitrogen_content][:Internode],
                     ),
                     mapping=[PreviousTimeStep(:biomass),],
                 ),
@@ -233,10 +232,9 @@ function model_mapping(p)
             MultiScaleModel(
                 model=XPalm.RmQ10FixedN(
                     p.parameters[:respiration][:Leaf][:Q10],
-                    p.parameters[:respiration][:Leaf][:Rm_base],
+                    p.parameters[:respiration][:Leaf][:Mr],
                     p.parameters[:respiration][:Leaf][:T_ref],
                     p.parameters[:respiration][:Leaf][:P_alive],
-                    p.parameters[:nitrogen_content][:Leaf]
                 ),
                 mapping=[PreviousTimeStep(:biomass),],
             ),
@@ -276,10 +274,9 @@ function model_mapping(p)
             MultiScaleModel(
                 model=XPalm.RmQ10FixedN(
                     p.parameters[:respiration][:Male][:Q10],
-                    p.parameters[:respiration][:Male][:Rm_base],
+                    p.parameters[:respiration][:Male][:Mr],
                     p.parameters[:respiration][:Male][:T_ref],
                     p.parameters[:respiration][:Male][:P_alive],
-                    p.parameters[:nitrogen_content][:Male],
                 ),
                 mapping=[PreviousTimeStep(:biomass),],
             ),
@@ -304,10 +301,9 @@ function model_mapping(p)
             MultiScaleModel(
                 model=XPalm.RmQ10FixedN(
                     p.parameters[:respiration][:Female][:Q10],
-                    p.parameters[:respiration][:Female][:Rm_base],
+                    p.parameters[:respiration][:Female][:Mr],
                     p.parameters[:respiration][:Female][:T_ref],
                     p.parameters[:respiration][:Female][:P_alive],
-                    p.parameters[:nitrogen_content][:Female],
                 ),
                 mapping=[PreviousTimeStep(:biomass),],
             ),
@@ -355,6 +351,19 @@ function model_mapping(p)
             ),
             # root_growth=RootGrowthFTSW(ini_root_depth=p.parameters[:ini_root_depth]),
             # soil_water=FTSW{RootSystem}(ini_root_depth=p.parameters[:ini_root_depth]),
+            MultiScaleModel(
+                model=XPalm.RmQ10FixedN(
+                    p.parameters[:respiration][:RootSystem][:Q10],
+                    p.parameters[:respiration][:RootSystem][:Turn],
+                    p.parameters[:respiration][:RootSystem][:Prot],
+                    p.parameters[:respiration][:RootSystem][:N],
+                    p.parameters[:respiration][:RootSystem][:Gi],
+                    p.parameters[:respiration][:RootSystem][:Mx],
+                    p.parameters[:respiration][:RootSystem][:T_ref],
+                    p.parameters[:respiration][:RootSystem][:P_alive],
+                ),
+                mapping=[PreviousTimeStep(:biomass),],
+            ),
         ),
         "Soil" => (
             # light_interception=Beer{Soil}(),
