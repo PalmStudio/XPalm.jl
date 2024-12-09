@@ -22,6 +22,16 @@ mutable struct Palm{T}
 end
 
 function default_parameters()
+
+    # Computation of the average maintenance respiration coefficient for a leaf, based on Dufrene (1990):
+    tot_prop = 7.5 + 13.6 + 9.1
+    rachis_proportion = 9.1 / tot_prop
+    petiole = 13.6 / tot_prop
+    leaflets = 7.5 / tot_prop
+
+    rachis_proportion + petiole + leaflets ≈ 1.0 || error("The sum of the proportions should be equal to 1.0")
+    Mr_leaf = 0.0018 * rachis_proportion + 0.0022 * petiole + 0.0083 * leaflets
+
     p = Dict(
         :scene_area => 10000 / 136.0, # scene area in m-2, area occupied for one plant
         :k => 0.5, # light extinction coefficient
@@ -35,45 +45,49 @@ function default_parameters()
         :RL0 => 5.0, # Root length at emergence (m)
         :respiration => Dict(
             :Internode => Dict(
+                :Mr => 0.005, # Dufrene (1990)
                 :Q10 => 1.7,  # Dufrene et al. (2005)
-                :Rm_base => 0.005, # Dufrene et al. (1990), Oleagineux.
-                :T_ref => 25.0,
+                :T_ref => 100.0, # Dufrene et al. (1990), gives Rm_base commpared to all dry mass (not just living biomass)
                 :P_alive => 0.21, # Dufrene et al. (2005)
             ),
             :Leaf => Dict(
+                :Mr => Mr_leaf, # Or 0.0022 for the rachis, she also gives the proportion of each so we could compute something in-between
                 :Q10 => 2.1,
-                #! :Rm_base => 0.083, # Dufrene et al. (1990), Oleagineux.
-                :Rm_base => 0.0083,
                 :T_ref => 25.0,
                 :P_alive => 0.90,
             ),
             :Female => Dict(
+                :Mr => 0.0022, # Kraalingen et al. 1989, AFM (and 1985 too)
                 :Q10 => 2.1,
-                :Rm_base => 0.0022, # Kraalingen et al. 1989, AFM
                 :T_ref => 25.0,
                 :P_alive => 0.50,
             ),
             :Male => Dict( ## to check 
+                :Mr => 0.0121, # Kraalingen et al. 1989, AFM
                 :Q10 => 2.1,
-                :Rm_base => 0.0022, # Kraalingen et al. 1989, AFM
                 :T_ref => 25.0,
                 :P_alive => 0.50,
             ),
             :RootSystem => Dict(
+                # Dufrene et al. (1990), Oleagineux:
                 :Q10 => 2.1,
-                :Rm_base => 0.0022, # Dufrene et al. (1990), Oleagineux.
+                :Turn => 0.036,
+                :Prot => 6.25,
+                :N => 0.008,
+                :Gi => 0.07,
+                :Mx => 0.005,
                 :T_ref => 25.0,
                 :P_alive => 0.80,
             ),
         ),
-        :nitrogen_content => Dict(
-            :Stem => 0.004,
-            :Internode => 0.004,
-            :Leaf => 0.025,
-            :Female => 0.01,
-            :Male => 0.01,
-            :RootSystem => 0.008,
-        ),
+        # :nitrogen_content => Dict(
+        #     :Stem => 0.004,
+        #     :Internode => 0.004,
+        #     :Leaf => 0.025,
+        #     :Female => 0.01,
+        #     :Male => 0.01,
+        #     :RootSystem => 0.008,
+        # ),
         :ini_root_depth => 100.0,
         :potential_area => Dict(
             :leaf_area_first_leaf => 0.02, # leaf potential area for the first leaf (m2)
