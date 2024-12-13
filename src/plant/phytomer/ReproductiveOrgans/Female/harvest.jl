@@ -1,7 +1,7 @@
 
 struct BunchHarvest <: AbstractHarvestModel end
 
-PlantSimEngine.inputs_(::BunchHarvest) = (state="undetermined", biomass=-Inf, biomass_stalk=-Inf, biomass_fruits=-Inf)
+PlantSimEngine.inputs_(::BunchHarvest) = (state="undetermined", biomass=-Inf, biomass_stalk=-Inf, biomass_fruits=-Inf, fruits_number=-9999)
 PlantSimEngine.outputs_(::BunchHarvest) = (biomass_bunch_harvested=0.0, biomass_stalk_harvested=0.0, biomass_fruit_harvested=0.0, is_harvested=false, biomass_bunch_harvested_cum=0.0)
 
 # Applied at the Female inflorescence scale:
@@ -15,6 +15,7 @@ function PlantSimEngine.run!(m::BunchHarvest, models, st, meteo, constants, extr
         st.biomass_stalk = 0.0
         st.biomass_fruits = 0.0
         st.is_harvested = true
+        st.fruits_number = 0
     else # The biomass harvested should only appear on the day of harvest, otherwise it is 0 (before and after harvest)
         st.biomass_bunch_harvested = 0.0
         st.biomass_stalk_harvested = 0.0
