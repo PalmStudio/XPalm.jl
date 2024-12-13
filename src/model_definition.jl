@@ -16,7 +16,7 @@ Defines the list of sub-models used in XPalm.
 function model_mapping(p)
     Dict(
         "Scene" => (
-            XPalm.ET0_BP(),
+            XPalm.ET0_BP(p.parameters[:latitude], p.parameters[:altitude]),
             DailyDegreeDays(),
             MultiScaleModel(
                 model=XPalm.LAIModel(p.parameters[:scene_area]),
@@ -55,7 +55,7 @@ function model_mapping(p)
                 model=XPalm.SceneToPlantLightPartitioning(p.parameters[:scene_area]),
                 mapping=[:aPPFD_scene => "Scene" => :aPPFD, :scene_leaf_area => "Scene"],
             ),
-            XPalm.ConstantRUEModel(p.parameters[:RUE]),
+            XPalm.RUE_FTSW(p.parameters[:RUE], p.parameters[:threshold_ftsw]),
             XPalm.CarbonOfferRm(),
             MultiScaleModel(
                 model=XPalm.OrgansCarbonAllocationModel(p.parameters[:carbon_demand][:reserves][:cost_reserve_mobilization]),
@@ -368,13 +368,24 @@ function model_mapping(p)
         "Soil" => (
             # light_interception=Beer{Soil}(),
             MultiScaleModel(
-                model=FTSW(ini_root_depth=p.parameters[:ini_root_depth]),
+                model=FTSW(
+                    ini_root_depth=p.parameters[:soil][:ini_root_depth],
+                    H_FC=p.parameters[:soil][:field_capacity],
+                    H_WP_Z1=p.parameters[:soil][:wilting_point_1],
+                    Z1=p.parameters[:soil][:thickness_1],
+                    H_WP_Z2=p.parameters[:soil][:wilting_point_2],
+                    Z2=p.parameters[:soil][:thickness_2],
+                    H_0=p.parameters[:soil][:initial_water_content],
+                    KC=p.parameters[:soil][:Kc],
+                    TRESH_EVAP=p.parameters[:soil][:evaporation_threshold],
+                    TRESH_FTSW_TRANSPI=p.parameters[:soil][:transpiration_threshold],
+                ),
                 mapping=[:ET0 => "Scene", :aPPFD => "Scene"], # Using TEff computed at scene scale
             ),
             #! Root growth should be in the roots part, but it is a hard-coupled model with 
             #! the FSTW, so we need it here for now.
             MultiScaleModel(
-                model=RootGrowthFTSW(ini_root_depth=p.parameters[:ini_root_depth]),
+                model=RootGrowthFTSW(ini_root_depth=p.parameters[:soil][:ini_root_depth]),
                 mapping=[:TEff => "Scene",], # Using TEff computed at scene scale
             ),
         )

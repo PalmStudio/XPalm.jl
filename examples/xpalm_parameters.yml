@@ -12,7 +12,19 @@ carbon_demand:
     respiration_cost_oleosynthesis: 3.2
     respiration_cost: 1.44
 scene_area: 73.52941176470588
-ini_root_depth: 100.0
+latitude: 0.97
+altitude: 50.0
+soil:
+  ini_root_depth: 100.0
+  field_capacity: 0.23
+  wilting_point_1: 0.05
+  thickness_1: 200.0
+  wilting_point_2: 0.05
+  thickness_2: 2000.0
+  initial_water_content: 0.15
+  Kc: 1.0
+  evaporation_threshold: 0.5
+  transpiration_threshold: 0.5
 phyllochron:
   age_palm_maturity: 2920
   threshold_ftsw_stress: 0.3
@@ -84,6 +96,7 @@ potential_dimensions:
   min_radius: 0.002
   slope_radius: 150.0
 RUE: 4.8
+threshold_ftsw: 0.6
 leaflets_biomass_contribution: 0.35
 lma_min: 80.0
 inflo:
