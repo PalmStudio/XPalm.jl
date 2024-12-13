@@ -1,20 +1,15 @@
 """
-    FTSW{O}(
-        ini_root_depth::T
-        H_FC::T
-        H_WP_Z1::T
-        Z1::T
-        H_WP_Z2::T
-        Z2::T
-        H_0::T
-        KC::T
-        TRESH_EVAP::T
-        TRESH_FTSW_TRANSPI::T
-        ini_qty_H2O_Vap::T
-        ini_qty_H2O_C1::T
-        ini_qty_H2O_C1minusVap::T
-        ini_qty_H2O_C2::T
-        ini_qty_H2O_C::T
+    FTSW(;
+        ini_root_depth,
+        H_FC=0.23,
+        H_WP_Z1=0.05,
+        Z1=200.0,
+        H_WP_Z2=0.05,
+        Z2=2000.0,
+        H_0=0.15,
+        KC=1.0,
+        TRESH_EVAP=0.5,
+        TRESH_FTSW_TRANSPI=0.5,
     )
 
 Fraction of Transpirable Soil Water model.
@@ -30,7 +25,7 @@ Note that there is also a method for `FTSW` that takes an organ type as type, *e
 - `H_WP_Z2`: Humidity at wilting point (g[H20] g[Soil]) for the second layer
 - `Z2`: Thickness of the second layer (mm)
 - `H_0`: Initial soil humidity (g[H20] g[Soil])
-- `KC`: cultural coefficient (unitless)
+- `KC`: crop coefficient (unitless)
 - `TRESH_EVAP`: fraction of water content in the evaporative layer below which evaporation is reduced (g[H20] g[Soil])
 - `TRESH_FTSW_TRANSPI`: FTSW treshold below which transpiration is reduced (g[H20] g[Soil])
 """
@@ -65,13 +60,12 @@ function FTSW(;
     KC=1.0,
     TRESH_EVAP=0.5,
     TRESH_FTSW_TRANSPI=0.5,
-    ini_ftsw=0.5
 )
-    vals = promote(ini_root_depth, H_FC, H_WP_Z1, Z1, H_WP_Z2, Z2, H_0, KC, TRESH_EVAP, TRESH_FTSW_TRANSPI, ini_ftsw)
+    vals = promote(ini_root_depth, H_FC, H_WP_Z1, Z1, H_WP_Z2, Z2, H_0, KC, TRESH_EVAP, TRESH_FTSW_TRANSPI)
     FTSW(vals...)
 end
 
-function FTSW(ini_root_depth, H_FC, H_WP_Z1, Z1, H_WP_Z2, Z2, H_0, KC, TRESH_EVAP, TRESH_FTSW_TRANSPI, ini_ftsw)
+function FTSW(ini_root_depth, H_FC, H_WP_Z1, Z1, H_WP_Z2, Z2, H_0, KC, TRESH_EVAP, TRESH_FTSW_TRANSPI)
     soil_depth = Z1 + Z2
     soil = FTSW(ini_root_depth, H_FC, H_WP_Z1, Z1, H_WP_Z2, Z2, H_0, KC, TRESH_EVAP, TRESH_FTSW_TRANSPI, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, soil_depth)
 
@@ -122,7 +116,7 @@ Coefficient of stress.
 - `fillRate`: fill level of the compartment
 - `tresh`: filling treshold of the  compartment below which there is a reduction in the flow
 """
-KS(fillRate, tresh) = fillRate >= tresh ? 1 : 1 / (tresh) * fillRate
+KS(fillRate, tresh) = fillRate >= tresh ? 1.0 : 1.0 / tresh * fillRate
 
 """
     compute_compartment_size(m, root_depth)
@@ -306,7 +300,7 @@ function PlantSimEngine.run!(m::FTSW, models, st, meteo, constants, extra=nothin
     compute_fraction!(st)
 
     # balance after transpiration
-    st.transpiration = Transp_Max * KS(m.TRESH_FTSW_TRANSPI, st.ftsw)
+    st.transpiration = Transp_Max * KS(st.ftsw, m.TRESH_FTSW_TRANSPI)
     # st.transpiration = 0.0
     if st.qty_H2O_C2 > 0.0
         TranspiC2 = min(st.transpiration * (st.qty_H2O_C2 / (st.qty_H2O_C2 + st.qty_H2O_C1minusVap)), st.qty_H2O_C2)
