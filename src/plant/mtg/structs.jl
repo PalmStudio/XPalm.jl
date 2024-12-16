@@ -34,6 +34,8 @@ function default_parameters()
 
     p = Dict(
         :scene_area => 10000 / 136.0, # scene area in m-2, area occupied for one plant
+        :latitude => 0.97,
+        :altitude => 50.0,
         :k => 0.5, # light extinction coefficient
         :RUE => 4.8, # Radiation use efficiency (gC MJ[PAR]-1)
         :threshold_ftsw => 0.6,
