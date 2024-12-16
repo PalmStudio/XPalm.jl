@@ -67,6 +67,8 @@ function PlantSimEngine.run!(m::AbortionRate, models, status, meteo, constants, 
         #e.g. if threshold_abortion is 0.7 we will have more chance to abort
         if random_abort < threshold_abortion
             status.state = "Aborted"
+            # Give the state to the reproductive organ:
+            status.node[1][2][:plantsimengine_status].state = status.state
         end
     end
 
