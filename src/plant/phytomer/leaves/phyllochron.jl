@@ -42,7 +42,6 @@ PlantSimEngine.inputs_(::PhyllochronModel) = (
 
 PlantSimEngine.outputs_(m::PhyllochronModel) = (
     newPhytomerEmergence=0.0,
-    phyllochron=-Inf,
     production_speed=-Inf,
     phylo_slow=-Inf,
 )
