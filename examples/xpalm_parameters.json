@@ -1,38 +1,5 @@
 {
-    "carbon_demand": {
-        "leaf": {
-            "respiration_cost": 1.44
-        },
-        "internode": {
-            "stem_apparent_density": 300000.0,
-            "respiration_cost": 1.44
-        },
-        "reserves": {
-            "cost_reserve_mobilization": 1.667
-        },
-        "male": {
-            "respiration_cost": 1.44
-        },
-        "female": {
-            "respiration_cost_oleosynthesis": 3.2,
-            "respiration_cost": 1.44
-        }
-    },
     "scene_area": 73.52941176470588,
-    "latitude": 0.97,
-    "altitude": 50.0,
-    "soil": {
-        "ini_root_depth": 100.0,
-        "field_capacity": 0.23,
-        "wilting_point_1": 0.05,
-        "thickness_1": 200.0,
-        "wilting_point_2": 0.05,
-        "thickness_2": 2000.0,
-        "initial_water_content": 0.15,
-        "Kc": 1.0,
-        "evaporation_threshold": 0.5,
-        "transpiration_threshold": 0.5
-    },
     "phyllochron": {
         "age_palm_maturity": 2920,
         "threshold_ftsw_stress": 0.3,
@@ -40,6 +7,31 @@
         "production_speed_mature": 0.0074
     },
     "lma_max": 200.0,
+    "RL0": 5.0,
+    "nsc_max": 0.3,
+    "altitude": 50.0,
+    "k": 0.5,
+    "RUE": 4.8,
+    "leaflets_biomass_contribution": 0.35,
+    "male": {
+        "fraction_biomass_first_male": 0.3,
+        "duration_flowering_male": 1800.0,
+        "age_mature_male": 2920.0,
+        "male_max_biomass": 1200.0
+    },
+    "seed_reserve": 100,
+    "soil": {
+        "initial_water_content": 0.15,
+        "evaporation_threshold": 0.5,
+        "ini_root_depth": 100.0,
+        "Kc": 1.0,
+        "thickness_2": 2000.0,
+        "thickness_1": 200.0,
+        "transpiration_threshold": 0.5,
+        "field_capacity": 0.23,
+        "wilting_point_2": 0.05,
+        "wilting_point_1": 0.05
+    },
     "female": {
         "age_mature_female": 2920.0,
         "stalk_max_biomass": 2100.0,
@@ -54,8 +46,6 @@
         "potential_fruit_number_at_maturity": 2000
     },
     "rank_leaf_pruning": 50,
-    "RL0": 5.0,
-    "nsc_max": 0.3,
     "respiration": {
         "Leaf": {
             "Q10": 2.1,
@@ -87,11 +77,12 @@
         },
         "Internode": {
             "Q10": 1.7,
-            "T_ref": 100.0,
+            "T_ref": 25.0,
             "Mr": 0.005,
             "P_alive": 0.21
         }
     },
+    "latitude": 0.97,
     "potential_area": {
         "leaf_area_first_leaf": 0.02,
         "leaf_area_mature_leaf": 12.0,
@@ -99,7 +90,6 @@
         "inflexion_index": 560.0,
         "slope": 100.0
     },
-    "k": 0.5,
     "SRL": 0.4,
     "potential_dimensions": {
         "inflexion_point_radius": 900.0,
@@ -113,8 +103,6 @@
         "min_radius": 0.002,
         "slope_radius": 150.0
     },
-    "RUE": 4.8,
-    "leaflets_biomass_contribution": 0.35,
     "lma_min": 80.0,
     "inflo": {
         "abortion_rate_max": 0.8,
@@ -126,17 +114,30 @@
         "TT_flowering": 6300.0,
         "duration_abortion": 540.0
     },
-    "male": {
-        "fraction_biomass_first_male": 0.3,
-        "duration_flowering_male": 1800.0,
-        "age_mature_male": 2920.0,
-        "male_max_biomass": 1200.0
-    },
     "biomass_dry": {
         "Leaf": 2.0,
         "Stem": 0.1,
         "RootSystem": 12.5,
         "Internode": 2.0
     },
-    "seed_reserve": 100
+    "threshold_ftsw": 0.6,
+    "carbon_demand": {
+        "leaf": {
+            "respiration_cost": 1.44
+        },
+        "internode": {
+            "stem_apparent_density": 300000.0,
+            "respiration_cost": 1.44
+        },
+        "reserves": {
+            "cost_reserve_mobilization": 1.667
+        },
+        "male": {
+            "respiration_cost": 1.44
+        },
+        "female": {
+            "respiration_cost_oleosynthesis": 3.2,
+            "respiration_cost": 1.44
+        }
+    }
 }
