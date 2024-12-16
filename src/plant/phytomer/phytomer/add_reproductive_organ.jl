@@ -19,6 +19,7 @@ end
 PlantSimEngine.inputs_(m::ReproductiveOrganEmission) = (
     graph_node_count=m.graph_node_count_init, # Also modified in the model, but can't be an output, other models have it too
     phytomer_count=m.phytomer_count_init,
+    TT_since_init=-Inf,
 )
 
 PlantSimEngine.outputs_(::ReproductiveOrganEmission) = NamedTuple()
@@ -49,4 +50,7 @@ function PlantSimEngine.run!(m::ReproductiveOrganEmission, models, status, meteo
     # Compute the initiation age of the organ:
     PlantSimEngine.run!(sim_object.models[status.sex].initiation_age, sim_object.models[status.sex], st_repro_organ, meteo, constants, sim_object)
     PlantSimEngine.run!(sim_object.models[status.sex].final_potential_biomass, sim_object.models[status.sex], st_repro_organ, meteo, constants, sim_object)
+    st_repro_organ.TT_since_init = copy(status.TT_since_init)
+    # Note: we initialize TT_since_init to the one from the phytomer, as the parameters for development are given from the phytomer point of view.
+    # This is because the reproductive organ is only instantiated when its sex is determined, but it started to grow at the same time as the phytomer.
 end
