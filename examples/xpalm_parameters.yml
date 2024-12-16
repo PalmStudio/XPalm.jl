@@ -73,7 +73,7 @@ respiration:
     P_alive: 0.8
   Internode:
     Q10: 1.7
-    T_ref: 100.0
+    T_ref: 25.0
     Mr: 0.005
     P_alive: 0.21
 potential_area:
