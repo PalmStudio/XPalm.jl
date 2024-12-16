@@ -7,7 +7,6 @@ Give the phenological state to the phytomer and the inflorescence depending on t
 # Arguments
 
 - `TT_flowering`: thermal time for flowering since phytomer appearence (degree days).
-- `duration_abortion`: duration used for computing abortion rate before flowering (degree days).
 - `duration_flowering_male`: duration between male flowering and senescence (degree days).
 - `duration_fruit_setting`: period of thermal time after flowering that determines the number of flowers in the bunch that become fruits, *i.e.* fruit set (degree days).
 - `TT_harvest`:Thermal time since phytomer appearance when the bunch is harvested (degree days)
@@ -31,7 +30,6 @@ Give the phenological state to the phytomer and the inflorescence depending on t
 
 struct InfloStateModel{T} <: AbstractStateModel
     TT_flowering::T
-    duration_abortion::T
     duration_flowering_male::T
     duration_fruit_setting::T
     TT_harvest::T
@@ -41,12 +39,12 @@ struct InfloStateModel{T} <: AbstractStateModel
 end
 
 function InfloStateModel(;
-    TT_flowering=6300.0, duration_abortion=540.0, duration_flowering_male=1800.0, duration_fruit_setting=405.0, TT_harvest=12150.0, fraction_period_oleosynthesis=0.8,
+    TT_flowering=6300.0, duration_flowering_male=1800.0, duration_fruit_setting=405.0, TT_harvest=12150.0, fraction_period_oleosynthesis=0.8,
     TT_senescence_male=TT_flowering + duration_flowering_male
 )
     duration_dev_bunch = TT_harvest - (TT_flowering + duration_fruit_setting)
     TT_ini_oleo = TT_flowering + duration_fruit_setting + (1 - fraction_period_oleosynthesis) * duration_dev_bunch
-    InfloStateModel(TT_flowering, duration_abortion, duration_flowering_male, duration_fruit_setting, TT_harvest, fraction_period_oleosynthesis, TT_ini_oleo, TT_senescence_male)
+    InfloStateModel(TT_flowering, duration_flowering_male, duration_fruit_setting, TT_harvest, fraction_period_oleosynthesis, TT_ini_oleo, TT_senescence_male)
 end
 
 PlantSimEngine.inputs_(::InfloStateModel) = (TT_since_init=-Inf, sex="undetermined")

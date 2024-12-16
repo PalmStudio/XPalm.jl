@@ -134,7 +134,6 @@ function model_mapping(p)
             MultiScaleModel(
                 model=XPalm.InfloStateModel(
                     TT_flowering=p.parameters[:inflo][:TT_flowering],
-                    duration_abortion=p.parameters[:inflo][:duration_abortion],
                     duration_flowering_male=p.parameters[:male][:duration_flowering_male],
                     duration_fruit_setting=p.parameters[:female][:duration_fruit_setting],
                     TT_harvest=p.parameters[:female][:TT_harvest],
