@@ -36,6 +36,7 @@ function default_parameters()
         :scene_area => 10000 / 136.0, # scene area in m-2, area occupied for one plant
         :k => 0.5, # light extinction coefficient
         :RUE => 4.8, # Radiation use efficiency (gC MJ[PAR]-1)
+        :threshold_ftsw => 0.6,
         :SRL => 0.4, # Specific Root Length (m g-1)
         :lma_min => 80.0, # min leaf mass area (g m-2)
         :lma_max => 200.0, # max  leaf mass area (g m-2)
@@ -47,7 +48,7 @@ function default_parameters()
             :Internode => Dict(
                 :Mr => 0.005, # Dufrene (1990)
                 :Q10 => 1.7,  # Dufrene et al. (2005)
-                :T_ref => 100.0, # Dufrene et al. (1990), gives Rm_base commpared to all dry mass (not just living biomass)
+                :T_ref => 25.0, # Dufrene et al. (1990), gives Rm_base commpared to all dry mass (not just living biomass)
                 :P_alive => 0.21, # Dufrene et al. (2005)
             ),
             :Leaf => Dict(
@@ -88,7 +89,18 @@ function default_parameters()
         #     :Male => 0.01,
         #     :RootSystem => 0.008,
         # ),
-        :ini_root_depth => 100.0,
+        :soil => Dict(
+            :ini_root_depth => 100.0,
+            :field_capacity => 0.23,
+            :wilting_point_1 => 0.05,
+            :thickness_1 => 200.0,
+            :wilting_point_2 => 0.05,
+            :thickness_2 => 2000.0,
+            :initial_water_content => 0.15,
+            :Kc => 1.0,
+            :evaporation_threshold => 0.5,
+            :transpiration_threshold => 0.5,
+        ),
         :potential_area => Dict(
             :leaf_area_first_leaf => 0.02, # leaf potential area for the first leaf (m2)
             :leaf_area_mature_leaf => 12.0, # leaf potential area for a mature leaf (m2)
