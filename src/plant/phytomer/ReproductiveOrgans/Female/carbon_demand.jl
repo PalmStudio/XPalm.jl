@@ -61,7 +61,7 @@ function FemaleCarbonDemandModel(
     duration_dev_bunch = TT_harvest - (TT_flowering + duration_fruit_setting)
     duration_dev_oleo = fraction_period_oleosynthesis * duration_dev_bunch
     TT_ini_oleo = TT_flowering + duration_fruit_setting + (1.0 - fraction_period_oleosynthesis) * duration_dev_bunch
-    duration_dev_stalk = fraction_period_stalk * TT_harvest
+    duration_dev_stalk = fraction_period_stalk * (TT_harvest - TT_flowering)
 
     FemaleCarbonDemandModel(
         respiration_cost,
@@ -97,7 +97,7 @@ function PlantSimEngine.run!(m::FemaleCarbonDemandModel, models, status, meteo, 
     end
 
     # If there are no fruits, there is no carbon demand
-    if status.fruits_number != -9999
+    if status.fruits_number > 0
         # As soon as we have fruits:
         if status.TT_since_init >= m.TT_harvest - m.duration_dev_bunch
             status.carbon_demand_non_oil = status.fruits_number * status.final_potential_fruit_biomass * (1.0 - m.oil_content) * m.respiration_cost * (status.TEff / m.duration_dev_bunch)
@@ -112,7 +112,7 @@ function PlantSimEngine.run!(m::FemaleCarbonDemandModel, models, status, meteo, 
     end
 
     # Carbon demand for the stalk:
-    if status.TT_since_init >= m.duration_dev_stalk
+    if status.TT_since_init >= m.TT_flowering + m.duration_dev_stalk
         status.carbon_demand_stalk = 0.0
     else
         status.carbon_demand_stalk = (status.final_potential_biomass_stalk * (status.TEff / m.duration_dev_stalk)) * m.respiration_cost
