@@ -37,7 +37,7 @@ function AbortionRate(; TT_flowering=6300.0, duration_abortion=540.0, abortion_r
 end
 
 PlantSimEngine.inputs_(::AbortionRate) = (TT_since_init=-Inf, carbon_offer_plant=-Inf, carbon_demand_plant=-Inf)
-PlantSimEngine.outputs_(::AbortionRate) = (state="undetermined", carbon_demand_abortion=0.0, carbon_offer_abortion=0.0,)
+PlantSimEngine.outputs_(::AbortionRate) = (state="undetermined", carbon_demand_abortion=0.0, carbon_offer_abortion=0.0, abortion_calculation_flag=false)
 
 function PlantSimEngine.run!(m::AbortionRate, models, status, meteo, constants, extra=nothing)
     status.state == "Aborted" && return # if abortion is determined, no need to compute it again
@@ -49,7 +49,7 @@ function PlantSimEngine.run!(m::AbortionRate, models, status, meteo, constants, 
     end
 
     # Here we have to determine if there is abortion or not:
-    if status.TT_since_init > m.TT_flowering
+    if status.TT_since_init > m.TT_flowering && status.abortion_calculation_flag == false
         trophic_status_abortion = status.carbon_offer_abortion / status.carbon_demand_abortion
 
         # draws a number between 0 and 1 in a uniform distribution:
@@ -70,6 +70,8 @@ function PlantSimEngine.run!(m::AbortionRate, models, status, meteo, constants, 
             # Give the state to the reproductive organ:
             status.node[1][2][:plantsimengine_status].state = status.state
         end
+
+        status.abortion_calculation_flag = true  # Update the flag, so that we do not compute it again
     end
 
     return nothing
