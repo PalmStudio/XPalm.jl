@@ -38,6 +38,7 @@ include("plant/plant_age/palm_age_increment.jl")
 include("plant/plant_age/initiation_age.jl")
 include("soil/FTSW.jl")
 include("soil/FTSW_BP.jl")
+include("soil/FTSW_CPP.jl")
 include("plant/roots/root_growth.jl")
 
 include("plant/mtg_node_count.jl")
