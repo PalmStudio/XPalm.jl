@@ -10,8 +10,22 @@
     m = ModelList(
         XPalm.RootGrowthFTSW(ini_root_depth=ini_root_depth),
         XPalm.FTSW(ini_root_depth=ini_root_depth),
-        status=(NamedTuple(init)..., TEff=10.0)
+        status=(aPPFD=1.0, ET0=2.5, TEff=10.0)
     )
     run!(m, meteo[1, :], executor=SequentialEx())
-    @test m[:ftsw][1] ≈ 0.5604523014825595
+    @test m[:ftsw][1] ≈ 0.5659117396283625
+end
+
+
+@testset "FTSW_BP" begin
+    ini_root_depth = 300.0
+
+    mod = ModelList(
+        XPalm.RootGrowthFTSW(ini_root_depth=ini_root_depth),
+        XPalm.FTSW_BP(ini_root_depth=ini_root_depth),
+        status=(aPPFD=1.0, ET0=2.5, TEff=10.0)
+    )
+    run!(mod, meteo[1, :], executor=SequentialEx())
+
+    @test mod[:ftsw][1] ≈ 0.5660684808743338
 end
