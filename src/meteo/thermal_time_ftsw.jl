@@ -96,7 +96,7 @@ function PlantSimEngine.run!(m::DegreeDaysFTSW, models, st, meteo, constants, ex
         end
     end
 
-    expansion_stress = st.ftsw > m.threshold_ftsw_stress ? 1 : st.ftsw / m.threshold_ftsw_stress
+    expansion_stress = st.ftsw > m.threshold_ftsw_stress ? 1.0 : st.ftsw / m.threshold_ftsw_stress
     st.TEff = st.TEff * expansion_stress
     # We apply an expansion stress to the thermal time based on FTSW:
     st.TT_since_init += st.TEff
