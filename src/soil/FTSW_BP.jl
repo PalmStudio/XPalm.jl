@@ -18,33 +18,35 @@ Fraction of Transpirable Soil Water model.
 - `TRESH_EVAP`: fraction of water content in the evaporative layer below which evaporation is reduced (g[H20] g[Soil])
 - `TRESH_FTSW_TRANSPI`: FTSW treshold below which transpiration is reduced (g[H20] g[Soil])
 """
-struct FTSW_BP <: AbstractFTSWModel
-    ini_root_depth::Float64   # root depth at initialization (mm)
-    H_FC::Float64
-    H_WP_Z1::Float64
-    Z1::Float64
-    H_WP_Z2::Float64
-    Z2::Float64
-    H_0::Float64
-    KC::Float64
-    TRESH_EVAP::Float64
-    TRESH_FTSW_TRANSPI::Float64
-    ini_qty_H2O_Vap::Float64  # quantity of water in evaporative compartment
-    ini_qty_H2O_C1::Float64   # quantity of water in C1 compartment
-    ini_qty_H2O_C1minusVap::Float64
-    ini_qty_H2O_C2::Float64   # quantity of water in C2 compartment
-    ini_qty_H2O_C::Float64    # quantity of water in C compartment
-    ini_qty_H2O_Vap_Roots::Float64
-    ini_qty_H2O_C1_Roots::Float64
-    ini_qty_H2O_C1minusVap_Roots::Float64
-    ini_qty_H2O_C2_Roots::Float64
-    ini_qty_H2O_C_Roots::Float64
+struct FTSW_BP{T} <: AbstractFTSWModel
+    ini_root_depth::T   # root depth at initialization (mm)
+    H_FC::T
+    H_WP_Z1::T
+    Z1::T
+    H_WP_Z2::T
+    Z2::T
+    H_0::T
+    KC::T
+    TRESH_EVAP::T
+    TRESH_FTSW_TRANSPI::T
+    ini_qty_H2O_Vap::T  # quantity of water in evaporative compartment
+    ini_qty_H2O_C1::T   # quantity of water in C1 compartment
+    ini_qty_H2O_C1minusVap::T
+    ini_qty_H2O_C2::T   # quantity of water in C2 compartment
+    ini_qty_H2O_C::T    # quantity of water in C compartment
+    ini_qty_H2O_Vap_Roots::T
+    ini_qty_H2O_C1_Roots::T
+    ini_qty_H2O_C1minusVap_Roots::T
+    ini_qty_H2O_C2_Roots::T
+    ini_qty_H2O_C_Roots::T
+    ini_ftsw::T
+    soil_depth::T
 end
 
 PlantSimEngine.inputs_(::FTSW_BP) = (
     root_depth=0.0,
     ET0=-Inf, #potential evapotranspiration
-    tree_ei=-Inf, # light interception efficiency (ei=1-exp(-kLAI))
+    aPPFD=-Inf,
 )
 
 function FTSW_BP(;
@@ -63,32 +65,33 @@ function FTSW_BP(;
 end
 
 function FTSW_BP(ini_root_depth, H_FC, H_WP_Z1, Z1, H_WP_Z2, Z2, H_0, KC, TRESH_EVAP, TRESH_FTSW_TRANSPI)
-    soil = FTSW_BP(ini_root_depth, H_FC, H_WP_Z1, Z1, H_WP_Z2, Z2, H_0, KC, TRESH_EVAP, TRESH_FTSW_TRANSPI, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0)
+    soil_depth = Z1 + Z2
+    soil = FTSW_BP(ini_root_depth, H_FC, H_WP_Z1, Z1, H_WP_Z2, Z2, H_0, KC, TRESH_EVAP, TRESH_FTSW_TRANSPI, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0, 1.0, soil_depth)
     init = soil_init_default(soil)
     FTSW_BP(
         ini_root_depth, H_FC, H_WP_Z1, Z1, H_WP_Z2, Z2, H_0, KC, TRESH_EVAP, TRESH_FTSW_TRANSPI,
-        init.qty_H2O_Vap, init.qty_H2O_C1, init.qty_H2O_C1minusVap, init.qty_H2O_C2, init.qty_H2O_C, init.qty_H2O_Vap_Roots, init.qty_H2O_C1_Roots, init.qty_H2O_C1minusVap_Roots, init.qty_H2O_C2_Roots, init.qty_H2O_C_Roots
+        init.qty_H2O_Vap, init.qty_H2O_C1, init.qty_H2O_C1minusVap, init.qty_H2O_C2, init.qty_H2O_C, init.qty_H2O_Vap_Roots, init.qty_H2O_C1_Roots, init.qty_H2O_C1minusVap_Roots, init.qty_H2O_C2_Roots, init.qty_H2O_C_Roots,
+        init.ftsw, soil_depth
     )
 end
 
-PlantSimEngine.outputs_(::FTSW_BP) = (
-    qty_H2O_Vap=-Inf,  # quantity of water in evaporative compartment
-    qty_H2O_Vap_Roots=-Inf,
-    qty_H2O_C1=-Inf,   # quantity of water in C1 compartment
-    qty_H2O_C1_Roots=-Inf,
-    qty_H2O_C1minusVap=-Inf,
-    qty_H2O_C1minusVap_Roots=-Inf,
-    qty_H2O_C2=-Inf,   # quantity of water in C2 compartment
-    qty_H2O_C2_Roots=-Inf,
-    qty_H2O_C=-Inf,    # quantity of water in C compartment
-    qty_H2O_C_Roots=-Inf,
+PlantSimEngine.outputs_(m::FTSW_BP) = (
+    qty_H2O_Vap=m.ini_qty_H2O_Vap,  # quantity of water in evaporative compartment
+    qty_H2O_Vap_Roots=m.ini_qty_H2O_Vap_Roots,
+    qty_H2O_C1=m.ini_qty_H2O_C1,   # quantity of water in C1 compartment
+    qty_H2O_C1_Roots=m.ini_qty_H2O_C1_Roots,
+    qty_H2O_C1minusVap=m.ini_qty_H2O_C1minusVap,
+    qty_H2O_C1minusVap_Roots=m.ini_qty_H2O_C1minusVap_Roots,
+    qty_H2O_C2=m.ini_qty_H2O_C2,   # quantity of water in C2 compartment
+    qty_H2O_C2_Roots=m.ini_qty_H2O_C2_Roots,
+    qty_H2O_C=m.ini_qty_H2O_C,    # quantity of water in C compartment
+    qty_H2O_C_Roots=m.ini_qty_H2O_C_Roots,
     FractionC1=-Inf,
     FractionC1Roots=-Inf,
     FractionC2=-Inf,
     FractionC2Roots=-Inf,
     FractionC1minusVapRoots=-Inf,
     FractionC=-Inf,
-    FractionCRoots=-Inf,
     SizeC1=-Inf,
     roots_SizeC1=-Inf,
     SizeC2=-Inf,
@@ -99,10 +102,15 @@ PlantSimEngine.outputs_(::FTSW_BP) = (
     roots_SizeVap=-Inf,
     SizeC1minusVap=-Inf,
     roots_SizeC1minusVap=-Inf,
-    ftsw=-Inf,
+    ftsw=m.ini_ftsw,
     rain_remain=-Inf,
     rain_effective=-Inf,
-    runoff=-Inf,)
+    runoff=-Inf,
+    soil_depth=m.soil_depth, # This variable is just initialised and keep its value until the end
+    transpiration=-Inf,
+)
+
+PlantSimEngine.dep(::FTSW_BP) = (root_growth=AbstractRoot_GrowthModel,)
 
 """
     KS_bp(fillRate, tresh)
@@ -210,7 +218,11 @@ function soil_init_default(m::FTSW_BP)
 
     status.qty_H2O_C1_Roots = max(0.0, status.qty_H2O_C1 * status.roots_SizeC1 / status.SizeC1)
     status.qty_H2O_Vap_Roots = max(0.0, status.qty_H2O_Vap * status.roots_SizeVap / status.SizeVap)
-    status.qty_H2O_C2_Roots = max(0.0, status.qty_H2O_C2 * status.roots_SizeC2 / status.SizeC2)
+    if status.SizeC2 > 0.0
+        status.qty_H2O_C2_Roots = status.qty_H2O_C2 * status.roots_SizeC2 / status.SizeC2
+    else
+        status.qty_H2O_C2_Roots = 0.0
+    end
     status.qty_H2O_C_Roots = max(0.0, status.qty_H2O_C * status.roots_SizeC / status.SizeC)
     status.qty_H2O_C1minusVap_Roots = max(0.0, status.qty_H2O_C1minusVap * status.roots_SizeC1minusVap / status.SizeC1minusVap)
 
@@ -220,11 +232,17 @@ end
 
 function PlantSimEngine.run!(m::FTSW_BP, models, st, meteo, constants, extra=nothing)
     rain = meteo.Precipitations
+    st.soil_depth = m.soil_depth
+
+    # Run the root growth model:
+    PlantSimEngine.run!(models.root_growth, models, st, meteo, constants, extra)
 
     compute_compartment_size(m, st)
 
-    EvapMax = (1 - st.tree_ei) * st.ET0 * m.KC
-    Transp_Max = st.tree_ei * st.ET0 * m.KC
+    tree_ei = 1.0 - (meteo.Ri_PAR_f * constants.J_to_umol - st.aPPFD) / (meteo.Ri_PAR_f * constants.J_to_umol)
+
+    EvapMax = (1.0 - tree_ei) * st.ET0 * m.KC
+    Transp_Max = tree_ei * st.ET0 * m.KC
 
     # estim effective rain (runoff)
     if (0.916 * rain - 0.589) < 0
@@ -327,14 +345,14 @@ function PlantSimEngine.run!(m::FTSW_BP, models, st, meteo, constants, extra=not
 
     # compute water balance  roots after Transpiration
 
-    Transpi = Transp_Max * KS_bp(m.TRESH_FTSW_TRANSPI, st.ftsw)
+    st.transpiration = Transp_Max * KS_bp(m.TRESH_FTSW_TRANSPI, st.ftsw)
     if (st.qty_H2O_C2_Roots > 0)
-        TranspiC2 = min(Transpi * (st.qty_H2O_C2_Roots / (st.qty_H2O_C2_Roots + st.qty_H2O_C1minusVap_Roots)), st.qty_H2O_C2_Roots)
+        TranspiC2 = min(st.transpiration * (st.qty_H2O_C2_Roots / (st.qty_H2O_C2_Roots + st.qty_H2O_C1minusVap_Roots)), st.qty_H2O_C2_Roots)
     else
         TranspiC2 = 0
     end
     if (st.qty_H2O_C1minusVap_Roots > 0)
-        TranspiC1moinsVap = min(Transpi * (st.qty_H2O_C1minusVap_Roots / (st.qty_H2O_C2_Roots + st.qty_H2O_C1minusVap_Roots)), st.qty_H2O_C1minusVap_Roots)
+        TranspiC1moinsVap = min(st.transpiration * (st.qty_H2O_C1minusVap_Roots / (st.qty_H2O_C2_Roots + st.qty_H2O_C1minusVap_Roots)), st.qty_H2O_C1minusVap_Roots)
     else
         TranspiC1moinsVap = 0
     end
