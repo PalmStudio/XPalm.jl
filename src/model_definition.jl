@@ -20,7 +20,7 @@ function model_mapping(p)
             DailyDegreeDays(),
             MultiScaleModel(
                 model=XPalm.LAIModel(p.parameters[:scene_area]),
-                mapping=[:leaf_area => ["Leaf"],],
+                mapping=[:leaf_areas => ["Plant" => :leaf_area],],
             ),
             XPalm.Beer(k=p.parameters[:k]),
             XPalm.GraphNodeCount(length(p.mtg)), # to have the `graph_node_count` variable initialised in the status
@@ -41,7 +41,7 @@ function model_mapping(p)
             ),
             MultiScaleModel(
                 model=XPalm.PlantLeafAreaModel(),
-                mapping=[:leaf_area => ["Leaf"],],
+                mapping=[:leaf_area_leaves => ["Leaf" => :leaf_area],],
             ),
             MultiScaleModel(
                 model=XPalm.PhytomerEmission(p.mtg),
@@ -53,7 +53,7 @@ function model_mapping(p)
             ),
             MultiScaleModel(
                 model=XPalm.SceneToPlantLightPartitioning(p.parameters[:scene_area]),
-                mapping=[:aPPFD_scene => "Scene" => :aPPFD, :scene_leaf_area => "Scene"],
+                mapping=[:aPPFD_scene => "Scene" => :aPPFD, :scene_leaf_area => "Scene" => :leaf_area],
             ),
             XPalm.RUE_FTSW(p.parameters[:RUE], p.parameters[:threshold_ftsw]),
             XPalm.CarbonOfferRm(),

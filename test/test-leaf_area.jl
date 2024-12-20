@@ -51,7 +51,7 @@ end
             MultiScaleModel(XPalm.LAIModel(30.0), [:leaf_area => "Leaf"]),
         )
     )
-    vars = Dict{String,Any}("Scene" => (:lai, :scene_leaf_area), "Leaf" => (:leaf_area,))
+    vars = Dict{String,Any}("Scene" => (:lai, :leaf_area), "Leaf" => (:leaf_area,))
     out = run!(mtg, mapping, meteo, outputs=vars, executor=SequentialEx())
     df = filter(row -> row.organ == "Scene", outputs(out, DataFrame))
     @test df.lai[1] ≈ 0.0010127314814814814

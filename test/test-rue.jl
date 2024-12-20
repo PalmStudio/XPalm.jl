@@ -36,7 +36,7 @@ end
         "Plant" => (
             MultiScaleModel(XPalm.SceneToPlantLightPartitioning(plant_area), [:aPPFD_scene => "Scene" => :aPPFD]),
             XPalm.ConstantRUEModel(4.8),
-            Status(plant_leaf_area=leaf_area_plant, scene_leaf_area=scene_leaf_area,)
+            Status(leaf_area=leaf_area_plant, scene_leaf_area=scene_leaf_area,)
         )
     )
     vars = Dict{String,Any}("Plant" => (:carbon_assimilation,))

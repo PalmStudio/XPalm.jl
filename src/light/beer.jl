@@ -83,7 +83,7 @@ leaf area of the plant.
 # Inputs 
 
 - `aPPFD`: absorbed Photosynthetic Photon Flux Density in mol[PAR] m[soil]⁻² d⁻¹ (scene scale).
-- `plant_leaf_area`: the target plant leaf area
+- `leaf_area`: the target plant leaf area
 - `scene_leaf_area`: the total scene leaf area
 
 # Outputs
@@ -95,7 +95,7 @@ struct SceneToPlantLightPartitioning{T} <: AbstractLight_InterceptionModel
 end
 
 function PlantSimEngine.inputs_(::SceneToPlantLightPartitioning)
-    (aPPFD_scene=-Inf, plant_leaf_area=-Inf, scene_leaf_area=-Inf)
+    (aPPFD_scene=-Inf, leaf_area=-Inf, scene_leaf_area=-Inf)
 end
 
 function PlantSimEngine.outputs_(::SceneToPlantLightPartitioning)
@@ -105,5 +105,5 @@ end
 # Partitioning between plants:
 function PlantSimEngine.run!(m::SceneToPlantLightPartitioning, models, status, meteo, constants, extra=nothing)
     # aPPFD in mol[PAR] plant⁻¹ d⁻¹, from aPPFD in mol[PAR] m[scene]⁻² d⁻¹ and the plant's relative leaf area:
-    status.aPPFD = status.aPPFD_scene * m.scene_area * status.plant_leaf_area / status.scene_leaf_area
+    status.aPPFD = status.aPPFD_scene * m.scene_area * status.leaf_area / status.scene_leaf_area
 end
