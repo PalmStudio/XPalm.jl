@@ -211,13 +211,12 @@ function model_mapping(p)
             ),
             MultiScaleModel(
                 model=LeafStateModel(),
-                mapping=[:rank_phytomers => ["Phytomer" => :rank], :state_phytomers => ["Phytomer" => :state],],
+                mapping=[:rank_leaves => ["Leaf" => :rank], :state_phytomers => ["Phytomer" => :state],],
             ),
             MultiScaleModel(
-                model=LeafRankModel(),
-                mapping=[:rank_phytomers => ["Phytomer" => :rank],],
+                model=RankLeafPruning(p.parameters[:rank_leaf_pruning]),
+                mapping=[:state_phytomers => ["Phytomer" => :state],],
             ),
-            RankLeafPruning(p.parameters[:rank_leaf_pruning]),
             MultiScaleModel(
                 model=InitiationAgeFromPlantAge(),
                 mapping=[:plant_age => "Plant",],
