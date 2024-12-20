@@ -14,8 +14,8 @@ m = Weather(meteo)
 
 out_vars = Dict{String,Any}(
     "Scene" => (:lai,),
-    # "Scene" => (:lai, :scene_leaf_area, :aPPFD, :TEff),
-    # "Plant" => (:plant_age, :ftsw, :newPhytomerEmergence, :aPPFD, :plant_leaf_area, :carbon_assimilation, :carbon_offer_after_rm, :Rm, :TT_since_init, :TEff, :phytomer_count, :newPhytomerEmergence),
+    # "Scene" => (:lai, :leaf_area, :aPPFD, :TEff),
+    # "Plant" => (:plant_age, :ftsw, :newPhytomerEmergence, :aPPFD, :leaf_area, :carbon_assimilation, :carbon_offer_after_rm, :Rm, :TT_since_init, :TEff, :phytomer_count, :newPhytomerEmergence),
     # "Leaf" => (:Rm, :potential_area, :TT_since_init, :TEff, :A, :carbon_demand, :carbon_allocation,),
     # "Leaf" => (:Rm, :potential_area),
     # "Internode" => (:Rm, :carbon_allocation, :carbon_demand),
@@ -52,7 +52,7 @@ df_leaf = filter(row -> row.organ == "Leaf", df)
 
 lines(df_scene.lai)
 lines(df_plant.phytomer_count)
-lines(df_scene.scene_leaf_area)
-lines(df_scene.scene_leaf_area)
+lines(df_scene.leaf_area)
+lines(df_scene.leaf_area)
 lines(df_scene.TEff)
 lines(df_plant.carbon_assimilation)

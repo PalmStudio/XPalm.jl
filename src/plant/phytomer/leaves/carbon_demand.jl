@@ -32,10 +32,9 @@ PlantSimEngine.inputs_(::LeafCarbonDemandModelPotentialArea) = (increment_potent
 PlantSimEngine.outputs_(::LeafCarbonDemandModelPotentialArea) = (carbon_demand=0.0,)
 
 function PlantSimEngine.run!(m::LeafCarbonDemandModelPotentialArea, models, status, meteo, constants, extra=nothing)
-    # Get the index of the leaf in the organ list (we added the organ index in the organ list as the index of the MTG):
-    if status.state == "Harvested" #! No need for that no? `increment_potential_area` should be 0.0 when the leaf is mature
+    if status.state == "Pruned" #! No need for that no? `increment_potential_area` should be 0.0 when the leaf is mature
         status.carbon_demand = zero(eltype(status.carbon_demand))
-        return # if it is harvested, no carbon demand
+        return nothing
     else
         status.carbon_demand = status.increment_potential_area * (m.lma_min * m.respiration_cost) / m.leaflets_biomass_contribution
     end

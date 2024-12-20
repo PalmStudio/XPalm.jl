@@ -113,7 +113,7 @@ function multiscale_variables_display(vars, Child, input_function, default)
     for (key, values) in vars
         variable_names = sort(collect(values), by=x -> string(x) |> lowercase)
         length(variable_names) == 0 && continue
-        Dict("Soil" => (:ftsw,), "Scene" => (:lai,), "Plant" => (:plant_leaf_area, :Rm, :aPPFD, :biomass_bunch_harvested_organs), "Leaf" => (:leaf_area,))
+        Dict("Soil" => (:ftsw,), "Scene" => (:lai,), "Plant" => (:leaf_area, :Rm, :aPPFD, :biomass_bunch_harvested_organs), "Leaf" => (:leaf_area,))
         default_at_scale = [get(default, key, ())...]
 
         push!(var_body,
@@ -145,7 +145,7 @@ end
 # ╔═╡ bde1793e-983a-47e4-94a6-fbbe53fe72d6
 @bind variables variables_display(
     Dict(k => keys(merge(v...)) for (k, v) in XPalm.PlantSimEngine.variables(XPalm.model_mapping(XPalm.Palm()))),
-    default=Dict("Soil" => (:ftsw,), "Scene" => (:lai,), "Plant" => (:plant_leaf_area, :Rm, :aPPFD, :biomass_bunch_harvested), "Leaf" => (:leaf_area,))
+    default=Dict("Soil" => (:ftsw,), "Scene" => (:lai,), "Plant" => (:leaf_area, :Rm, :aPPFD, :biomass_bunch_harvested), "Leaf" => (:leaf_area,))
 )
 
 # ╔═╡ 9bdd9351-c883-492f-adcc-062537fb9ecc

@@ -28,7 +28,7 @@ struct DegreeDaysFTSW{T} <: AbstractThermal_TimeModel
 end
 
 
-PlantSimEngine.inputs_(::DegreeDaysFTSW) = (ftsw=-Inf,)
+PlantSimEngine.inputs_(::DegreeDaysFTSW) = (ftsw=0.3,)
 
 PlantSimEngine.outputs_(::DegreeDaysFTSW) = (
     TEff=-Inf,

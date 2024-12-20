@@ -10,7 +10,7 @@ PlantSimEngine.inputs_(::PotentialReserveLeaf) = (leaf_area=-Inf, reserve=0.0,)
 PlantSimEngine.outputs_(::PotentialReserveLeaf) = (potential_reserve=0.0,)
 
 function PlantSimEngine.run!(m::PotentialReserveLeaf, models, st, meteo, constants, extra)
-    if st.leaf_state == "Opened"
+    if st.state == "Opened"
         st.potential_reserve = (m.lma_max - m.lma_min) * st.leaf_area / m.leaflets_biomass_contribution - st.reserve
     else
         st.potential_reserve = 0.0
