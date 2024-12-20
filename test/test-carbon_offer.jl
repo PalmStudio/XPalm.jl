@@ -1,6 +1,6 @@
 @testset "CarbonOfferRm" begin
     m = ModelList(
-        biomass=XPalm.CarbonOfferRm(),
+        biomass=CarbonOfferRm(),
         status=(carbon_assimilation=10.0, Rm=2.0)
     )
     run!(m, executor=SequentialEx())
@@ -9,7 +9,7 @@ end
 
 @testset "CarbonOfferPhotosynthesis" begin
     m = ModelList(
-        XPalm.CarbonOfferPhotosynthesis(),
+        CarbonOfferPhotosynthesis(),
         status=(carbon_assimilation=10.0,)
     )
     run!(m, executor=SequentialEx())

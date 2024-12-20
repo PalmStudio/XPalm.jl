@@ -1,7 +1,7 @@
 
 aPPFD_radiation = 60.0
 @testset "RUE" begin
-    m = ModelList(carbon_assimilation=XPalm.ConstantRUEModel(4.8), status=(aPPFD=aPPFD_radiation,))
+    m = ModelList(carbon_assimilation=ConstantRUEModel(4.8), status=(aPPFD=aPPFD_radiation,))
     run!(m, meteo[1, :], executor=SequentialEx())
 
     @test m[:carbon_assimilation][1] ≈ aPPFD_radiation / Constants().J_to_umol * 4.8
@@ -11,7 +11,7 @@ end
     mtg = Palm().mtg
     m = Dict(
         "Plant" => (
-            XPalm.ConstantRUEModel(4.8),
+            ConstantRUEModel(4.8),
             Status(aPPFD=aPPFD_radiation,) # aPPFD in mol[PAR] m[soil]⁻² d⁻¹
         )
     )
@@ -30,12 +30,12 @@ end
     mtg = Palm().mtg
     m = Dict(
         "Scene" => (
-            XPalm.Beer(0.5),
+            Beer(0.5),
             Status(lai=2.0,),
         ),
         "Plant" => (
-            MultiScaleModel(XPalm.SceneToPlantLightPartitioning(plant_area), [:aPPFD_scene => "Scene" => :aPPFD]),
-            XPalm.ConstantRUEModel(4.8),
+            MultiScaleModel(SceneToPlantLightPartitioning(plant_area), [:aPPFD_scene => "Scene" => :aPPFD]),
+            ConstantRUEModel(4.8),
             Status(leaf_area=leaf_area_plant, scene_leaf_area=scene_leaf_area,)
         )
     )

@@ -1,6 +1,6 @@
 @testset "InternodeBiomass" begin
     m = ModelList(
-        XPalm.InternodeBiomass(),
+        InternodeBiomass(),
         status=(carbon_allocation=10.0, biomass=0.0)
     )
 
@@ -14,7 +14,7 @@ end
         MultiScaleTreeGraph.Node(get_node(mtg, 7), NodeMTG("+", "Male", 1, 4))
         m = Dict(
             "Male" => (
-                XPalm.MaleBiomass(),
+                MaleBiomass(),
                 Status(carbon_allocation=10.0, state="undetermined")
             )
         )
@@ -31,7 +31,7 @@ end
         MultiScaleTreeGraph.Node(get_node(mtg, 7), NodeMTG("+", "Male", 1, 4))
         m = Dict(
             "Male" => (
-                XPalm.MaleBiomass(),
+                MaleBiomass(),
                 Status(carbon_allocation=0.0, state="Senescent", biomass=10.0)
             )
         )
@@ -48,7 +48,7 @@ end
         MultiScaleTreeGraph.Node(get_node(mtg, 7), NodeMTG("+", "Male", 1, 4))
         m = Dict(
             "Male" => (
-                XPalm.MaleBiomass(),
+                MaleBiomass(),
                 Status(carbon_allocation=10.0, state="Aborted", biomass=0.0)
             )
         )
@@ -67,7 +67,7 @@ end
     MultiScaleTreeGraph.Node(get_node(mtg, 7), NodeMTG("+", "Female", 1, 4))
     m = Dict(
         "Female" => (
-            XPalm.FemaleBiomass(),
+            FemaleBiomass(),
             Status(carbon_allocation=15.0, state="undetermined", biomass=10.0, carbon_demand_stalk=2.0, carbon_demand_non_oil=1.0, carbon_demand_oil=3.0)
         )
     )

@@ -14,13 +14,13 @@ end
 
 @testset "DailyPlantAgeModel" begin
     mtg = Palm().mtg
-    m = Dict("Plant" => XPalm.DailyPlantAgeModel(10))
+    m = Dict("Plant" => DailyPlantAgeModel(10))
     vars = Dict{String,Any}("Plant" => (:plant_age,))
     out = run!(mtg, m, meteo, outputs=vars, executor=SequentialEx())
     df = outputs(out, DataFrame)
     @test df.plant_age[452] ≈ 462
     # m = ModelList(
-    #     plant_age=XPalm.DailyPlantAgeModel(10.0),
+    #     plant_age=DailyPlantAgeModel(10.0),
     #     status=(TT_since_init=[1:1:1000;],)
     # )
     # run!(m)

@@ -77,6 +77,16 @@ df = xpalm(meteo, DataFrame; palm=XPalm.Palm(parameters=params), vars=Dict("Scen
 !!! note
     The configuration file must contain all the parameters required by the model. Template files are available from the `examples` folder.
 
+
+## Importing the models
+
+The models are available from the `Models` submodule. To import all models, you can use the following command:
+
+```julia
+using XPalm
+using XPalm.Models
+```
+
 ## Funding
 
 This work is supported by the PalmStudio research project, funded by the [SMART Research Institute](https://smartri.id/) and [CIRAD](https://www.cirad.fr/en).
