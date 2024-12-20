@@ -4,7 +4,7 @@ import ..XPalm: age_relative_value, age_modulation_logistic
 
 # Put all models into this submodule so users can import that submodule to get the models without prefixing them with `XPalm.`
 import PlantSimEngine
-import PlantSimEngine: @process, add_organ!, MultiScaleModel, PreviousTimeStep
+import PlantSimEngine: @process, add_organ!
 import MultiScaleTreeGraph
 import MultiScaleTreeGraph: index, symbol
 import Random: MersenneTwister, AbstractRNG
