@@ -14,18 +14,12 @@ Give the phenological state to the phytomer and the inflorescence depending on t
 - `TT_ini_oleo`:thermal time for initializing oleosynthesis since phytomer appearence (degree days)
 
 # Inputs
+
 - `TT_since_init`: cumulated thermal time from the first day (degree C days)
 
-# Outputs 
+# Outputs
+
 - `state`: phytomer state (undetermined,Aborted,Flowering,...)
-
-
-# Example
-
-```jldoctest
-
-```
-
 """
 
 struct InfloStateModel{T} <: AbstractStateModel
