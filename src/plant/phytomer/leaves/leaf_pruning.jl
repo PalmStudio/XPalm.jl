@@ -18,7 +18,7 @@ struct RankLeafPruning{T} <: AbstractLeaf_PruningModel
     rank::T
 end
 
-PlantSimEngine.inputs_(::RankLeafPruning) = (rank=-9999, state="undetermined", biomass=-Inf, leaf_area=-Inf)
+PlantSimEngine.inputs_(::RankLeafPruning) = (rank=-9999, state="undetermined", biomass=-Inf, leaf_area=-Inf, state_phytomers=["undetermined"])
 PlantSimEngine.outputs_(::RankLeafPruning) = (litter_leaf=-Inf,)
 
 # Applied at the leaf scale:
@@ -31,5 +31,10 @@ function PlantSimEngine.run!(m::RankLeafPruning, models, status, meteo, constant
         status.litter_leaf = status.biomass
         status.biomass = 0.0
         status.reserve = 0.0
+        status.state = "Pruned" # The leaf may not be pruned yet if it has a male inflorescence.
+
+        i = index(status.node) # index of the leaf
+        # If the leaf is pruned but the phytomer is not harvested, then we harvest:
+        status.state_phytomers[i] = "Harvested"
     end
 end
