@@ -24,10 +24,11 @@ at maturity (dimensionless)
 ```jl
 using PlantSimEngine
 using MultiScaleTreeGraph
-using XPalm 
+using XPalm
+using XPalm.Models 
 
 node = Node(NodeMTG("/", "Plant", 1, 1))
-pot_model = XPalm.FemaleFinalPotentialFruits(8.0 * 365, 0.3, 2000.0, 6.5, 2100.0)
+pot_model = FemaleFinalPotentialFruits(8.0 * 365, 0.3, 2000.0, 6.5, 2100.0)
 
 m = ModelList(
     pot_model,

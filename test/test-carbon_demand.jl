@@ -1,20 +1,20 @@
 @testset "InternodeCarbonDemandModel" begin
     mtg = Palm().mtg
     m = Dict(
-        "Plant" => (XPalm.DailyPlantAgeModel(), XPalm.DailyDegreeDays(),),
+        "Plant" => (DailyPlantAgeModel(), DailyDegreeDays(),),
         "Internode" =>
             (
                 MultiScaleModel(
-                    model=XPalm.InitiationAgeFromPlantAge(),
+                    model=InitiationAgeFromPlantAge(),
                     mapping=[:plant_age => "Plant",],
                 ),
                 MultiScaleModel(
-                    model=XPalm.DailyDegreeDaysSinceInit(),
+                    model=DailyDegreeDaysSinceInit(),
                     mapping=[:TEff => "Plant",], # Using TEff computed at plant scale
                 ),
-                XPalm.FinalPotentialInternodeDimensionModel(),
-                XPalm.PotentialInternodeDimensionModel(),
-                XPalm.InternodeCarbonDemandModel(300000.0, 1.44),
+                FinalPotentialInternodeDimensionModel(),
+                PotentialInternodeDimensionModel(),
+                InternodeCarbonDemandModel(300000.0, 1.44),
             )
     )
     vars = Dict{String,Any}("Internode" => (:carbon_demand, :potential_volume, :final_potential_height, :final_potential_radius, :potential_height, :potential_radius, :TT_since_init))
@@ -31,7 +31,7 @@ end
     mtg = Palm().mtg
     m = Dict(
         "Leaf" => (
-            XPalm.LeafCarbonDemandModelPotentialArea(80.0, 1.44, 0.35),
+            LeafCarbonDemandModelPotentialArea(80.0, 1.44, 0.35),
             Status(increment_potential_area=1.0, state="undetermined",)
         )
     )

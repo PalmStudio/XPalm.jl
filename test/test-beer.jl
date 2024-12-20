@@ -1,6 +1,6 @@
 @testset "Beer" begin
     m = ModelList(
-        light_interception=XPalm.Beer(0.5),
+        light_interception=Beer(0.5),
         status=(lai=fill(2.0, nrow(meteo)),)
     )
 

@@ -1,4 +1,5 @@
 using XPalm
+using XPalm.Models
 import XPalm: Palm
 using Test
 using Dates

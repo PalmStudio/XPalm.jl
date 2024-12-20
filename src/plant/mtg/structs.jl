@@ -16,7 +16,7 @@ Create a new scene with one Palm plant.
 - `model_list`: a dictionary of models (default: `model_mapping(parameters, nsteps)`)
 """
 mutable struct Palm{T}
-    mtg::MultiScaleTreeGraph.Node
+    mtg::Node
     initiation_age::Int
     parameters::T
 end
@@ -204,59 +204,44 @@ Create a new scene with one Palm plant. The scene contains a soil, a plant, a ro
 
 - a `Palm` object
 """
-function Palm(;
-    initiation_age=0,
-    parameters=default_parameters(),
-)
+function Palm(; initiation_age=0, parameters=default_parameters(),)
 
-    scene = MultiScaleTreeGraph.Node(
-        1,
-        NodeMTG("/", "Scene", 1, 0),
-        Dict{Symbol,Any}(
-        # :area => 10000 / 136.0, # scene area, m2
-        ),
-    )
+    scene = Node(1, NodeMTG("/", "Scene", 1, 0), Dict{Symbol,Any}(),)
+    soil = Node(scene, NodeMTG("+", "Soil", 1, 1),)
 
-    soil = MultiScaleTreeGraph.Node(scene, NodeMTG("+", "Soil", 1, 1),)
+    plant = Node(scene, NodeMTG("+", "Plant", 1, 1), Dict{Symbol,Any}(:parameters => parameters,),)
 
-    plant = MultiScaleTreeGraph.Node(
-        scene,
-        NodeMTG("+", "Plant", 1, 1),
-        Dict{Symbol,Any}(
-            :parameters => parameters,
-        ),
-    )
-
-    roots = MultiScaleTreeGraph.Node(
-        plant,
-        NodeMTG("+", "RootSystem", 1, 2),
+    roots = Node(
+        plant, NodeMTG("+", "RootSystem", 1, 2),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age,
             :depth => parameters[:RL0], # total exploration depth m
         ),
     )
 
-    stem = MultiScaleTreeGraph.Node(
-        plant,
-        NodeMTG("+", "Stem", 1, 2),
+    stem = Node(
+        plant, NodeMTG("+", "Stem", 1, 2),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
         ),
     )
 
-    phyto = MultiScaleTreeGraph.Node(stem, NodeMTG("/", "Phytomer", 1, 3),
+    phyto = Node(
+        stem, NodeMTG("/", "Phytomer", 1, 3),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
         ),
     )
 
-    internode = MultiScaleTreeGraph.Node(phyto, NodeMTG("/", "Internode", 1, 4),
+    internode = Node(
+        phyto, NodeMTG("/", "Internode", 1, 4),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
         ),
     )
 
-    leaf = MultiScaleTreeGraph.Node(internode, NodeMTG("+", "Leaf", 1, 4),
+    leaf = Node(
+        internode, NodeMTG("+", "Leaf", 1, 4),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
         ),

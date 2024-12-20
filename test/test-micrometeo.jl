@@ -1,12 +1,12 @@
 @testset "ET0_BP" begin
-    m = ModelList(XPalm.ET0_BP())
+    m = ModelList(ET0_BP())
     run!(m, meteo[1, :])
     @test m[:ET0][1] ≈ 2.82260378306658
 end
 
 @testset "thermal_time" begin
     mtg = Palm().mtg
-    m = Dict("Plant" => XPalm.DailyDegreeDays())
+    m = Dict("Plant" => DailyDegreeDays())
     vars = Dict{String,Any}("Plant" => (:TEff, :TT_since_init))
     out = run!(mtg, m, meteo, outputs=vars, executor=SequentialEx())
     df = outputs(out, DataFrame)
@@ -18,7 +18,7 @@ end
 
 @testset "thermal_time_ftsw" begin
     mtg = Palm().mtg
-    m = Dict("Plant" => (XPalm.DegreeDaysFTSW(threshold_ftsw_stress=0.3), Status(ftsw=0.2,)))
+    m = Dict("Plant" => (DegreeDaysFTSW(threshold_ftsw_stress=0.3), Status(ftsw=0.2,)))
     vars = Dict{String,Any}("Plant" => (:TEff,))
     out = run!(mtg, m, meteo, outputs=vars, executor=SequentialEx())
     df = outputs(out, DataFrame)
