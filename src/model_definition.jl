@@ -54,7 +54,10 @@ function model_mapping(p)
                 model=XPalm.SceneToPlantLightPartitioning(p.parameters[:scene_area]),
                 mapping=[:aPPFD_scene => "Scene" => :aPPFD, :scene_leaf_area => "Scene" => :leaf_area],
             ),
-            XPalm.RUE_FTSW(p.parameters[:RUE], p.parameters[:threshold_ftsw]),
+            MultiScaleModel(
+                model=XPalm.RUE_FTSW(p.parameters[:RUE], p.parameters[:threshold_ftsw]),
+                mapping=[PreviousTimeStep(:ftsw) => "Soil",],
+            ),
             XPalm.CarbonOfferRm(),
             MultiScaleModel(
                 model=XPalm.OrgansCarbonAllocationModel(p.parameters[:carbon_demand][:reserves][:cost_reserve_mobilization]),
