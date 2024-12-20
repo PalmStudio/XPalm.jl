@@ -1,7 +1,7 @@
 @testset "FTSW" begin
     ini_root_depth = 300.0
     soil = FTSW(ini_root_depth=ini_root_depth)
-    init = soil_init_default(soil)
+    init = Models.soil_init_default(soil)
     init.ET0 = 2.5
     init.aPPFD = 1.0
 
