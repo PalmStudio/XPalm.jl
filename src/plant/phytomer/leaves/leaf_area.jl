@@ -39,6 +39,7 @@ Sum of the leaf area at plant scale.
 # Inputs
 
 - `leaf_area_leaves`: a vector of leaf area (m²)
+- `leaf_states`: a vector of leaf states. Only leaves with state "Opened" are considered.
 
 # Outputs
 
@@ -46,10 +47,10 @@ Sum of the leaf area at plant scale.
 """
 struct PlantLeafAreaModel <: AbstractLeaf_AreaModel end
 
-PlantSimEngine.inputs_(::PlantLeafAreaModel) = (leaf_area_leaves=[-Inf],)
+PlantSimEngine.inputs_(::PlantLeafAreaModel) = (leaf_area_leaves=[-Inf], leaf_states=["undetermined"])
 PlantSimEngine.outputs_(::PlantLeafAreaModel) = (leaf_area=-Inf,)
 
 # Applied at the plant / scene scale:
 function PlantSimEngine.run!(m::PlantLeafAreaModel, models, st, meteo, constants, extra=nothing)
-    st.leaf_area = sum(st.leaf_area_leaves)
+    st.leaf_area = sum(st.leaf_area_leaves[st.leaf_states.=="Opened"])
 end
