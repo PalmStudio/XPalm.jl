@@ -31,7 +31,7 @@ end
 @testset "LAIModel" begin
     m = ModelList(
         XPalm.LAIModel(30.0),
-        status=(leaf_area=12.0,)
+        status=(leaf_areas=[12.0],)
     )
 
     run!(m, executor=SequentialEx())
@@ -48,7 +48,7 @@ end
             Status(carbon_allocation=10.0),
         ),
         "Scene" => (
-            MultiScaleModel(XPalm.LAIModel(30.0), [:leaf_area => "Leaf"]),
+            MultiScaleModel(XPalm.LAIModel(30.0), [:leaf_areas => "Leaf" => :leaf_area]),
         )
     )
     vars = Dict{String,Any}("Scene" => (:lai, :leaf_area), "Leaf" => (:leaf_area,))
