@@ -1,6 +1,6 @@
 module XPalm
 
-import MultiScaleTreeGraph: NodeMTG, index, symbol#, addchild!, get_root
+import MultiScaleTreeGraph: Node, NodeMTG, index, symbol#, addchild!, get_root
 import PlantSimEngine
 
 # Palm structure:

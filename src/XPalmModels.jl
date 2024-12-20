@@ -1,7 +1,11 @@
 module Models
 
+import ..XPalm: age_relative_value, age_modulation_logistic
+
 # Put all models into this submodule so users can import that submodule to get the models without prefixing them with `XPalm.`
+import PlantSimEngine
 import PlantSimEngine: @process, add_organ!, MultiScaleModel, PreviousTimeStep
+import MultiScaleTreeGraph
 import MultiScaleTreeGraph: index, symbol
 import Random: MersenneTwister, AbstractRNG
 import Dates
@@ -64,7 +68,6 @@ include("plant/stem/biomass.jl")
 
 include("plant/carbon_assimilation/rue.jl")
 include("plant/carbon_assimilation/rue_ftsw.jl")
-include("plant/carbon_offer/carbon_offer_photosynthesis.jl")
 include("plant/carbon_offer/carbon_offer_rm.jl")
 include("plant/carbon_allocation/carbon_allocation.jl")
 include("plant/respiration/maintenance/maintenance_respiration.jl")
@@ -102,7 +105,7 @@ export ET0_BP, LAIModel, Beer, GraphNodeCount
 
 # Plant-scale models  
 export DailyPlantAgeModel, PhyllochronModel, PlantLeafAreaModel, PhytomerEmission, PlantRm, SceneToPlantLightPartitioning
-export RUE_FTSW, OrgansCarbonAllocationModel, OrganReserveFilling, PlantBunchHarvest
+export ConstantRUEModel, RUE_FTSW, CarbonOfferRm, OrgansCarbonAllocationModel, OrganReserveFilling, PlantBunchHarvest
 
 # Phytomer-scale models
 export SexDetermination, ReproductiveOrganEmission, AbortionRate, InfloStateModel
