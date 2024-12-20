@@ -35,7 +35,6 @@ end
 PlantSimEngine.inputs_(::PhyllochronModel) = (
     plant_age=0,
     TEff=-Inf,
-    ftsw=-Inf,
 )
 
 PlantSimEngine.outputs_(m::PhyllochronModel) = (
