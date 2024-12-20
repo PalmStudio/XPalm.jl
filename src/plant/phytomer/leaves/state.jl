@@ -27,10 +27,12 @@ function PlantSimEngine.run!(::LeafStateModel, models, status, meteo, constants,
     i = index(status.node) # index of the leaf
     if status.state_phytomers[i] == "Harvested"
         status.state = "Pruned"
+        #! This is already done in the InfloStateModel...
     end
 
-    if status.maturity == true && status.state == "undetermined"
+    if status.maturity == true && status.state == "undetermined" || index(status.node) == 1
         # Enter here only once, when the leaf is mature and the leaf state was not changed to Opened yet.
+        # Or if the leaf is the first leaf of the plant, in which case she is opened already.
         status.state = "Opened"
         # Compute the rank of each phytomer based on the index of the opened leaf:
         # NB: the values are from the oldest to youngest phytomer
