@@ -69,8 +69,8 @@ function PlantSimEngine.run!(m::InfloStateModel, models, status, meteo, constant
     elseif status.sex == "Female"
         if status.TT_since_init >= m.TT_harvest
             status.state = "Harvested"
-            # Give the information to the leaf:
-            status.node[1][1][:plantsimengine_status].state = "Harvested"
+            # Give the information to the leaf (prune it):
+            status.node[1][1][:plantsimengine_status].state = "Pruned"
         elseif status.TT_since_init >= m.TT_ini_oleo
             status.state = "Oleosynthesis"
         elseif status.TT_since_init >= m.TT_flowering

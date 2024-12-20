@@ -41,7 +41,7 @@ function model_mapping(p)
             ),
             MultiScaleModel(
                 model=XPalm.PlantLeafAreaModel(),
-                mapping=[:leaf_area_leaves => ["Leaf" => :leaf_area], :leaf_states => ["Leaf" => :leaf_state],],
+                mapping=[:leaf_area_leaves => ["Leaf" => :leaf_area], :leaf_states => ["Leaf" => :state],],
             ),
             MultiScaleModel(
                 model=XPalm.PhytomerEmission(p.mtg),
