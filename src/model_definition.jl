@@ -30,12 +30,11 @@ function model_mapping(p)
                 model=DegreeDaysFTSW(
                     threshold_ftsw_stress=p.parameters[:phyllochron][:threshold_ftsw_stress],
                 ),
-                mapping=[:ftsw => "Soil",],
+                mapping=[PreviousTimeStep(:ftsw) => "Soil",],
             ),
             XPalm.DailyPlantAgeModel(),
             XPalm.PhyllochronModel(
                 p.parameters[:phyllochron][:age_palm_maturity],
-                p.parameters[:phyllochron][:threshold_ftsw_stress],
                 p.parameters[:phyllochron][:production_speed_initial],
                 p.parameters[:phyllochron][:production_speed_mature],
             ),
