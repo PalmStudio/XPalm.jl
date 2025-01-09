@@ -16,7 +16,7 @@ function PlantSimEngine.run!(m::BunchHarvest, models, st, meteo, constants, extr
         st.biomass_fruits = 0.0
         st.is_harvested = true
         st.fruits_number = 0
-    elseif st.state == "Aborted"
+    elseif st.state == "Aborted" && st.is_harvested == false
         st.litter = st.biomass
         st.biomass_bunch_harvested_cum = 0.0
         st.biomass = 0.0
