@@ -31,6 +31,8 @@ function PlantSimEngine.run!(::LeafStateModel, models, status, meteo, constants,
     end
 
     if (status.maturity == true || index(status.node) == 1) && status.state == "undetermined"
+        #! We should add an effect of water stress here (or on the maturity side?)
+
         # Enter here only once, when the leaf is mature and the leaf state was not changed to Opened yet.
         # Or if the leaf is the first leaf of the plant (and also with status still undetermined), in which case she is opened already.
         status.state = "Opened"
