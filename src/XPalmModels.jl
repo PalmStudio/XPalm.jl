@@ -48,7 +48,6 @@ include("plant/phytomer/leaves/potential_area.jl")
 include("plant/phytomer/leaves/leaf_area.jl")
 include("plant/phytomer/leaves/lai.jl")
 include("plant/phytomer/leaves/state.jl")
-include("plant/phytomer/leaves/leaf_rank.jl")
 include("plant/phytomer/leaves/leaf_pruning.jl")
 include("plant/phytomer/leaves/carbon_demand.jl")
 include("plant/phytomer/leaves/biomass.jl")
@@ -116,7 +115,7 @@ export InternodeCarbonDemandModel, PotentialReserveInternode, InternodeBiomass
 
 # Leaf models
 export FinalPotentialAreaModel, PotentialAreaModel, LeafAreaModel
-export LeafStateModel, LeafRankModel, RankLeafPruning, LeafCarbonDemandModelPotentialArea, PotentialReserveLeaf, LeafBiomass
+export LeafStateModel, RankLeafPruning, LeafCarbonDemandModelPotentialArea, PotentialReserveLeaf, LeafBiomass
 
 # Reproductive organ models:
 # Male:
