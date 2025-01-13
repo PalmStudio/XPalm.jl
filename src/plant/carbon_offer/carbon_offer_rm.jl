@@ -11,5 +11,5 @@ PlantSimEngine.outputs_(::CarbonOfferRm) = (carbon_offer_after_rm=-Inf,)
 
 # Should be applied at the plant scale:
 function PlantSimEngine.run!(::CarbonOfferRm, models, status, meteo, constants, extra=nothing)
-    status.carbon_offer_after_rm = status.carbon_assimilation - status.Rm
+    status.carbon_offer_after_rm = max(status.carbon_assimilation - status.Rm, 0.0)
 end
