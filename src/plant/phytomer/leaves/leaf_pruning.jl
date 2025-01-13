@@ -41,5 +41,10 @@ function PlantSimEngine.run!(m::RankLeafPruning, models, status, meteo, constant
         i = index(status.node) # index of the leaf
         # If the leaf is pruned but the phytomer is not harvested, then we harvest:
         status.state_phytomers[i] = "Harvested"
+        # Give the information to the inflorescence if any:
+        phytomer_children = MultiScaleTreeGraph.children(parent(status.node))
+        if length(phytomer_children) > 1
+            phytomer_children[2][:plantsimengine_status].state = "Harvested"
+        end
     end
 end
