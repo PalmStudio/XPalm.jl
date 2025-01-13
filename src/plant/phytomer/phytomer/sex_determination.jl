@@ -52,6 +52,8 @@ PlantSimEngine.dep(::SexDetermination) = (reproductive_organ_emission=AbstractRe
 
 function PlantSimEngine.run!(m::SexDetermination, models, status, meteo, constants, extra=nothing)
     status.sex != "undetermined" && return # if the sex is already determined, no need to compute it again
+    status.state == "Aborted" && return # if the phytomer is aborted, no reproductive organ can be emitted  
+    status.state == "Harvested" && return # no need to compute if harvested (e.g. the leaf was removed)
 
     # We only look into the period of sex determination:
     if status.TT_since_init > (m.TT_flowering - m.duration_abortion - m.duration_sex_determination)
