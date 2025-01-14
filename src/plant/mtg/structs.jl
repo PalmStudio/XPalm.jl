@@ -165,7 +165,8 @@ function default_parameters()
             :fraction_biomass_first_male => 0.3,
         ),
         :female => Dict(
-            :age_mature_female => 8.0 * 365,
+            :days_increase_number_fruits => 5.0 * 365,
+            :days_maximum_number_fruits => 8.0 * 365,
             :fraction_first_female => 0.30,
             :potential_fruit_number_at_maturity => 2000,
             :potential_fruit_weight_at_maturity => 6.5, # g

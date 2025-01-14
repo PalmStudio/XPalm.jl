@@ -308,7 +308,8 @@ function model_mapping(p)
                 mapping=[PreviousTimeStep(:biomass),],
             ),
             FemaleFinalPotentialFruits(
-                p.parameters[:female][:age_mature_female],
+                p.parameters[:female][:days_increase_number_fruits],
+                p.parameters[:female][:days_maximum_number_fruits],
                 p.parameters[:female][:fraction_first_female],
                 p.parameters[:female][:potential_fruit_number_at_maturity],
                 p.parameters[:female][:potential_fruit_weight_at_maturity],
