@@ -4,7 +4,7 @@ struct MaleFinalPotentialBiomass{T} <: AbstractFinal_Potential_BiomassModel
     fraction_biomass_first_male::T
 end
 
-PlantSimEngine.inputs_(::MaleFinalPotentialBiomass) = (initiation_age=-9999,)
+PlantSimEngine.inputs_(::MaleFinalPotentialBiomass) = (initiation_age=0,)
 PlantSimEngine.outputs_(::MaleFinalPotentialBiomass) = (final_potential_biomass=-Inf,)
 
 function PlantSimEngine.run!(m::MaleFinalPotentialBiomass, models, status, meteo, constants, extra=nothing)

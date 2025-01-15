@@ -59,7 +59,7 @@ struct FemaleFinalPotentialFruits{T,I} <: AbstractFinal_Potential_BiomassModel
     stalk_max_biomass::T
 end
 
-PlantSimEngine.inputs_(::FemaleFinalPotentialFruits) = (initiation_age=-9999,)
+PlantSimEngine.inputs_(::FemaleFinalPotentialFruits) = (initiation_age=0,)
 PlantSimEngine.outputs_(::FemaleFinalPotentialFruits) = (potential_fruits_number=-9999, final_potential_fruit_biomass=-Inf, final_potential_biomass_stalk=-Inf,)
 
 function PlantSimEngine.run!(m::FemaleFinalPotentialFruits, models, st, meteo, constants, extra=nothing)

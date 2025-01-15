@@ -31,7 +31,7 @@ function FinalPotentialAreaModel(; age_first_mature_leaf=2920, leaf_area_first_l
     FinalPotentialAreaModel(age_first_mature_leaf, leaf_area_first_leaf, leaf_area_mature_leaf)
 end
 
-PlantSimEngine.inputs_(::FinalPotentialAreaModel) = (initiation_age=-9999,)
+PlantSimEngine.inputs_(::FinalPotentialAreaModel) = (initiation_age=0,)
 
 PlantSimEngine.outputs_(m::FinalPotentialAreaModel) = (
     final_potential_area=m.leaf_area_first_leaf, # Potential area of the leaf at full development
