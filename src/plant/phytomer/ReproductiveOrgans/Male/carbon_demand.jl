@@ -1,6 +1,5 @@
 struct MaleCarbonDemandModel{T} <: AbstractCarbon_DemandModel
     respiration_cost::T
-    TT_flowering::T
     duration_flowering_male::T
 end
 
@@ -8,9 +7,9 @@ PlantSimEngine.inputs_(::MaleCarbonDemandModel) = (final_potential_biomass=-Inf,
 PlantSimEngine.outputs_(::MaleCarbonDemandModel) = (carbon_demand=0.0,)
 
 function PlantSimEngine.run!(m::MaleCarbonDemandModel, models, st, meteo, constants, extra=nothing)
-    if st.state == "Aborted" || st.state == "Harvested" || st.state == "Senescent"
-        st.carbon_demand = 0.0
+    if st.state == "Flowering"
+        st.carbon_demand = (st.final_potential_biomass * (st.TEff / m.duration_flowering_male)) * m.respiration_cost
     else
-        st.carbon_demand = (st.final_potential_biomass * (st.TEff / (m.TT_flowering + m.duration_flowering_male))) * m.respiration_cost
+        st.carbon_demand = 0.0
     end
 end
