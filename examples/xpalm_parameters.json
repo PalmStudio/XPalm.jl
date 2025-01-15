@@ -127,7 +127,8 @@
             "respiration_cost": 1.44
         },
         "internode": {
-            "stem_apparent_density": 300000.0,
+            "apparent_density": 300000.0,
+            "carbon_concentration": 0.5,
             "respiration_cost": 1.44
         },
         "reserves": {

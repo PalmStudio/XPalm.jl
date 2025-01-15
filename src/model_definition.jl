@@ -179,10 +179,11 @@ function model_mapping(p)
                     p.parameters[:potential_dimensions][:inflexion_point_radius],
                     p.parameters[:potential_dimensions][:slope_radius],
                 ),
-                InternodeDimensionModel(p.parameters[:carbon_demand][:internode][:stem_apparent_density]),
+                InternodeDimensionModel(p.parameters[:carbon_demand][:internode][:apparent_density]),
                 InternodeCarbonDemandModel(
-                    p.parameters[:carbon_demand][:internode][:stem_apparent_density],
-                    p.parameters[:carbon_demand][:internode][:respiration_cost]
+                    apparent_density=p.parameters[:carbon_demand][:internode][:apparent_density],
+                    carbon_concentration=p.parameters[:carbon_demand][:internode][:carbon_concentration],
+                    respiration_cost=p.parameters[:carbon_demand][:internode][:respiration_cost]
                 ),
                 MultiScaleModel(
                     model=PotentialReserveInternode(
@@ -191,7 +192,7 @@ function model_mapping(p)
                     mapping=[PreviousTimeStep(:biomass), PreviousTimeStep(:reserve)],
                 ),
                 InternodeBiomass(
-                    initial_biomass=p.parameters[:potential_dimensions][:min_height] * p.parameters[:potential_dimensions][:min_radius] * p.parameters[:carbon_demand][:internode][:stem_apparent_density],
+                    initial_biomass=p.parameters[:potential_dimensions][:min_height] * p.parameters[:potential_dimensions][:min_radius] * p.parameters[:carbon_demand][:internode][:apparent_density],
                     respiration_cost=p.parameters[:carbon_demand][:internode][:respiration_cost]
                 ),
             ),

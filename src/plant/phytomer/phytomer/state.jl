@@ -1,6 +1,6 @@
 """
-    InfloStateModel(stem_apparent_density,respiration_cost)
-    InfloStateModel(stem_apparent_density=3000.0,respiration_cost=1.44)
+    InfloStateModel(apparent_density,respiration_cost)
+    InfloStateModel(apparent_density=3000.0,respiration_cost=1.44)
 
 Give the phenological state to the phytomer and the inflorescence depending on thermal time since phytomer appearance
 

@@ -134,7 +134,8 @@ function default_parameters()
                 :respiration_cost => 1.44,
             ),
             :internode => Dict(
-                :stem_apparent_density => 300000.0, # g m-3
+                :apparent_density => 300000.0, # g m-3
+                :carbon_concentration => 0.5, # g g-1
                 :respiration_cost => 1.44, # g g-1
             ),
             :male => Dict(
