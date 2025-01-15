@@ -53,9 +53,9 @@ function PlantSimEngine.run!(m::InfloStateModel, models, status, meteo, constant
     PlantSimEngine.run!(models.abortion, models, status, meteo, constants, extra)
 
     if status.sex == "Male"
-        if status.TT_since_init > m.TT_senescence_male
+        if status.TT_since_init >= m.TT_senescence_male
             status.state = "Scenescent"
-        elseif status.TT_since_init > m.TT_flowering
+        elseif status.TT_since_init >= m.TT_flowering
             status.state = "Flowering" #NB: if before TT_flowering it is undetermined
         end
 
