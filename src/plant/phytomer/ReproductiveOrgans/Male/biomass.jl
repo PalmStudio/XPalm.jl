@@ -34,7 +34,7 @@ function PlantSimEngine.run!(m::MaleBiomass, models, st, meteo, constants, extra
         return # if it is aborted, no biomass, because it is done before flowering
     end
 
-    if st.state == "Senescent"
+    if st.state == "Harvested"
         st.litter_male = copy(st.biomass)
         st.biomass = 0.0
         return # if it is aborted, no biomass

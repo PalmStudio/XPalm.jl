@@ -26,13 +26,13 @@ end
         @test df.litter_male[end] ≈ 0.0 # no senescence
     end
 
-    @testset "Senescent" begin
+    @testset "Harvested" begin
         mtg = Palm().mtg
         MultiScaleTreeGraph.Node(get_node(mtg, 7), NodeMTG("+", "Male", 1, 4))
         m = Dict(
             "Male" => (
                 MaleBiomass(),
-                Status(carbon_allocation=0.0, state="Senescent", biomass=10.0)
+                Status(carbon_allocation=0.0, state="Harvested", biomass=10.0)
             )
         )
         vars = Dict{String,Any}("Male" => (:biomass, :litter_male))
