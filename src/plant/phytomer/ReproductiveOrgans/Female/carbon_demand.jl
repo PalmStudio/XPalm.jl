@@ -79,7 +79,7 @@ function FemaleCarbonDemandModel(
     )
 end
 
-PlantSimEngine.inputs_(::FemaleCarbonDemandModel) = (final_potential_fruit_biomass=-Inf, TEff=-Inf, state="undetermined",)
+PlantSimEngine.inputs_(::FemaleCarbonDemandModel) = (final_potential_fruit_biomass=-Inf, TEff=-Inf, state="undetermined", TT_since_init=-Inf)
 PlantSimEngine.outputs_(::FemaleCarbonDemandModel) = (carbon_demand=0.0, carbon_demand_oil=-Inf, carbon_demand_non_oil=-Inf, carbon_demand_stalk=-Inf,)
 
 function PlantSimEngine.run!(m::FemaleCarbonDemandModel, models, status, meteo, constants, extra=nothing)
