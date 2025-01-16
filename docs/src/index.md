@@ -150,9 +150,23 @@ This work is supported by the PalmStudio research project, funded by the [SMART 
 
 ## API
 
+### Index
+
 ```@index
 ```
 
+### XPalm
+
+Documentation for the main functions of the XPalm package.
+
 ```@autodocs
 Modules = [XPalm]
+```
+
+### Models
+
+Documentation for the models available in XPalm.
+
+```@autodocs
+Modules = [XPalm.Models]
 ```
