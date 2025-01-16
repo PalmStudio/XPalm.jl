@@ -133,7 +133,9 @@ using XPalm.Models
 
 #### More examples
 
-You can find more example applications in the [Xpalm applications Github repository](https://github.com/PalmStudio/XPalm_applications).
+The package provides an example script in the `examples` folder. To run it, you first have to place your working directory inside the folder, and then activate its environement by running `] activate .`. 
+
+You can also find example applications in the [Xpalm applications Github repository](https://github.com/PalmStudio/XPalm_applications).
 
 ## Funding
 

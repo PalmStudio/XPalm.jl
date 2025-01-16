@@ -13,15 +13,13 @@ meteo.duration = [Dates.Day(i[1:1]) for i in meteo.duration]
 m = Weather(meteo)
 
 out_vars = Dict{String,Any}(
-    "Scene" => (:lai,),
-    # "Scene" => (:lai, :leaf_area, :aPPFD, :TEff),
-    # "Plant" => (:plant_age, :ftsw, :newPhytomerEmergence, :aPPFD, :leaf_area, :carbon_assimilation, :carbon_offer_after_rm, :Rm, :TT_since_init, :TEff, :phytomer_count, :newPhytomerEmergence),
-    # "Leaf" => (:Rm, :potential_area, :TT_since_init, :TEff, :A, :carbon_demand, :carbon_allocation,),
-    # "Leaf" => (:Rm, :potential_area),
-    # "Internode" => (:Rm, :carbon_allocation, :carbon_demand),
-    # "Male" => (:Rm,),
-    # "Female" => (:biomass,),
-    # "Soil" => (:TEff, :ftsw, :root_depth),
+    "Scene" => (:lai, :leaf_area, :aPPFD),
+    "Plant" => (:plant_age, :ftsw, :newPhytomerEmergence, :aPPFD, :leaf_area, :carbon_assimilation, :carbon_offer_after_rm, :Rm, :TT_since_init, :TEff, :phytomer_count, :newPhytomerEmergence),
+    "Leaf" => (:Rm, :potential_area, :TT_since_init, :TEff, :A, :carbon_demand, :carbon_allocation,),
+    "Internode" => (:Rm, :carbon_allocation, :carbon_demand),
+    "Male" => (:Rm,),
+    "Female" => (:biomass,),
+    "Soil" => (:TEff, :ftsw, :root_depth),
 )
 
 # Example 1: Run the model with the default parameters (but output as a DataFrame):
@@ -54,5 +52,7 @@ lines(df_scene.lai)
 lines(df_plant.phytomer_count)
 lines(df_scene.leaf_area)
 lines(df_scene.leaf_area)
-lines(df_scene.TEff)
+lines(df_plant.leaf_area)
 lines(df_plant.carbon_assimilation)
+
+data(df_leaf) * mapping(:timestep, :carbon_demand, color=:node => nonnumeric) * visual(Lines) |> draw
