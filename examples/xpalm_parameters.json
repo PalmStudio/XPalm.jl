@@ -17,7 +17,7 @@
         "fraction_biomass_first_male": 0.3,
         "duration_flowering_male": 1800.0,
         "age_mature_male": 2920.0,
-        "male_max_biomass": 1200.0
+        "male_max_biomass": 408.0
     },
     "seed_reserve": 100.0,
     "soil": {

@@ -1,5 +1,5 @@
 """
-RankLeafPruning(rank)
+    RankLeafPruning(rank)
 
 Function to remove leaf biomass and area when the phytomer has an harvested bunch or when the leaf reaches a treshold rank (below rank of harvested bunches) 
 
@@ -38,13 +38,18 @@ function PlantSimEngine.run!(m::RankLeafPruning, models, status, meteo, constant
         status.state = "Pruned" # The leaf may not be pruned yet if it has a male inflorescence.
         status.is_pruned = true
 
-        i = index(status.node) # index of the leaf
+        # Get the internode node to check if the phytomer is harvested:
+        internode_node = parent(status.node)
+
         # If the leaf is pruned but the phytomer is not harvested, then we harvest:
-        status.state_phytomers[i] = "Harvested"
-        # Give the information to the inflorescence if any:
-        phytomer_children = MultiScaleTreeGraph.children(parent(status.node))
-        if length(phytomer_children) > 1
-            phytomer_children[2][:plantsimengine_status].state = "Harvested"
+        phytomer_node = parent(internode_node)
+        phytomer_node[:plantsimengine_status].state = "Harvested"
+
+        # Give the information to the inflorescence if we find one:
+        internode_children = MultiScaleTreeGraph.children(internode_node)
+        inflo_nodes = filter(x -> MultiScaleTreeGraph.symbol(x) == "Female" || MultiScaleTreeGraph.symbol(x) == "Male", internode_children)
+        if length(inflo_nodes) == 1
+            inflo_nodes[1][:plantsimengine_status].state = "Harvested"
         end
     end
 end
