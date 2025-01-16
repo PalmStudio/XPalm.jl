@@ -8,7 +8,24 @@
 
 ## Overview
 
-[XPalm](https://github.com/PalmStudio/XPalm.jl) is a growth and yield model for oil palm (*Elaeis guineensis*).
+XPalm is a process-based model for simulating oil palm (*Elaeis guineensis*) growth and development. The model simulates key physiological processes including:
+
+- Phenology and development
+- Carbon assimilation and allocation
+- Water balance
+- Reproductive organ development
+- Yield components
+
+XPalm implements a multiscale approach, modeling processes at different organizational levels:
+
+Scene: Environment and canopy-level processes
+Plant: Whole palm processes
+Phytomer: Individual growth unit processes
+Organ: Leaf, internode and reproductive organ processes
+
+The model uses a daily time step and requires standard meteorological inputs (temperature, radiation, rainfall...).
+
+The model is implemented in the [Julia programming language](https://julialang.org/), which is a high-level, high-performance dynamic programming language for technical computing. 
 
 ## Installation
 
@@ -24,11 +41,17 @@ To use the package, type the following in the Julia REPL:
 using XPalm
 ```
 
-## Running the model
+## Quick Start
+
+From the Julia REPL, load the package:
+
+```julia
+using XPalm
+```
 
 ### The easiest way of running the model
 
-The easiest way to run the model is to use the template notebook provided by the package. To run the notebook, you need to install the Pluto package first by running `] add Pluto`. Then, you can run the notebook by running the following commands in the Julia REPL:
+The easiest way to run the model is to use the template notebook provided by the package. To run the notebook, you need to install the Pluto package first by running `] add Pluto`. Then, you can run the notebook using the following commands in the Julia REPL:
 
 ```julia
 using Pluto, XPalm
@@ -38,47 +61,68 @@ XPalm.notebook("xpalm_notebook.jl")
 
 This command will create a new Pluto notebook (named "xpalm_notebook.jl") in the current directory, and open it automatically for you.
 
-Once cosed, you can re-open this notebook by running the same command again. If the file already exists, it will be opened automatically.
+Once closed, you can re-open this notebook by running the same command again. If the file already exists, it will be opened automatically.
 
 ### Programmatically running the model
 
-The model can be run using the `xpalm` function. The function takes a table as input and returns a table with the same format as result. The `vars` argument is a dictionary that maps the names of the columns in the input table to the names of the variables in the model. The `sink` argument specifies the type of the output table such as a `DataFrame`, or any table implementing the `Tables.jl` interface (*e.g.* [XSLX](https://github.com/felipenoris/XLSX.jl), [SQLite](https://github.com/JuliaDatabases/SQLite.jl), [Arrow](https://github.com/apache/arrow-julia), see here [for all integrations](https://github.com/JuliaData/Tables.jl/blob/main/INTEGRATIONS.md)).
+#### Basic simulation
+
+Run a simple simulation using default parameters and meteorological data:
 
 ```julia
 using XPalm, CSV, DataFrames
+
+# Load example meteorological data
 meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), DataFrame)
-df = xpalm(meteo, DataFrame; vars= Dict("Scene" => (:lai,)))
+
+# Run simulation
+df = xpalm(meteo; 
+    vars = Dict("Scene" => (:lai,)), # Request LAI as output
+    sink = DataFrame
+)
 ```
 
 !!! note
     You need to install the `CSV` and `DataFrames` packages to run the example above. You can install them by running `] add CSV DataFrames`.
 
-We can also run the model with a custom configuration file for the parameter values. The configuration file may be in any format that can be parsed into a dictionary, such as JSON, YAML or TOML.
+#### Advanced Usage
 
-For example, to run the model with a JSON configuration file:
+Customize palm parameters and request multiple outputs:
+
+```julia
+# Read the parameters from a YAML file (provided in the example folder of the package):
+using YAML
+parameters = YAML.load_file(joinpath(dirname(dirname(pathof(XPalm))), "examples/xpalm_parameters.yml"))
+
+# Create palm with custom parameters
+p = Palm(parameters=parameters)
+
+# Run simulation with multiple outputs
+results = xpalm(
+    meteo,
+    DataFrame,
+    vars = Dict(
+        "Scene" => (:lai, :et0),
+        "Plant" => (:leaf_area, :biomass_bunch_harvested),
+        "Soil" => (:ftsw,)
+    ),
+    palm = p,
+)
+```
+
+You can also import the parameters from a JSON file using the `JSON` package:
 
 ```julia
 using JSON # You first need to install the JSON package by running `] add JSON`
 params = open("examples/xpalm_parameters.json", "r") do io
     JSON.parse(io; dicttype=Dict{Symbol,Any}, inttype=Int64)
 end
-p = XPalm.Palm(parameters=params)
-df = xpalm(meteo, DataFrame; palm=p, vars=Dict("Scene" => (:lai,)))
-```
-
-Or with a YAML file:
-
-```julia
-using YAML # You first need to install the YAML package by running `] add YAML`
-params = YAML.load_file(joinpath(dirname(dirname(pathof(XPalm))), "examples/xpalm_parameters.yml"), dicttype=Dict{Symbol,Any})
-df = xpalm(meteo, DataFrame; palm=XPalm.Palm(parameters=params), vars=Dict("Scene" => (:lai,)))
 ```
 
 !!! note
     The configuration file must contain all the parameters required by the model. Template files are available from the `examples` folder.
 
-
-## Importing the models
+#### Importing the models
 
 The models are available from the `Models` submodule. To import all models, you can use the following command:
 
@@ -87,22 +131,10 @@ using XPalm
 using XPalm.Models
 ```
 
+#### More examples
+
+You can find more example applications in the [Xpalm applications Github repository](https://github.com/PalmStudio/XPalm_applications).
+
 ## Funding
 
 This work is supported by the PalmStudio research project, funded by the [SMART Research Institute](https://smartri.id/) and [CIRAD](https://www.cirad.fr/en).
-
-## To do
-
-- [ ] Manage the case when photosynthesis + reserves are not enough for maintenance respiration: e.g. abortions?
-- [ ] Add variable that tells us how far we are from the demand, i.e. (demand - allocation)
-- [ ] Test difference between LeafCarbonDemandModelArea and LeafCarbonDemandModelPotentialArea. The first assumes that the leaf can always increase its demand more than the potential to catch back any delay in growth induced by previous stress. The second assumes that the potential daily increment only follows the daily potential curve, and that any lost demand induced by stress will be lost demand.
-- [ ] There can still be some carbon offer at the end of the day, where do we put it?
-- [ ] Increase the new internode size when the reserves are full?
-- [ ] Check the carbon balance (add it as a variable?)
-- [ ] In carbon allocation, put again `reserve` as needed input. We had to remove it because PSE detects a cyclic dependency with reserve filling. This is ok to remove because carbon allocation needs the value from the day before.
-- [ ] calibration of 'final_potential_biomass' check on ECOPALM data the maximum number of furit and maximal individual fruit
-- [ ] Add harvest management: remove fruits, remove leaves
-- [ ] Compute the trophic status of the phytomer and females as a proper process (see number_fruits + sex_determination)
-- [ ] Add litter (when leaves are removed) + male inflorescences
-- [x] Add peduncle carbon demand and biomass for the female
-- [x] Review how maintenance respiration is computed (add Male and Female)
