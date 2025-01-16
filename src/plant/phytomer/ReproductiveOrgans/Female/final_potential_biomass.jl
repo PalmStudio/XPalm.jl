@@ -51,12 +51,35 @@ m[:potential_fruits_number]
 ```
 """
 struct FemaleFinalPotentialFruits{T,I} <: AbstractFinal_Potential_BiomassModel
-    days_increase_number_fruits::T
-    days_maximum_number_fruits::T
+    days_increase_number_fruits::I
+    days_maximum_number_fruits::I
     fraction_first_female::T
     potential_fruit_number_at_maturity::I
     potential_fruit_weight_at_maturity::T
     stalk_max_biomass::T
+end
+
+function FemaleFinalPotentialFruits(;
+    days_increase_number_fruits=2379,
+    days_maximum_number_fruits=6500,
+    fraction_first_female=0.3,
+    potential_fruit_number_at_maturity=2000,
+    potential_fruit_weight_at_maturity=6.5,
+    stalk_max_biomass=2100.0
+)
+
+    # Check the type of the inputs, promote them if necessary:
+    days_increase_number_fruits, days_maximum_number_fruits, potential_fruit_number_at_maturity = promote(days_increase_number_fruits, days_maximum_number_fruits, potential_fruit_number_at_maturity)
+    fraction_first_female, potential_fruit_weight_at_maturity, stalk_max_biomass = promote(fraction_first_female, potential_fruit_weight_at_maturity, stalk_max_biomass)
+
+    FemaleFinalPotentialFruits(
+        days_increase_number_fruits,
+        days_maximum_number_fruits,
+        fraction_first_female,
+        potential_fruit_number_at_maturity,
+        potential_fruit_weight_at_maturity,
+        stalk_max_biomass,
+    )
 end
 
 PlantSimEngine.inputs_(::FemaleFinalPotentialFruits) = (initiation_age=0,)

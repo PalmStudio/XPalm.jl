@@ -303,12 +303,12 @@ function model_mapping(p)
                 mapping=[PreviousTimeStep(:biomass),],
             ),
             FemaleFinalPotentialFruits(
-                p.parameters[:female][:days_increase_number_fruits],
-                p.parameters[:female][:days_maximum_number_fruits],
-                p.parameters[:female][:fraction_first_female],
-                p.parameters[:female][:potential_fruit_number_at_maturity],
-                p.parameters[:female][:potential_fruit_weight_at_maturity],
-                p.parameters[:female][:stalk_max_biomass],
+                days_increase_number_fruits=p.parameters[:female][:days_increase_number_fruits],
+                days_maximum_number_fruits=p.parameters[:female][:days_maximum_number_fruits],
+                fraction_first_female=p.parameters[:female][:fraction_first_female],
+                potential_fruit_number_at_maturity=p.parameters[:female][:potential_fruit_number_at_maturity],
+                potential_fruit_weight_at_maturity=p.parameters[:female][:potential_fruit_weight_at_maturity],
+                stalk_max_biomass=p.parameters[:female][:stalk_max_biomass],
             ),
             MultiScaleModel(
                 model=NumberSpikelets(
