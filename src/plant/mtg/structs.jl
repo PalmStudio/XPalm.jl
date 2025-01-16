@@ -161,7 +161,7 @@ function default_parameters()
         ),
         :male => Dict(
             :duration_flowering_male => 1800.0,
-            :male_max_biomass => 408.0, # in gC
+            :male_max_biomass => 174.852, # in carbon, so 1200g in dry mass -> 1200 x 0.4857 gC g-1 dry mass x 0.3 dry mass content (0.7 water content)
             :age_mature_male => 8.0 * 365,
             :fraction_biomass_first_male => 0.3,
         ),
