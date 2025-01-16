@@ -26,12 +26,7 @@ function model_mapping(p)
             GraphNodeCount(length(p.mtg)), # to have the `graph_node_count` variable initialised in the status
         ),
         "Plant" => (
-            MultiScaleModel(
-                model=DegreeDaysFTSW(
-                    threshold_ftsw_stress=p.parameters[:phyllochron][:threshold_ftsw_stress],
-                ),
-                mapping=[PreviousTimeStep(:ftsw) => "Soil",],
-            ),
+            DailyDegreeDays(),
             DailyPlantAgeModel(),
             PhyllochronModel(
                 p.parameters[:phyllochron][:age_palm_maturity],
@@ -369,7 +364,7 @@ function model_mapping(p)
         "Soil" => (
             # light_interception=Beer{Soil}(),
             MultiScaleModel(
-                model=FTSW(
+                model=FTSW_BP(
                     ini_root_depth=p.parameters[:soil][:ini_root_depth],
                     H_FC=p.parameters[:soil][:field_capacity],
                     H_WP_Z1=p.parameters[:soil][:wilting_point_1],
