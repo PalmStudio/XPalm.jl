@@ -17,12 +17,12 @@ latitude: 0.97
 altitude: 50.0
 soil:
   ini_root_depth: 100.0
-  field_capacity: 0.23
+  field_capacity: 0.25
   wilting_point_1: 0.05
   thickness_1: 200.0
   wilting_point_2: 0.05
   thickness_2: 2000.0
-  initial_water_content: 0.15
+  initial_water_content: 0.25
   Kc: 1.0
   evaporation_threshold: 0.5
   transpiration_threshold: 0.5
@@ -33,15 +33,15 @@ phyllochron:
   production_speed_mature: 0.0074
 lma_max: 200.0
 female:
-  days_increase_number_fruits: 1820
-  days_maximum_number_fruits: 2920
+  days_increase_number_fruits: 2379.0 # in days
+  days_maximum_number_fruits: 6500.0 # in days
   stalk_max_biomass: 2100.0
   fraction_first_female: 0.3
   potential_fruit_weight_at_maturity: 6.5
   fraction_period_oleosynthesis: 0.8
   duration_fruit_setting: 405.0
   fraction_period_stalk: 0.2
-  TT_harvest: 12150.0
+  TT_harvest: 12150.0 # 90 phytomers until harvest (60 growing + 30 opened) x 9°C days-1 in average per day x 15 days
   oil_content: 0.25
   duration_dev_spikelets: 675.0
   potential_fruit_number_at_maturity: 2000
@@ -52,19 +52,19 @@ respiration:
   Leaf:
     Q10: 2.1
     T_ref: 25.0
-    Mr: 0.003594370860927152
+    Mr: 0.003594370860927152 # Or 0.0022 for the rachis, she also gives the proportion of each so we could compute something in-between
     P_alive: 0.9
-  Male:
+  Male: # Kraalingen et al. 1989, AFM (to check)
     Q10: 2.1
     T_ref: 25.0
     Mr: 0.0121
     P_alive: 0.5
-  Female:
+  Female: # Kraalingen et al. 1989, AFM (and 1985 too)
     Q10: 2.1
     T_ref: 25.0
     Mr: 0.0022
     P_alive: 0.5
-  RootSystem:
+  RootSystem: # Dufrene et al. (1990), Oleagineux:
     Q10: 2.1
     Turn: 0.036
     Prot: 6.25
@@ -74,15 +74,15 @@ respiration:
     Gi: 0.07
     P_alive: 0.8
   Internode:
-    Q10: 1.7
-    T_ref: 25.0
-    Mr: 0.005
-    P_alive: 0.21
+    Q10: 1.7  # Dufrene et al. (2005)
+    T_ref: 25.0 # Dufrene et al. (1990), gives Rm_base commpared to all dry mass (not just living biomass)
+    Mr: 0.005 # Dufrene (1990)
+    P_alive: 0.21 # Dufrene et al. (2005)
 potential_area:
   leaf_area_first_leaf: 0.02
   leaf_area_mature_leaf: 12.0
   age_first_mature_leaf: 2920
-  inflexion_index: 560.0
+  inflexion_index: 337.5 # with around 60 leaves with rank < 1, each taking 15 days to emerge at mature stage, and 9°C days-1 per day average, it takes 8100 days to develop. At mature stage a leaf is around 12 m2, so it should be 8100 / 12 / 2 (inflexion is at half duration)
   slope: 100.0
 k: 0.5
 SRL: 0.4
@@ -98,7 +98,7 @@ potential_dimensions:
   min_radius: 0.002
   slope_radius: 150.0
 RUE: 4.8
-threshold_ftsw: 0.6
+threshold_ftsw: 0.3
 leaflets_biomass_contribution: 0.35
 lma_min: 80.0
 inflo:
@@ -108,7 +108,7 @@ inflo:
   sex_ratio_ref: 0.6
   random_seed: 1
   abortion_rate_ref: 0.2
-  TT_flowering: 6300.0
+  TT_flowering: 10530.0 # TT_Harvest - (180 days * 9°C days-1 in average), see Van Kraalingen et al. 1989
   duration_abortion: 540.0
 male:
   fraction_biomass_first_male: 0.3
@@ -120,4 +120,4 @@ biomass_dry:
   Stem: 0.1
   RootSystem: 12.5
   Internode: 2.0
-seed_reserve: 100
+seed_reserve: 100.0

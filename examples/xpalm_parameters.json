@@ -19,22 +19,22 @@
         "age_mature_male": 2920.0,
         "male_max_biomass": 1200.0
     },
-    "seed_reserve": 100,
+    "seed_reserve": 100.0,
     "soil": {
-        "initial_water_content": 0.15,
+        "initial_water_content": 0.25,
         "evaporation_threshold": 0.5,
         "ini_root_depth": 100.0,
         "Kc": 1.0,
         "thickness_2": 2000.0,
         "thickness_1": 200.0,
         "transpiration_threshold": 0.5,
-        "field_capacity": 0.23,
+        "field_capacity": 0.25,
         "wilting_point_2": 0.05,
         "wilting_point_1": 0.05
     },
     "female": {
-        "days_increase_number_fruits": 1820,
-        "days_maximum_number_fruits": 2920,
+        "days_increase_number_fruits": 2379,
+        "days_maximum_number_fruits": 6500,
         "stalk_max_biomass": 2100.0,
         "fraction_first_female": 0.3,
         "potential_fruit_weight_at_maturity": 6.5,
@@ -88,7 +88,7 @@
         "leaf_area_first_leaf": 0.02,
         "leaf_area_mature_leaf": 12.0,
         "age_first_mature_leaf": 2920,
-        "inflexion_index": 560.0,
+        "inflexion_index": 337.5,
         "slope": 100.0
     },
     "SRL": 0.4,
@@ -112,7 +112,7 @@
         "sex_ratio_ref": 0.6,
         "random_seed": 1,
         "abortion_rate_ref": 0.2,
-        "TT_flowering": 6300.0,
+        "TT_flowering": 10530.0,
         "duration_abortion": 540.0
     },
     "biomass_dry": {
@@ -121,7 +121,7 @@
         "RootSystem": 12.5,
         "Internode": 2.0
     },
-    "threshold_ftsw": 0.6,
+    "threshold_ftsw": 0.3,
     "carbon_demand": {
         "leaf": {
             "respiration_cost": 1.44

@@ -38,12 +38,12 @@ function default_parameters()
         :altitude => 50.0,
         :k => 0.5, # light extinction coefficient
         :RUE => 4.8, # Radiation use efficiency (gC MJ[PAR]-1)
-        :threshold_ftsw => 0.6,
+        :threshold_ftsw => 0.3,
         :SRL => 0.4, # Specific Root Length (m g-1)
         :lma_min => 80.0, # min leaf mass area (g m-2)
         :lma_max => 200.0, # max  leaf mass area (g m-2)
         :leaflets_biomass_contribution => 0.35,
-        :seed_reserve => 100, # seed reserve (from which the plant grows)
+        :seed_reserve => 100.0, # seed reserve (from which the plant grows)
         :nsc_max => 0.3, # Maximum non-structural carbohydrates content in the stem.
         :RL0 => 5.0, # Root length at emergence (m)
         :respiration => Dict(
@@ -93,12 +93,12 @@ function default_parameters()
         # ),
         :soil => Dict(
             :ini_root_depth => 100.0,
-            :field_capacity => 0.23,
+            :field_capacity => 0.25,
             :wilting_point_1 => 0.05,
             :thickness_1 => 200.0,
             :wilting_point_2 => 0.05,
             :thickness_2 => 2000.0,
-            :initial_water_content => 0.15,
+            :initial_water_content => 0.25,
             :Kc => 1.0,
             :evaporation_threshold => 0.5,
             :transpiration_threshold => 0.5,
@@ -107,7 +107,7 @@ function default_parameters()
             :leaf_area_first_leaf => 0.02, # leaf potential area for the first leaf (m2)
             :leaf_area_mature_leaf => 12.0, # leaf potential area for a mature leaf (m2)
             :age_first_mature_leaf => 8 * 365, # age of the first mature leaf (days)
-            :inflexion_index => 560.0,
+            :inflexion_index => 337.5,
             :slope => 100.0,
         ),
         :potential_dimensions => Dict(
@@ -150,7 +150,7 @@ function default_parameters()
             )
         ),
         :inflo => Dict(
-            :TT_flowering => 6300.0,
+            :TT_flowering => 10530.0, # TT_Harvest - (180 days * 9°C days-1 in average), see Van Kraalingen et al. 1989
             :duration_sex_determination => 1350.0,
             :duration_abortion => 540.0,
             :sex_ratio_min => 0.2,
@@ -166,15 +166,15 @@ function default_parameters()
             :fraction_biomass_first_male => 0.3,
         ),
         :female => Dict(
-            :days_increase_number_fruits => 5.0 * 365,
-            :days_maximum_number_fruits => 8.0 * 365,
+            :days_increase_number_fruits => 2379, # in days
+            :days_maximum_number_fruits => 6500,
             :fraction_first_female => 0.30,
             :potential_fruit_number_at_maturity => 2000,
             :potential_fruit_weight_at_maturity => 6.5, # g
             :duration_fruit_setting => 405.0,
             :duration_dev_spikelets => 675.0,
             :oil_content => 0.25,
-            :TT_harvest => 12150.0,
+            :TT_harvest => 12150.0, # 90 phytomers until harvest (60 growing + 30 opened) x 9°C days-1 in average per day x 15 days
             :fraction_period_oleosynthesis => 0.8,
             :stalk_max_biomass => 2100.0,
             :fraction_period_stalk => 0.2,
