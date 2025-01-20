@@ -13,7 +13,6 @@ Function to remove leaf biomass and area when the phytomer has an harvested bunc
 - `litter_leaf`: leaf biomass removed from the plantand going to the litter
 
 """
-
 struct RankLeafPruning{T} <: AbstractLeaf_PruningModel
     rank::T
 end
