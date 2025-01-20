@@ -8,7 +8,7 @@ using DataFrames, CSV, Statistics
 using Dates
 using XPalm
 
-meteo = CSV.read("0-data/Meteo_Nigeria_PR.txt", DataFrame)
+meteo = CSV.read("0-data/meteo", DataFrame)
 meteo.duration = [Dates.Day(i[1:1]) for i in meteo.duration]
 m = Weather(meteo)
 
