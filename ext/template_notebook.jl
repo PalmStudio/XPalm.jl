@@ -62,8 +62,8 @@ md"""
 
 # ╔═╡ 1fa0b119-26fe-4807-8aea-50cdbd591656
 meteo = let
-    m = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo"), DataFrame)
-    m.duration = [Dates.Day(i[1:1]) for i in m.duration]
+    m = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), DataFrame)
+    m.duration .= Dates.Day(1)
     Weather(m)
     m
 end
