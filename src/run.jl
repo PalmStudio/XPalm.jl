@@ -20,8 +20,8 @@ A simulation output, either as a dictionary of variables per scales (default) or
 # Example
 
 ```julia
-using XPalm, CSV, DataFrames
-meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), DataFrame)
+using XPalmModel, CSV, DataFrames
+meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalmModel))), "0-data/meteo.csv"), DataFrame)
 df = xpalm(meteo; vars= Dict("Scene" => (:lai,)), sink=DataFrame)
 ```
 """

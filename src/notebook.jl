@@ -11,8 +11,8 @@ Open an XPalm notebook or create one from a template at `path`, and run the note
 # Example
 
 ```julia
-using XPalm, Pluto
-XPalm.notebook()
+using XPalmModel, Pluto
+XPalmModel.notebook()
 ```
 """
 function notebook(path=joinpath(pwd(), "xpalm_notebook.jl"), force=false)

@@ -1,4 +1,4 @@
-module XPalm
+module XPalmModel
 
 import MultiScaleTreeGraph: Node, NodeMTG, index, symbol#, addchild!, get_root
 import PlantSimEngine

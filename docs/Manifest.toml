@@ -859,16 +859,16 @@ git-tree-sha1 = "a2fccc6559132927d4c5dc183e3e01048c6dcbd6"
 uuid = "02c8fc9c-b97f-50b9-bbe4-9be30ff0a78a"
 version = "2.13.5+0"
 
-[[deps.XPalm]]
+[[deps.XPalmModel]]
 deps = ["Dates", "MultiScaleTreeGraph", "PlantMeteo", "PlantSimEngine", "Random", "Statistics", "Tables"]
 path = ".."
 uuid = "6b523e1e-d512-416c-8e51-a8fbef0064e7"
 version = "0.1.0"
 
-    [deps.XPalm.extensions]
-    XPalmPluto = "Pluto"
+    [deps.XPalmModel.extensions]
+    XPalmModelPluto = "Pluto"
 
-    [deps.XPalm.weakdeps]
+    [deps.XPalmModel.weakdeps]
     Pluto = "c3e4b0f8-55cb-11ea-2926-15256bba5781"
 
 [[deps.YAML]]

@@ -1,4 +1,4 @@
-name = "XPalm"
+name = "XPalmModel"
 uuid = "6b523e1e-d512-416c-8e51-a8fbef0064e7"
 authors = ["Rémi Vezy <VEZY@users.noreply.github.com> and contributors"]
 version = "0.1.0"

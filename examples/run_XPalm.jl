@@ -6,7 +6,7 @@ using PlantMeteo, PlantSimEngine, MultiScaleTreeGraph
 using CairoMakie, AlgebraOfGraphics
 using DataFrames, CSV, Statistics
 using Dates
-using XPalm
+using XPalmModel
 
 meteo = CSV.read("0-data/meteo", DataFrame)
 meteo.duration = [Dates.Day(i[1:1]) for i in meteo.duration]
@@ -27,9 +27,9 @@ df = xpalm(m, DataFrame; vars=out_vars)
 
 # Example 2.1: Run the model with custom parameter values from a YAML file:
 using YAML, OrderedCollections
-params = YAML.load_file(joinpath(dirname(dirname(pathof(XPalm))), "examples/xpalm_parameters.yml"), dicttype=OrderedDict{Symbol,Any})
+params = YAML.load_file(joinpath(dirname(dirname(pathof(XPalmModel))), "examples/xpalm_parameters.yml"), dicttype=OrderedDict{Symbol,Any})
 params[:k] = 0.6
-p = XPalm.Palm(parameters=params)
+p = XPalmModel.Palm(parameters=params)
 df = xpalm(m, DataFrame; palm=p, vars=out_vars)
 
 # Example 2.2: Run the model with custom parameter values from a JSON file:
@@ -38,7 +38,7 @@ params = open("examples/xpalm_parameters.json", "r") do io
     JSON.parse(io; dicttype=OrderedDict{Symbol,Any}, inttype=Int64)
 end
 params[:k] = 0.6
-p = XPalm.Palm(parameters=params)
+p = XPalmModel.Palm(parameters=params)
 df = xpalm(m, DataFrame; palm=p, vars=out_vars)
 
 # Making some plots with the results:
