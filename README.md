@@ -60,7 +60,7 @@ Fraction of transpirable soil water (FTSW) over time:
 The package can be installed using the Julia package manager. From the Julia REPL, type `]` to enter the Pkg REPL mode and run:
 
 ```julia
-pkg> add https://github.com/PalmStudio/XPalm.jl
+pkg> add XPalm
 ```
 
 To use the package, type the following in the Julia REPL:
