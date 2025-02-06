@@ -41,6 +41,35 @@ The model uses a daily time step and requires standard meteorological inputs (te
 
 The model is implemented in the [Julia programming language](https://julialang.org/), which is a high-level, high-performance dynamic programming language for technical computing. 
 
+## Example outputs
+
+Here are some example outputs from the model, showing the evolution of variables at different scales:
+
+**Scene level:**
+
+Leaf area index (LAI) at the scene level over time:
+
+![scene level](assets/simulation_results_Scene.png)
+
+**Plant level:**
+
+Maintenance respiration (Rm), absorbed PPFD (aPPFD), biomass of bunches harvested, and leaf area at the plant level over time:
+ 
+![plant level](assets/simulation_results_Plant.png)
+
+**Leaf level:**
+
+Leaf area at the level of the individual leaf over time:
+
+![leaf level](assets/simulation_results_Leaf.png)
+
+**Soil level:**
+
+Fraction of transpirable soil water (FTSW) over time:
+
+![soil level](assets/simulation_results_Soil.png)
+
+
 ## Installation
 
 Install XPalm using Julia's package manager, typing `]` in the Julia REPL (*i.e.* the console) to enter the Pkg REPL mode and then typing:
@@ -63,7 +92,6 @@ The easiest way to run the model is to use the template notebook provided by the
 
 ```julia
 using Pluto, XPalm
-Pluto.run(joinpath(dirname(pathof(XPalm)), "..", "notebooks", "XPalm.jl")
 XPalm.notebook("xpalm_notebook.jl")
 ```
 
@@ -84,9 +112,8 @@ using XPalm, CSV, DataFrames
 meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), DataFrame)
 
 # Run simulation
-df = xpalm(meteo; 
+df = xpalm(meteo, DataFrame;
     vars = Dict("Scene" => (:lai,)), # Request LAI as output
-    sink = DataFrame
 )
 ```
 
@@ -98,19 +125,22 @@ df = xpalm(meteo;
 Customize palm parameters and request multiple outputs:
 
 ```julia
-# Read the parameters from a YAML file (provided in the example folder of the package):
+# Read the parameters from a YAML file (provided in the example folder of the package). Note that parameter keys should be imported as `Symbol`s
 using YAML
-parameters = YAML.load_file(joinpath(dirname(dirname(pathof(XPalm))), "examples/xpalm_parameters.yml"))
+parameters = YAML.load_file(joinpath(dirname(dirname(pathof(XPalm))), "examples/xpalm_parameters.yml"); dicttype=Dict{Symbol,Any})
+
+# Load example meteorological data
+meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), DataFrame)
 
 # Create palm with custom parameters
-p = Palm(parameters=parameters)
+p = XPalm.Palm(parameters=parameters)
 
 # Run simulation with multiple outputs
 results = xpalm(
     meteo,
     DataFrame,
     vars = Dict(
-        "Scene" => (:lai, :et0),
+        "Scene" => (:lai,),
         "Plant" => (:leaf_area, :biomass_bunch_harvested),
         "Soil" => (:ftsw,)
     ),
@@ -140,6 +170,7 @@ using XPalm.Models
 ```
 
 #### More examples
+
 The package provides an example script in the `examples` folder. To run it, you first have to place your working directory inside the folder, and then activate its environement by running `] activate .`. 
 
 You can also find example applications in the [Xpalm applications Github repository](https://github.com/PalmStudio/XPalm_applications).

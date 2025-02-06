@@ -27,6 +27,34 @@ The model uses a daily time step and requires standard meteorological inputs (te
 
 The model is implemented in the [Julia programming language](https://julialang.org/), which is a high-level, high-performance dynamic programming language for technical computing. 
 
+## Example outputs
+
+Here are some example outputs from the model, showing the evolution of variables at different scales:
+
+**Scene level:**
+
+Leaf area index (LAI) at the scene level over time:
+
+![scene level](assets/simulation_results_Scene.png)
+
+**Plant level:**
+
+Maintenance respiration (Rm), absorbed PPFD (aPPFD), biomass of bunches harvested, and leaf area at the plant level over time:
+ 
+![plant level](assets/simulation_results_Plant.png)
+
+**Leaf level:**
+
+Leaf area at the level of the individual leaf over time:
+
+![leaf level](assets/simulation_results_Leaf.png)
+
+**Soil level:**
+
+Fraction of transpirable soil water (FTSW) over time:
+
+![soil level](assets/simulation_results_Soil.png)
+
 ## Installation
 
 The package can be installed using the Julia package manager. From the Julia REPL, type `]` to enter the Pkg REPL mode and run:
@@ -55,7 +83,6 @@ The easiest way to run the model is to use the template notebook provided by the
 
 ```julia
 using Pluto, XPalm
-Pluto.run(joinpath(dirname(pathof(XPalm)), "..", "notebooks", "XPalm.jl")
 XPalm.notebook("xpalm_notebook.jl")
 ```
 
@@ -92,17 +119,20 @@ Customize palm parameters and request multiple outputs:
 ```julia
 # Read the parameters from a YAML file (provided in the example folder of the package):
 using YAML
-parameters = YAML.load_file(joinpath(dirname(dirname(pathof(XPalm))), "examples/xpalm_parameters.yml"))
+parameters = YAML.load_file(joinpath(dirname(dirname(pathof(XPalm))), "examples/xpalm_parameters.yml"); dicttype=Dict{Symbol,Any})
+
+# Load example meteorological data
+meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), DataFrame)
 
 # Create palm with custom parameters
-p = Palm(parameters=parameters)
+p = XPalm.Palm(parameters=parameters)
 
 # Run simulation with multiple outputs
 results = xpalm(
     meteo,
     DataFrame,
     vars = Dict(
-        "Scene" => (:lai, :et0),
+        "Scene" => (:lai,),
         "Plant" => (:leaf_area, :biomass_bunch_harvested),
         "Soil" => (:ftsw,)
     ),
@@ -114,7 +144,7 @@ You can also import the parameters from a JSON file using the `JSON` package:
 
 ```julia
 using JSON # You first need to install the JSON package by running `] add JSON`
-params = open("examples/xpalm_parameters.json", "r") do io
+params = open(joinpath(dirname(dirname(pathof(XPalm))), "examples/xpalm_parameters.json"), "r") do io
     JSON.parse(io; dicttype=Dict{Symbol,Any}, inttype=Int64)
 end
 ```
