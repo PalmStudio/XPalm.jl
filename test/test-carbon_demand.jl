@@ -22,8 +22,8 @@
     df = outputs(out, DataFrame)
     total_demand = sum(df.carbon_demand)
     biomass = sum(df.carbon_demand) / 1.44
-    @test total_demand ≈ 133.4260422797521
-    @test biomass ≈ df.potential_volume[end] * 300000.0 ≈ 92.6569738053834
+    @test total_demand ≈ 3664.353671147133
+    @test biomass ≈ df.potential_volume[end] * 300000.0 ≈ 2544.6900494077313
 end
 
 

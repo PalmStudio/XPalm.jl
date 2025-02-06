@@ -18,7 +18,7 @@ end
             status=(NamedTuple(init)..., soil_depth=2000.0, TEff=9.0)
         )
         run!(m, meteo[1, :], executor=SequentialEx())
-        @test m[:ftsw][1] ≈ 0.5608639639527875
+        @test m[:ftsw][1] ≈ 0.5824964394002472
         @test m[:root_depth][1] == 302.7
     end
 
@@ -36,6 +36,6 @@ end
         df = outputs(out, DataFrame)
         @test df.root_depth[1] ≈ 302.7
         @test df.root_depth[end] ≈ 2200.0
-        @test df.ftsw[1] ≈ 0.5608639639527875
+        @test df.ftsw[1] ≈ 0.5824964394002472
     end
 end

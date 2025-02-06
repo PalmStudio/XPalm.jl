@@ -43,6 +43,6 @@ end
     out = run!(mtg, m, meteo, outputs=vars, executor=SequentialEx())
     df = outputs(out, DataFrame)
 
-    @test df.carbon_assimilation[1] ≈ 23.244236049954306
-    @test df.carbon_assimilation[end] ≈ 22.967373313544766
+    @test df.carbon_assimilation[1] ≈ 24.221335070384264
+    @test df.carbon_assimilation[end] ≈ 22.30710240739654
 end

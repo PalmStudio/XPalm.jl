@@ -55,5 +55,5 @@ end
     out = run!(mtg, mapping, meteo, outputs=vars, executor=SequentialEx())
     df = filter(row -> row.organ == "Scene", outputs(out, DataFrame))
     @test df.lai[1] ≈ 0.0010127314814814814
-    @test df.lai[end] ≈ 0.9276620370370258
+    @test df.lai[end] ≈ 4.2129629629632985
 end

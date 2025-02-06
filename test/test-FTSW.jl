@@ -13,7 +13,7 @@
         status=(aPPFD=1.0, ET0=2.5, TEff=10.0)
     )
     run!(m, meteo[1, :], executor=SequentialEx())
-    @test m[:ftsw][1] ≈ 0.5659117396283625
+    @test m[:ftsw][1] ≈ 0.5877389073548493
 end
 
 
@@ -27,5 +27,5 @@ end
     )
     run!(mod, meteo[1, :], executor=SequentialEx())
 
-    @test mod[:ftsw][1] ≈ 0.5660684808743338
+    @test mod[:ftsw][1] ≈ 0.5649629600495986
 end

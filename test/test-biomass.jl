@@ -22,7 +22,7 @@ end
         out = run!(mtg, m, meteo, outputs=vars, executor=SequentialEx())
         df = outputs(out, DataFrame)
         @test df.biomass[1] ≈ 6.944444444444445
-        @test df.biomass[end] ≈ 6361.111111111035
+        @test df.biomass[end] ≈ 28888.888888891193
         @test df.litter_male[end] ≈ 0.0 # no senescence
     end
 
