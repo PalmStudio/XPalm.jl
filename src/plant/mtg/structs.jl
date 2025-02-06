@@ -207,6 +207,11 @@ Create a new scene with one Palm plant. The scene contains a soil, a plant, a ro
 - a `Palm` object
 """
 function Palm(; initiation_age=0, parameters=default_parameters(),)
+    # Parameters should be a Dict{Symbol,Any}:
+    if !(typeof(parameters) <: Dict{Symbol})
+        @info "`parameters` should be a Dict{Symbol,Any}, converting using: `Dict{Symbol,Any}(Symbol(k) => v for (k, v) in parameters)`"
+        parameters = Dict{Symbol,Any}(Symbol(k) => v for (k, v) in parameters)
+    end
 
     scene = Node(1, NodeMTG("/", "Scene", 1, 0), Dict{Symbol,Any}(),)
     soil = Node(scene, NodeMTG("+", "Soil", 1, 1),)
