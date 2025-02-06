@@ -35,25 +35,25 @@ Here are some example outputs from the model, showing the evolution of variables
 
 Leaf area index (LAI) at the scene level over time:
 
-![scene level](assets/simulation_results_Scene.png)
+![scene level](docs/src/assets/simulation_results_Scene.png)
 
 **Plant level:**
 
 Maintenance respiration (Rm), absorbed PPFD (aPPFD), biomass of bunches harvested, and leaf area at the plant level over time:
  
-![plant level](assets/simulation_results_Plant.png)
+![plant level](docs/src/assets/simulation_results_Plant.png)
 
 **Leaf level:**
 
 Leaf area at the level of the individual leaf over time:
 
-![leaf level](assets/simulation_results_Leaf.png)
+![leaf level](docs/src/assets/simulation_results_Leaf.png)
 
 **Soil level:**
 
 Fraction of transpirable soil water (FTSW) over time:
 
-![soil level](assets/simulation_results_Soil.png)
+![soil level](docs/src/assets/simulation_results_Soil.png)
 
 ## Installation
 
