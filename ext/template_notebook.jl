@@ -64,6 +64,7 @@ md"""
 meteo = let
     m = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), DataFrame)
     m.duration .= Dates.Day(1)
+    m.timestep .= 1:nrow(m)
     Weather(m)
     m
 end
@@ -156,11 +157,13 @@ df = let
     p = XPalm.Palm(parameters=params)
     if length(variables_dict) > 0
         sim = xpalm(meteo, DataFrame; palm=p, vars=variables_dict)
+        dfs_all = leftjoin(sim, meteo, on=:timestep)
+        sort!(dfs_all, :timestep)
     end
 end
 
 # ╔═╡ a8c2f2f2-e016-494d-9f7b-c445c62b0810
-dfs = Dict(i => select(filter(row -> row.organ == i, df), [:timestep, :node, variables_dict[i]...]) for i in keys(variables_dict));
+dfs = Dict(i => select(filter(row -> row.organ == i, df), [:date, :node, variables_dict[i]...]) for i in keys(variables_dict));
 
 # ╔═╡ f6ad8a2a-75ec-4f9b-a462-fccccf7f58e5
 let
@@ -169,14 +172,14 @@ let
         n_nodes_scale = length(unique(dfs[scale].node))
 
         if n_nodes_scale == 1
-            m = mapping(:timestep, :value, layout=:variable)
+            m = mapping(:date, :value, layout=:variable)
         else
-            m = mapping(:timestep, :value, color=:node => nonnumeric, layout=:variable)
+            m = mapping(:date, :value, color=:node => nonnumeric, layout=:variable)
         end
 
         height_plot = max(300, 300 * length(variables_dict[scale]) / 2)
 
-        plt = data(stack(dfs[scale], Not([:timestep, :node]), view=true)) * m * visual(Lines)
+        plt = data(stack(dfs[scale], Not([:date, :node]), view=true)) * m * visual(Lines)
 
         pag = paginate(plt, layout=2)
 
@@ -207,11 +210,11 @@ let
         n_nodes_scale = length(unique(dfs[scale].node))
 
         if n_nodes_scale == 1
-            m = mapping(:timestep, variables_one_dict[scale])
-            df_plot = select(dfs[scale], [:timestep, :node, variables_one_dict[scale]])
+            m = mapping(:date, variables_one_dict[scale])
+            df_plot = select(dfs[scale], [:date, :node, variables_one_dict[scale]])
         else
-            m = mapping(:timestep, variables_one_dict[scale], color=:node => nonnumeric)
-            df_plot = select(df, [:timestep, :node, variables_one_dict[scale]])
+            m = mapping(:date, variables_one_dict[scale], color=:node => nonnumeric)
+            df_plot = select(df, [:date, :node, variables_one_dict[scale]])
             filter!(row -> row.node in nodes_dict[scale], df_plot)
         end
 
