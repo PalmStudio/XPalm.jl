@@ -1,19 +1,19 @@
 ```@meta
-CurrentModule = XPalmModel
+CurrentModule = XPalm
 ```
 
-# XPalm - A Growth and Yield Model for Oil Palm
+# XPalm - A growth and yield model for oil palm
 
 ```@raw html
-<!-- [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://PalmStudio.github.io/XPalmModel.jl/stable/) -->
+<!-- [![Stable](https://img.shields.io/badge/docs-stable-blue.svg)](https://PalmStudio.github.io/XPalm.jl/stable/) -->
 ```
 
-[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://PalmStudio.github.io/XPalmModel.jl/dev/)
-[![Build Status](https://github.com/PalmStudio/XPalmModel.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/PalmStudio/XPalmModel.jl/actions/workflows/CI.yml?query=branch%3Amain)
-[![Coverage](https://codecov.io/gh/PalmStudio/XPalmModel.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/PalmStudio/XPalmModel.jl)
+[![Dev](https://img.shields.io/badge/docs-dev-blue.svg)](https://PalmStudio.github.io/XPalm.jl/dev/)
+[![Build Status](https://github.com/PalmStudio/XPalm.jl/actions/workflows/CI.yml/badge.svg?branch=main)](https://github.com/PalmStudio/XPalm.jl/actions/workflows/CI.yml?query=branch%3Amain)
+[![Coverage](https://codecov.io/gh/PalmStudio/XPalm.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/PalmStudio/XPalm.jl)
 [![ColPrac: Contributor's Guide on Collaborative Practices for Community Packages](https://img.shields.io/badge/ColPrac-Contributor's%20Guide-blueviolet)](https://github.com/SciML/ColPrac)
 
-[XPalmModel](https://github.com/PalmStudio/XPalmModel.jl) is a growth and yield model for oil palm (*Elaeis guineensis*).
+[XPalm](https://github.com/PalmStudio/XPalm.jl) is a growth and yield model for oil palm (*Elaeis guineensis*).
 
 ```@contents
 Pages = ["index.md"]
@@ -75,7 +75,7 @@ Fraction of transpirable soil water (FTSW) over time:
 Install XPalm using Julia's package manager, typing `]` in the Julia REPL (*i.e.* the console) to enter the Pkg REPL mode and then typing:
 
 ```julia
-add XPalmModel
+add XPalm
 ```
 
 ## Quick Start
@@ -83,7 +83,7 @@ add XPalmModel
 From the Julia REPL, load the package:
 
 ```julia
-using XPalmModel
+using XPalm
 ```
 
 ### The easiest way of running the model
@@ -91,8 +91,8 @@ using XPalmModel
 The easiest way to run the model is to use the template notebook provided by the package. To run the notebook, you need to install the Pluto package first by running `] add Pluto`. Then, you can run the notebook using the following commands in the Julia REPL:
 
 ```julia
-using Pluto, XPalmModel
-XPalmModel.notebook("xpalm_notebook.jl")
+using Pluto, XPalm
+XPalm.notebook("xpalm_notebook.jl")
 ```
 
 This command will create a new Pluto notebook (named "xpalm_notebook.jl") in the current directory, and open it automatically for you.
@@ -106,10 +106,10 @@ Once closed, you can re-open this notebook by running the same command again. If
 Run a simple simulation using default parameters and meteorological data:
 
 ```julia
-using XPalmModel, CSV, DataFrames
+using XPalm, CSV, DataFrames
 
 # Load example meteorological data
-meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalmModel))), "0-data/meteo.csv"), DataFrame)
+meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), DataFrame)
 
 # Run simulation
 df = xpalm(meteo, DataFrame;
@@ -127,13 +127,13 @@ Customize palm parameters and request multiple outputs:
 ```julia
 # Read the parameters from a YAML file (provided in the example folder of the package). Note that parameter keys should be imported as `Symbol`s
 using YAML
-parameters = YAML.load_file(joinpath(dirname(dirname(pathof(XPalmModel))), "examples/xpalm_parameters.yml"); dicttype=Dict{Symbol,Any})
+parameters = YAML.load_file(joinpath(dirname(dirname(pathof(XPalm))), "examples/xpalm_parameters.yml"); dicttype=Dict{Symbol,Any})
 
 # Load example meteorological data
-meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalmModel))), "0-data/meteo.csv"), DataFrame)
+meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), DataFrame)
 
 # Create palm with custom parameters
-p = XPalmModel.Palm(parameters=parameters)
+p = XPalm.Palm(parameters=parameters)
 
 # Run simulation with multiple outputs
 results = xpalm(
@@ -165,8 +165,8 @@ end
 The models are available from the `Models` submodule. To import all models, you can use the following command:
 
 ```julia
-using XPalmModel
-using XPalmModel.Models
+using XPalm
+using XPalm.Models
 ```
 
 #### More examples
@@ -191,7 +191,7 @@ This work is supported by the PalmStudio research project, funded by the [SMART 
 Documentation for the main functions of the XPalm package.
 
 ```@autodocs
-Modules = [XPalmModel]
+Modules = [XPalm]
 ```
 
 ### Models
@@ -199,5 +199,5 @@ Modules = [XPalmModel]
 Documentation for the models available in XPalm.
 
 ```@autodocs
-Modules = [XPalmModel.Models]
+Modules = [XPalm.Models]
 ```

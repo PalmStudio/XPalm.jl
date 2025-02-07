@@ -1,6 +1,6 @@
-using XPalmModel
-using XPalmModel.Models
-import XPalmModel: Palm
+using XPalm
+using XPalm.Models
+import XPalm: Palm
 using Test
 using Dates
 using MultiScaleTreeGraph, PlantMeteo, PlantSimEngine
@@ -8,9 +8,9 @@ using CSV, DataFrames, Statistics
 
 # Import the meteo data once:
 
-meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalmModel))), "0-data/meteo.csv"), DataFrame)
+meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), DataFrame)
 
-dirtest = joinpath(dirname(dirname(pathof(XPalmModel))), "test/")
+dirtest = joinpath(dirname(dirname(pathof(XPalm))), "test/")
 
 @testset "Age" begin
     include(joinpath(dirtest, "test-age.jl"))

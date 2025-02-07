@@ -1,16 +1,16 @@
-using XPalmModel
+using XPalm
 using Documenter
 
-DocMeta.setdocmeta!(XPalmModel, :DocTestSetup, :(using XPalmModel); recursive=true)
+DocMeta.setdocmeta!(XPalm, :DocTestSetup, :(using XPalm); recursive=true)
 
 makedocs(;
-    modules=[XPalmModel],
+    modules=[XPalm],
     authors="Rémi Vezy <VEZY@users.noreply.github.com> and contributors",
-    repo=Documenter.Remotes.GitHub("PalmStudio", "XPalmModel.jl"),
-    sitename="XPalmModel.jl",
+    repo=Documenter.Remotes.GitHub("PalmStudio", "XPalm.jl"),
+    sitename="XPalm.jl",
     format=Documenter.HTML(;
         prettyurls=get(ENV, "CI", "false") == "true",
-        canonical="https://PalmStudio.github.io/XPalmModel.jl",
+        canonical="https://PalmStudio.github.io/XPalm.jl",
         edit_link="main",
         assets=String[]
     ),
@@ -20,6 +20,6 @@ makedocs(;
 )
 
 deploydocs(;
-    repo="github.com/PalmStudio/XPalmModel.jl",
+    repo="github.com/PalmStudio/XPalm.jl",
     devbranch="main"
 )

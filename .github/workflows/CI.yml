@@ -65,6 +65,6 @@ jobs:
         shell: julia --project=docs --color=yes {0}
         run: |
           using Documenter: DocMeta, doctest
-          using XPalmModel
-          DocMeta.setdocmeta!(XPalmModel, :DocTestSetup, :(using XPalmModel); recursive=true)
-          doctest(XPalmModel)
+          using XPalm
+          DocMeta.setdocmeta!(XPalm, :DocTestSetup, :(using XPalm); recursive=true)
+          doctest(XPalm)
