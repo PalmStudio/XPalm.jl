@@ -2,9 +2,9 @@
 aPPFD_radiation = 60.0
 @testset "RUE" begin
     m = ModelList(carbon_assimilation=ConstantRUEModel(4.8), status=(aPPFD=aPPFD_radiation,))
-    run!(m, meteo[1, :], executor=SequentialEx())
+    out = run!(m, meteo[1, :], executor=SequentialEx())
 
-    @test m[:carbon_assimilation][1] ≈ aPPFD_radiation / Constants().J_to_umol * 4.8
+    @test out[:carbon_assimilation][1] ≈ aPPFD_radiation / Constants().J_to_umol * 4.8
 end
 
 @testset "Multiscale RUE" begin
@@ -16,7 +16,7 @@ end
         )
     )
     vars = Dict{String,Any}("Plant" => (:carbon_assimilation,))
-    out = run!(mtg, m, meteo, outputs=vars, executor=SequentialEx())
+    out = run!(mtg, m, meteo, tracked_outputs=vars, executor=SequentialEx())
     df = outputs(out, DataFrame)
 
     @test df.carbon_assimilation[1] ≈ aPPFD_radiation / Constants().J_to_umol * 4.8
@@ -31,7 +31,7 @@ end
     m = Dict(
         "Scene" => (
             Beer(0.5),
-            Status(lai=2.0,),
+            Status(LAI=2.0,),
         ),
         "Plant" => (
             MultiScaleModel(SceneToPlantLightPartitioning(plant_area), [:aPPFD_scene => "Scene" => :aPPFD]),
@@ -40,7 +40,7 @@ end
         )
     )
     vars = Dict{String,Any}("Plant" => (:carbon_assimilation,))
-    out = run!(mtg, m, meteo, outputs=vars, executor=SequentialEx())
+    out = run!(mtg, m, meteo, tracked_outputs=vars, executor=SequentialEx())
     df = outputs(out, DataFrame)
 
     @test df.carbon_assimilation[1] ≈ 24.221335070384264

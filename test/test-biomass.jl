@@ -4,8 +4,8 @@
         status=(carbon_allocation=10.0, biomass=0.0)
     )
 
-    run!(m, executor=SequentialEx())
-    @test m[:biomass][1] ≈ 10.0 / 1.44
+    outputs = run!(m, executor=SequentialEx())
+    @test outputs[:biomass][1] ≈ 10.0 / 1.44
 end
 
 @testset "MaleBiomass" begin
@@ -19,7 +19,7 @@ end
             )
         )
         vars = Dict{String,Any}("Male" => (:biomass, :litter_male))
-        out = run!(mtg, m, meteo, outputs=vars, executor=SequentialEx())
+        out = run!(mtg, m, meteo, tracked_outputs=vars, executor=SequentialEx())
         df = outputs(out, DataFrame)
         @test df.biomass[1] ≈ 6.944444444444445
         @test df.biomass[end] ≈ 28888.888888891193
@@ -36,7 +36,7 @@ end
             )
         )
         vars = Dict{String,Any}("Male" => (:biomass, :litter_male))
-        out = run!(mtg, m, meteo, outputs=vars, executor=SequentialEx())
+        out = run!(mtg, m, meteo, tracked_outputs=vars, executor=SequentialEx())
         df = outputs(out, DataFrame)
         @test df.biomass == zeros(length(df.biomass))
         @test df.litter_male[1] == 10.0
@@ -54,7 +54,7 @@ end
         )
 
         vars = Dict{String,Any}("Male" => (:biomass, :litter_male))
-        out = run!(mtg, m, meteo, outputs=vars, executor=SequentialEx())
+        out = run!(mtg, m, meteo, tracked_outputs=vars, executor=SequentialEx())
         df = outputs(out, DataFrame)
         @test df.biomass == zeros(length(df.biomass))
         @test df.litter_male == zeros(length(df.biomass))
@@ -72,7 +72,7 @@ end
         )
     )
     vars = Dict{String,Any}("Female" => (:biomass, :biomass_stalk, :biomass_fruits))
-    out = run!(mtg, m, meteo, outputs=vars, executor=SequentialEx())
+    out = run!(mtg, m, meteo, tracked_outputs=vars, executor=SequentialEx())
     df = outputs(out, DataFrame)
     @test df.biomass[1] ≈ 7.552083333333333
     @test df.biomass_stalk[1] ≈ 3.4722222222222223

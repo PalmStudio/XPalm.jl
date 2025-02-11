@@ -16,7 +16,7 @@ end
     mtg = Palm().mtg
     m = Dict("Plant" => DailyPlantAgeModel(10))
     vars = Dict{String,Any}("Plant" => (:plant_age,))
-    out = run!(mtg, m, meteo, outputs=vars, executor=SequentialEx())
+    out = run!(mtg, m, meteo, tracked_outputs=vars, executor=SequentialEx())
     df = outputs(out, DataFrame)
     @test df.plant_age[452] ≈ 462
     # m = ModelList(
