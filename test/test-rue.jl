@@ -17,7 +17,7 @@ end
     )
     vars = Dict{String,Any}("Plant" => (:carbon_assimilation,))
     out = run!(mtg, m, meteo, tracked_outputs=vars, executor=SequentialEx())
-    df = outputs(out, DataFrame)
+    df = convert_outputs(out, DataFrame)
 
     @test df.carbon_assimilation[1] ≈ aPPFD_radiation / Constants().J_to_umol * 4.8
     # @test df.carbon_assimilation[end] ≈ 22.967373313544766
@@ -41,7 +41,7 @@ end
     )
     vars = Dict{String,Any}("Plant" => (:carbon_assimilation,))
     out = run!(mtg, m, meteo, tracked_outputs=vars, executor=SequentialEx())
-    df = outputs(out, DataFrame)
+    df = convert_outputs(out, DataFrame)
 
     @test df.carbon_assimilation[1] ≈ 24.221335070384264
     @test df.carbon_assimilation[end] ≈ 22.30710240739654

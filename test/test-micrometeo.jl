@@ -9,7 +9,7 @@ end
     m = Dict("Plant" => DailyDegreeDays())
     vars = Dict{String,Any}("Plant" => (:TEff, :TT_since_init))
     out = run!(mtg, m, meteo, tracked_outputs=vars, executor=SequentialEx())
-    df = outputs(out, DataFrame)
+    df = convert_outputs(out, DataFrame)
     @test df.TEff[1] ≈ 8.996814638030823
     @test df.TEff[end] ≈ 9.608695832784498
     @test df.TT_since_init[10] ≈ 89.3153902056305
@@ -21,7 +21,7 @@ end
     m = Dict("Plant" => (DegreeDaysFTSW(threshold_ftsw_stress=0.3), Status(ftsw=0.2,)))
     vars = Dict{String,Any}("Plant" => (:TEff,))
     out = run!(mtg, m, meteo, tracked_outputs=vars, executor=SequentialEx())
-    df = outputs(out, DataFrame)
+    df = convert_outputs(out, DataFrame)
     # m = ModelList(
     #     DegreeDaysFTSW(),
     #     status=(threshold_ftsw_stress=0.3, ftsw=fill(ftsw_cst, nrow(meteo)))

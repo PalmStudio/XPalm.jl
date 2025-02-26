@@ -19,7 +19,7 @@
     )
     vars = Dict{String,Any}("Internode" => (:carbon_demand, :potential_volume, :final_potential_height, :final_potential_radius, :potential_height, :potential_radius, :TT_since_init))
     out = run!(mtg, m, meteo, tracked_outputs=vars, executor=SequentialEx())
-    df = outputs(out, DataFrame)
+    df = convert_outputs(out, DataFrame)
     total_demand = sum(df.carbon_demand)
     biomass = sum(df.carbon_demand) / 1.44
     @test total_demand ≈ 3664.353671147133
@@ -37,7 +37,7 @@ end
     )
     vars = Dict{String,Any}("Leaf" => (:carbon_demand,))
     out = run!(mtg, m, meteo[1:2, :], tracked_outputs=vars, executor=SequentialEx())
-    df = outputs(out, DataFrame)
+    df = convert_outputs(out, DataFrame)
     @test df.carbon_demand[1] ≈ 329.14285714285716
     @test df.carbon_demand[1] ≈ 1.0 * (80.0 * 1.44) / 0.35
 end

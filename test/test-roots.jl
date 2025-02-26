@@ -33,7 +33,7 @@ end
         )
         vars = Dict{String,Any}("Soil" => (:root_depth, :ftsw))
         out = run!(mtg, m, meteo, tracked_outputs=vars, executor=SequentialEx())
-        df = outputs(out, DataFrame)
+        df = convert_outputs(out, DataFrame)
         @test df.root_depth[1] ≈ 302.7
         @test df.root_depth[end] ≈ 2200.0
         @test df.ftsw[1] ≈ 0.5824964394002472
