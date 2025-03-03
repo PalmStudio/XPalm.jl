@@ -6,11 +6,11 @@
             (
                 MultiScaleModel(
                     model=InitiationAgeFromPlantAge(),
-                    mapping=[:plant_age => "Plant",],
+                    mapped_variables=[:plant_age => "Plant",],
                 ),
                 MultiScaleModel(
                     model=DailyDegreeDaysSinceInit(),
-                    mapping=[:TEff => "Plant",], # Using TEff computed at plant scale
+                    mapped_variables=[:TEff => "Plant",], # Using TEff computed at plant scale
                 ),
                 FinalPotentialInternodeDimensionModel(),
                 PotentialInternodeDimensionModel(),
