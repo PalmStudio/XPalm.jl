@@ -1,7 +1,7 @@
 @testset "Beer" begin
     m = ModelList(
         light_interception=Beer(0.5),
-        status=(LAI=fill(2.0, nrow(meteo)),)
+        status=(lai=fill(2.0, nrow(meteo)),)
     )
 
     out = run!(m, meteo)

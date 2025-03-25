@@ -31,7 +31,7 @@ end
     m = Dict(
         "Scene" => (
             Beer(0.5),
-            Status(LAI=2.0,),
+            Status(lai=2.0,),
         ),
         "Plant" => (
             MultiScaleModel(SceneToPlantLightPartitioning(plant_area), [:aPPFD_scene => "Scene" => :aPPFD]),
