@@ -28,11 +28,11 @@ df = xpalm(meteo; vars= Dict("Scene" => (:lai,)), sink=DataFrame)
 function xpalm(meteo, sink; vars=Dict("Scene" => (:lai,)), palm=Palm(initiation_age=0, parameters=default_parameters()))
     models = model_mapping(palm)
     out = PlantSimEngine.run!(palm.mtg, models, meteo, tracked_outputs=vars, executor=PlantSimEngine.SequentialEx(), check=false)
-    return PlantSimEngine.convert_outputs_2(out, sink, no_value=missing)
+    return PlantSimEngine.convert_outputs(out, sink, no_value=missing)
 end
 
 function xpalm(meteo; vars=Dict("Scene" => (:lai,)), palm=Palm(initiation_age=0, parameters=default_parameters()))
     models = model_mapping(palm)
     out = PlantSimEngine.run!(palm.mtg, models, meteo, tracked_outputs=vars, executor=PlantSimEngine.SequentialEx(), check=false)
-    return PlantSimEngine.convert_outputs_2(out)
+    return PlantSimEngine.convert_outputs(out)
 end

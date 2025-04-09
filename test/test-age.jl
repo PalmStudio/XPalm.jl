@@ -17,7 +17,7 @@ end
     m = Dict("Plant" => DailyPlantAgeModel(10))
     vars = Dict{String,Any}("Plant" => (:plant_age,))
     out = run!(mtg, m, meteo, tracked_outputs=vars, executor=SequentialEx())
-    df = PlantSimEngine.convert_outputs_2(out, DataFrame)
+    df = convert_outputs(out, DataFrame)
     @test df["Plant"].plant_age[452] ≈ 462
     # m = ModelList(
     #     plant_age=DailyPlantAgeModel(10.0),
