@@ -12,8 +12,8 @@
         FTSW(ini_root_depth=ini_root_depth),
         status=(aPPFD=1.0, ET0=2.5, TEff=10.0)
     )
-    run!(m, meteo[1, :], executor=SequentialEx())
-    @test m[:ftsw][1] ≈ 0.5877389073548493
+    outputs = run!(m, meteo[1, :], executor=SequentialEx())
+    @test outputs[:ftsw][1] ≈ 0.5877389073548493
 end
 
 
@@ -25,7 +25,7 @@ end
         FTSW_BP(ini_root_depth=ini_root_depth),
         status=(aPPFD=1.0, ET0=2.5, TEff=10.0)
     )
-    run!(mod, meteo[1, :], executor=SequentialEx())
+    outputs = run!(mod, meteo[1, :], executor=SequentialEx())
 
-    @test mod[:ftsw][1] ≈ 0.5649629600495986
+    @test outputs[:ftsw][1] ≈ 0.5649629600495986
 end
