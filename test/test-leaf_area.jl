@@ -3,8 +3,8 @@
         leaf_final_potential_area=FinalPotentialAreaModel(8 * 365, 0.0015, 12.0),
         status=(initiation_age=1825,)
     )
-    run!(m)
-    @test m[:final_potential_area][1] ≈ 7.500562499999999
+    out = run!(m)
+    @test out[:final_potential_area][1] ≈ 7.500562499999999
 end
 
 @testset "PotentialAreaModel" begin
@@ -12,11 +12,11 @@ end
         leaf_potential_area=PotentialAreaModel(560.0, 100.0),
         status=(TT_since_init=[1:1:10000;], final_potential_area=fill(8.0, 10000),)
     )
-    run!(m)
-    @test m[:potential_area][3000] ≈ 2.9890383871139807e-6
-    @test m[:potential_area][5520] ≈ 7.999756547544795
-    @test m[:maturity][1] ≈ false
-    @test m[:maturity][9000] ≈ true
+    out = run!(m)
+    @test out[:potential_area][3000] ≈ 2.9890383871139807e-6
+    @test out[:potential_area][5520] ≈ 7.999756547544795
+    @test out[:maturity][1] ≈ false
+    @test out[:maturity][9000] ≈ true
 end
 
 @testset "LeafAreaModel" begin
@@ -24,8 +24,8 @@ end
         leaf_area=LeafAreaModel(80.0, 0.35, 0.0),
         status=(biomass=2000.0,)
     )
-    run!(m)
-    @test m[:leaf_area][1] ≈ 8.75
+    out = run!(m)
+    @test out[:leaf_area][1] ≈ 8.75
 end
 
 @testset "LAIModel" begin
@@ -34,8 +34,8 @@ end
         status=(leaf_areas=[12.0],)
     )
 
-    run!(m, executor=SequentialEx())
-    @test m[:lai][1] == 0.4
+    out = run!(m, executor=SequentialEx())
+    @test out[:lai][1] == 0.4
 end
 
 
@@ -52,8 +52,8 @@ end
         )
     )
     vars = Dict{String,Any}("Scene" => (:lai, :leaf_area), "Leaf" => (:leaf_area,))
-    out = run!(mtg, mapping, meteo, outputs=vars, executor=SequentialEx())
-    df = filter(row -> row.organ == "Scene", outputs(out, DataFrame))
+    out = run!(mtg, mapping, meteo, tracked_outputs=vars, executor=SequentialEx())
+    df = filter(row -> row.organ == "Scene", convert_outputs(out, DataFrame))
     @test df.lai[1] ≈ 0.0010127314814814814
     @test df.lai[end] ≈ 4.2129629629632985
 end
