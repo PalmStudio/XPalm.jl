@@ -53,7 +53,7 @@ end
     )
     vars = Dict{String,Any}("Scene" => (:lai, :leaf_area), "Leaf" => (:leaf_area,))
     out = run!(mtg, mapping, meteo, tracked_outputs=vars, executor=SequentialEx())
-    df = filter(row -> row.organ == "Scene", convert_outputs(out, DataFrame))
+    df = convert_outputs(out, DataFrame)["Scene"]
     @test df.lai[1] ≈ 0.0010127314814814814
     @test df.lai[end] ≈ 4.2129629629632985
 end
