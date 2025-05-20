@@ -1,70 +1,59 @@
-carbon_demand:
-  leaf:
-    respiration_cost: 1.44
-  internode:
-    apparent_density: 300000.0
-    carbon_concentration: 0.5
-    respiration_cost: 1.44
-  reserves:
-    cost_reserve_mobilization: 1.667
-  male:
-    respiration_cost: 1.44
-  female:
-    respiration_cost_oleosynthesis: 3.2
-    respiration_cost: 1.44
-scene_area: 73.52941176470588
-latitude: 0.97
-altitude: 50.0
-soil:
-  ini_root_depth: 100.0
-  field_capacity: 0.25
-  wilting_point_1: 0.05
-  thickness_1: 200.0
-  wilting_point_2: 0.05
-  thickness_2: 2000.0
-  initial_water_content: 0.25
-  Kc: 1.0
-  evaporation_threshold: 0.5
-  transpiration_threshold: 0.5
+reproduction:
+  sex_ratio:
+    sex_ratio_ref: 0.6
+    sex_ratio_min: 0.2
+    random_seed: 1
+  abortion:
+    abortion_rate_max: 0.8
+    random_seed: 1
+    abortion_rate_ref: 0.2
+  yield_formation:
+    fraction_first_female: 0.3
+    stalk_max_biomass: 2100.0
+    potential_fruit_number_at_maturity: 2000
+    potential_fruit_weight_at_maturity: 6.5
+    oil_content: 0.25
 phyllochron:
   age_palm_maturity: 2920
   threshold_ftsw_stress: 0.3
   production_speed_initial: 0.0111
   production_speed_mature: 0.0074
-lma_max: 200.0
-female:
-  days_increase_number_fruits: 2379.0 # in days
-  days_maximum_number_fruits: 6500.0 # in days
-  stalk_max_biomass: 2100.0
-  fraction_first_female: 0.3
-  potential_fruit_weight_at_maturity: 6.5
-  fraction_period_oleosynthesis: 0.8
-  duration_fruit_setting: 405.0
-  fraction_period_stalk: 0.2
-  TT_harvest: 12150.0 # 90 phytomers until harvest (60 growing + 30 opened) x 9°C days-1 in average per day x 15 days
-  oil_content: 0.25
-  duration_dev_spikelets: 675.0
-  potential_fruit_number_at_maturity: 2000
-rank_leaf_pruning: 50
-RL0: 5.0
-nsc_max: 0.3
+biomass:
+  leaf:
+    leaflets_biomass_contribution: 0.35
+  male:
+    max_biomass: 174.852
+    fraction_biomass_first_male: 0.3
+radiation:
+  k: 0.5
+  RUE: 4.8
+  threshold_ftsw: 0.3
+reserves:
+  nsc_max: 0.3
+mass_and_dimensions:
+  leaf:
+    lma_min: 80.0
+    lma_max: 200.0
+  roots:
+    SRL: 0.4
+    RL0: 5.0
 respiration:
   Leaf:
     Q10: 2.1
     T_ref: 25.0
-    Mr: 0.003594370860927152 # Or 0.0022 for the rachis, she also gives the proportion of each so we could compute something in-between
+    Mr: 0.003594370860927152
     P_alive: 0.9
-  Male: # Kraalingen et al. 1989, AFM (to check)
+  Male:
     Q10: 2.1
     T_ref: 25.0
     Mr: 0.0121
     P_alive: 0.5
-  Female: # Kraalingen et al. 1989, AFM (and 1985 too)
+  Female:
     Q10: 2.1
     T_ref: 25.0
     Mr: 0.0022
     P_alive: 0.5
-  RootSystem: # Dufrene et al. (1990), Oleagineux:
+  RootSystem:
     Q10: 2.1
     Turn: 0.036
     Prot: 6.25
@@ -74,50 +63,77 @@ respiration:
     Gi: 0.07
     P_alive: 0.8
   Internode:
-    Q10: 1.7  # Dufrene et al. (2005)
-    T_ref: 25.0 # Dufrene et al. (1990), gives Rm_base commpared to all dry mass (not just living biomass)
-    Mr: 0.005 # Dufrene (1990)
-    P_alive: 0.21 # Dufrene et al. (2005)
-potential_area:
-  leaf_area_first_leaf: 0.02
-  leaf_area_mature_leaf: 12.0
-  age_first_mature_leaf: 2920
-  inflexion_index: 337.5 # with around 60 leaves with rank < 1, each taking 15 days to emerge at mature stage, and 9°C days-1 per day average, it takes 8100 days to develop. At mature stage a leaf is around 12 m2, so it should be 8100 / 12 / 2 (inflexion is at half duration)
-  slope: 100.0
-k: 0.5
-SRL: 0.4
-potential_dimensions:
-  inflexion_point_radius: 900.0
-  inflexion_point_height: 900.0
-  min_height: 0.002
-  max_height: 0.03
-  slope_height: 150.0
-  max_radius: 0.3
-  age_max_height: 2920
-  age_max_radius: 2920
-  min_radius: 0.002
-  slope_radius: 150.0
-RUE: 4.8
-threshold_ftsw: 0.3
-leaflets_biomass_contribution: 0.35
-lma_min: 80.0
-inflo:
-  abortion_rate_max: 0.8
-  duration_sex_determination: 1350.0
-  sex_ratio_min: 0.2
-  sex_ratio_ref: 0.6
-  random_seed: 1
-  abortion_rate_ref: 0.2
-  TT_flowering: 10530.0 # TT_Harvest - (180 days * 9°C days-1 in average), see Van Kraalingen et al. 1989
-  duration_abortion: 540.0
-male:
-  fraction_biomass_first_male: 0.3
-  duration_flowering_male: 1800.0
-  age_mature_male: 2920.0
-  male_max_biomass: 174.852 # in carbon, so 1200g in dry mass -> 1200 x 0.4857 gC g-1 dry mass x 0.3 dry mass content (0.7 water content)
+    Q10: 1.7
+    T_ref: 25.0
+    Mr: 0.005
+    P_alive: 0.21
+phenology:
+  male:
+    duration_flowering_male: 1800.0
+    age_mature_male: 2920.0
+  female:
+    days_maximum_number_fruits: 6500
+    days_increase_number_fruits: 2379
+    duration_fruit_setting: 405.0
+    duration_dev_spikelets: 675.0
+    fraction_period_oleosynthesis: 0.8
+    TT_harvest: 12150.0
+    fraction_period_stalk: 0.2
+  inflorescence:
+    duration_sex_determination: 1350.0
+    TT_flowering: 10530.0
+    duration_abortion: 540.0
+plot:
+  altitude: 50.0
+  scene_area: 73.52941176470588
+  latitude: 0.97
+water:
+  initial_water_content: 0.25
+  evaporation_threshold: 0.5
+  ini_root_depth: 100.0
+  Kc: 1.0
+  thickness_2: 2000.0
+  thickness_1: 200.0
+  transpiration_threshold: 0.5
+  field_capacity: 0.25
+  wilting_point_2: 0.05
+  wilting_point_1: 0.05
+management:
+  rank_leaf_pruning: 50
 biomass_dry:
   Leaf: 2.0
   Stem: 0.1
   RootSystem: 12.5
   Internode: 2.0
-seed_reserve: 100.0
+dimensions:
+  leaf:
+    leaf_area_first_leaf: 0.02
+    leaf_area_mature_leaf: 12.0
+    age_first_mature_leaf: 2920
+    inflexion_index: 337.5
+    slope: 100.0
+  internode:
+    inflexion_point_radius: 900.0
+    inflexion_point_height: 900.0
+    min_height: 0.002
+    max_height: 0.03
+    slope_height: 150.0
+    max_radius: 0.3
+    age_max_height: 2920
+    age_max_radius: 2920
+    min_radius: 0.002
+    slope_radius: 150.0
+carbon_demand:
+  leaf:
+    respiration_cost: 1.44
+  internode:
+    carbon_concentration: 0.5
+    apparent_density: 300000.0
+    respiration_cost: 1.44
+  reserves:
+    cost_reserve_mobilization: 1.667
+  male:
+    respiration_cost: 1.44
+  female:
+    respiration_cost_oleosynthesis: 3.2
+    respiration_cost: 1.44
