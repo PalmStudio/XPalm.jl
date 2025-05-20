@@ -145,7 +145,7 @@ end
 
 # ╔═╡ bde1793e-983a-47e4-94a6-fbbe53fe72d6
 @bind variables variables_display(
-    Dict(k => keys(merge(v...)) for (k, v) in XPalm.PlantSimEngine.variables(XPalm.model_mapping(XPalm.Palm()))),
+    Dict(k => keys(filter(x -> !isa(x, AbstractVector), merge(v...))) for (k, v) in XPalm.PlantSimEngine.variables(XPalm.model_mapping(XPalm.Palm()))),
     default=Dict("Soil" => (:ftsw,), "Scene" => (:lai,), "Plant" => (:leaf_area, :Rm, :aPPFD, :biomass_bunch_harvested), "Leaf" => (:leaf_area,))
 )
 
