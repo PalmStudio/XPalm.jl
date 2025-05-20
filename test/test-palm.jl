@@ -8,6 +8,6 @@ mtg_ref = joinpath(dirname(dirname(pathof(XPalm))), "test/references/palm.mtg")
 
     @test select(new_palm.mtg, :initiation_age) == select(ref_mtg, :initiation_age)
     @test new_palm.initiation_age == 0
-    @test typeof(new_palm.parameters) == Dict{Symbol,Any}
-    @test new_palm.parameters[:SRL] == 0.4
+    @test typeof(new_palm.parameters) == Dict{Symbol,Dict{Symbol}}
+    @test new_palm.parameters[:mass_and_dimensions][:roots][:SRL] == 0.4
 end
