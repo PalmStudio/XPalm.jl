@@ -205,7 +205,7 @@ function default_parameters()
                 :days_maximum_number_fruits => 6500,
                 :duration_fruit_setting => 405.0,
                 :duration_dev_spikelets => 675.0,
-                :duration_bunch_development => 5445.0, # 90 phytomers until harvest (60 growing + 30 opened) x 9°C days-1 in average per day x 15 days
+                :duration_bunch_development => 1215.0, # 90 phytomers until harvest (60 growing + 30 opened) x 9°C days-1 in average per day x 15 days
                 :fraction_period_oleosynthesis => 0.8,
                 :fraction_period_stalk => 0.2,
             ),

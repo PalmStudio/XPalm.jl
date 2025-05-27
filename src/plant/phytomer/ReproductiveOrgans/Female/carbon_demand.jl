@@ -78,10 +78,12 @@ function FemaleCarbonDemandModel(;
     @assert TT_flowering > 0.0 "TT_flowering must be > 0.0"
     @assert 0.0 <= fraction_period_oleosynthesis <= 1.0 "fraction_period_oleosynthesis must be between 0 and 1"
     @assert 0.0 <= fraction_period_stalk <= 1.0 "fraction_period_stalk must be between 0 and 1"
-    duration_oleosynthesis = fraction_period_oleosynthesis * duration_bunch_development
-    duration_dev_stalk = fraction_period_stalk * (TT_flowering + duration_fruit_setting + duration_bunch_development)
-
     TT_fruiting = TT_flowering + duration_fruit_setting
+
+    duration_oleosynthesis = fraction_period_oleosynthesis * duration_bunch_development
+    duration_dev_stalk = fraction_period_stalk * (TT_fruiting + duration_bunch_development)
+
+
 
     FemaleCarbonDemandModel(
         respiration_cost,
