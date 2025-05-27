@@ -1,5 +1,5 @@
 """
-    SexDetermination(TT_flowering, duration_abortion, duration_sex_determination, sex_ratio_min, sex_ratio_ref, rng::AbstractRNG)
+    SexDetermination(TT_flowering, duration_abortion, duration_sex_determination, sex_ratio_min, sex_ratio_ref, rng)
     SexDetermination(TT_flowering, duration_abortion, duration_sex_determination, sex_ratio_min, sex_ratio_ref; random_seed=1)
 
 Determines the sex of a phytomer -or rather, its bunch- based on the trophic 
@@ -31,13 +31,13 @@ state of the plant during a given period in thermal time.
 The sex of the organ is determined at `TT_flowering-duration_abortion` based on the `trophic_status` of the plant during a period of time 
 before this date. The hypothesis is that a trophic stress can trigger more males in the plant.
 """
-struct SexDetermination{T} <: AbstractSex_DeterminationModel
+struct SexDetermination{T,R<:AbstractRNG} <: AbstractSex_DeterminationModel
     TT_flowering::T
     duration_abortion::T
     duration_sex_determination::T
     sex_ratio_min::T
     sex_ratio_ref::T
-    rng::AbstractRNG
+    rng::R
 end
 
 function SexDetermination(; TT_flowering=6300.0, duration_abortion=540.0, duration_sex_determination=1350.0, sex_ratio_min=0.2, sex_ratio_ref=0.6, random_seed=1)
