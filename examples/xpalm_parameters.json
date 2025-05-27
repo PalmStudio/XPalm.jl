@@ -98,7 +98,7 @@
             "duration_fruit_setting": 405.0,
             "duration_dev_spikelets": 675.0,
             "fraction_period_oleosynthesis": 0.8,
-            "TT_harvest": 12150.0,
+            "duration_bunch_development": 1215.0,
             "fraction_period_stalk": 0.2
         },
         "inflorescence": {
