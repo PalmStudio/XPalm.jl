@@ -22,7 +22,7 @@ A simulation output, either as a dictionary of variables per scales (default) or
 ```julia
 using XPalm, CSV, DataFrames
 meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), DataFrame)
-df = xpalm(meteo; vars= Dict("Scene" => (:lai,)), sink=DataFrame)
+df = xpalm(meteo, DataFrame; vars= Dict("Scene" => (:lai,)))
 ```
 """
 function xpalm(meteo, sink; vars=Dict("Scene" => (:lai,)), palm=Palm(initiation_age=0, parameters=default_parameters()))
@@ -34,5 +34,5 @@ end
 function xpalm(meteo; vars=Dict("Scene" => (:lai,)), palm=Palm(initiation_age=0, parameters=default_parameters()))
     models = model_mapping(palm)
     out = PlantSimEngine.run!(palm.mtg, models, meteo, tracked_outputs=vars, executor=PlantSimEngine.SequentialEx(), check=false)
-    return PlantSimEngine.convert_outputs(out)
+    return out
 end
