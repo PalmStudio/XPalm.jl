@@ -75,7 +75,7 @@ function FemaleCarbonDemandModel(;
 )
     @assert duration_bunch_development > 0 "`duration_bunch_development` must be > 0"
     @assert duration_fruit_setting > 0 "`duration_fruit_setting` must be > 0"
-    @assert TT_flowering = 0.0 "TT_flowering must be = 0.0"
+    @assert TT_flowering > 0.0 "TT_flowering must be > 0.0"
     @assert 0.0 <= fraction_period_oleosynthesis <= 1.0 "fraction_period_oleosynthesis must be between 0 and 1"
     @assert 0.0 <= fraction_period_stalk <= 1.0 "fraction_period_stalk must be between 0 and 1"
     duration_oleosynthesis = fraction_period_oleosynthesis * duration_bunch_development
