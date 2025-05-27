@@ -43,7 +43,7 @@ end
 function SexDetermination(; TT_flowering=6300.0, duration_abortion=540.0, duration_sex_determination=1350.0, sex_ratio_min=0.2, sex_ratio_ref=0.6, random_seed=1)
     @assert sex_ratio_ref > sex_ratio_min "`sex_ratio_ref` must be greater than `sex_ratio_min`"
     @assert sex_ratio_min > 0.0 "`sex_ratio_min` must be greater than 0.0"
-    SexDetermination(TT_flowering, duration_abortion, duration_sex_determination, sex_ratio_min, sex_ratio_ref, MersenneTwister(random_seed))
+    SexDetermination(promote(TT_flowering, duration_abortion, duration_sex_determination, sex_ratio_min, sex_ratio_ref)..., MersenneTwister(random_seed))
 end
 
 PlantSimEngine.inputs_(::SexDetermination) = (TT_since_init=-Inf, carbon_offer_plant=-Inf, carbon_demand_plant=-Inf)

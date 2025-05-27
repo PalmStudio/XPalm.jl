@@ -38,7 +38,7 @@ function InfloStateModel(;
 )
     duration_dev_bunch = TT_harvest - (TT_flowering + duration_fruit_setting)
     TT_ini_oleo = TT_flowering + duration_fruit_setting + (1 - fraction_period_oleosynthesis) * duration_dev_bunch
-    InfloStateModel(TT_flowering, duration_flowering_male, duration_fruit_setting, TT_harvest, fraction_period_oleosynthesis, TT_ini_oleo, TT_senescence_male)
+    InfloStateModel(promote(TT_flowering, duration_flowering_male, duration_fruit_setting, TT_harvest, fraction_period_oleosynthesis, TT_ini_oleo, TT_senescence_male)...)
 end
 
 PlantSimEngine.inputs_(::InfloStateModel) = (TT_since_init=-Inf, sex="undetermined")

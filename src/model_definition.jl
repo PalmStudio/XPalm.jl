@@ -169,10 +169,10 @@ function model_mapping(p)
                     p.parameters[:dimensions][:internode][:max_radius],
                 ),
                 PotentialInternodeDimensionModel(
-                    p.parameters[:dimensions][:internode][:inflexion_point_height],
-                    p.parameters[:dimensions][:internode][:slope_height],
-                    p.parameters[:dimensions][:internode][:inflexion_point_radius],
-                    p.parameters[:dimensions][:internode][:slope_radius],
+                    inflexion_point_height=p.parameters[:dimensions][:internode][:inflexion_point_height],
+                    slope_height=p.parameters[:dimensions][:internode][:slope_height],
+                    inflexion_point_radius=p.parameters[:dimensions][:internode][:inflexion_point_radius],
+                    slope_radius=p.parameters[:dimensions][:internode][:slope_radius],
                 ),
                 InternodeDimensionModel(p.parameters[:carbon_demand][:internode][:apparent_density]),
                 InternodeCarbonDemandModel(
@@ -277,8 +277,8 @@ function model_mapping(p)
                 mapped_variables=[PreviousTimeStep(:biomass),],
             ),
             MaleCarbonDemandModel(
-                p.parameters[:carbon_demand][:male][:respiration_cost],
-                p.parameters[:phenology][:male][:duration_flowering_male],
+                respiration_cost=p.parameters[:carbon_demand][:male][:respiration_cost],
+                duration_flowering_male=p.parameters[:phenology][:male][:duration_flowering_male],
             ),
             MaleBiomass(
                 p.parameters[:carbon_demand][:male][:respiration_cost],

@@ -6,7 +6,7 @@ struct PotentialInternodeDimensionModel{T} <: AbstractInternode_Potential_Dimens
 end
 
 
-PotentialInternodeDimensionModel(; inflexion_point_height=900.0, slope_height=150.0, inflexion_point_radius=900.0, slope_radius=150.0) = PotentialInternodeDimensionModel(inflexion_point_height, slope_height, inflexion_point_radius, slope_radius)
+PotentialInternodeDimensionModel(; inflexion_point_height=900.0, slope_height=150.0, inflexion_point_radius=900.0, slope_radius=150.0) = PotentialInternodeDimensionModel(promote(inflexion_point_height, slope_height, inflexion_point_radius, slope_radius)...)
 
 """
 PotentialInternodeDimensionModel(inflexion_point_height,slope_height,inflexion_point_radius,slope_radius)
