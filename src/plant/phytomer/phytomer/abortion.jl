@@ -33,7 +33,7 @@ struct AbortionRate{T,R<:AbstractRNG} <: AbstractAbortionModel
 end
 
 function AbortionRate(; TT_flowering=6300.0, duration_abortion=540.0, abortion_rate_max=0.8, abortion_rate_ref=0.2, random_seed::Int=0)
-    AbortionRate(TT_flowering, duration_abortion, abortion_rate_max, abortion_rate_ref, MersenneTwister(random_seed))
+    AbortionRate(promote(TT_flowering, duration_abortion, abortion_rate_max, abortion_rate_ref)..., MersenneTwister(random_seed))
 end
 
 PlantSimEngine.inputs_(::AbortionRate) = (TT_since_init=-Inf, carbon_offer_plant=-Inf, carbon_demand_plant=-Inf)
@@ -65,7 +65,7 @@ function PlantSimEngine.run!(m::AbortionRate, models, status, meteo, constants, 
         )
 
         #e.g. if threshold_abortion is 0.7 we will have more chance to abort
-        if random_abort < threshold_abortion
+        if random_abort <= threshold_abortion
             status.state = "Aborted"
             # Give the state to the reproductive organ:
             status.node[1][2][:plantsimengine_status].state = status.state

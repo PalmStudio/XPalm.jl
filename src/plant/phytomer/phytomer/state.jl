@@ -1,17 +1,23 @@
 """
-    InfloStateModel(apparent_density,respiration_cost)
-    InfloStateModel(apparent_density=3000.0,respiration_cost=1.44)
-
-Give the phenological state to the phytomer and the inflorescence depending on thermal time since phytomer appearance
+    InfloStateModel(TT_flowering, TT_fruiting, TT_harvest, TT_ini_oleo, TT_senescence)    
+    InfloStateModel(;
+        TT_flowering=6300.0, duration_flowering_male=1800.0, duration_fruit_setting=405.0, duration_bunch_development=5445.0, fraction_period_oleosynthesis=0.8,
+    )
+    
+Computes the phenological state to the phytomer and the inflorescence depending on thermal time since phytomer appearance.
+The first method takes the thermal times directly as arguments, while the second one requires only the flowering time, and all other values relative to it.
 
 # Arguments
 
 - `TT_flowering`: thermal time for flowering since phytomer appearence (degree days).
-- `duration_flowering_male`: duration between male flowering and senescence (degree days).
-- `duration_fruit_setting`: period of thermal time after flowering that determines the number of flowers in the bunch that become fruits, *i.e.* fruit set (degree days).
-- `TT_harvest`:Thermal time since phytomer appearance when the bunch is harvested (degree days)
+- `TT_fruiting`: thermal time for fruit setting since phytomer appearence (degree days).
+- `TT_harvest`: thermal time for harvesting since phytomer appearence (degree days).
+- `TT_ini_oleo`: thermal time for initializing oleosynthesis since phytomer appearence (degree days).
+- `TT_senescence_male`: thermal time for male senescence since phytomer appearence (degree days).
+- `duration_flowering_male`: duration in thermal time between male flowering and senescence (degree days).
+- `duration_fruit_setting`: duration between flowering and fruit set (degree days).
+- `duration_bunch_development`: duration between fruit set and bunch maturity (ready for harvest) (degree days).
 - `fraction_period_oleosynthesis`: fraction of the duration between flowering and harvesting when oleosynthesis occurs
-- `TT_ini_oleo`:thermal time for initializing oleosynthesis since phytomer appearence (degree days)
 
 # Inputs
 
@@ -19,26 +25,48 @@ Give the phenological state to the phytomer and the inflorescence depending on t
 
 # Outputs
 
-- `state`: phytomer state (undetermined,Aborted,Flowering,...)
+The `state` of the phytomer. For a male inflorescence, the state can be one of the following:
+
+- "Aborted": the inflorescence is aborted (computed by the `AbortionModel`)
+- "Flowering": the inflorescence is flowering
+- "Senescent": the inflorescence is senescent
+- "Pruned": the inflorescence is pruned (this can happen if the inflorescence is not harvested)
+
+For a female inflorescence, the state can be one of the following:
+
+- "Aborted": the inflorescence is aborted (computed by the `AbortionModel`)
+- "Flowering": the inflorescence is flowering
+- "FruitSetting": the inflorescence is setting fruits
+- "Oleosynthesis": the inflorescence is synthesizing oil
+- "Harvested": the inflorescence is harvested
+
+Note that the state is also given to the reproductive organ (the second child of the first child of the phytomer), and to the
+leaf if the inflorescence is harvested (in which case the leaf is set to "Pruned").
 """
 
 struct InfloStateModel{T} <: AbstractStateModel
     TT_flowering::T
-    duration_flowering_male::T
-    duration_fruit_setting::T
+    TT_fruiting::T
     TT_harvest::T
-    fraction_period_oleosynthesis::T
     TT_ini_oleo::T
     TT_senescence_male::T
 end
 
 function InfloStateModel(;
-    TT_flowering=6300.0, duration_flowering_male=1800.0, duration_fruit_setting=405.0, TT_harvest=12150.0, fraction_period_oleosynthesis=0.8,
-    TT_senescence_male=TT_flowering + duration_flowering_male
+    TT_flowering=6300.0, duration_flowering_male=1800.0, duration_fruit_setting=405.0, duration_bunch_development=5445.0, fraction_period_oleosynthesis=0.8,
 )
-    duration_dev_bunch = TT_harvest - (TT_flowering + duration_fruit_setting)
-    TT_ini_oleo = TT_flowering + duration_fruit_setting + (1 - fraction_period_oleosynthesis) * duration_dev_bunch
-    InfloStateModel(TT_flowering, duration_flowering_male, duration_fruit_setting, TT_harvest, fraction_period_oleosynthesis, TT_ini_oleo, TT_senescence_male)
+    @assert TT_flowering > 0.0 "TT_flowering must be > 0.0"
+    @assert duration_flowering_male > 0.0 "duration_flowering_male must be > 0.0"
+    @assert duration_fruit_setting > 0.0 "duration_fruit_setting must be > 0.0"
+    @assert duration_bunch_development > 0.0 "duration_bunch_development must be > 0.0"
+    @assert 0.0 <= fraction_period_oleosynthesis <= 1.0 "fraction_period_oleosynthesis must be between 0 and 1"
+
+    TT_senescence_male = TT_flowering + duration_flowering_male
+    TT_ini_oleo = TT_flowering + duration_fruit_setting + (1 - fraction_period_oleosynthesis) * duration_bunch_development
+    TT_fruiting = TT_flowering + duration_fruit_setting
+    TT_harvest = TT_fruiting + duration_bunch_development
+
+    InfloStateModel(promote(TT_flowering, TT_fruiting, TT_harvest, TT_ini_oleo, TT_senescence_male)...)
 end
 
 PlantSimEngine.inputs_(::InfloStateModel) = (TT_since_init=-Inf, sex="undetermined")
@@ -54,7 +82,7 @@ function PlantSimEngine.run!(m::InfloStateModel, models, status, meteo, constant
 
     if status.sex == "Male"
         if status.TT_since_init >= m.TT_senescence_male
-            status.state = "Scenescent"
+            status.state = "Senescent"
         elseif status.TT_since_init >= m.TT_flowering
             status.state = "Flowering" #NB: if before TT_flowering it is undetermined
         end
@@ -68,6 +96,8 @@ function PlantSimEngine.run!(m::InfloStateModel, models, status, meteo, constant
             status.node[1][1][:plantsimengine_status].state = "Pruned"
         elseif status.TT_since_init >= m.TT_ini_oleo
             status.state = "Oleosynthesis"
+        elseif status.TT_since_init >= m.TT_fruiting
+            status.state = "FruitSetting"
         elseif status.TT_since_init >= m.TT_flowering
             status.state = "Flowering"
         end

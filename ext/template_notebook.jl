@@ -76,7 +76,7 @@ md"""
 
 # ╔═╡ 73f8cf85-cb03-444e-bf9e-c65363e9ffb8
 params = let
-    file = joinpath("0-data/xpalm_parameters.yml")
+    file = joinpath(dirname(dirname(pathof(XPalm))), "examples/xpalm_parameters.yml")
     update_time_ = PlutoLinks.@use_file_change(file)
     @use_memo([update_time_]) do
         YAML.load_file(file, dicttype=Dict{Symbol,Any})
@@ -145,7 +145,7 @@ end
 
 # ╔═╡ bde1793e-983a-47e4-94a6-fbbe53fe72d6
 @bind variables variables_display(
-    Dict(k => keys(merge(v...)) for (k, v) in XPalm.PlantSimEngine.variables(XPalm.model_mapping(XPalm.Palm()))),
+    Dict(k => keys(filter(x -> !isa(x, AbstractVector), merge(v...))) for (k, v) in XPalm.PlantSimEngine.variables(XPalm.model_mapping(XPalm.Palm()))),
     default=Dict("Soil" => (:ftsw,), "Scene" => (:lai,), "Plant" => (:leaf_area, :Rm, :aPPFD, :biomass_bunch_harvested), "Leaf" => (:leaf_area,))
 )
 

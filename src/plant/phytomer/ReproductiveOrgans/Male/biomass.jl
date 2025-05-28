@@ -15,7 +15,7 @@ Compute male biomass  from daily carbon allocation
 
 # outputs
 - `biomass`: inflo biomass
-- `litter_male`: biomass of scenescent inflorescent that goes to the litter 
+- `litter_male`: biomass of senescent inflorescent that goes to the litter 
 """
 struct MaleBiomass{T} <: AbstractBiomassModel
     respiration_cost::T
@@ -34,7 +34,7 @@ function PlantSimEngine.run!(m::MaleBiomass, models, st, meteo, constants, extra
         return # if it is aborted, no biomass, because it is done before flowering
     end
 
-    if st.state == "Harvested"
+    if st.state == "Harvested" || st.state == "Senescent"
         st.litter_male = copy(st.biomass)
         st.biomass = 0.0
         return # if it is aborted, no biomass

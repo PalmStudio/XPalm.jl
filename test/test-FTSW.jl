@@ -27,5 +27,5 @@ end
     )
     outputs = run!(mod, meteo[1, :], executor=SequentialEx())
 
-    @test outputs[:ftsw][1] ≈ 0.5649629600495986
+    @test outputs[:ftsw][1] ≈ 0.5648148148148148
 end

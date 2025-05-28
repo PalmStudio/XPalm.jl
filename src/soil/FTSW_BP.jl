@@ -120,9 +120,9 @@ Coefficient of stress.
 # Arguments
 
 - `fillRate`: fill level of the compartment
-- `tresh`: filling treshold of the  compartment below which there is a reduction in the flow
+- `tresh`: filling treshold of the compartment below which there is a reduction in the flow
 """
-KS_bp(fillRate, tresh) = fillRate >= tresh ? 1 : 1 / (tresh) * fillRate
+KS_bp(fillRate, tresh) = fillRate >= tresh ? 1 : 1 / tresh * fillRate
 
 """
     compute_compartment_size(m, root_depth)
@@ -187,6 +187,7 @@ function compute_fraction_bp!(status)
         status.FractionC2Roots = 0
     end
     status.ftsw = status.qty_H2O_C_Roots / status.roots_SizeC
+
     status.FractionC1minusVapRoots = status.qty_H2O_C1minusVap_Roots / status.roots_SizeC1minusVap
 
 end
@@ -239,7 +240,11 @@ function PlantSimEngine.run!(m::FTSW_BP, models, st, meteo, constants, extra=not
 
     compute_compartment_size(m, st)
 
-    tree_ei = 1.0 - (meteo.Ri_PAR_f * constants.J_to_umol - st.aPPFD) / (meteo.Ri_PAR_f * constants.J_to_umol)
+    if meteo.Ri_PAR_f > 0.0
+        tree_ei = 1.0 - (meteo.Ri_PAR_f * constants.J_to_umol - st.aPPFD) / (meteo.Ri_PAR_f * constants.J_to_umol)
+    else
+        tree_ei = 1.0
+    end
 
     EvapMax = (1.0 - tree_ei) * st.ET0 * m.KC
     Transp_Max = tree_ei * st.ET0 * m.KC
@@ -345,7 +350,7 @@ function PlantSimEngine.run!(m::FTSW_BP, models, st, meteo, constants, extra=not
 
     # compute water balance  roots after Transpiration
 
-    st.transpiration = Transp_Max * KS_bp(m.TRESH_FTSW_TRANSPI, st.ftsw)
+    st.transpiration = Transp_Max * KS_bp(st.ftsw, m.TRESH_FTSW_TRANSPI)
     if (st.qty_H2O_C2_Roots > 0)
         TranspiC2 = min(st.transpiration * (st.qty_H2O_C2_Roots / (st.qty_H2O_C2_Roots + st.qty_H2O_C1minusVap_Roots)), st.qty_H2O_C2_Roots)
     else

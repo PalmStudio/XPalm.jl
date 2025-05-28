@@ -25,7 +25,7 @@ struct NumberFruits{T} <: AbstractNumber_FruitsModel
     duration_fruit_setting::T
 end
 
-NumberFruits(; TT_flowering=6300.0, duration_fruit_setting=405.0) = NumberFruits(TT_flowering, duration_fruit_setting)
+NumberFruits(; TT_flowering=6300.0, duration_fruit_setting=405.0) = NumberFruits(promote(TT_flowering, duration_fruit_setting)...)
 
 PlantSimEngine.inputs_(::NumberFruits) = (carbon_offer_plant=0.0, potential_fruits_number=-9999, carbon_demand_plant=0.0)
 PlantSimEngine.outputs_(::NumberFruits) = (fruits_number=-9999, carbon_offer_flowering=0.0, carbon_demand_flowering=0.0, nb_fruits_flag=false)
