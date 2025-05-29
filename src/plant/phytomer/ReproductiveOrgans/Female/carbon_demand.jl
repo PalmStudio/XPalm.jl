@@ -86,14 +86,16 @@ function FemaleCarbonDemandModel(;
 
 
     FemaleCarbonDemandModel(
-        respiration_cost,
-        respiration_cost_oleosynthesis,
-        oil_content,
-        TT_flowering,
-        TT_fruiting,
-        duration_bunch_development,
-        duration_oleosynthesis,
-        duration_dev_stalk
+        promote(
+            respiration_cost,
+            respiration_cost_oleosynthesis,
+            oil_content,
+            TT_flowering,
+            TT_fruiting,
+            duration_bunch_development,
+            duration_oleosynthesis,
+            duration_dev_stalk
+        )...
     )
 end
 
