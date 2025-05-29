@@ -18,7 +18,7 @@ end
     vars = Dict{String,Any}("Plant" => (:plant_age,))
     out = run!(mtg, m, meteo, tracked_outputs=vars, executor=SequentialEx())
     df = convert_outputs(out, DataFrame)
-    @test df.plant_age[452] ≈ 462
+    @test df["Plant"].plant_age[452] ≈ 462
     # m = ModelList(
     #     plant_age=DailyPlantAgeModel(10.0),
     #     status=(TT_since_init=[1:1:1000;],)
