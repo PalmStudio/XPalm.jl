@@ -1,11 +1,12 @@
 """
-    FemaleFinalPotentialFruits(
-        days_increase_number_fruits,
-        days_maximum_number_fruits,
-        fraction_first_female,
-        potential_fruit_number_at_maturity,
-        potential_fruit_weight_at_maturity,
-        stalk_max_biomass,
+    FemaleFinalPotentialFruits(;
+        days_increase_number_fruits=2379,
+        days_maximum_number_fruits=6500,
+        fraction_first_female=0.3,
+        potential_fruit_number_at_maturity=2000,
+        potential_fruit_weight_at_maturity=6.5,
+        stalk_max_biomass=2100.0,
+        oil_content=0.25
     )
 
 # Arguments
@@ -17,6 +18,7 @@ at maturity (dimensionless)
 - `potential_fruit_number_at_maturity`: potential number of fruits at maturity (number of fruits)
 - `potential_fruit_weight_at_maturity`: potential weight of one fruit at maturity (g)
 - `stalk_max_biomass`: maximum biomass of the stalk (g)
+- `oil_content`: oil content in the fruit (g oil g⁻¹ fruit)
 
 # Inputs
 
@@ -57,6 +59,7 @@ struct FemaleFinalPotentialFruits{T,I} <: AbstractFinal_Potential_BiomassModel
     potential_fruit_number_at_maturity::I
     potential_fruit_weight_at_maturity::T
     stalk_max_biomass::T
+    oil_content::T
 end
 
 function FemaleFinalPotentialFruits(;
@@ -65,12 +68,13 @@ function FemaleFinalPotentialFruits(;
     fraction_first_female=0.3,
     potential_fruit_number_at_maturity=2000,
     potential_fruit_weight_at_maturity=6.5,
-    stalk_max_biomass=2100.0
+    stalk_max_biomass=2100.0,
+    oil_content=0.25
 )
 
     # Check the type of the inputs, promote them if necessary:
     days_increase_number_fruits, days_maximum_number_fruits, potential_fruit_number_at_maturity = promote(days_increase_number_fruits, days_maximum_number_fruits, potential_fruit_number_at_maturity)
-    fraction_first_female, potential_fruit_weight_at_maturity, stalk_max_biomass = promote(fraction_first_female, potential_fruit_weight_at_maturity, stalk_max_biomass)
+    fraction_first_female, potential_fruit_weight_at_maturity, stalk_max_biomass, oil_content = promote(fraction_first_female, potential_fruit_weight_at_maturity, stalk_max_biomass, oil_content)
 
     FemaleFinalPotentialFruits(
         days_increase_number_fruits,
@@ -79,11 +83,12 @@ function FemaleFinalPotentialFruits(;
         potential_fruit_number_at_maturity,
         potential_fruit_weight_at_maturity,
         stalk_max_biomass,
+        oil_content
     )
 end
 
 PlantSimEngine.inputs_(::FemaleFinalPotentialFruits) = (initiation_age=0,)
-PlantSimEngine.outputs_(::FemaleFinalPotentialFruits) = (potential_fruits_number=-9999, final_potential_fruit_biomass=-Inf, final_potential_biomass_stalk=-Inf,)
+PlantSimEngine.outputs_(::FemaleFinalPotentialFruits) = (potential_fruits_number=-9999, final_potential_fruit_biomass=-Inf, final_potential_biomass_stalk=-Inf, final_potential_biomass_oil_fruit=-Inf, final_potential_biomass_non_oil_fruit=-Inf, final_potential_oil_biomass=-Inf, final_potential_non_oil_biomass=-Inf)
 
 function PlantSimEngine.run!(m::FemaleFinalPotentialFruits, models, st, meteo, constants, extra=nothing)
     coeff_dev = age_relative_value(st.initiation_age, m.days_increase_number_fruits, m.days_maximum_number_fruits, m.fraction_first_female, 1.0)
@@ -91,4 +96,8 @@ function PlantSimEngine.run!(m::FemaleFinalPotentialFruits, models, st, meteo, c
     st.potential_fruits_number = floor(Int, coeff_dev * m.potential_fruit_number_at_maturity)
     st.final_potential_fruit_biomass = coeff_dev * m.potential_fruit_weight_at_maturity
     st.final_potential_biomass_stalk = coeff_dev * m.stalk_max_biomass
+    st.final_potential_biomass_oil_fruit = st.final_potential_fruit_biomass * m.oil_content
+    st.final_potential_biomass_non_oil_fruit = st.final_potential_fruit_biomass - st.final_potential_biomass_oil_fruit
+    st.final_potential_oil_biomass = st.final_potential_biomass_oil_fruit * st.potential_fruits_number
+    st.final_potential_non_oil_biomass = st.final_potential_biomass_non_oil_fruit * st.potential_fruits_number
 end

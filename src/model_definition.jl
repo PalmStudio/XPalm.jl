@@ -77,6 +77,10 @@ function model_mapping(p)
                     :biomass_stalk_harvested_organs => ["Female"] .=> :biomass_stalk_harvested,
                     :biomass_fruit_harvested_organs => ["Female"] .=> :biomass_fruit_harvested,
                     :biomass_bunch_harvested_cum_organs => ["Female"] .=> :biomass_bunch_harvested_cum,
+                    :biomass_oil_harvested_organs => ["Female"] .=> :biomass_oil_harvested,
+                    :biomass_oil_harvested_cum_organs => ["Female"] .=> :biomass_oil_harvested_cum,
+                    :biomass_oil_harvested_potential_organs => ["Female"] .=> :biomass_oil_harvested_potential,
+                    :biomass_oil_harvested_potential_cum_organs => ["Female"] .=> :biomass_oil_harvested_potential_cum
                 ],
             ),
         ),
@@ -309,6 +313,7 @@ function model_mapping(p)
                 potential_fruit_number_at_maturity=p.parameters[:reproduction][:yield_formation][:potential_fruit_number_at_maturity],
                 potential_fruit_weight_at_maturity=p.parameters[:reproduction][:yield_formation][:potential_fruit_weight_at_maturity],
                 stalk_max_biomass=p.parameters[:reproduction][:yield_formation][:stalk_max_biomass],
+                oil_content=p.parameters[:reproduction][:yield_formation][:oil_content],
             ),
             MultiScaleModel(
                 model=NumberSpikelets(
@@ -327,7 +332,6 @@ function model_mapping(p)
             FemaleCarbonDemandModel(
                 respiration_cost=p.parameters[:carbon_demand][:female][:respiration_cost],
                 respiration_cost_oleosynthesis=p.parameters[:carbon_demand][:female][:respiration_cost_oleosynthesis],
-                oil_content=p.parameters[:reproduction][:yield_formation][:oil_content],
                 TT_flowering=p.parameters[:phenology][:inflorescence][:TT_flowering],
                 duration_bunch_development=p.parameters[:phenology][:female][:duration_bunch_development],
                 duration_fruit_setting=p.parameters[:phenology][:female][:duration_fruit_setting],
