@@ -30,7 +30,7 @@ end
 FemaleBiomass(; respiration_cost=1.44, respiration_cost_oleosynthesis=3.2) = FemaleBiomass(respiration_cost, respiration_cost_oleosynthesis)
 
 PlantSimEngine.inputs_(::FemaleBiomass) = (carbon_allocation=0.0, state="undetermined", carbon_demand_non_oil=0.0, carbon_demand_oil=0.0, carbon_demand_stalk=0.0)
-PlantSimEngine.outputs_(::FemaleBiomass) = (biomass=0.0, biomass_stalk=0.0, biomass_fruits=0.0,)
+PlantSimEngine.outputs_(::FemaleBiomass) = (biomass=0.0, biomass_stalk=0.0, biomass_fruits=0.0, biomass_oil=0.0)
 
 # Applied at the Female inflorescence scale:
 function PlantSimEngine.run!(m::FemaleBiomass, models, st, meteo, constants, extra=nothing)
@@ -47,7 +47,8 @@ function PlantSimEngine.run!(m::FemaleBiomass, models, st, meteo, constants, ext
     allocation_stalk = st.carbon_demand_stalk <= 0.0 ? 0.0 : st.carbon_allocation * st.carbon_demand_stalk / demand_tot
 
     st.biomass_stalk += allocation_stalk / m.respiration_cost
-    st.biomass_fruits += allocation_nonoil / m.respiration_cost + allocation_oil / m.respiration_cost_oleosynthesis
+    st.biomass_oil += allocation_oil / m.respiration_cost_oleosynthesis
+    st.biomass_fruits += allocation_nonoil / m.respiration_cost + st.biomass_oil
 
     st.biomass = st.biomass_stalk + st.biomass_fruits
 end
