@@ -1,16 +1,31 @@
 using XPalm
 using XPalm.Models
+using XPalm.VPalm
 import XPalm: Palm
+using Aqua
+using JET
 using Test
 using Dates
+using Random
 using MultiScaleTreeGraph, PlantMeteo, PlantSimEngine
-using CSV, DataFrames, Statistics
+using CSV, DataFrames, Statistics, Unitful
 
 # Import the meteo data once:
 
 meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), DataFrame)
 
 dirtest = joinpath(dirname(dirname(pathof(XPalm))), "test/")
+
+@testset "Code quality (Aqua.jl)" begin
+    Aqua.test_all(XPalm, ambiguities=false)
+end
+
+if VERSION >= v"1.10"
+    # See this issue: https://github.com/aviatesk/JET.jl/issues/665
+    @testset "Code linting (JET.jl)" begin
+        JET.test_package(XPalm; target_defined_modules=true)
+    end
+end
 
 @testset "Age" begin
     include(joinpath(dirtest, "test-age.jl"))
@@ -73,3 +88,32 @@ end
     include("test-run.jl")
 end
 
+@testset "VPalm.jl" begin
+    @testset "Parameters IO" begin
+        include("test-vpalm-parameters_IO.jl")
+    end
+
+    @testset "Units" begin
+        include("test-vpalm-check_units.jl")
+    end
+
+    @testset "Stem allometries" begin
+        include("test-vpalm-stem.jl")
+    end
+
+    @testset "Petiole" begin
+        include("test-vpalm-petiole.jl")
+    end
+
+    @testset "Biomechanical model" begin
+        include("test-vpalm-interpolate_points.jl")
+        include("test-vpalm-bend.jl")
+        include("test-vpalm-inertia_flex_rota.jl")
+        include("test-vpalm-xyz_dist_angles.jl")
+    end
+
+    @testset "Static mockup" begin
+        include("test-vpalm-static_mockup.jl")
+    end
+    # Write your tests here.
+end

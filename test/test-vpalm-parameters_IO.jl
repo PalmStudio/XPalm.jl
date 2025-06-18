@@ -1,0 +1,25 @@
+file = joinpath(dirname(dirname(pathof(VPalm))), "test", "references", "vpalm-parameter_file.yml")
+
+@testset "read_parameters" begin
+    params = read_parameters(file)
+    @test params["seed"] == 0
+    @test params["rachis_fresh_weight"] == uconvert.(u"kg", [3283.69036312366, 1063.9932881231, 2162.5705640037, 2599.64643263777, 2847.69600542076, 3543.85934335108, 1738.44491614517, 2572.33942143874, 1304.47223054737, 2218.86151566894, 2593.53561491941, 3213.10762158926, 1399.70357441676, 1798.50989686876, 3422.19283261617, 2531.78816964515, 2637.05236437938, 1332.80743829869, 2008.85020034422, 3075.88851449637, 1488.60323484694, 2791.96824272362, 3323.39012817795, 1659.07658335793, 1093.40967284921, 2159.10406627345, 2277.24545945857, 3291.16777106225, 5837.00631166487, 2952.51944709699, 3335.88421853902, 2930.18316294363, 2586.03669404442, 1595.01171784255, 3643.8671613006, 2420.90565350939, 3076.17973383251, 1680.96412553848, 3921.75971345165, 2614.17012370972, 2490.97904720409, 3238.67495932336, 2683.9974957434, 2746.85443435005, 1522.67913795562]u"g")
+end
+
+@testset "write_parameters" begin
+    params = read_parameters(file)
+
+    params2 = mktemp() do f, io
+        write_parameters(f, params)
+        params2 = read_parameters(f)
+        return params2
+    end
+
+    for (k, v) in params
+        isame = params[k] == params2[k]
+        if !isame
+            println("params[$k] = $(params[k]) != params2[$k] = $(params2[k])")
+        end
+        @test params[k] == params2[k]
+    end
+end
