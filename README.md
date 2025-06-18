@@ -25,7 +25,9 @@ Organ: Leaf, internode and reproductive organ processes
 
 The model uses a daily time step and requires standard meteorological inputs (temperature, radiation, rainfall...).
 
-The model is implemented in the [Julia programming language](https://julialang.org/), which is a high-level, high-performance dynamic programming language for technical computing. 
+The model also includes a submodule `VPalm` to design palm tree mockups from a set of architectural parameters and allometric equations. It is designed to integrate smoothly with the physiological models from the package.
+
+The model is implemented in the [Julia programming language](https://julialang.org/), which is a high-level, high-performance dynamic programming language for technical computing.
 
 ## Example outputs
 
@@ -40,7 +42,7 @@ Leaf area index (LAI) at the scene level over time:
 **Plant level:**
 
 Maintenance respiration (Rm), absorbed PPFD (aPPFD), biomass of bunches harvested, and leaf area at the plant level over time:
- 
+
 ![plant level](docs/src/assets/simulation_results_Plant.png)
 
 **Leaf level:**
@@ -103,7 +105,7 @@ using XPalm, CSV, DataFrames
 meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), DataFrame)
 
 # Run simulation
-df = xpalm(meteo; 
+df = xpalm(meteo;
     vars = Dict("Scene" => (:lai,)), # Request LAI as output
     sink = DataFrame
 )
@@ -163,9 +165,26 @@ using XPalm.Models
 
 #### More examples
 
-The package provides an example script in the `examples` folder. To run it, you first have to place your working directory inside the folder, and then activate its environement by running `] activate .`. 
+The package provides an example script in the `examples` folder. To run it, you first have to place your working directory inside the folder, and then activate its environement by running `] activate .`.
 
 You can also find example applications in the [Xpalm applications Github repository](https://github.com/PalmStudio/XPalm_applications).
+
+## VPalm
+
+The package also includes a submodule `VPalm` that is an automaton that builds 3d mockups of palm plants from architectural parameters and allometric equations. It also integrates a biomechanical model to compute the leaf bending and torsion using the biomass of each leaf.
+
+You can run `VPalm` simply by loading the submodule. Here is an exemple to load `VPalm` parameters and define an extremely simple palm tree with multiscale architecture defined using [`mtg` format](https://github.com/VEZY/MultiScaleTreeGraph.jl). Scales are `["Plant", "Stem", "Phytomer", "Internode", "Leaf", "Petiole", "PetioleSegment", "Rachis", "RachisSegment"]`. Additional scales are also available such as `["Leaflet", "LeafletSegment"]`.
+
+```julia
+using XPalm
+using XPalm.VPalm
+
+# Load example parameters
+file = joinpath(dirname(dirname(pathof(XPalm))), "test", "references", "vpalm-parameter_file.yml")
+parameters = read_parameters(file)
+
+mtg = VPalm.mtg_skeleton(parameters)
+```
 
 ## Funding
 
