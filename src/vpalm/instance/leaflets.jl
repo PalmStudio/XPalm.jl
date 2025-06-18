@@ -210,7 +210,9 @@ function create_single_leaflet(
     # Handle leaflet unfolding for young fronds (special case for fronds that are still developing)
     if leaf_rank < last_rank_unfolding
         if leaf_rank < 1
-            v_angle = 90.0u"°"  # Very young fronds have vertical leaflets
+            v_angle = 0.0u"°"  # Very young fronds have vertical leaflets
+        else
+            v_angle *= leaf_rank * 0.2  # Very young fronds have vertical leaflets
         end
         h_angle *= leaf_rank * 0.2  # Reduce horizontal angle for young fronds
         if leaf_rank < 1

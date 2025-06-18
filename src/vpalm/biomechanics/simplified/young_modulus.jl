@@ -97,6 +97,7 @@ end
 Calculate the global angles for each segment of a bent leaflet based on the Young's modulus model.
 
 # Arguments
+
 - `young_modulus`: Value of Young's modulus
 - `initial_angle`: Initial angle from vertical in radians
 - `leaflet_length`: Total length of the leaflet
@@ -104,6 +105,7 @@ Calculate the global angles for each segment of a bent leaflet based on the Youn
 - `segment_positions`: Array of segment boundary positions (normalized 0-1)
 
 # Returns
+
 - Array of segment angles in radians
 """
 function calculate_segment_angles(young_modulus, initial_angle, leaflet_length, tapering, segment_positions)

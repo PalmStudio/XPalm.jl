@@ -48,13 +48,14 @@ function add_leaflet_geometry!(
     # 1. Apply leaflet's insertion angles (horizontal and vertical)
     # 2. Apply torsion around leaflet's own axis
     # 3. Apply rachis orientation (inherit from parent)
-    rot_rachis = Meshes.Rotate(
-        RotXYZ(
-            deg2rad(rachis_orientation.zenithal_angle_global),
-            deg2rad(rachis_orientation.azimuthal_angle_global),
-            deg2rad(rachis_orientation.torsion_angle_global)
+    rot_rachis =
+        Meshes.Rotate(
+            RotYZX(
+                -deg2rad(rachis_orientation.zenithal_angle_global),
+                deg2rad(rachis_orientation.azimuthal_angle_global),
+                deg2rad(rachis_orientation.torsion_angle_global)
+            )
         )
-    )
 
     # Process each leaflet segment
     traverse!(leaflet_node, symbol="LeafletSegment") do segment
@@ -67,8 +68,8 @@ function add_leaflet_geometry!(
         segment_angle = deg2rad(segment["zenithal_angle"])
         # segment_angle += deg2rad(15.0)
         # Rotation matrix for the section
-        rot = RotZYX(h_angle, segment_angle, torsion)
-
+        # rot = RotZYX(h_angle, segment_angle, torsion)
+        rot = RotYZX(segment_angle, h_angle, torsion)
         # Calculate transformation for this segment
         # !Based on ElaeisArchiTree.java line 246-254, the leaflet shape is a V-shaped plane, but not working here!
         mesh_transformation =

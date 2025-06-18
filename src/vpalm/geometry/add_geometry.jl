@@ -1,4 +1,23 @@
-function add_geometry!(mtg, refmesh_cylinder, refmesh_snag, ref_mesh_plane)
+"""
+    add_geometry!(
+        mtg, refmesh_cylinder, refmesh_snag, ref_mesh_plane;
+        snag_width=0.20u"m", # see defaultOrthotropyAttribute in the trunk in the java implementation
+        snag_height=0.15u"m",
+        snag_length=3.0u"m",
+    )
+
+Adds geometry to the MTG (Multiscale Tree Graph) for the oil palm plant architecture, i.e. compute the meshes.
+"""
+function add_geometry!(
+    mtg,
+    refmesh_cylinder,
+    refmesh_snag,
+    ref_mesh_plane;
+    snag_width=0.20u"m", # see defaultOrthotropyAttribute in the trunk in the java implementation
+    snag_height=0.15u"m",
+    snag_length=0.1u"m",
+)
+
     stem_diameter = mtg[1].stem_diameter
     stem_bending = mtg[1].stem_bending
     isnothing(stem_diameter) && (stem_diameter = 0.0u"m")
@@ -7,9 +26,6 @@ function add_geometry!(mtg, refmesh_cylinder, refmesh_snag, ref_mesh_plane)
     snag_insertion_angle = deg2rad(-35.0u"°") # deg2rad(-20.0 - 35.0)
     internode_height = 0.0u"m"
     snag_rotation = 0.0u"°"
-    snag_width = 0.20u"m" # see defaultOrthotropyAttribute in the trunk in the java implementation
-    snag_height = 0.15u"m"
-    snag_length = 3.0u"m"
     position_section = Ref(Meshes.Point(0.0, 0.0, 0.0))
 
     traverse!(mtg, symbol=["Internode", "Leaf", "Petiole", "Rachis", "Leaflet"]) do node

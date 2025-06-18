@@ -15,7 +15,7 @@ An ordered dictionary containing the contents of the parameter file with appropr
 # Example
 
 ```julia
-file = joinpath(dirname(dirname(pathof(VPalm))),"test", "references","vpalm-parameter_file.yml")
+file = joinpath(dirname(dirname(pathof(VPalm))),"test","files","parameter_file.yml")
 read_parameters(file)
 ```
 """
@@ -25,8 +25,6 @@ function read_parameters(file; verbose=false)
     # Convert integer parameters
     p["seed"] = p["seed"] |> Int
     p["nb_leaves_emitted"] = p["nb_leaves_emitted"] |> Int
-    p["nb_leaves_mean"] = p["nb_leaves_mean"] |> Int
-    p["nb_leaves_sd"] = p["nb_leaves_sd"] |> Int
     p["stem_growth_start"] = p["stem_growth_start"] |> Int
     p["nb_leaves_in_sheath"] = p["nb_leaves_in_sheath"] |> Int
     p["internode_rank_no_expansion"] = p["internode_rank_no_expansion"] |> Int
@@ -77,6 +75,10 @@ function read_parameters(file; verbose=false)
     # Apply length units for rachis_final_lengths (m)
     if haskey(p, "rachis_final_lengths")
         p["rachis_final_lengths"] = [@check_unit rachis_length u"m" verbose "rachis_final_lengths" for rachis_length in p["rachis_final_lengths"]]
+    else
+        haskey(p, "leaf_length_intercept") || haskey(p, "leaf_length_slope") || error("Either 'rachis_final_lengths' or both 'leaf_length_intercept' and 'leaf_length_slope' must be provided.")
+        p["leaf_length_intercept"] = @check_unit p["leaf_length_intercept"] u"m" verbose "leaf_length_intercept"
+        p["leaf_length_slope"] = @check_unit p["leaf_length_slope"] u"m/kg" verbose "leaf_length_slope"
     end
 
     # Apply pressure units (MPa) for elastic and shear modulus
@@ -98,7 +100,6 @@ function read_parameters(file; verbose=false)
     end
 
     @assert p["nb_leaves_emitted"] > 0
-    @assert p["nb_leaves_mean"] > 0
     return p
 end
 
@@ -114,7 +115,7 @@ Write the given parameters to a file using YAML format.
 # Example
 
 ```julia
-file = joinpath(dirname(dirname(pathof(VPalm))),"test","files","vpalm-parameter_file.yml")
+file = joinpath(dirname(dirname(pathof(VPalm))),"test","files","parameter_file.yml")
 params = read_parameters(file)
 write_parameters(tempname(), params)
 ```

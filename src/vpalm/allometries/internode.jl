@@ -1,15 +1,15 @@
 """
-    internode_diameter(internode_index, nb_internodes, stem_diameter, stem_base_shrinkage, stem_top_shrinkage, leaves_in_sheath)
+    internode_diameter(internode_index, rank, stem_diameter, stem_base_shrinkage, stem_top_shrinkage)
 
 Computes the diameter of an internode at a given rank.
 
 # Arguments
+
 - `internode_index`: The index of the internode.
-- `nb_internodes`: The total number of internodes.
+- `rank`: The rank of the internode.
 - `stem_diameter`: The diameter of the stem at the base.
 - `stem_base_shrinkage`: The shrinkage coefficient at the stem base.
 - `stem_top_shrinkage`: The shrinkage coefficient at the stem top.
-- `leaves_in_sheath`: The number of leaves in the sheath.
 
 # Returns
 The diameter of the internode (m).
@@ -17,12 +17,11 @@ The diameter of the internode (m).
 # Details
 A shrinking function is applied to the stem base and top to compute the diameter of the internode.
 """
-function internode_diameter(internode_index, nb_internodes, stem_diameter, stem_base_shrinkage, stem_top_shrinkage, leaves_in_sheath)
+function internode_diameter(internode_index, rank, stem_diameter, stem_base_shrinkage, stem_top_shrinkage)
     # Shrink trunk base
-    diameter = stem_diameter * (1 - exp(-stem_base_shrinkage * internode_index))
+    diameter = stem_diameter * (1.0 - exp(-stem_base_shrinkage * internode_index))
     # Shrink trunk top
-    frond_rank = nb_internodes - internode_index - leaves_in_sheath
-    reduction_factor = max(0, min(1, 1 - exp(-stem_top_shrinkage * frond_rank)))
+    reduction_factor = max(0, min(1.0, 1.0 - exp(-stem_top_shrinkage * rank)))
     return diameter * reduction_factor
 end
 
