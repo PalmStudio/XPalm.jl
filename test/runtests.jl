@@ -4,6 +4,7 @@ using XPalm.VPalm
 import XPalm: Palm
 using Aqua
 using JET
+using Meshes
 using Test
 using Dates
 using Random
@@ -88,32 +89,32 @@ end
     include("test-run.jl")
 end
 
-@testset "VPalm.jl" begin
+@testset "VPalm" begin
     @testset "Parameters IO" begin
-        include("test-vpalm-parameters_IO.jl")
+        include(joinpath(dirtest, "test-vpalm-parameters_IO.jl"))
     end
 
     @testset "Units" begin
-        include("test-vpalm-check_units.jl")
+        include(joinpath(dirtest, "test-vpalm-check_units.jl"))
     end
 
     @testset "Stem allometries" begin
-        include("test-vpalm-stem.jl")
+        include(joinpath(dirtest, "test-vpalm-stem.jl"))
     end
 
     @testset "Petiole" begin
-        include("test-vpalm-petiole.jl")
+        include(joinpath(dirtest, "test-vpalm-petiole.jl"))
     end
 
     @testset "Biomechanical model" begin
-        include("test-vpalm-interpolate_points.jl")
-        include("test-vpalm-bend.jl")
-        include("test-vpalm-inertia_flex_rota.jl")
-        include("test-vpalm-xyz_dist_angles.jl")
+        include(joinpath(dirtest, "test-vpalm-interpolate_points.jl"))
+        include(joinpath(dirtest, "test-vpalm-bend.jl"))
+        include(joinpath(dirtest, "test-vpalm-inertia_flex_rota.jl"))
+        include(joinpath(dirtest, "test-vpalm-xyz_dist_angles.jl"))
     end
 
     @testset "Static mockup" begin
-        include("test-vpalm-static_mockup.jl")
+        include(joinpath(dirtest, "test-vpalm-static_mockup.jl"))
     end
     # Write your tests here.
 end

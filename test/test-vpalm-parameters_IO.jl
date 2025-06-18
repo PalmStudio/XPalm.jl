@@ -1,4 +1,4 @@
-file = joinpath(dirname(dirname(pathof(VPalm))), "test", "references", "vpalm-parameter_file.yml")
+file = joinpath(dirname(dirname(pathof(XPalm))), "test", "references", "vpalm-parameter_file.yml")
 
 @testset "read_parameters" begin
     params = read_parameters(file)
