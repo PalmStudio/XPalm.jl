@@ -14,6 +14,10 @@ include("age_modulation/age_modulation_logistic.jl")
 include("XPalmModels.jl")
 using .Models
 
+# Load VPalm for reconstruction of the palm structure:
+include("VPalm.jl")
+using .VPalm
+
 include("model_definition.jl")
 
 include("run.jl")

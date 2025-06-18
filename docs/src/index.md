@@ -39,7 +39,9 @@ Organ: Leaf, internode and reproductive organ processes
 
 The model uses a daily time step and requires standard meteorological inputs (temperature, radiation, rainfall...).
 
-The model is implemented in the [Julia programming language](https://julialang.org/), which is a high-level, high-performance dynamic programming language for technical computing. 
+The model also includes a submodule `VPalm` to design palm tree mockups from a set of architectural parameters and allometric equations. It is designed to integrate smoothly with the physiological models from the package.
+
+The model is implemented in the [Julia programming language](https://julialang.org/), which is a high-level, high-performance dynamic programming language for technical computing.
 
 ## Example outputs
 
@@ -75,7 +77,13 @@ Fraction of transpirable soil water (FTSW) over time:
 Install XPalm using Julia's package manager, typing `]` in the Julia REPL (*i.e.* the console) to enter the Pkg REPL mode and then typing:
 
 ```julia
-add XPalm
+pkg> add XPalm
+```
+
+To use the package, type the following in the Julia REPL:
+
+```julia
+using XPalm
 ```
 
 ## Quick Start
@@ -152,7 +160,7 @@ You can also import the parameters from a JSON file using the `JSON` package:
 
 ```julia
 using JSON # You first need to install the JSON package by running `] add JSON`
-params = open("examples/xpalm_parameters.json", "r") do io
+params = open(joinpath(dirname(dirname(pathof(XPalm))), "examples/xpalm_parameters.json"), "r") do io
     JSON.parse(io; dicttype=Dict{Symbol,Any}, inttype=Int64)
 end
 ```
@@ -171,9 +179,59 @@ using XPalm.Models
 
 #### More examples
 
-The package provides an example script in the `examples` folder. To run it, you first have to place your working directory inside the folder, and then activate its environement by running `] activate .`. 
+The package provides an example script in the `examples` folder. To run it, you first have to place your working directory inside the folder, and then activate its environement by running `] activate .`.
 
 You can also find example applications in the [Xpalm applications Github repository](https://github.com/PalmStudio/XPalm_applications).
+
+## VPalm
+
+The package also includes a submodule `VPalm` that is an automaton that builds 3d mockups of palm plants from architectural parameters and allometric equations. It also integrates a biomechanical model to compute the leaf bending and torsion using the biomass of each leaf.
+
+You can run `VPalm` simply by loading the submodule. Here is an example to load `VPalm` default parameters and build a palm tree with a multiscale architecture defined using the [Multiscale Tree Graph format (MTG)](https://github.com/VEZY/MultiScaleTreeGraph.jl).
+
+```julia
+using XPalm
+using XPalm.VPalm
+
+# Load example parameters
+file = joinpath(dirname(dirname(pathof(XPalm))), "test", "references", "vpalm-parameter_file.yml")
+parameters = read_parameters(file)
+
+mtg = build_mockup(parameters)
+
+viz(mtg, color = :green)
+```
+
+![palm plant](assets/palm_mockup.png)
+
+!!! details "Code to reproduce this image"
+    To reproduce the image above, you can use the following code snippet. It will create a mockup of a palm plant with colored segments based on their type.
+
+    ```julia
+    using XPalm
+    using XPalm.VPalm
+    file = joinpath(dirname(dirname(pathof(XPalm))), "test", "references", "vpalm-parameter_file.yml")
+    parameters = read_parameters(file)
+    mtg = build_mockup(parameters; merge_scale=:leaflet)
+    traverse!(mtg) do node
+        if symbol(node) == "Petiole"
+            petiole_and_rachis_segments = descendants(node, symbol=["PetioleSegment", "RachisSegment"])
+            colormap = cgrad([colorant"peachpuff4", colorant"blanchedalmond"], length(petiole_and_rachis_segments), scale=:log2)
+            for (i, seg) in enumerate(petiole_and_rachis_segments)
+                seg[:color_type] = colormap[i]
+            end
+        elseif symbol(node) == "Leaflet"
+            node[:color_type] = :mediumseagreen
+        elseif symbol(node) == "Leaf" # This will color the snags
+            node[:color_type] = :peachpuff4
+        end
+    end
+    f, ax, p = viz(mtg, color=:color_type)
+    save("palm_mockup.png", f, size=(800, 600), px_per_unit=3)
+    ```
+
+!!! note 
+    Note that the MTG is built with the following scales: `["Plant", "Stem", "Phytomer", "Internode", "Leaf", "Petiole", "PetioleSegment", "Rachis", "RachisSegment", "Leaflet", "LeafletSegment"]`.
 
 ## Funding
 
@@ -200,4 +258,13 @@ Documentation for the models available in XPalm.
 
 ```@autodocs
 Modules = [XPalm.Models]
+```
+
+
+### VPalm
+
+Documentation for the main functions of the XPalm package.
+
+```@autodocs
+Modules = [XPalm.VPalm]
 ```

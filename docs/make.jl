@@ -12,7 +12,8 @@ makedocs(;
         prettyurls=get(ENV, "CI", "false") == "true",
         canonical="https://PalmStudio.github.io/XPalm.jl",
         edit_link="main",
-        assets=String[]
+        assets=String[],
+        size_threshold=3_500_000,
     ),
     pages=[
         "Home" => "index.md",
