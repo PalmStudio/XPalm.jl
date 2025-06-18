@@ -1,0 +1,51 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: 'XPalm.jl : A crop model for Oil Palm '
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - orcid: 'https://orcid.org/0000-0002-0808-1461'
+    given-names: Rémi
+    family-names: Vezy
+    email: remi.vezy@cirad.fr
+    affiliation: CIRAD
+  - given-names: Raphael
+    name-particle: P.A.
+    family-names: Perez
+    email: raphael.perez@cirad.fr
+    affiliation: CIRAD
+    orcid: 'https://orcid.org/0000-0001-5270-9212'
+  - given-names: Thomas
+    family-names: Arsouze
+    email: thomas.arsouze@cirad.fr
+    affiliation: CIRAD
+    orcid: 'https://orcid.org/0000-0002-8871-6120'
+  - given-names: Jean
+    family-names: Dauzat
+    affiliation: CIRAD
+identifiers:
+  - type: swh
+    value: 'swh:1:dir:a92b3660e4387b5ffc4a915c849bea7c0808b199'
+repository-code: 'https://github.com/PalmStudio/XPalm.jl'
+url: 'https://palmstudio.github.io/XPalm.jl/stable/'
+abstract: >-
+  XPalm is a process-based model for simulating oil palm
+  (Elaeis guineensis) growth and development. The model
+  simulates key physiological processes at different
+  organizational levels, using a multiscale approach.
+keywords:
+  - FSPM
+  - Oil Palm
+  - Elaeis guineensis
+  - Modeling
+  - Growth
+  - Development
+  - Julia language
+license: MIT
+commit: f5842c4ea02aafa48443311f46a82a0c3fcba32a
+version: 0.3.3
+date-released: '2025-06-04'
