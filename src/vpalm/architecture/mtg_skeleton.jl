@@ -63,7 +63,7 @@ function mtg_skeleton(parameters; rng=Random.MersenneTwister(parameters["seed"])
     # Loop on internodes
     for i in 1:nb_internodes
         if i > 1
-            Node(unique_mtg_id[], phytomer, MutableNodeMTG("<", "Phytomer", i, 3))
+            phytomer = Node(unique_mtg_id[], phytomer, MutableNodeMTG("<", "Phytomer", i, 3))
             unique_mtg_id[] += 1
         end
         internode = Node(unique_mtg_id[], phytomer, MutableNodeMTG("/", "Internode", i, 4))
