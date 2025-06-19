@@ -45,14 +45,14 @@ function add_leaflet_geometry!(
     position_section = Ref(Meshes.Point(0.0, 0.0, 0.0))
 
     # Calculate the orientation for the full leaflet
-    # 1. Apply leaflet's insertion angles (horizontal and vertical)
-    # 2. Apply torsion around leaflet's own axis
+    # 1. Apply torsion around leaflet's own axis
+    # 2. Apply leaflet's insertion angles (horizontal and vertical)
     # 3. Apply rachis orientation (inherit from parent)
     rot_rachis =
         Meshes.Rotate(
-            RotYZX(
-                -deg2rad(rachis_orientation.zenithal_angle_global),
+            RotZYX(
                 deg2rad(rachis_orientation.azimuthal_angle_global),
+                -deg2rad(rachis_orientation.zenithal_angle_global),
                 deg2rad(rachis_orientation.torsion_angle_global)
             )
         )

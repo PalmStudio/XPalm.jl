@@ -37,7 +37,7 @@ function add_section_geometry!(
         torsion = node_section.torsion_angle_global # Torsion (in degrees)
 
         # Rotation matrix for the section
-        rot = RotYZX(-deg2rad(elevation), deg2rad(azimuth), deg2rad(torsion))
+        rot = RotZYX(deg2rad(azimuth), -deg2rad(elevation), deg2rad(torsion))
 
         # The cylinder by default is oriented along Z, so we rotate it to align with X first
         base_orientation = Rotations.RotY(π / 2)
