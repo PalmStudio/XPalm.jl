@@ -68,8 +68,7 @@ function add_leaflet_geometry!(
         segment_angle = deg2rad(segment["zenithal_angle"])
         # segment_angle += deg2rad(15.0)
         # Rotation matrix for the section
-        # rot = RotZYX(h_angle, segment_angle, torsion)
-        rot = RotYZX(segment_angle, h_angle, torsion)
+        rot = RotZYX(h_angle, segment_angle, torsion)
         # Calculate transformation for this segment
         # !Based on ElaeisArchiTree.java line 246-254, the leaflet shape is a V-shaped plane, but not working here!
         mesh_transformation =
