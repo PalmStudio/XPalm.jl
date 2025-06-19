@@ -21,7 +21,8 @@ mesh_size = Meshes.boundingbox(new_mesh).max - Meshes.boundingbox(new_mesh).min
 new_mesh = new_mesh |> Scale([1.0 / i.val for i in mesh_size.coords]...)
 
 GeoIO.save("assets/snag.ply", GeoIO.georef(nothing, new_mesh))
-# We open it in blender to remove duplicated vertices. To do so, we need to import it with Z axis forward and -Y up.
+# We open it in blender to remove duplicated vertices. To do so, we need to import it with Y as the forward axis and Z as the up axis.
+# Click on the "merge vertices" option during import. Then export it as a PLY file again.
 mesh_ = GeoIO.load("assets/snag.ply")
 
 # using GLMakie # Install this one if you want to visualize the mesh
