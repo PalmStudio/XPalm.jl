@@ -51,7 +51,20 @@ function mtg_skeleton(parameters; rng=Random.MersenneTwister(parameters["seed"])
     stem = Node(unique_mtg_id[], plant, MutableNodeMTG("+", "Stem", 1, 2))
     unique_mtg_id[] += 1
 
-    compute_properties_stem!(stem, parameters, rng)
+    # The reference leaf is usually the leaf at rank 17, but it can be less if there are not enough leaves (9, or 6 or 3, or 1).
+    reference_leaf = if length(final_lengths) >= 17
+        17
+    elseif length(final_lengths) >= 9
+        9
+    elseif length(final_lengths) >= 6
+        6
+    elseif length(final_lengths) >= 3
+        3
+    else
+        1
+    end
+
+    compute_properties_stem!(stem, parameters, final_lengths[reference_leaf]; rng=rng)
 
     stem_height = stem[:stem_height]
     stem_diameter = stem[:stem_diameter]

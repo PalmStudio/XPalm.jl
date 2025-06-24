@@ -1,11 +1,12 @@
 """
-    compute_properties_stem!(node, parameters, rng)
+    compute_properties_stem!(node, parameters, reference_leaf; rng)
 
 Compute the properties of the stem node.
 
 # Arguments
 - `node`: the stem node
 - `parameters`: the parameters of the Vpalm model
+- `length_reference_leaf`: the length of the reference leaf (usually, rank 17)
 - `rng`: the random number generator
 
 # Returns
@@ -31,7 +32,7 @@ stem = Node(plant, MutableNodeMTG("+", "Stem", 1, 2))
 compute_properties_stem!(stem, parameters, rng)
 ```
 """
-function compute_properties_stem!(node, parameters, rng)
+function compute_properties_stem!(node, parameters, length_reference_leaf; rng)
     node[:stem_bending] = VPalm.stem_bending(
         parameters["stem_bending_mean"],
         parameters["stem_bending_sd"]; rng=rng
@@ -45,7 +46,7 @@ function compute_properties_stem!(node, parameters, rng)
         parameters["stem_height_variation"]; rng=rng
     )
     node[:stem_diameter] = VPalm.stem_diameter(
-        parameters["rachis_length_reference"],
+        length_reference_leaf,
         parameters["stem_diameter_max"],
         parameters["stem_diameter_slope"],
         parameters["stem_diameter_inflection"],

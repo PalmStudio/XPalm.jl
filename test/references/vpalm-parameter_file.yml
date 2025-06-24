@@ -133,7 +133,6 @@ rachis_final_lengths: # Rachis length from older leaving leaf to rank 1 leaf (m)
     3.8151212015557796,
     3.812942880637742,
   ]
-rachis_length_reference: 5.0335230597 # Rachis length of the first leaf (reference leaf, m)
 leaflet_lamina_angle: 140 # V-shape of the leaflet, °
 leaflets_nb_max: 171.716496884477 # Maximum number of leaflets on a leaf #! this seems low! See Perez et al. 2016 Fig.3 -> 250
 leaflets_nb_min: 20 # Minimum number of leaflets on a leaf (for very young palms)
