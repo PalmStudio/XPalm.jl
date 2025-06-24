@@ -2,7 +2,7 @@
 # Visit https://bit.ly/cffinit to generate yours today!
 
 cff-version: 1.2.0
-title: 'XPalm.jl : A crop model for Oil Palm '
+title: 'XPalm.jl : A model for Oil Palm '
 message: >-
   If you use this software, please cite it using the
   metadata from this file.
