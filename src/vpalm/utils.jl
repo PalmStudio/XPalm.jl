@@ -11,11 +11,11 @@ Compute a logistic function.
 - `inflection`: The inflection point of the logistic function.
 """
 function logistic(x, max, slope, inflection)
-    return max / (1. + exp(-4 * slope * (x - inflection)))
+    return max / (1.0 + exp(-4.0 * slope * (x - inflection)))
 end
 
 function logistic(x::T, max, slope, inflection::T) where T<:Quantity
-    return max / (1. + exp(-4 * slope * (ustrip(x) - ustrip(inflection))))
+    return max / (1.0 + exp(-4.0 * slope * (ustrip(x) - ustrip(inflection))))
 end
 
 """
