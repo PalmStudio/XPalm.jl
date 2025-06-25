@@ -31,6 +31,9 @@ The internode dimensions are computed based on the dimensions of the stem and th
 # Examples
 
 ```julia
+using XPalm.VPalm
+using Unitful
+
 file = joinpath(dirname(dirname(pathof(VPalm))), "test", "files", "parameter_file.yml")
 parameters = read_parameters(file)
 nb_internodes = parameters["nb_leaves_emitted"] + parameters["nb_internodes_before_planting"] # The number of internodes emitted since the seed
@@ -38,7 +41,7 @@ nb_internodes = parameters["nb_leaves_emitted"] + parameters["nb_internodes_befo
 plant = Node(MutableNodeMTG("/", "Plant", 1, 1))
 # Stem (& Roots) / Scale 2
 stem = Node(plant, MutableNodeMTG("+", "Stem", 1, 2))
-compute_properties_stem!(stem, parameters, rng)
+compute_properties_stem!(stem, parameters, 3.0u"m"; rng=rng)
 stem_height = stem[:stem_height]
 stem_diameter = stem[:stem_diameter]
 # Phytomer / Scale 3

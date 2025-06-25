@@ -171,10 +171,13 @@ function create_single_leaflet(
     leaflet_node.plane = plane  # Controls vertical orientation type
     leaflet_node.side = side    # Controls which side of rachis
 
+    # Cache some attributes in case we need to update the angles later
+    leaflet_node.leaflet_relative_pos = leaflet_relative_pos
+
     # Calculate azimuthal angle of the leaflet insertion based on position and side of the leaflet
     # It is mainly determined by position along rachis. The angle is relative to the rachis direction,
     # i.e. 0.0 puts a leaflet parallel to the rachis, 90.0 makes it perpendicular.
-    h_angle = leaflet_azimuthal_angle(
+    leaflet_node.h_angle = leaflet_azimuthal_angle(
         leaflet_relative_pos,
         side,
         parameters["leaflet_axial_angle_c"],
@@ -185,7 +188,7 @@ function create_single_leaflet(
     ) * u"°"
 
     # Vertical angle (radial/X) is determined by position and plane type
-    v_angle = leaflet_zenithal_angle(
+    leaflet_node.v_angle = leaflet_zenithal_angle(
         leaflet_relative_pos,
         plane,
         side,
@@ -200,9 +203,14 @@ function create_single_leaflet(
         rng
     ) * u"°"
 
-    # Add stiffness with random variation to simulate natural variability
-    stiffness = parameters["leaflet_stiffness"] + rand(rng) * parameters["leaflet_stiffness_sd"]
+    # We use intermediate variables for angles for further computations, but 
+    # we keep the original angles in the node for later updates on the leaf
+    h_angle = leaflet_node.h_angle
+    v_angle = leaflet_node.v_angle
 
+    # Add stiffness with random variation to simulate natural variability
+    leaflet_node.stiffness_0 = parameters["leaflet_stiffness"] + rand(rng) * parameters["leaflet_stiffness_sd"]
+    stiffness = leaflet_node.stiffness_0
     # Set leaflet attribute data
     leaflet_node["relative_position"] = leaflet_relative_pos
     leaflet_node["leaflet_rank"] = norm_leaflet_rank
@@ -385,7 +393,7 @@ function create_leaflet_segments!(
         segment_node["width"] = segment_widths[j] * width_max
         segment_node["width"] < 0u"m" && error("Negative width: $segment_node")
         segment_node["length"] = (segment_boundaries[j+1] - segment_boundaries[j]) * leaflet_length
-        segment_node["segment_boundaries"] = segment_boundaries
+        segment_node["segment_boundaries"] = segment_boundaries[j]
 
         # Apply the bending angle based on biomechanical model
         # Direction depends on which side of the rachis the leaflet is on
@@ -393,6 +401,48 @@ function create_leaflet_segments!(
         # Next segment will be attached to this one
         last_parent = segment_node
     end
+end
+
+"""
+    update_leaflet_angles!(leaflet, leaf_rank; last_rank_unfolding=2)
+
+
+Update the angles and stiffness of a leaflet based on its position, side, and leaf rank.
+
+# Arguments
+
+- `leaflet`: The leaflet node to update
+- `leaf_rank`: The rank of the leaf (affects unfolding for young leaves)
+- `last_rank_unfolding`: Rank at which leaflets are fully unfolded (default is 2)
+"""
+function update_leaflet_angles!(leaflet, leaf_rank; last_rank_unfolding=2)
+    # Using the original sampled vangle, and adjusting it if necessary:
+    v_angle = leaflet.v_angle
+    h_angle = leaflet.h_angle
+    stiffness = leaflet.stiffness_0
+    # Handle leaflet unfolding for young fronds (special case for fronds that are still developing)
+    if leaf_rank < last_rank_unfolding
+        if leaf_rank < 1
+            v_angle = 0.0u"°"  # Very young fronds have vertical leaflets
+        else
+            v_angle *= leaf_rank * 0.2  # Very young fronds have vertical leaflets
+        end
+        h_angle *= leaf_rank * 0.2  # Reduce horizontal angle for young fronds
+        if leaf_rank < 1
+            h_angle = 0.0u"°"  # No horizontal angle for very young fronds
+        end
+        stiffness = 10000 + (2.0 - leaf_rank) * 20000  # Young fronds have higher stiffness
+    end
+
+    leaflet.stiffness = stiffness
+    # We update the leaflet insertion angles:
+    leaflet.zenithal_angle = v_angle
+    leaflet.azimuthal_angle = h_angle
+    # Note: the torsion is not supposed to change over time
+
+    # Re-compute bending angles for each segment using Young's modulus model
+    # This simulates how the leaflet bends under its own weight based on stiffness
+    update_segment_angles!(leaflet, ustrip(leaflet.stiffness), deg2rad(leaflet.zenithal_angle), ustrip(leaflet.length), leaflet.tapering)
 end
 
 

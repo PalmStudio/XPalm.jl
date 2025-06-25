@@ -82,3 +82,54 @@ function rachis(unique_mtg_id, index, scale, leaf_rank, rachis_length, height_cp
 
     return rachis_node
 end
+
+
+"""
+    update_rachis_angles!(rachis_node, leaf_rank, rachis_length, height_cpoint, width_cpoint, zenithal_cpoint_angle, fresh_biomass, parameters; rng)
+
+
+Update the angles and dimensions of the rachis segments based on biomechanical properties. This function is called when the rachis exists already, but needs updating its angles and dimensions 
+following a change in the leaf rank, length, or fresh biomass.
+"""
+function update_rachis_angles!(rachis_node, leaf_rank, rachis_length, height_cpoint, width_cpoint, zenithal_cpoint_angle, fresh_biomass, parameters; rng)
+    nb_segments = parameters["rachis_nb_segments"]
+    points_length, points_positions, points_bending, points_deviation, points_torsion, x, y, z = biomechanical_properties_rachis(
+        parameters["rachis_twist_initial_angle"], parameters["rachis_twist_initial_angle_sdp"],
+        parameters["elastic_modulus"], parameters["shear_modulus"],
+        rachis_length,
+        parameters["leaflet_length_at_b_intercept"], parameters["leaflet_length_at_b_slope"], parameters["relative_position_bpoint"],
+        parameters["relative_position_bpoint_sd"], parameters["relative_length_first_leaflet"], parameters["relative_length_last_leaflet"], parameters["relative_position_leaflet_max_length"],
+        fresh_biomass, # Expected in kg
+        leaf_rank, height_cpoint, zenithal_cpoint_angle, nb_segments,
+        parameters["height_rachis_tappering"],
+        parameters["biomechanical_model"]["nb_sections"],
+        parameters["biomechanical_model"]["iterations"],
+        deg2rad(parameters["biomechanical_model"]["angle_max"]);
+        verbose=true, rng=rng
+    )
+
+    last_parent = rachis_node
+
+    p = Ref(0)
+    traverse!(rachis_node, symbol="RachisSegment") do node
+        p[] += 1
+        #NB: we still update the dimensions in case the rachis grew since the last call
+        node.width = rachis_width(p[] / nb_segments, width_cpoint, parameters["rachis_width_tip"])
+        node.height = rachis_height(p[] / nb_segments, height_cpoint, parameters["height_rachis_tappering"])
+        node.length = points_length[p[]]
+        node.zenithal_angle_global = points_bending[p[]]
+        node.azimuthal_angle_global = points_deviation[p[]]
+        node.torsion_angle_global = points_torsion[p[]]
+        node.x = x[p[]]
+        node.y = y[p[]]
+        node.z = z[p[]]
+    end
+
+    # We force the last node to take the angles values of its parent node, because the biomechanical model can give
+    # weird values at the boundaries:
+    last_parent.zenithal_angle_global = parent(last_parent).zenithal_angle_global
+    last_parent.azimuthal_angle_global = parent(last_parent).azimuthal_angle_global
+    last_parent.torsion_angle_global = parent(last_parent).torsion_angle_global
+
+    return rachis_node
+end

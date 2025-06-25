@@ -68,3 +68,29 @@ function petiole_sections!(petiole_node, petiole_nb_segments, unique_mtg_id)
 
     return nothing
 end
+
+
+"""
+    update_petiole_angles!(petiole_node)
+
+Update the angles of the petiole segments based on the petiole node properties.
+
+# Arguments
+
+- `petiole_node`: the MTG Node of the petiole
+
+# Returns
+
+Nothing, the petiole node is updated in-place with its segments angles.
+"""
+function update_petiole_angles!(petiole_node)
+    segment_id = Ref(1)
+    petiole_nb_segments = descendants(petiole_node, symbol="PetioleSegment") |> length
+    traverse!(petiole_node[1], symbol="PetioleSegment") do segment
+        petiole_section_insertion_angle = petiole_node[:zenithal_insertion_angle] + segment_id[] * petiole_node[:section_insertion_angle]
+        segment_id[] += 1
+
+        compute_properties_petiole_section!(petiole_node, segment, segment_id[], petiole_nb_segments, petiole_section_insertion_angle)
+    end
+    return nothing
+end
