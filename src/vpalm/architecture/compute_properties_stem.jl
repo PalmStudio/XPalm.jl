@@ -36,7 +36,7 @@ stem = Node(plant, MutableNodeMTG("+", "Stem", 1, 2))
 compute_properties_stem!(stem, parameters, 3.0u"m"; rng=rng)
 ```
 """
-function compute_properties_stem!(node, parameters, length_reference_leaf; rng=MersenneTwister(1234))
+function compute_properties_stem!(node, parameters, length_reference_leaf; rng=Random.MersenneTwister(1234))
     node[:stem_bending] = VPalm.stem_bending(
         parameters["stem_bending_mean"],
         parameters["stem_bending_sd"]; rng=rng
