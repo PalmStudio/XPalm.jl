@@ -137,7 +137,5 @@ function write_parameters(file, params)
         end
     end
 
-
-
     YAML.write_file(file, params_no_units)
 end
