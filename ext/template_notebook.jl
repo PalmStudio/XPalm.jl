@@ -79,7 +79,7 @@ params = let
     file = joinpath(dirname(dirname(pathof(XPalm))), "examples/xpalm_parameters.yml")
     update_time_ = PlutoLinks.@use_file_change(file)
     @use_memo([update_time_]) do
-        YAML.load_file(file, dicttype=Dict{Symbol,Any})
+        YAML.load_file(file)
     end
 end
 

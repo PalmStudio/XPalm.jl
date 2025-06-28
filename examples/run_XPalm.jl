@@ -27,17 +27,17 @@ df = xpalm(m, DataFrame; vars=out_vars)
 
 # Example 2.1: Run the model with custom parameter values from a YAML file:
 using YAML, OrderedCollections
-params = YAML.load_file(joinpath(dirname(dirname(pathof(XPalm))), "examples/xpalm_parameters.yml"), dicttype=OrderedDict{Symbol,Any})
-params[:k] = 0.6
+params = YAML.load_file(joinpath(dirname(dirname(pathof(XPalm))), "examples/xpalm_parameters.yml"))
+params["k"] = 0.6
 p = XPalm.Palm(parameters=params)
 df = xpalm(m, DataFrame; palm=p, vars=out_vars)
 
 # Example 2.2: Run the model with custom parameter values from a JSON file:
 using JSON, OrderedCollections
 params = open("examples/xpalm_parameters.json", "r") do io
-    JSON.parse(io; dicttype=OrderedDict{Symbol,Any}, inttype=Int64)
+    JSON.parse(io; dicttype=OrderedDict{String,Any}, inttype=Int64)
 end
-params[:k] = 0.6
+params["k"] = 0.6
 p = XPalm.Palm(parameters=params)
 df = xpalm(m, DataFrame; palm=p, vars=out_vars)
 
