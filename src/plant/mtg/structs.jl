@@ -248,13 +248,13 @@ function Palm(; initiation_age=0, parameters=default_parameters(), architecture=
         parameters = Dict{AbstractString,Any}(string(k) => v for (k, v) in parameters)
     end
 
-    scene = Node(1, MutableNodeMTG("/", "Scene", 1, 0), Dict{Symbol,Any}(),)
-    soil = Node(scene, MutableNodeMTG("+", "Soil", 1, 1),)
+    scene = Node(1, NodeMTG("/", "Scene", 1, 0), Dict{Symbol,Any}(),)
+    soil = Node(scene, NodeMTG("+", "Soil", 1, 1),)
 
-    plant = Node(scene, MutableNodeMTG("+", "Plant", 1, 1), Dict{Symbol,Any}(:parameters => parameters,),)
+    plant = Node(scene, NodeMTG("+", "Plant", 1, 1), Dict{Symbol,Any}(:parameters => parameters,),)
 
     roots = Node(
-        plant, MutableNodeMTG("+", "RootSystem", 1, 2),
+        plant, NodeMTG("+", "RootSystem", 1, 2),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age,
             # :depth => parameters["RL0"], # total exploration depth m
@@ -262,28 +262,28 @@ function Palm(; initiation_age=0, parameters=default_parameters(), architecture=
     )
 
     stem = Node(
-        plant, MutableNodeMTG("+", "Stem", 1, 2),
+        plant, NodeMTG("+", "Stem", 1, 2),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
         ),
     )
 
     phyto = Node(
-        stem, MutableNodeMTG("/", "Phytomer", 1, 3),
+        stem, NodeMTG("/", "Phytomer", 1, 3),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
         ),
     )
 
     internode = Node(
-        phyto, MutableNodeMTG("/", "Internode", 1, 4),
+        phyto, NodeMTG("/", "Internode", 1, 4),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
         ),
     )
 
     leaf = Node(
-        internode, MutableNodeMTG("+", "Leaf", 1, 4),
+        internode, NodeMTG("+", "Leaf", 1, 4),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
         ),

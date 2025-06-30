@@ -1,6 +1,6 @@
 module XPalm
 
-import MultiScaleTreeGraph: Node, MutableNodeMTG, index, symbol#, addchild!, get_root
+import MultiScaleTreeGraph: Node, NodeMTG, index, symbol#, addchild!, get_root
 import PlantSimEngine
 import PlantSimEngine: MultiScaleModel, PreviousTimeStep
 import Random
