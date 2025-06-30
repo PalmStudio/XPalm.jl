@@ -219,6 +219,9 @@ function default_parameters()
             "RootSystem" => p["mass_and_dimensions"]["roots"]["RL0"] / p["mass_and_dimensions"]["roots"]["SRL"]
         )
     )
+
+    push!(p, "vpalm" => VPalm.default_parameters())
+
     return p
 end
 
@@ -237,7 +240,7 @@ Create a new scene with one Palm plant. The scene contains a soil, a plant, a ro
 
 - a `Palm` object
 """
-function Palm(; initiation_age=0, parameters=default_parameters(),)
+function Palm(; initiation_age=0, parameters=default_parameters(), architecture=true)
     # Parameters should be a Dict{AbstractString,Any}:
     if !(typeof(parameters) <: Dict{AbstractString})
         @info "`parameters` should be a Dict{AbstractString,Any}, converting using: `Dict{AbstractString,Any}(string(k) => v for (k, v) in parameters)`"

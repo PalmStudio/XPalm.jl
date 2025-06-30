@@ -139,3 +139,20 @@ function write_parameters(file, params)
 
     YAML.write_file(file, params_no_units)
 end
+
+
+
+"""
+    default_parameters()
+
+Returns a dictionary of default parameters for the VPalm model.
+
+# Example
+
+```julia
+default_params = default_parameters()
+```
+"""
+function default_parameters()
+    YAML.load_file(joinpath(dirname(pathof(VPalm)), "test", "references", "vpalm-parameter_file.yml"))
+end

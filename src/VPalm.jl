@@ -66,6 +66,6 @@ include("vpalm/instance/leaflets.jl")
 
 include("vpalm/build_mockup.jl")
 
-export read_parameters, write_parameters
+export read_parameters, write_parameters, default_parameters
 export build_mockup
 end
