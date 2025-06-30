@@ -430,7 +430,7 @@ Update the angles and stiffness of a leaflet based on its position, side, and le
 function update_leaflet_angles!(
     leaflet, leaf_rank;
     last_rank_unfolding=2,
-    unique_mtg_id=Ref(max_id(leaflet)),
+    unique_mtg_id=Ref(max_id(leaflet) + 1),
     xm_intercept=0.176, xm_slope=0.08,
     ym_intercept=0.51, ym_slope=-0.025
 )
