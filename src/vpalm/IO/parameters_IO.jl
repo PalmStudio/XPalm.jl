@@ -75,8 +75,8 @@ function read_parameters(file; verbose=false)
     # Apply length units for rachis_final_lengths (m)
     if haskey(p, "rachis_final_lengths")
         p["rachis_final_lengths"] = [@check_unit rachis_length u"m" verbose "rachis_final_lengths" for rachis_length in p["rachis_final_lengths"]]
-    else
-        haskey(p, "leaf_length_intercept") || haskey(p, "leaf_length_slope") || error("Either 'rachis_final_lengths' or both 'leaf_length_intercept' and 'leaf_length_slope' must be provided.")
+    end
+    if haskey(p, "leaf_length_intercept") && haskey(p, "leaf_length_slope")
         p["leaf_length_intercept"] = @check_unit p["leaf_length_intercept"] u"m" verbose "leaf_length_intercept"
         p["leaf_length_slope"] = @check_unit p["leaf_length_slope"] u"m/kg" verbose "leaf_length_slope"
     end
@@ -154,5 +154,6 @@ default_params = default_parameters()
 ```
 """
 function default_parameters()
-    YAML.load_file(joinpath(dirname(pathof(VPalm)), "test", "references", "vpalm-parameter_file.yml"))
+    file = joinpath(dirname(dirname(dirname(@__DIR__))), "test", "references", "vpalm-parameter_file.yml")
+    read_parameters(file)
 end

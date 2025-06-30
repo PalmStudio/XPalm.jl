@@ -121,3 +121,59 @@ function mtg_skeleton(parameters; rng=Random.MersenneTwister(parameters["seed"])
 
     return plant
 end
+
+
+"""
+    init_attributes_seed!(plant, parameters; rng=Random.MersenneTwister(parameters["seed"]))
+
+
+Initialize the attributes of a palm plant seed (one internode with one leaf), based on the provided parameters.
+"""
+function init_attributes_seed!(plant, parameters; rng=Random.MersenneTwister(parameters["seed"]))
+    nb_leaves_in_sheath = 0# parameters["nb_leaves_in_sheath"]
+    biomass_first_leaf =
+        uconvert(
+            u"kg",
+            parameters["dimensions"]["leaf"]["leaf_area_first_leaf"] * parameters["mass_and_dimensions"]["leaf"]["lma_min"] /
+            parameters["biomass"]["leaf"]["leaflets_biomass_contribution"] * u"g"
+        )
+
+    parameters = parameters["vpalm"]
+    final_length = rachis_length_from_biomass(biomass_first_leaf, parameters["leaf_length_intercept"], parameters["leaf_length_slope"])
+
+    stem = plant[2]
+    compute_properties_stem!(stem, parameters, final_length; rng=rng)
+
+    stem_height = stem[:stem_height]
+    stem_diameter = stem[:stem_diameter]
+
+    nb_internodes = descendants(plant, symbol="Internode") |> length
+    i = 0
+    unique_mtg_id = Ref(max_id(plant) + 1)
+    traverse!(plant, symbol="Internode") do internode
+        i += 1
+        rank = compute_leaf_rank(nb_internodes, i, nb_leaves_in_sheath)
+
+        compute_properties_internode!(internode, i, nb_internodes, rank, stem_height, stem_diameter, parameters, rng)
+        leaf = internode[1]
+        leaf.rank = rank
+        leaf.is_alive = true
+
+        compute_properties_leaf!(leaf, leaf.rank, leaf.is_alive, final_length, parameters, rng)
+
+        if leaf.is_alive
+            # Build the petiole
+            petiole_node = petiole(unique_mtg_id, i, 5, leaf.rachis_length, leaf.zenithal_insertion_angle, leaf.zenithal_cpoint_angle, parameters; rng=rng)
+            addchild!(leaf, petiole_node)
+
+            # Build the rachis
+            rachis_node = rachis(unique_mtg_id, i, 5, leaf.rank, leaf.rachis_length, petiole_node.height_cpoint, petiole_node.width_cpoint, leaf.zenithal_cpoint_angle, biomass_first_leaf, parameters; rng=rng)
+            addchild!(petiole_node, rachis_node)
+
+            # Add the leaflets to the rachis:
+            leaflets!(unique_mtg_id, rachis_node, 5, leaf.rank, leaf.rachis_length, parameters; rng=rng)
+        end
+    end
+
+    return plant
+end

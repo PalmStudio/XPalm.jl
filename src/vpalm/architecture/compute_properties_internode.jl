@@ -34,8 +34,7 @@ The internode dimensions are computed based on the dimensions of the stem and th
 using XPalm.VPalm
 using Unitful
 
-file = joinpath(dirname(dirname(pathof(VPalm))), "test", "files", "parameter_file.yml")
-parameters = read_parameters(file)
+parameters = VPalm.default_parameters()
 nb_internodes = parameters["nb_leaves_emitted"] + parameters["nb_internodes_before_planting"] # The number of internodes emitted since the seed
 # Plant / Scale 1
 plant = Node(MutableNodeMTG("/", "Plant", 1, 1))

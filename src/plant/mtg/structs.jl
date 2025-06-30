@@ -32,7 +32,7 @@ function default_parameters()
     rachis_proportion + petiole + leaflets ≈ 1.0 || error("The sum of the proportions should be equal to 1.0")
     Mr_leaf = 0.0018 * rachis_proportion + 0.0022 * petiole + 0.0083 * leaflets
 
-    p = Dict(
+    p = OrderedDict{String,Any}(
         "plot" => Dict(
             "scene_area" => 10000 / 136.0, # scene area in m-2, area occupied for one plant
             "latitude" => 0.97,
@@ -131,6 +131,7 @@ function default_parameters()
             ),
             "leaf" => Dict(
                 "leaf_area_first_leaf" => 0.02, # leaf potential area for the first leaf (m2)
+                "length_first_leaf" => 0.3, # length of the first leaf (m)
                 "leaf_area_mature_leaf" => 12.0, # leaf potential area for a mature leaf (m2)
                 "age_first_mature_leaf" => 8 * 365, # age of the first mature leaf (days)
                 "inflexion_index" => 337.5,
@@ -247,13 +248,13 @@ function Palm(; initiation_age=0, parameters=default_parameters(), architecture=
         parameters = Dict{AbstractString,Any}(string(k) => v for (k, v) in parameters)
     end
 
-    scene = Node(1, NodeMTG("/", "Scene", 1, 0), Dict{Symbol,Any}(),)
-    soil = Node(scene, NodeMTG("+", "Soil", 1, 1),)
+    scene = Node(1, MutableNodeMTG("/", "Scene", 1, 0), Dict{Symbol,Any}(),)
+    soil = Node(scene, MutableNodeMTG("+", "Soil", 1, 1),)
 
-    plant = Node(scene, NodeMTG("+", "Plant", 1, 1), Dict{Symbol,Any}(:parameters => parameters,),)
+    plant = Node(scene, MutableNodeMTG("+", "Plant", 1, 1), Dict{Symbol,Any}(:parameters => parameters,),)
 
     roots = Node(
-        plant, NodeMTG("+", "RootSystem", 1, 2),
+        plant, MutableNodeMTG("+", "RootSystem", 1, 2),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age,
             # :depth => parameters["RL0"], # total exploration depth m
@@ -261,32 +262,35 @@ function Palm(; initiation_age=0, parameters=default_parameters(), architecture=
     )
 
     stem = Node(
-        plant, NodeMTG("+", "Stem", 1, 2),
+        plant, MutableNodeMTG("+", "Stem", 1, 2),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
         ),
     )
 
     phyto = Node(
-        stem, NodeMTG("/", "Phytomer", 1, 3),
+        stem, MutableNodeMTG("/", "Phytomer", 1, 3),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
         ),
     )
 
     internode = Node(
-        phyto, NodeMTG("/", "Internode", 1, 4),
+        phyto, MutableNodeMTG("/", "Internode", 1, 4),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
         ),
     )
 
     leaf = Node(
-        internode, NodeMTG("+", "Leaf", 1, 4),
+        internode, MutableNodeMTG("+", "Leaf", 1, 4),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
         ),
     )
+
+    VPalm.init_attributes_seed!(plant, parameters; rng=Random.MersenneTwister(parameters["vpalm"]["seed"]))
+
     return Palm(scene, initiation_age, parameters)
 end
 
