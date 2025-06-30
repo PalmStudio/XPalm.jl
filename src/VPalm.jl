@@ -4,7 +4,7 @@ module VPalm
 import Random
 
 # For managing the MTG:
-import MultiScaleTreeGraph: Node, MutableNodeMTG, traverse!, symbol, reparent!, addchild!, descendants, delete_nodes!, new_child_link
+import MultiScaleTreeGraph: Node, MutableNodeMTG, traverse!, symbol, reparent!, addchild!, descendants, delete_nodes!, new_child_link, children, max_id, scale
 
 # IO:
 import YAML, OrderedCollections

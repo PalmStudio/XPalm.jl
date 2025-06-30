@@ -268,7 +268,8 @@ function create_single_leaflet(
         stiffness,
         0.5,  # tapering factor
         leaflet_relative_pos,
-        parameters
+        xm_intercept=parameters["leaflet_xm_intercept"], xm_slope=parameters["leaflet_xm_slope"],
+        ym_intercept=parameters["leaflet_ym_intercept"], ym_slope=parameters["leaflet_ym_slope"]
     )
 
     return leaflet_node
@@ -283,8 +284,9 @@ end
         width_max,
         stiffness,
         tapering,
-        leaflet_relative_pos,
-        parameters
+        leaflet_relative_pos;
+        xm_intercept, xm_slope,
+        ym_intercept, ym_slope  
     )
 
 Create the segments that make up a leaflet with proper shape and bending properties.
@@ -299,7 +301,8 @@ Create the segments that make up a leaflet with proper shape and bending propert
 - `stiffness`: Stiffness value (Young's modulus) for biomechanical bending
 - `tapering`: Tapering factor (how width decreases along length)
 - `leaflet_relative_pos`: Relative position of the leaflet on the rachis (0-1)
-- `parameters`: Model parameters
+- `xm_intercept`, `xm_slope`: Parameters for defining maximum leaflet width **position**
+- `ym_intercept`, `ym_slope`: Parameters for defining maximum leaflet width **value**
 
 # Returns
 
@@ -313,14 +316,15 @@ function create_leaflet_segments!(
     width_max,
     stiffness,
     tapering,
-    leaflet_relative_pos,
-    parameters
+    leaflet_relative_pos;
+    xm_intercept, xm_slope,
+    ym_intercept, ym_slope,
 )
     # Calculate beta distribution parameters for leaflet shape
     # xm = position of maximum width along the leaflet's length (0-1)
     # ym = value of the distribution at this maximum point
-    position_max_width = linear(leaflet_relative_pos, parameters["leaflet_xm_intercept"], parameters["leaflet_xm_slope"])
-    width_at_max = linear(leaflet_relative_pos, parameters["leaflet_ym_intercept"], parameters["leaflet_ym_slope"])
+    position_max_width = linear(leaflet_relative_pos, xm_intercept, xm_slope)
+    width_at_max = linear(leaflet_relative_pos, ym_intercept, ym_slope)
 
     # Define leaflet segment boundaries along length (5 segments as in Java)
     # These carefully positioned segments create a more realistic leaflet shape
@@ -404,7 +408,12 @@ function create_leaflet_segments!(
 end
 
 """
-    update_leaflet_angles!(leaflet, leaf_rank; last_rank_unfolding=2)
+    update_leaflet_angles!(
+        leaflet, leaf_rank; 
+        last_rank_unfolding=2, unique_mtg_id=max_id(leaflet), 
+        xm_intercept=0.176, xm_slope=0.08, 
+        ym_intercept=0.51, ym_slope=-0.025
+    )
 
 
 Update the angles and stiffness of a leaflet based on its position, side, and leaf rank.
@@ -414,8 +423,17 @@ Update the angles and stiffness of a leaflet based on its position, side, and le
 - `leaflet`: The leaflet node to update
 - `leaf_rank`: The rank of the leaf (affects unfolding for young leaves)
 - `last_rank_unfolding`: Rank at which leaflets are fully unfolded (default is 2)
+- `unique_mtg_id`: Reference to the unique ID counter for MTG nodes (default is the maximum ID in the MTG)
+- `xm_intercept`, `xm_slope`: Parameters for defining maximum leaflet width **position**
+- `ym_intercept`, `ym_slope`: Parameters for defining maximum leaflet width **value**
 """
-function update_leaflet_angles!(leaflet, leaf_rank; last_rank_unfolding=2)
+function update_leaflet_angles!(
+    leaflet, leaf_rank;
+    last_rank_unfolding=2,
+    unique_mtg_id=Ref(max_id(leaflet)),
+    xm_intercept=0.176, xm_slope=0.08,
+    ym_intercept=0.51, ym_slope=-0.025
+)
     # Using the original sampled vangle, and adjusting it if necessary:
     v_angle = leaflet.v_angle
     h_angle = leaflet.h_angle
@@ -440,9 +458,26 @@ function update_leaflet_angles!(leaflet, leaf_rank; last_rank_unfolding=2)
     leaflet.azimuthal_angle = h_angle
     # Note: the torsion is not supposed to change over time
 
-    # Re-compute bending angles for each segment using Young's modulus model
-    # This simulates how the leaflet bends under its own weight based on stiffness
-    update_segment_angles!(leaflet, ustrip(leaflet.stiffness), deg2rad(leaflet.zenithal_angle), ustrip(leaflet.length), leaflet.tapering)
+    children_leaflet = children(leaflet)
+    if length(children_leaflet) > 0 && symbol(children_leaflet[1]) == "LeafletSegment"
+        # If we have leaflet segments, we need can simply update their angles:
+        update_segment_angles!(leaflet, ustrip(leaflet.stiffness), deg2rad(leaflet.zenithal_angle), ustrip(leaflet.length), leaflet.tapering)
+    else
+        # If we have no segments (they were merged at leaflet scale), we need to re-create them:
+        scale_leaflet_segments = scale(leaflet) + 1
+        create_leaflet_segments!(
+            unique_mtg_id,
+            leaflet,
+            scale_leaflet_segments,
+            leaflet.length,
+            leaflet.width,
+            leaflet.stiffness,
+            0.5,  # tapering factor
+            leaflet.relative_position,
+            xm_intercept=xm_intercept, xm_slope=xm_slope,
+            ym_intercept=ym_intercept, ym_slope=ym_slope
+        )
+    end
 end
 
 
