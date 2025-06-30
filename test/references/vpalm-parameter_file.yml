@@ -83,8 +83,8 @@ rachis_fresh_weight: # in (g)
     1539.43552920264,
     1514.5943737911,
   ]
-# leaf_length_intercept: 3.6801281 # intercept of the linear relationship between rachis biomass and length (m)
-# leaf_length_slope: 0.08769 # slope of the relationship between lenght and biomass (m/kg)
+leaf_length_intercept: 0.0 # intercept of the linear relationship between rachis biomass and length (m)
+leaf_length_slope: 1.31 # slope of the relationship between lenght and biomass (m/kg)
 rachis_final_lengths: # Rachis length from older leaving leaf to rank 1 leaf (m). Optional (can use leaf_length_intercept + slope instead).
   [
     3.908789001031405,
