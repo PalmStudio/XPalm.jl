@@ -51,7 +51,7 @@ compute_properties_internode!(internode, 1, nb_internodes, stem_height, stem_dia
 ```
 """
 function compute_properties_internode!(node, index, nb_internodes, rank, stem_height, stem_diameter, parameters, rng)
-    node[:Width] = VPalm.internode_diameter(
+    node[:width] = VPalm.internode_diameter(
         index,
         rank,
         stem_diameter,

@@ -32,7 +32,7 @@ function add_geometry!(
         if symbol(node) == "Internode"
             snag_rotation += node.XEuler
             stem_bending += node.Orthotropy
-            internode_width = node.Width > 0.0u"m" ? node.Width : 0.01u"m"
+            internode_width = node.width > 0.0u"m" ? node.width : 0.01u"m"
             mesh_transformation = Meshes.Scale(ustrip(internode_width), ustrip(internode_width), ustrip(node.Length)) →
                                   Meshes.Translate(0.0u"m", 0.0u"m", internode_height) →
                                   Meshes.Rotate(RotZ(deg2rad(snag_rotation))) →
