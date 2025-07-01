@@ -249,6 +249,7 @@ function Palm(; initiation_age=0, parameters=default_parameters(), architecture=
     end
 
     scene = Node(1, NodeMTG("/", "Scene", 1, 0), Dict{Symbol,Any}(),)
+    architecture && (scene.vpalm_rng = Random.MersenneTwister(parameters["vpalm"]["seed"]))
     soil = Node(scene, NodeMTG("+", "Soil", 1, 1),)
 
     plant = Node(scene, NodeMTG("+", "Plant", 1, 1), Dict{Symbol,Any}(:parameters => parameters,),)
@@ -289,7 +290,7 @@ function Palm(; initiation_age=0, parameters=default_parameters(), architecture=
         ),
     )
 
-    VPalm.init_attributes_seed!(plant, parameters; rng=Random.MersenneTwister(parameters["vpalm"]["seed"]))
+    architecture && VPalm.init_attributes_seed!(plant, parameters; rng=scene.vpalm_rng)
 
     return Palm(scene, initiation_age, parameters)
 end
