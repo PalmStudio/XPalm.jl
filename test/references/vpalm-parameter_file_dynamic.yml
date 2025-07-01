@@ -35,104 +35,8 @@ rachis_nb_segments: 100 # Number of segments in the rachis
 leafLengthIntercept: 351.197778086018
 leafLengthSlope: 0.058350292901005
 rachisLength_SDP: 15.2515779099962
-rachis_fresh_weight: # in (g)
-  [
-    2607.60521189879,
-    2582.76405648725,
-    2557.92290107571,
-    2533.08174566417,
-    2508.24059025263,
-    2483.39943484109,
-    2458.55827942956,
-    2433.71712401802,
-    2408.87596860648,
-    2384.03481319494,
-    2359.1936577834,
-    2334.35250237186,
-    2309.51134696033,
-    2284.67019154879,
-    2259.82903613725,
-    2234.98788072571,
-    2210.14672531417,
-    2185.30556990263,
-    2160.46441449109,
-    2135.62325907956,
-    2110.78210366802,
-    2085.94094825648,
-    2061.09979284494,
-    2036.2586374334,
-    2011.41748202186,
-    1986.57632661033,
-    1961.73517119879,
-    1936.89401578725,
-    1912.05286037571,
-    1887.21170496417,
-    1862.37054955263,
-    1837.5293941411,
-    1812.68823872956,
-    1787.84708331802,
-    1763.00592790648,
-    1738.16477249494,
-    1713.3236170834,
-    1688.48246167187,
-    1663.64130626033,
-    1638.80015084879,
-    1613.95899543725,
-    1589.11784002571,
-    1564.27668461417,
-    1539.43552920264,
-    1514.5943737911,
-  ]
-# leaf_length_intercept: 0.0 # intercept of the linear relationship between rachis biomass and length (m)
-# leaf_length_slope: 1.31 # slope of the relationship between lenght and biomass (m/kg)
-rachis_final_lengths: # Rachis length from older leaving leaf to rank 1 leaf (m). Optional (can use leaf_length_intercept + slope instead).
-  [
-    3.908789001031405,
-    3.906610680113367,
-    3.9044323591953294,
-    3.9022540382772912,
-    3.900075717359253,
-    3.8978973964412154,
-    3.895719075523178,
-    3.8935407546051404,
-    3.891362433687102,
-    3.8891841127690645,
-    3.8870057918510263,
-    3.8848274709329886,
-    3.8826491500149514,
-    3.8804708290969137,
-    3.8782925081788755,
-    3.876114187260838,
-    3.8739358663427996,
-    3.871757545424762,
-    3.8695792245067238,
-    3.867400903588687,
-    3.8652225826706488,
-    3.863044261752611,
-    3.860865940834573,
-    3.8586876199165348,
-    3.856509298998497,
-    3.8543309780804598,
-    3.852152657162422,
-    3.849974336244384,
-    3.847796015326346,
-    3.845617694408308,
-    3.8434393734902703,
-    3.841261052572233,
-    3.8390827316541953,
-    3.836904410736157,
-    3.8347260898181195,
-    3.8325477689000813,
-    3.8303694479820436,
-    3.8281911270640063,
-    3.8260128061459686,
-    3.8238344852279305,
-    3.8216561643098927,
-    3.8194778433918546,
-    3.817299522473817,
-    3.8151212015557796,
-    3.812942880637742,
-  ]
+leaf_length_intercept: 0.0 # intercept of the linear relationship between rachis biomass and length (m)
+leaf_length_slope: 1.31 # slope of the relationship between lenght and biomass (m/kg)
 leaflet_lamina_angle: 140 # V-shape of the leaflet, °
 leaflets_nb_max: 171.716496884477 # Maximum number of leaflets on a leaf #! this seems low! See Perez et al. 2016 Fig.3 -> 250
 leaflets_nb_min: 20 # Minimum number of leaflets on a leaf (for very young palms)
@@ -140,7 +44,6 @@ leaflets_nb_slope: 0.252868691666823 # slope of the logistic relationship betwee
 leaflets_nb_inflexion: 2.3256241328755 # inflexion point of the logistic relationship between rachis length and nb leaflets
 nbLeaflets_SDP: 6 # standard deviation around the value computed for a given rachis lenght
 leaflet_position_shape_coefficient: 2.47840369933858 # shape coefficient for placing the leaflets along the rachis
-# Dispo_SDP: 0.0368626708565566 #! Not used anymore, it was always added to the position (not randomly), I don't understand the utility of it
 leaflets_between_to_within_group_ratio: 2.0 # Ratio of inter-group to intra-group leaflets spacing.
 relative_position_bpoint: 0.658754588282827
 relative_position_bpoint_sd: 0.034351699174915
