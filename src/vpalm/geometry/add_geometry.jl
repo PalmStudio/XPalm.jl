@@ -33,12 +33,12 @@ function add_geometry!(
             snag_rotation += node.XEuler
             stem_bending += node.Orthotropy
             internode_width = node.width > 0.0u"m" ? node.width : 0.01u"m"
-            mesh_transformation = Meshes.Scale(ustrip(internode_width), ustrip(internode_width), ustrip(node.Length)) →
+            mesh_transformation = Meshes.Scale(ustrip(internode_width), ustrip(internode_width), ustrip(node.length)) →
                                   Meshes.Translate(0.0u"m", 0.0u"m", internode_height) →
                                   Meshes.Rotate(RotZ(deg2rad(snag_rotation))) →
                                   Meshes.Rotate(RotY(deg2rad(stem_bending)))
             node.geometry = PlantGeom.Geometry(ref_mesh=refmesh_cylinder, transformation=mesh_transformation)
-            internode_height += node.Length
+            internode_height += node.length
         elseif symbol(node) == "Leaf"
             if !node.is_alive
                 # Dead leaf, we keep the snag only

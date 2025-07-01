@@ -59,7 +59,7 @@ function compute_properties_internode!(node, index, nb_internodes, rank, stem_he
         parameters["stem_top_shrinkage"],
     )
 
-    node[:Length] = internode_length(
+    node[:length] = internode_length(
         index,
         nb_internodes,
         stem_height,
