@@ -35,11 +35,12 @@ function mtg_skeleton(parameters; rng=Random.MersenneTwister(parameters["seed"])
     # This is optional, it may be computed from the biomass if not provided
     if haskey(parameters, "rachis_final_lengths")
         final_lengths = copy(parameters["rachis_final_lengths"])
-        rank_1_leaf_length = copy(final_lengths[end]) # The length of the youngest leaf (rank = 1)
-        @assert length(final_lengths) == nb_leaves_alive "The number of rachis final lengths (`rachis_final_lengths`) should be equal to the number of leaves alive ($nb_leaves_alive)."
     else # If the parameter is missing, we use leaf_length_intercept and leaf_length_slope to compute the final lengths from the fresh biomass
         final_lengths = rachis_length_from_biomass.(rachis_fresh_biomasses, parameters["leaf_length_intercept"], parameters["leaf_length_slope"])
     end
+
+    rank_1_leaf_length = copy(final_lengths[end]) # The length of the youngest leaf (rank = 1)
+    @assert length(final_lengths) == nb_leaves_alive "The number of rachis final lengths (`rachis_final_lengths`) should be equal to the number of leaves alive ($nb_leaves_alive)."
 
     unique_mtg_id = Ref(1)
     # Plant / Scale 1
