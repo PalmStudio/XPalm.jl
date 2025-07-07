@@ -1,7 +1,7 @@
 PlantSimEngine.@process "geometry" verbose = false
 
 """
-    LeafGeometryModel(;vpalm_parameters, rng=Random.MersenneTwister())
+    GeometryModel(;vpalm_parameters, rng=Random.MersenneTwister())
 
 A PlantSimEngine model that builds the 3D geometry for a leaf, including the petiole, rachis, and leaflets.
 This model operates at the phytomer scale and modifies the MTG directly.
@@ -26,17 +26,17 @@ This model has no outputs as it modifies the MTG directly by adding geometric pr
 
 The model requires access to the VPalm parameters via the parameters dictionary under the "vpalm" key.
 """
-struct LeafGeometryModel{I,T,D<:AbstractDict{String}} <: AbstractGeometryModel
+struct GeometryModel{I,T,D<:AbstractDict{String}} <: AbstractGeometryModel
     graph_node_count_init::I
     vpalm_parameters::D
     rng::T
 end
 
-function LeafGeometryModel(; mtg::Node, vpalm_parameters, rng=Random.MersenneTwister(1234))
-    LeafGeometryModel(length(mtg), vpalm_parameters, rng)
+function GeometryModel(; mtg::Node, vpalm_parameters, rng=Random.MersenneTwister(1234))
+    GeometryModel(length(mtg), vpalm_parameters, rng)
 end
 
-function PlantSimEngine.inputs_(m::LeafGeometryModel)
+function PlantSimEngine.inputs_(m::GeometryModel)
     (
         graph_node_count=m.graph_node_count_init,
         height_internodes=-Inf, radius_internodes=-Inf, # From the internode scale
@@ -47,12 +47,12 @@ end
 #! but we don't use those inputs from the status, instead we get them by traversing the mtg.
 #! update this code when https://github.com/VirtualPlantLab/PlantSimEngine.jl/issues/140 is resolved.
 
-function PlantSimEngine.outputs_(::LeafGeometryModel)
+function PlantSimEngine.outputs_(::GeometryModel)
     (is_reconstructed=false,)
 end
 
-PlantSimEngine.ObjectDependencyTrait(::Type{<:LeafGeometryModel}) = PlantSimEngine.IsObjectDependent()
-PlantSimEngine.TimeStepDependencyTrait(::Type{<:LeafGeometryModel}) = PlantSimEngine.IsTimeStepIndependent()
+PlantSimEngine.ObjectDependencyTrait(::Type{<:GeometryModel}) = PlantSimEngine.IsObjectDependent()
+PlantSimEngine.TimeStepDependencyTrait(::Type{<:GeometryModel}) = PlantSimEngine.IsTimeStepIndependent()
 
 """
     run!(model, models, status, meteo, constants, node)
@@ -62,7 +62,7 @@ petiole, rachis, and leaflets.
 
 # Arguments
 
-- `model::LeafGeometryModel`: The leaf geometry model
+- `model::GeometryModel`: The leaf geometry model
 - `models`: A `ModelList` struct holding the parameters for the model
 - `status`: The status of the model with inputs (height, radius, biomass, rank)
 - `meteo`: Meteorology structure (not used by this model)
@@ -73,7 +73,7 @@ petiole, rachis, and leaflets.
 
 The model expects `node` to be the phytomer MTG node and accesses VPalm parameters from `model.vpalm_parameters`.
 """
-function PlantSimEngine.run!(model::LeafGeometryModel, models, status, meteo, constants, extra)
+function PlantSimEngine.run!(model::GeometryModel, models, status, meteo, constants, extra)
     # Extract the phytomer from the node
     phytomer = status.node
     # Get internode and leaf nodes:
