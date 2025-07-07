@@ -70,13 +70,12 @@ petiole, rachis, and leaflets.
 The model expects `node` to be the phytomer MTG node and accesses VPalm parameters from `model.vpalm_parameters`.
 """
 function PlantSimEngine.run!(model::LeafGeometryModel, models, status, meteo, constants, extra)
-    # status.state == "undetermined" && return nothing # reconstruct the full leaf geometry only when it's growing #! check if the leaf continues to grow after it is opnened
+    status.state == "Pruned" && return nothing # reconstruct the leaf geometry only if it's not Pruned
 
     # extract the phytomer from the node
     phytomer = status.node
 
     # Get the plant from the phytomer to find unique MTG ID
-    status.graph_node_count += 1
     unique_mtg_id = PlantSimEngine.refvalue(status, :graph_node_count)
 
     # Get internode and leaf nodes
@@ -99,11 +98,13 @@ function PlantSimEngine.run!(model::LeafGeometryModel, models, status, meteo, co
     )
 
     # Set leaf properties
-    leaf.rank = leaf.plantsimengine_status.rank
+    rank_new = leaf.plantsimengine_status.rank
+    update_in_rank = leaf.rank != rank_new #! we update the leaves geometry only if the rank has changed
+    leaf.rank = rank_new
     leaf.is_alive = true
 
     # Convert biomass and calculate rachis length
-    biomass_leaf = uconvert(u"kg", leaf.plantsimengine_status.biomass / 100 * u"g")
+    biomass_leaf = uconvert(u"kg", leaf.plantsimengine_status.biomass * u"g")
     current_length = rachis_length_from_biomass(
         biomass_leaf,
         vpalm_params["leaf_length_intercept"],
@@ -112,11 +113,14 @@ function PlantSimEngine.run!(model::LeafGeometryModel, models, status, meteo, co
 
     # Compute leaf properties
     compute_properties_leaf!(leaf, leaf.plantsimengine_status.rank, current_length, vpalm_params, model.rng)
-
+    isnan(leaf.rachis_length) && error("Rachis length: $(leaf.rachis_length), leaf_rank: $(leaf.rank), final_length: $current_length, biomass: $biomass_leaf")
     # @show current_length leaf.plantsimengine_status.rank leaf.plantsimengine_status.biomass biomass_leaf
     if !status.is_reconstructed
+        status.graph_node_count += 1
+        println("$(meteo.date): Building leaf geometry for unique_mtg_id: $(unique_mtg_id[]), index: $i")
         build_leaf(unique_mtg_id, i, leaf, biomass_leaf, vpalm_params; rng=model.rng)
-    else
+    elseif update_in_rank
+        println("$(meteo.date): Updating leaf geometry for unique_mtg_id: $(unique_mtg_id[]), index: $i")
         update_leaf!(leaf, biomass_leaf, vpalm_params; unique_mtg_id=unique_mtg_id, rng=model.rng)
     end
 
