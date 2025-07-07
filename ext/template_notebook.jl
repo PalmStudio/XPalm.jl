@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.3
+# v0.20.6
 
 using Markdown
 using InteractiveUtils
@@ -7,7 +7,7 @@ using InteractiveUtils
 # This Pluto notebook uses @bind for interactivity. When running this notebook outside of Pluto, the following 'mock version' of @bind gives bound variables a default value (instead of an error).
 macro bind(def, element)
     #! format: off
-    quote
+    return quote
         local iv = try Base.loaded_modules[Base.PkgId(Base.UUID("6e696c72-6542-2067-7265-42206c756150"), "AbstractPlutoDingetjes")].Bonds.initial_value catch; b -> missing; end
         local el = $(esc(element))
         global $(esc(def)) = Core.applicable(Base.get, el) ? Base.get(el) : iv(el)
@@ -157,7 +157,11 @@ df = let
     p = XPalm.Palm(parameters=params)
     if length(variables_dict) > 0
         sim = xpalm(meteo, DataFrame; palm=p, vars=variables_dict)
-        dfs_all = leftjoin(sim, meteo, on=:timestep)
+		for (scale_string, df) in sim
+    		df[!,:organ] .= scale_string
+		end
+		merged_df = reduce((x,y) -> vcat(x,y; cols=:union), values(sim))
+        dfs_all = leftjoin(merged_df, meteo, on=:timestep)
         sort!(dfs_all, :timestep)
     end
 end
@@ -247,7 +251,7 @@ end
 # ╟─387ee199-3f98-4c4a-9399-4bafe5f5243e
 # ╟─460efc79-762c-4e97-b2dd-06afe83dfe8e
 # ╟─d1377c41-98a8-491d-a4e5-d427e3cb7090
-# ╠═279a3e36-00c6-4506-a0a7-71e876aef781
+# ╟─279a3e36-00c6-4506-a0a7-71e876aef781
 # ╟─462fc904-a5bc-4fc0-b342-166d2b02376c
 # ╟─5997198e-c8c4-494c-b904-bf54ae69e7e5
 # ╟─96737f48-5478-4fbc-b72b-1ca33efa4846
