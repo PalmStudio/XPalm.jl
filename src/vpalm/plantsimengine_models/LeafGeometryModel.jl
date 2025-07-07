@@ -98,7 +98,7 @@ function PlantSimEngine.run!(model::LeafGeometryModel, models, status, meteo, co
     # Set internode properties
     i = index(internode)
     internode.width = internode.plantsimengine_status.radius * 2.0u"m"
-    internode.length = internode.plantsimengine_status.height
+    internode.length = internode.plantsimengine_status.height * u"m"
     internode.rank = leaf.plantsimengine_status.rank
     internode.Orthotropy = 0.05u"°"
     internode.XEuler = phyllotactic_angle(
