@@ -1,13 +1,14 @@
 
 
 """
-    model_mapping(p)
+    model_mapping(p; architecture=false)
 
 Defines the list of sub-models used in XPalm.
 
 # Arguments
 
 - `p`: A palm object with the parameters of the model (*e.g.* p = Palm()).
+- `architecture`: A boolean indicating whether to compute the 3D architecture of the palm (default is false).
 
 # Returns
 
