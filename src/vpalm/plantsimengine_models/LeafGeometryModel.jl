@@ -26,15 +26,19 @@ This model has no outputs as it modifies the MTG directly by adding geometric pr
 
 The model requires access to the VPalm parameters via the parameters dictionary under the "vpalm" key.
 """
-struct LeafGeometryModel{T,D<:AbstractDict{String}} <: AbstractGeometryModel
+struct LeafGeometryModel{I,T,D<:AbstractDict{String}} <: AbstractGeometryModel
+    graph_node_count_init::I
     vpalm_parameters::D
     rng::T
 end
 
-LeafGeometryModel(; vpalm_parameters, rng=Random.MersenneTwister(1234)) = LeafGeometryModel(vpalm_parameters, rng)
+function LeafGeometryModel(; mtg::Node, vpalm_parameters, rng=Random.MersenneTwister(1234))
+    LeafGeometryModel(length(mtg), vpalm_parameters, rng)
+end
 
-function PlantSimEngine.inputs_(::LeafGeometryModel)
+function PlantSimEngine.inputs_(m::LeafGeometryModel)
     (
+        graph_node_count=m.graph_node_count_init,
         height_internodes=-Inf, radius_internodes=-Inf, # From the internode scale
         biomass_leaves=-Inf, rank_leaves=-Inf # From the leaf scale
     )
@@ -81,7 +85,10 @@ function PlantSimEngine.run!(model::LeafGeometryModel, models, status, meteo, co
     # Get internode and leaf nodes
     internode = phytomer[1]
     leaf = internode[1]
+    symbol(leaf) != "Leaf" && error("Expected leaf node, got $(symbol(leaf))")
 
+    leaf.plantsimengine_status.biomass <= 0.0 && return nothing # No biomass, no geometry
+    biomass_leaf = uconvert(u"kg", leaf.plantsimengine_status.biomass * u"g")
     # VPalm parameters:
     vpalm_params = model.vpalm_parameters
 
@@ -103,8 +110,6 @@ function PlantSimEngine.run!(model::LeafGeometryModel, models, status, meteo, co
     leaf.rank = rank_new
     leaf.is_alive = true
 
-    # Convert biomass and calculate rachis length
-    biomass_leaf = uconvert(u"kg", leaf.plantsimengine_status.biomass * u"g")
     current_length = rachis_length_from_biomass(
         biomass_leaf,
         vpalm_params["leaf_length_intercept"],
