@@ -74,17 +74,20 @@ petiole, rachis, and leaflets.
 The model expects `node` to be the phytomer MTG node and accesses VPalm parameters from `model.vpalm_parameters`.
 """
 function PlantSimEngine.run!(model::LeafGeometryModel, models, status, meteo, constants, extra)
-    status.state == "Pruned" && return nothing # reconstruct the leaf geometry only if it's not Pruned
-
-    # extract the phytomer from the node
+    # Extract the phytomer from the node
     phytomer = status.node
-
-    # Get the plant from the phytomer to find unique MTG ID
-    unique_mtg_id = PlantSimEngine.refvalue(status, :graph_node_count)
-
-    # Get internode and leaf nodes
+    # Get internode and leaf nodes:
     internode = phytomer[1]
     leaf = internode[1]
+
+    if status.state == "Pruned"
+        leaf.is_alive = false # This is used in the reconstruction for putting snags
+        return nothing
+    end
+
+    # Get the unique MTG ID
+    unique_mtg_id = PlantSimEngine.refvalue(status, :graph_node_count)
+
     symbol(leaf) != "Leaf" && error("Expected leaf node, got $(symbol(leaf))")
 
     leaf.plantsimengine_status.biomass <= 0.0 && return nothing # No biomass, no geometry
@@ -122,10 +125,8 @@ function PlantSimEngine.run!(model::LeafGeometryModel, models, status, meteo, co
     # @show current_length leaf.plantsimengine_status.rank leaf.plantsimengine_status.biomass biomass_leaf
     if !status.is_reconstructed
         status.graph_node_count += 1
-        println("$(meteo.date): Building leaf geometry for unique_mtg_id: $(unique_mtg_id[]), index: $i")
         build_leaf(unique_mtg_id, i, leaf, biomass_leaf, vpalm_params; rng=model.rng)
     elseif update_in_rank
-        println("$(meteo.date): Updating leaf geometry for unique_mtg_id: $(unique_mtg_id[]), index: $i")
         update_leaf!(leaf, biomass_leaf, vpalm_params; unique_mtg_id=unique_mtg_id, rng=model.rng)
     end
 
