@@ -1041,7 +1041,7 @@ end
 
 function leaflet_length_max(leaflet_length_at_b, relative_position_bpoint, relative_length_first_leaflet, relative_length_last_leaflet, relative_position_leaflet_max_length)
     @assert relative_position_bpoint >= 0 && relative_position_bpoint <= 1 "Relative position bpoint must be between 0 and 1."
-    @assert leaflet_length_at_b > zero(leaflet_length_at_b) "Leaflet length at b must be positive."
+    @assert leaflet_length_at_b > zero(leaflet_length_at_b) "Leaflet length at b must be positive: $leaflet_length_at_b"
 
     return leaflet_length_at_b / relative_leaflet_length(relative_position_bpoint, relative_length_first_leaflet, relative_length_last_leaflet, relative_position_leaflet_max_length)
 end
