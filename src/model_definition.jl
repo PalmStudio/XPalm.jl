@@ -13,8 +13,8 @@ Defines the list of sub-models used in XPalm.
 
 - A multiscale list of models, as a dictionary of scale (keys) and list of models (values).
 """
-function model_mapping(p)
-    Dict(
+function model_mapping(p; architecture=false)
+    models = Dict(
         "Scene" => (
             ET0_BP(p.parameters["plot"]["latitude"], p.parameters["plot"]["altitude"]),
             DailyDegreeDays(),
@@ -143,7 +143,21 @@ function model_mapping(p)
                 mapped_variables=[:state_organs => ["Leaf", "Male", "Female"] .=> :state,],
                 #! note: the mapping is artificial, we compute the state of those organs in the function directly because we use the status of a phytomer to give it to its children
                 #! second note: the models should really be associated to the organs (female and male inflo + leaves)
-            )
+            ),
+            MultiScaleModel(
+                model=VPalm.LeafGeometryModel(
+                    mtg=p.mtg,
+                    rng=Random.MersenneTwister(p.parameters["vpalm"]["seed"]),
+                    vpalm_parameters=p.parameters["vpalm"]
+                ),
+                mapped_variables=[
+                    :graph_node_count => "Scene" => :graph_node_count,
+                    :height_internodes => ["Internode" => :height],
+                    :radius_internodes => ["Internode" => :radius],
+                    :biomass_leaves => ["Leaf" => :biomass],
+                    :rank_leaves => ["Leaf" => :rank],
+                ],
+            ),
         ),
         "Internode" =>
             (
@@ -351,19 +365,19 @@ function model_mapping(p)
             ),
             # root_growth=RootGrowthFTSW(ini_root_depth=p.parameters["ini_root_depth"]),
             # soil_water=FTSW{RootSystem}(ini_root_depth=p.parameters["ini_root_depth"]),
-            MultiScaleModel(
-                model=RmQ10FixedN(
-                    p.parameters["respiration"]["RootSystem"]["Q10"],
-                    p.parameters["respiration"]["RootSystem"]["Turn"],
-                    p.parameters["respiration"]["RootSystem"]["Prot"],
-                    p.parameters["respiration"]["RootSystem"]["N"],
-                    p.parameters["respiration"]["RootSystem"]["Gi"],
-                    p.parameters["respiration"]["RootSystem"]["Mx"],
-                    p.parameters["respiration"]["RootSystem"]["T_ref"],
-                    p.parameters["respiration"]["RootSystem"]["P_alive"],
-                ),
-                mapped_variables=[PreviousTimeStep(:biomass),],
-            ),
+            # MultiScaleModel(
+            #     model=RmQ10FixedN(
+            #         p.parameters["respiration"]["RootSystem"]["Q10"],
+            #         p.parameters["respiration"]["RootSystem"]["Turn"],
+            #         p.parameters["respiration"]["RootSystem"]["Prot"],
+            #         p.parameters["respiration"]["RootSystem"]["N"],
+            #         p.parameters["respiration"]["RootSystem"]["Gi"],
+            #         p.parameters["respiration"]["RootSystem"]["Mx"],
+            #         p.parameters["respiration"]["RootSystem"]["T_ref"],
+            #         p.parameters["respiration"]["RootSystem"]["P_alive"],
+            #     ),
+            #     mapped_variables=[PreviousTimeStep(:biomass),],
+            # ),
         ),
         "Soil" => (
             # light_interception=Beer{Soil}(),
@@ -390,5 +404,35 @@ function model_mapping(p)
             ),
         )
     )
-end
 
+
+    if architecture
+        # Add the architecture models
+        models["Phytomer"] = merge(
+            models["Phytomer"],
+            (
+                MultiScaleModel(
+                    model=VPalm.LeafGeometryModel(
+                        mtg=p.mtg,
+                        rng=Random.MersenneTwister(p.parameters["vpalm"]["seed"]),
+                        vpalm_parameters=p.parameters["vpalm"]
+                    ),
+                    mapped_variables=[
+                        :graph_node_count => "Scene" => :graph_node_count,
+                        :height_internodes => ["Internode" => :height],
+                        :radius_internodes => ["Internode" => :radius],
+                        :biomass_leaves => ["Leaf" => :biomass],
+                        :rank_leaves => ["Leaf" => :rank],
+                    ],
+                ),
+                # "Phytomer" => (
+                #     MultiScaleModel(
+                #         model=PhytomerGeometryModel(p.mtg, p.vpalm_parameters),
+                #         mapped_variables=[:phytomer_geometry => ["Phytomer" => :geometry],],
+                #     ),
+                # ),
+            )
+        )
+    end
+    return models
+end
