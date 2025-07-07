@@ -49,8 +49,8 @@ relative_position_bpoint: 0.658754588282827
 relative_position_bpoint_sd: 0.034351699174915
 leaflet_length_at_b_intercept: 0.610414306944301 # Intercept of leaflet length at b point (m)  #! check this value
 leaflet_length_at_b_slope: 0.0544112333185808 #! check this value
-leaflet_width_at_b_intercept: 0.0630094765967717 #! check this value
-leaflet_width_at_b_slope: -0.00399539575923089 #! check this value
+leaflet_width_at_b_intercept: 0.0260336092584137 #! check this value
+leaflet_width_at_b_slope: 0.00549863402576809 #! check this value
 relative_length_first_leaflet: 0.180641437601563
 relative_length_last_leaflet: 0.523055131720828
 relative_position_leaflet_max_length: 0.522462119491008

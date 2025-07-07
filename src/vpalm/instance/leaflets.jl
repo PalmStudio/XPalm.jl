@@ -395,7 +395,7 @@ function create_leaflet_segments!(
 
         # Set segment width and length
         segment_node["width"] = segment_widths[j] * width_max
-        segment_node["width"] < 0u"m" && error("Negative width: $segment_node")
+        segment_node["width"] <= 0u"m" && error("Width for leaflet segment node $node_id(segment_node) is <=0: $(segment_node.width)")
         segment_node["length"] = (segment_boundaries[j+1] - segment_boundaries[j]) * leaflet_length
         segment_node["segment_boundaries"] = segment_boundaries[j]
 
@@ -410,7 +410,7 @@ end
 """
     update_leaflet_angles!(
         leaflet, leaf_rank; 
-        last_rank_unfolding=2, unique_mtg_id=max_id(leaflet), 
+        last_rank_unfolding=2, unique_mtg_id=new_id(leaflet), 
         xm_intercept=0.176, xm_slope=0.08, 
         ym_intercept=0.51, ym_slope=-0.025
     )
@@ -430,7 +430,7 @@ Update the angles and stiffness of a leaflet based on its position, side, and le
 function update_leaflet_angles!(
     leaflet, leaf_rank;
     last_rank_unfolding=2,
-    unique_mtg_id=Ref(max_id(leaflet) + 1),
+    unique_mtg_id=Ref(new_id(leaflet)),
     xm_intercept=0.176, xm_slope=0.08,
     ym_intercept=0.51, ym_slope=-0.025
 )
@@ -460,7 +460,7 @@ function update_leaflet_angles!(
 
     children_leaflet = children(leaflet)
     if length(children_leaflet) > 0 && symbol(children_leaflet[1]) == "LeafletSegment"
-        # If we have leaflet segments, we need can simply update their angles:
+        # If we have leaflet segments, we can simply update their angles:
         update_segment_angles!(leaflet, ustrip(leaflet.stiffness), deg2rad(leaflet.zenithal_angle), ustrip(leaflet.length), leaflet.tapering)
     else
         # If we have no segments (they were merged at leaflet scale), we need to re-create them:

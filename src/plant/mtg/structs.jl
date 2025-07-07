@@ -221,7 +221,7 @@ function default_parameters()
         )
     )
 
-    push!(p, "vpalm" => VPalm.default_parameters())
+    push!(p, "vpalm" => VPalm.default_parameters(; type="dynamic"))
 
     return p
 end

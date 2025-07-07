@@ -143,7 +143,7 @@ end
 
 
 """
-    default_parameters()
+    default_parameters(; type="static")
 
 Returns a dictionary of default parameters for the VPalm model.
 

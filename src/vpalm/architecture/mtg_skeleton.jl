@@ -85,12 +85,12 @@ function mtg_skeleton(parameters; rng=Random.MersenneTwister(parameters["seed"])
         rank = compute_leaf_rank(nb_internodes, i, parameters["nb_leaves_in_sheath"])
 
         compute_properties_internode!(internode, i, nb_internodes, rank, stem_height, stem_diameter, parameters, rng)
-        leaf = Node(unique_mtg_id[], internode, NodeMTG("+", "Leaf", i, 4))
+        leaf_node = Node(unique_mtg_id[], internode, NodeMTG("+", "Leaf", i, 4))
         unique_mtg_id[] += 1
-        leaf.rank = rank
-        leaf.is_alive = leaf.rank <= nb_leaves_alive
-        final_length = if leaf.is_alive
-            if leaf.rank <= 0
+        leaf_node.rank = rank
+        leaf_node.is_alive = leaf_node.rank <= nb_leaves_alive
+        final_length = if leaf_node.is_alive
+            if leaf_node.rank <= 0
                 # If the leaf is a spear, we estimate its future length using the length of the youngest leaf
                 rank_1_leaf_length
             else
@@ -100,22 +100,11 @@ function mtg_skeleton(parameters; rng=Random.MersenneTwister(parameters["seed"])
             0.0
         end
 
-        compute_properties_leaf!(leaf, leaf.rank, leaf.is_alive, final_length, parameters, rng)
-
-        # Loop on present leaves
-        if leaf.is_alive
-            # Build the petiole
-            petiole_node = petiole(unique_mtg_id, i, 5, leaf.rachis_length, leaf.zenithal_insertion_angle, leaf.zenithal_cpoint_angle, parameters; rng=rng)
-            addchild!(leaf, petiole_node)
-
-            # Build the rachis
-            rachis_fresh_biomass = leaf.rank <= 0 ? rank_1_leaf_biomass : pop!(rachis_fresh_biomasses)
-
-            rachis_node = rachis(unique_mtg_id, i, 5, leaf.rank, leaf.rachis_length, petiole_node.height_cpoint, petiole_node.width_cpoint, leaf.zenithal_cpoint_angle, rachis_fresh_biomass, parameters; rng=rng)
-            addchild!(petiole_node, rachis_node)
-
-            # Add the leaflets to the rachis:
-            leaflets!(unique_mtg_id, rachis_node, 5, leaf.rank, leaf.rachis_length, parameters; rng=rng)
+        if leaf_node.is_alive
+            rachis_fresh_biomass = leaf_node.rank <= 0 ? rank_1_leaf_biomass : pop!(rachis_fresh_biomasses)
+            leaf(unique_mtg_id, i, rank, rachis_fresh_biomass, final_length, leaf_node, parameters; rng=Random.MersenneTwister(1234))
+        else
+            compute_properties_leaf!(leaf_node, leaf_node.rank, final_length, parameters, rng)
         end
     end
 
@@ -149,30 +138,16 @@ function init_attributes_seed!(plant, parameters; rng=Random.MersenneTwister(par
 
     nb_internodes = descendants(plant, symbol="Internode") |> length
     i = 0
-    unique_mtg_id = Ref(max_id(plant) + 1)
+    unique_mtg_id = Ref(new_id(plant))
     traverse!(plant, symbol="Internode") do internode
         i += 1
         rank = compute_leaf_rank(nb_internodes, i, nb_leaves_in_sheath)
 
         compute_properties_internode!(internode, i, nb_internodes, rank, stem_height, stem_diameter, parameters, rng)
-        leaf = internode[1]
-        leaf.rank = rank
-        leaf.is_alive = true
+        leaf_node = internode[1]
+        leaf_node.is_alive = true
 
-        compute_properties_leaf!(leaf, leaf.rank, leaf.is_alive, final_length, parameters, rng)
-
-        if leaf.is_alive
-            # Build the petiole
-            petiole_node = petiole(unique_mtg_id, i, 5, leaf.rachis_length, leaf.zenithal_insertion_angle, leaf.zenithal_cpoint_angle, parameters; rng=rng)
-            addchild!(leaf, petiole_node)
-
-            # Build the rachis
-            rachis_node = rachis(unique_mtg_id, i, 5, leaf.rank, leaf.rachis_length, petiole_node.height_cpoint, petiole_node.width_cpoint, leaf.zenithal_cpoint_angle, biomass_first_leaf, parameters; rng=rng)
-            addchild!(petiole_node, rachis_node)
-
-            # Add the leaflets to the rachis:
-            leaflets!(unique_mtg_id, rachis_node, 5, leaf.rank, leaf.rachis_length, parameters; rng=rng)
-        end
+        leaf(unique_mtg_id, i, rank, biomass_first_leaf, final_length, leaf_node, parameters; rng=Random.MersenneTwister(1234))
     end
 
     return plant

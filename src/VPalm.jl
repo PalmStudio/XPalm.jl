@@ -4,7 +4,7 @@ module VPalm
 import Random
 
 # For managing the MTG:
-import MultiScaleTreeGraph: Node, NodeMTG, traverse!, symbol, reparent!, addchild!, descendants, delete_nodes!, new_child_link, children, max_id, scale
+import MultiScaleTreeGraph: Node, NodeMTG, traverse!, symbol, reparent!, addchild!, descendants, delete_nodes!, new_child_link, children, new_id, scale, index, node_id
 
 # IO:
 import YAML, OrderedCollections
@@ -20,6 +20,9 @@ import Unitful: @u_str, ustrip, unit, NoUnits, uconvert, Quantity
 
 # For the biomechanical model
 import Interpolations: linear_interpolation
+
+# For exporting PlantSimEngine models:
+import PlantSimEngine
 
 include("vpalm/units.jl")
 include("vpalm/utils.jl")
@@ -63,9 +66,14 @@ include("vpalm/geometry/leaflets.jl")
 include("vpalm/instance/petiole.jl")
 include("vpalm/instance/rachis.jl")
 include("vpalm/instance/leaflets.jl")
+include("vpalm/instance/leaf.jl")
 
 include("vpalm/build_mockup.jl")
 
-export read_parameters, write_parameters, default_parameters
+# PlantSimEngine models:
+include("vpalm/plantsimengine_models/LeafGeometryModel.jl")
+
+
+export read_parameters, write_parameters
 export build_mockup
 end
