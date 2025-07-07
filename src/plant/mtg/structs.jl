@@ -241,7 +241,7 @@ Create a new scene with one Palm plant. The scene contains a soil, a plant, a ro
 
 - a `Palm` object
 """
-function Palm(; initiation_age=0, parameters=default_parameters(), architecture=true)
+function Palm(; initiation_age=0, parameters=default_parameters(), architecture=false)
     # Parameters should be a Dict{AbstractString,Any}:
     if !(typeof(parameters) <: Dict{AbstractString})
         @info "`parameters` should be a Dict{AbstractString,Any}, converting using: `Dict{AbstractString,Any}(string(k) => v for (k, v) in parameters)`"
