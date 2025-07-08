@@ -23,77 +23,77 @@ dirtest = joinpath(dirname(dirname(pathof(XPalm))), "test/")
 vpalm_parameters = read_parameters(joinpath(dirtest, "references", "vpalm-parameter_file.yml"))
 vpalm_parameters2 = read_parameters(joinpath(dirtest, "references", "vpalm-parameter_file-missing_rachis_final_lengths.yml"))
 
-##@testset "Code quality (Aqua.jl)" begin
-##    Aqua.test_all(XPalm, ambiguities=false)
-##end
-##
-##if VERSION >= v"1.10"
-##    # See this issue: https://github.com/aviatesk/JET.jl/issues/665
-##    @testset "Code linting (JET.jl)" begin
-##        JET.test_package(XPalm; target_defined_modules=true)
-##    end
-##end
-##
-##@testset "Age" begin
-##    include(joinpath(dirtest, "test-age.jl"))
-##end
-##
-##@testset "Light" begin
-##    include(joinpath(dirtest, "test-beer.jl"))
-##end
-##
-##@testset "Micrometeorology" begin
-##    include(joinpath(dirtest, "test-micrometeo.jl"))
-##end
-##
-### @testset "Carbon_allocation" begin
-###     include(joinpath(dirtest, "test-carbon_allocation.jl"))
-### end
-##
-##@testset "Carbon_assimilation" begin
-##    include(joinpath(dirtest, "test-rue.jl"))
-##end
-##
-##@testset "Carbon_offer" begin
-##    include(joinpath(dirtest, "test-carbon_offer.jl"))
-##end
-##
-##@testset "Dimensions" begin
-##    include(joinpath(dirtest, "test-dimensions.jl"))
-##end
-##
-##@testset "Leaf area" begin
-##    include(joinpath(dirtest, "test-leaf_area.jl"))
-##end
-##
-### @testset "Number - fruits" begin
-###     include(joinpath(dirtest, "test-number_fruits.jl"))
-### end
-##
-##@testset "Biomass" begin
-##    include(joinpath(dirtest, "test-biomass.jl"))
-##end
-##
-##@testset "Carbon_demand" begin
-##    include(joinpath(dirtest, "test-carbon_demand.jl"))
-##end
-##
-##
-##@testset "Soil" begin
-##    include(joinpath(dirtest, "test-FTSW.jl"))
-##end
-##
-##@testset "Roots" begin
-##    include(joinpath(dirtest, "test-roots.jl"))
-##end
-##
-##@testset "Palm" begin
-##    include(joinpath(dirtest, "test-palm.jl"))
-##end
-##
-##@testset "Running a simulation" begin
-##    include("test-run.jl")
-##end
+@testset "Code quality (Aqua.jl)" begin
+    Aqua.test_all(XPalm, ambiguities=false)
+end
+
+if VERSION >= v"1.10"
+    # See this issue: https://github.com/aviatesk/JET.jl/issues/665
+    @testset "Code linting (JET.jl)" begin
+        JET.test_package(XPalm; target_defined_modules=true)
+    end
+end
+
+@testset "Age" begin
+    include(joinpath(dirtest, "test-age.jl"))
+end
+
+@testset "Light" begin
+    include(joinpath(dirtest, "test-beer.jl"))
+end
+
+@testset "Micrometeorology" begin
+    include(joinpath(dirtest, "test-micrometeo.jl"))
+end
+
+# @testset "Carbon_allocation" begin
+#     include(joinpath(dirtest, "test-carbon_allocation.jl"))
+# end
+
+@testset "Carbon_assimilation" begin
+    include(joinpath(dirtest, "test-rue.jl"))
+end
+
+@testset "Carbon_offer" begin
+    include(joinpath(dirtest, "test-carbon_offer.jl"))
+end
+
+@testset "Dimensions" begin
+    include(joinpath(dirtest, "test-dimensions.jl"))
+end
+
+@testset "Leaf area" begin
+    include(joinpath(dirtest, "test-leaf_area.jl"))
+end
+
+# @testset "Number - fruits" begin
+#     include(joinpath(dirtest, "test-number_fruits.jl"))
+# end
+
+@testset "Biomass" begin
+    include(joinpath(dirtest, "test-biomass.jl"))
+end
+
+@testset "Carbon_demand" begin
+    include(joinpath(dirtest, "test-carbon_demand.jl"))
+end
+
+
+@testset "Soil" begin
+    include(joinpath(dirtest, "test-FTSW.jl"))
+end
+
+@testset "Roots" begin
+    include(joinpath(dirtest, "test-roots.jl"))
+end
+
+@testset "Palm" begin
+    include(joinpath(dirtest, "test-palm.jl"))
+end
+
+@testset "Running a simulation" begin
+    include("test-run.jl")
+end
 
 @testset "VPalm" begin
 
