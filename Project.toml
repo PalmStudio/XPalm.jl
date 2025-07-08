@@ -1,7 +1,7 @@
 name = "XPalm"
 uuid = "6b523e1e-d512-416c-8e51-a8fbef0064e7"
 authors = ["Rémi Vezy <VEZY@users.noreply.github.com> and contributors"]
-version = "0.3.3"
+version = "0.4.0"
 
 [deps]
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
