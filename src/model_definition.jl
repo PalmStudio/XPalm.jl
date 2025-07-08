@@ -398,7 +398,7 @@ function model_mapping(p; architecture=false)
         models["Phytomer"] = (
             models["Phytomer"]...,
             MultiScaleModel(
-                model=VPalm.LeafGeometryModel(
+                model=VPalm.GeometryModel(
                     mtg=p.mtg,
                     rng=Random.MersenneTwister(p.parameters["vpalm"]["seed"]),
                     vpalm_parameters=p.parameters["vpalm"]

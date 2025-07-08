@@ -71,7 +71,7 @@ include("vpalm/instance/leaf.jl")
 include("vpalm/build_mockup.jl")
 
 # PlantSimEngine models:
-include("vpalm/plantsimengine_models/LeafGeometryModel.jl")
+include("vpalm/plantsimengine_models/GeometryModel.jl")
 
 
 export read_parameters, write_parameters
