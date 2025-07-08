@@ -2,7 +2,7 @@
 
 VPalm is a submodule of XPalm that provides a set of functions to reconstruct the architecture of palm trees based on a set of parameters and allometric relations.
 
-Parameters are defined in a YAML file and and a template is [provided](https://github.com/PalmStudio/XPalm.jl/blob/main/test/references/vpalm-parameter_file.yml):
+Parameters are defined in a YAML file and a template is [provided](https://github.com/PalmStudio/XPalm.jl/blob/main/test/references/vpalm-parameter_file.yml):
 
 ```julia
 using XPalm.VPalm
@@ -12,7 +12,7 @@ parameters = read_parameters(file)
 
 ## Parameters definition
 
-Here is a list of all necessary parameters to run XPAlm.VPalm:
+Here is a list of all necessary parameters to run XPalm.VPalm:
 
 | Parameter | Value | Description |
 |-----------|--------|-------------|
