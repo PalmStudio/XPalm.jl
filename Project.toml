@@ -1,7 +1,7 @@
 name = "XPalm"
 uuid = "6b523e1e-d512-416c-8e51-a8fbef0064e7"
 authors = ["Rémi Vezy <VEZY@users.noreply.github.com> and contributors"]
-version = "0.3.3"
+version = "0.4.0"
 
 [deps]
 Dates = "ade2ca70-3891-5945-98fb-dc099432e06a"
@@ -31,7 +31,7 @@ XPalmPluto = "Pluto"
 Dates = "1"
 Interpolations = "0.15.1, 0.16"
 Meshes = "0.52, 0.53"
-MultiScaleTreeGraph = "0.14.2"
+MultiScaleTreeGraph = "0.14.4"
 OrderedCollections = "1.6"
 PlantGeom = "0.12.0"
 PlantMeteo = "0.6.0"

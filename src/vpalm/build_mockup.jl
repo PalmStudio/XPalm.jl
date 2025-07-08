@@ -50,10 +50,10 @@ function build_mockup(parameters; merge_scale=:leaflet)
         PlantGeom.merge_children_geometry!(mtg; from="LeafletSegment", into="Leaflet", child_link_fun=child_link_fun_no_warning)
     elseif merge_scale == :leaf
         PlantGeom.merge_children_geometry!(mtg; from=["PetioleSegment", "RachisSegment", "LeafletSegment"], into="Leaf", child_link_fun=child_link_fun_no_warning, verbose=false)
-        delete_nodes!(mtg, symbol=["Rachis", "Petiole"], child_link_fun=child_link_fun_no_warning)
+        delete_nodes!(mtg, symbol=["Rachis", "Petiole", "Leaflet"], child_link_fun=child_link_fun_no_warning)
     elseif merge_scale == :plant
         PlantGeom.merge_children_geometry!(mtg; from=["Stem", "Leaf", "PetioleSegment", "RachisSegment", "LeafletSegment"], into="Plant", child_link_fun=child_link_fun_no_warning, verbose=false)
-        delete_nodes!(mtg, symbol=["Rachis", "Petiole"], child_link_fun=child_link_fun_no_warning)
+        delete_nodes!(mtg, symbol=["Rachis", "Petiole", "Leaflet"], child_link_fun=child_link_fun_no_warning)
     end
     return mtg
 end

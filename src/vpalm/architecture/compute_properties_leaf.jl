@@ -1,5 +1,5 @@
 """
-    compute_properties_leaf!(node, leaf_rank, is_alive, final_length, parameters, rng)
+    compute_properties_leaf!(node, leaf_rank, final_length, parameters, rng)
 
 Compute the properties of a leaf node:
 
@@ -11,7 +11,6 @@ Compute the properties of a leaf node:
 
 - `node`: the leaf node
 - `leaf_rank`: the rank of the leaf
-- `is_alive`: is the leaf alive or dead (snag)?
 - `final_length`: the final length of the leaf (m)
 - `parameters`: the parameters of the model
 - `rng`: the random number generator
@@ -29,44 +28,45 @@ The leaf dimensions are computed based on the dimensions of the stem and the par
 # Examples
 
 ```julia
+using XPalm.VPalm
+using Unitful
+
 file = joinpath(dirname(dirname(pathof(VPalm))), "test", "files", "parameter_file.yml")
 parameters = read_parameters(file)
 nb_internodes = parameters["nb_leaves_emitted"] + parameters["nb_internodes_before_planting"] # The number of internodes emitted since the seed
 nb_leaves_alive = floor(Int, mean_and_sd(parameters["nb_leaves_mean"], parameters["nb_leaves_sd"]; rng=rng))
 nb_leaves_alive = min(nb_leaves_alive, nb_internodes)
 # Plant / Scale 1
-plant = Node(MutableNodeMTG("/", "Plant", 1, 1))
+plant = Node(NodeMTG("/", "Plant", 1, 1))
 # Stem (& Roots) / Scale 2
-stem = Node(plant, MutableNodeMTG("+", "Stem", 1, 2))
-compute_properties_stem!(stem, parameters, rng)
+stem = Node(plant, NodeMTG("+", "Stem", 1, 2))
+compute_properties_stem!(stem, parameters, 3.0u"m"; rng=rng)
 stem_height = stem[:stem_height]
 stem_diameter = stem[:stem_diameter]
 # Phytomer / Scale 3
-phytomer = Node(stem, MutableNodeMTG("/", "Phytomer", 1, 3))
+phytomer = Node(stem, NodeMTG("/", "Phytomer", 1, 3))
 # Internode & Leaf / Scale 4
-internode = Node(phytomer, MutableNodeMTG("/", "Internode", 1, 4))
-leaf = Node(internode, MutableNodeMTG("+", "Leaf", 1, 4))
+internode = Node(phytomer, NodeMTG("/", "Internode", 1, 4))
+leaf = Node(internode, NodeMTG("+", "Leaf", 1, 4))
 compute_properties_leaf!(leaf, 1, nb_internodes, nb_leaves_alive, parameters, rng)
 ```
 """
-function compute_properties_leaf!(node, leaf_rank, is_alive, final_length, parameters, rng)
-    if is_alive
-        node[:zenithal_insertion_angle] = VPalm.leaf_insertion_angle(
-            leaf_rank,
-            parameters["leaf_max_angle"],
-            parameters["leaf_slope_angle"],
-            parameters["leaf_inflection_angle"]
-        )
-        node[:rachis_length] = rachis_expansion(leaf_rank, final_length)
+function compute_properties_leaf!(node, leaf_rank, final_length, parameters, rng)
+    node[:zenithal_insertion_angle] = VPalm.leaf_insertion_angle(
+        leaf_rank,
+        parameters["leaf_max_angle"],
+        parameters["leaf_slope_angle"],
+        parameters["leaf_inflection_angle"]
+    )
+    node[:rachis_length] = rachis_expansion(leaf_rank, final_length)
 
-        node[:zenithal_cpoint_angle] =
-            max(
-                c_point_angle(leaf_rank, parameters["cpoint_decli_intercept"], parameters["cpoint_decli_slope"], parameters["cpoint_angle_SDP"]; rng=rng),
-                node[:zenithal_insertion_angle]
-            )
-        # RV: I add this new thing were the zenithal cpoint angle cannot be lower than the insertion angle. Note that the angle is relative to the vertical (z)
-        # I do that because it would be weird if a leaf was going upward.
-    end
+    node[:zenithal_cpoint_angle] =
+        max(
+            c_point_angle(leaf_rank, parameters["cpoint_decli_intercept"], parameters["cpoint_decli_slope"], parameters["cpoint_angle_SDP"]; rng=rng),
+            node[:zenithal_insertion_angle]
+        )
+    # RV: I add this new thing were the zenithal cpoint angle cannot be lower than the insertion angle. Note that the angle is relative to the vertical (z)
+    # I do that because it would be weird if a leaf was going upward.
 
     return nothing
 end

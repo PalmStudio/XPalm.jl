@@ -133,9 +133,9 @@ df = xpalm(meteo, DataFrame;
 Customize palm parameters and request multiple outputs:
 
 ```julia
-# Read the parameters from a YAML file (provided in the example folder of the package). Note that parameter keys should be imported as `Symbol`s
+# Read the parameters from a YAML file (provided in the example folder of the package).
 using YAML
-parameters = YAML.load_file(joinpath(dirname(dirname(pathof(XPalm))), "examples/xpalm_parameters.yml"); dicttype=Dict{Symbol,Any})
+parameters = YAML.load_file(joinpath(dirname(dirname(pathof(XPalm))), "examples/xpalm_parameters.yml"))
 
 # Load example meteorological data
 meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), DataFrame)
@@ -161,7 +161,7 @@ You can also import the parameters from a JSON file using the `JSON` package:
 ```julia
 using JSON # You first need to install the JSON package by running `] add JSON`
 params = open(joinpath(dirname(dirname(pathof(XPalm))), "examples/xpalm_parameters.json"), "r") do io
-    JSON.parse(io; dicttype=Dict{Symbol,Any}, inttype=Int64)
+    JSON.parse(io; dicttype=Dict{String,Any}, inttype=Int64)
 end
 ```
 
