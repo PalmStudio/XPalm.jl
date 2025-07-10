@@ -43,7 +43,7 @@ The model also includes a submodule `VPalm` to design palm tree mockups from a s
 
 The model is implemented in the [Julia programming language](https://julialang.org/), which is a high-level, high-performance dynamic programming language for technical computing.
 
-![palm plant](../assets/palm_mockup.png)
+![palm plant](assets/palm_mockup.png)
 
 ## Example outputs
 
