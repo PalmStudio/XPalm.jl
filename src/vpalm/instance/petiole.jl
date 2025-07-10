@@ -23,7 +23,7 @@ Make a leaf petiole.
     - "petiole_nb_segments": the number of segments used to discretize the petiole
 """
 function petiole(unique_mtg_id, index, scale, rachis_length, zenithal_insertion_angle, zenithal_cpoint_angle, parameters; rng=Random.MersenneTwister(1))
-    petiole_node = Node(unique_mtg_id[], MutableNodeMTG("/", "Petiole", index, scale), Dict{Symbol,Any}())
+    petiole_node = Node(unique_mtg_id[], NodeMTG("/", "Petiole", index, scale), Dict{Symbol,Any}())
     unique_mtg_id[] += 1
     compute_properties_petiole!(
         petiole_node,
@@ -59,12 +59,38 @@ function petiole_sections!(petiole_node, petiole_nb_segments, unique_mtg_id)
     last_parent = petiole_node
     # segment_insertion_angle = Ref(copy(petiole_node.zenithal_insertion_angle))
     for p in 1:petiole_nb_segments
-        petiole_segment_node = Node(unique_mtg_id[], last_parent, MutableNodeMTG(p == 1 ? "/" : "<", "PetioleSegment", p, 6))
+        petiole_segment_node = Node(unique_mtg_id[], last_parent, NodeMTG(p == 1 ? "/" : "<", "PetioleSegment", p, 6))
         unique_mtg_id[] += 1
         petiole_section_insertion_angle = petiole_node[:zenithal_insertion_angle] + p * petiole_node[:section_insertion_angle]
         compute_properties_petiole_section!(petiole_node, petiole_segment_node, p, petiole_nb_segments, petiole_section_insertion_angle)
         last_parent = petiole_segment_node
     end
 
+    return nothing
+end
+
+
+"""
+    update_petiole_angles!(petiole_node)
+
+Update the angles of the petiole segments based on the petiole node properties.
+
+# Arguments
+
+- `petiole_node`: the MTG Node of the petiole
+
+# Returns
+
+Nothing, the petiole node is updated in-place with its segments angles.
+"""
+function update_petiole_angles!(petiole_node)
+    segment_id = Ref(1)
+    petiole_nb_segments = descendants(petiole_node, symbol="PetioleSegment") |> length
+    traverse!(petiole_node[1], symbol="PetioleSegment") do segment
+        petiole_section_insertion_angle = petiole_node[:zenithal_insertion_angle] + segment_id[] * petiole_node[:section_insertion_angle]
+        segment_id[] += 1
+
+        compute_properties_petiole_section!(petiole_node, segment, segment_id[], petiole_nb_segments, petiole_section_insertion_angle)
+    end
     return nothing
 end

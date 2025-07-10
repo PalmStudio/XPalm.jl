@@ -143,3 +143,62 @@ function calculate_segment_angles(young_modulus, initial_angle, leaflet_length, 
     # If we need the local angles: `diff(boundary_angles)`
     return boundary_angles
 end
+
+"""
+    update_segment_angles!(leaflet, young_modulus, initial_angle, leaflet_length, tapering)
+
+Update the zenithal angles of each segment in a leaflet based on the Young's modulus model.
+
+# Arguments
+- `leaflet`: The leaflet MTG node containing segments
+- `young_modulus`: Value of Young's modulus
+- `initial_angle`: Initial angle from vertical in radians
+- `leaflet_length`: Total length of the leaflet
+- `tapering`: Tapering factor
+
+# Returns
+
+- Nothing (the angles are updated in place)
+"""
+function update_segment_angles!(leaflet, young_modulus, initial_angle, leaflet_length, tapering)
+    total_deflection = final_angle(young_modulus, initial_angle, leaflet_length, tapering)
+
+    # Get angles at each segment boundary
+    segment_positions = descendants(leaflet, :segment_boundaries, symbol="LeafletSegment")
+    boundary_angles = zeros(length(segment_positions))
+
+    # And the following ones by traversal:
+    i = Ref(1)
+    traverse!(leaflet, symbol="LeafletSegment") do segment
+        if i[] == 1
+            boundary_angles[i[]] = initial_angle
+            segment.zenithal_angle = rad2deg(boundary_angles[i[]])
+            i[] += 1
+            return nothing
+        end
+
+        # segment["segment_boundaries"]
+        relative_pos = segment_positions[i[]] - segment_positions[1]
+        current_angle = boundary_angles[i[]-1]
+        # Calculate accumulated flexion up to this segment boundary
+        flexion = 0.0
+        prev_pos = segment_positions[i[]-1] - segment_positions[1]
+        steps = 10  # Number of integration steps between segments
+        step_size = (relative_pos - prev_pos) / steps
+        for step in 1:steps
+            step_pos = prev_pos + step * step_size
+            flexion += local_flexion(
+                current_angle + flexion,
+                total_deflection,
+                young_modulus,
+                tapering,
+                step_pos
+            )
+        end
+
+        boundary_angles[i[]] = boundary_angles[i[]-1] + flexion
+        segment.zenithal_angle = rad2deg(boundary_angles[i[]])
+    end
+
+    return nothing
+end

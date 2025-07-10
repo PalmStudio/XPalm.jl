@@ -14,7 +14,6 @@ by TEff if it is itself modulated by *e.g.* the available water in the soil.
 
 - `plant_age`= plant age (days)
 - `TEff`: daily efficient temperature for plant growth (degree C days) 
-- `ftsw`= fraction of tranpirable soil water (unitless)
 
 # Outputs 
 
