@@ -4,7 +4,7 @@ using Documenter
 DocMeta.setdocmeta!(XPalm, :DocTestSetup, :(using XPalm); recursive=true)
 
 makedocs(;
-    modules=[XPalm],
+    modules=[XPalm, XPalm.VPalm],
     authors="Rémi Vezy <VEZY@users.noreply.github.com> and contributors",
     repo=Documenter.Remotes.GitHub("PalmStudio", "XPalm.jl"),
     sitename="XPalm.jl",
@@ -17,7 +17,21 @@ makedocs(;
     ),
     pages=[
         "Home" => "index.md",
-    ]
+        "XPalm" => [
+            "XPalm notebook" => "notebook.md",
+            "Running XPalm" => "running.md",
+        ],
+        "Vpalm" => [
+            "Parameters" => "vpalm/parameters.md",
+            "Reconstruction" => "vpalm/reconstruction.md",
+        ],
+        "Coupling" => "coupling.md",
+        "API" => [
+            "Index" => "api_index.md",
+            "XPalm API" => "api.md",
+            "XPalm.VPalm API" => "vpalm/api.md",
+        ],
+    ],
 )
 
 deploydocs(;
