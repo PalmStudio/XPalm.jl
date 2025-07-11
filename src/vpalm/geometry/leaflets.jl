@@ -1,10 +1,12 @@
 """
     add_leaflet_geometry!(
-        leaflet_node, 
-        rachis_position, 
-        rachis_orientation, 
-        rachis_rotation, 
-        stem_bending, 
+        leaflet_node,
+        internode_width,
+        internode_height,
+        rachis_position,
+        rachis_orientation,
+        rachis_rotation,
+        stem_bending,
         refmesh_plane
     )
 
@@ -12,10 +14,12 @@ Create the leaflet geometry based on its segments.
 
 # Arguments
 - `leaflet_node`: The MTG node of the leaflet
+- `internode_width`: Width of the internode (used for positioning)
+- `internode_height`: Height of the internode (used for positioning)
 - `rachis_position`: Position of the rachis section where the leaflet is attached
 - `rachis_orientation`: Orientation angles [zenithal, azimuthal, torsion] of the rachis section
-- `rachis_rotation`: Rotation of the rachis due to phyllotaxy (radians)
-- `stem_bending`: Bending of the stem (radians)
+- `rachis_rotation`: Rotation of the rachis due to phyllotaxy (degrees)
+- `stem_bending`: Bending of the stem (degrees)
 - `refmesh_plane`: Reference mesh used for the planar leaflet segments
 
 # Returns
@@ -33,7 +37,7 @@ function add_leaflet_geometry!(
 )
     # Extract basic leaflet properties
     side = leaflet_node["side"]
-    h_angle = deg2rad(leaflet_node["azimuthal_angle"])   # Horizontal angle (insertion angle in Z)  
+    h_angle = deg2rad(leaflet_node["azimuthal_angle"])   # Horizontal angle (insertion angle in Z)
     v_angle = deg2rad(leaflet_node["zenithal_angle"])    # Vertical angle (insertion angle in X)
     torsion = deg2rad(leaflet_node["torsion_angle"]) + π / 2.0 # Twist around leaflet's axis
     lamina_angle = deg2rad(leaflet_node["lamina_angle"]) # V-shape of the leaflet

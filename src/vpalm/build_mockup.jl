@@ -5,7 +5,7 @@ Construct a mockup of an oil palm plant architecture using the specified paramet
 
 # Arguments
 
-- `parameters::Dict`: Dictionary containing model parameters for the oil palm plant architecture. 
+- `parameters::Dict`: Dictionary containing model parameters for the oil palm plant architecture.
 - `merge_scale::Symbol`: (optional) The scale at which to merge geometry.
     - `:node`: Geometry is not merged, each node has its own mesh (finer scale is leaflet segments).
     - `:leaflet` (default): Geometry is merged at the leaflet level.
@@ -26,8 +26,8 @@ The `merge_scale` argument controls how the geometry is structured within the Mu
 # Example
 
 ```julia
-using VPalm
-file = joinpath(dirname(dirname(pathof(VPalm))), "test", "files", "parameter_file.yml")
+using XPalm.VPalm
+file = joinpath(dirname(dirname(pathof(XPalm))), "test", "references", "vpalm-parameter_file.yml")
 parameters = read_parameters(file)
 mtg = build_mockup(parameters; merge_scale=:plant)
 ```
@@ -41,9 +41,9 @@ function build_mockup(parameters; merge_scale=:leaflet)
     # Note: we could do this at the same time than the architecture, but it is separated here for clarity. The downside is that we traverse the mtg twice, but it is pretty cheap.
     refmesh_cylinder = PlantGeom.RefMesh("cylinder", VPalm.cylinder())
     refmesh_snag = PlantGeom.RefMesh("Snag", VPalm.snag())
-    ref_mesh_plane = PlantGeom.RefMesh("Plane", VPalm.plane())
+    refmesh_plane = PlantGeom.RefMesh("Plane", VPalm.plane())
 
-    add_geometry!(mtg, refmesh_cylinder, refmesh_snag, ref_mesh_plane)
+    add_geometry!(mtg, refmesh_cylinder, refmesh_snag, refmesh_plane)
 
     if merge_scale == :leaflet
         # Merge leaflets segments geometry into the leaflets:

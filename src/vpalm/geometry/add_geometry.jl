@@ -1,6 +1,6 @@
 """
     add_geometry!(
-        mtg, refmesh_cylinder, refmesh_snag, ref_mesh_plane;
+        mtg, refmesh_cylinder, refmesh_snag, refmesh_plane;
         snag_width=0.20u"m", # see defaultOrthotropyAttribute in the trunk in the java implementation
         snag_height=0.15u"m",
         snag_length=3.0u"m",
@@ -12,7 +12,7 @@ function add_geometry!(
     mtg,
     refmesh_cylinder,
     refmesh_snag,
-    ref_mesh_plane;
+    refmesh_plane;
     snag_width=0.20u"m", # see defaultOrthotropyAttribute in the trunk in the java implementation
     snag_height=0.15u"m",
     snag_length=0.1u"m",
@@ -71,7 +71,7 @@ function add_geometry!(
                 (; rachis_node.zenithal_angle_global, rachis_node.azimuthal_angle_global, rachis_node.torsion_angle_global),                # Orientation of rachis at attachment point
                 snag_rotation,                # Global phyllotaxy rotation
                 stem_bending,                 # Global stem bending
-                ref_mesh_plane                 # Reference mesh for leaflet segments
+                refmesh_plane                 # Reference mesh for leaflet segments
             )
         end
     end

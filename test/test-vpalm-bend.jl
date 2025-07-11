@@ -23,6 +23,18 @@ ref = CSV.read(joinpath(@__DIR__, "references/6_EW01.22_17_kanan_unbent_bend.csv
         verbose=false
     )
 
+    # Test length of elastic_modulus and shear_modulus
+    @test_throws MethodError VPalm.bend(
+        df.type, df.width * u"m", df.height * u"m", df.torsion * u"°", df.x * u"m", df.y * u"m", df.z * u"m", df.mass * u"kg", df.mass_right * u"kg", df.mass_left * u"kg",
+        df.distance_application * u"m", fill(elastic_modulus, length(df) -1), shear_modulus, pas, Ncalc, Nboucle;
+        verbose=false, angle_max = 0.0u"°"
+    )
+    @test_throws MethodError VPalm.bend(
+        df.type, df.width * u"m", df.height * u"m", df.torsion * u"°", df.x * u"m", df.y * u"m", df.z * u"m", df.mass * u"kg", df.mass_right * u"kg", df.mass_left * u"kg",
+        df.distance_application * u"m", elastic_modulus, fill(shear_modulus, length(df) -1), pas, Ncalc, Nboucle;
+        verbose=false, angle_max = 0.0u"°"
+    )
+
     # CSV.write(joinpath(@__DIR__, "references/6_EW01.22_17_kanan_unbent_bend.csv"), DataFrame(out))
     ref_points = [Meshes.Point(row.x, row.y, row.z) for row in eachrow(ref)]
     for (ref_p, p) in zip(ref_points, out.points)
