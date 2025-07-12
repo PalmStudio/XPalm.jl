@@ -30,7 +30,7 @@ XPalmPluto = "Pluto"
 [compat]
 Dates = "1"
 Interpolations = "0.15.1, 0.16"
-Meshes = "0.52, 0.53"
+Meshes = "0.52, 0.53, 0.54"
 MultiScaleTreeGraph = "0.14.4"
 OrderedCollections = "1.6"
 PlantGeom = "0.12.0"
