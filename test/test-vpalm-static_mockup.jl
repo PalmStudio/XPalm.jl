@@ -20,8 +20,8 @@ end
 
 @testset "static mockup" begin
     # Check that the mockup is the same with and without rachis_final_lengths
-    mtg = VPalm.mtg_skeleton(vpalm_parameters; rng=StableRNG(vpalm_parameters_["seed"]))
-    mtg2 = VPalm.mtg_skeleton(vpalm_parameters; rng=StableRNG(vpalm_parameters_["seed"]))
+    mtg = VPalm.mtg_skeleton(vpalm_parameters; rng=StableRNG(vpalm_parameters["seed"]))
+    mtg2 = VPalm.mtg_skeleton(vpalm_parameters; rng=StableRNG(vpalm_parameters["seed"]))
     @test mtg == mtg2
 
     # Check the number of nodes in the mockup
@@ -43,7 +43,7 @@ end
 
 @testset "static mockup with geometry" begin
     # Check that the mockup with /without geometry are the same
-    mtg = VPalm.mtg_skeleton(vpalm_parameters; rng=StableRNG(vpalm_parameters_["seed"]))
+    mtg = VPalm.mtg_skeleton(vpalm_parameters; rng=StableRNG(vpalm_parameters["seed"]))
     mtg_geom = VPalm.build_mockup(vpalm_parameters)
     nb_symbols_mtg = Dict(sym => 0 for sym in get_classes(mtg).SYMBOL)
     traverse!(mtg) do node
