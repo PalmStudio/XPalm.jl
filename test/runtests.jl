@@ -12,7 +12,7 @@ using Dates
 using Random
 using MultiScaleTreeGraph, PlantGeom, PlantMeteo, PlantSimEngine
 using CSV, DataFrames, Statistics, Unitful
-
+import StableRNGs: StableRNG
 # Import the meteo data once:
 
 meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), DataFrame)

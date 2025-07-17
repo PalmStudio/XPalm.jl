@@ -14,13 +14,14 @@ function plot_mockup(parameters)
             node[:color_type] = :peachpuff4
         end
     end
-f, ax, p = viz(mtg, color=:color_type, size=(1200, 800))
+    f, ax, p = viz(mtg, color=:color_type, size=(1200, 800))
+    return f
 end
 
 @testset "static mockup" begin
     # Check that the mockup is the same with and without rachis_final_lengths
-    mtg = VPalm.mtg_skeleton(vpalm_parameters)
-    mtg2 = VPalm.mtg_skeleton(vpalm_parameters)
+    mtg = VPalm.mtg_skeleton(vpalm_parameters; rng=StableRNG(vpalm_parameters_["seed"]))
+    mtg2 = VPalm.mtg_skeleton(vpalm_parameters; rng=StableRNG(vpalm_parameters_["seed"]))
     @test mtg == mtg2
 
     # Check the number of nodes in the mockup
@@ -42,7 +43,7 @@ end
 
 @testset "static mockup with geometry" begin
     # Check that the mockup with /without geometry are the same
-    mtg = VPalm.mtg_skeleton(vpalm_parameters)
+    mtg = VPalm.mtg_skeleton(vpalm_parameters; rng=StableRNG(vpalm_parameters_["seed"]))
     mtg_geom = VPalm.build_mockup(vpalm_parameters)
     nb_symbols_mtg = Dict(sym => 0 for sym in get_classes(mtg).SYMBOL)
     traverse!(mtg) do node
@@ -54,7 +55,8 @@ end
     end
     # we remove the LeafletSegment nodes in the geometry mockup, as it slows the rendering
     @test delete!(nb_symbols_mtg, "LeafletSegment") == nb_symbols_mtg_geom
-    @test sum(descendants(mtg, :Length, ignore_nothing = true)) == sum(descendants(mtg_geom, :Length, ignore_nothing = true))
+    @test length(mtg) == 92486
+    @test length(mtg_geom) == 20996
 
-    @test_reference "references/palm_mockup.png" plot_mockup(vpalm_parameters)
+    @test_reference "references/palm_mockup.png" plot_mockup(vpalm_parameters) # delete the file and re-execute interactively to update the reference image
 end

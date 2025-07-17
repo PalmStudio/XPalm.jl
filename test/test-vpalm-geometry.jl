@@ -109,9 +109,9 @@ end
 
 @testset "leaflets" begin
     vpalm_parameters_ = copy(vpalm_parameters)
-    vpalm_parameters_["leaflet_stiffness_sd"] = 0.0
+    vpalm_parameters_["leaflet_stiffness_sd"] = 0.0u"MPa"
     plane_ref = PlantGeom.RefMesh("Plane", VPalm.plane())
-    mtg = VPalm.mtg_skeleton(vpalm_parameters)
+    mtg = VPalm.mtg_skeleton(vpalm_parameters_; rng=StableRNG(vpalm_parameters_["seed"]))
     leaflet_id = findfirst(i -> symbol(get_node(mtg, i)) == "Leaflet", 1:length(mtg))
     @test leaflet_id !== nothing
     leaflet_node = get_node(mtg, leaflet_id)
@@ -123,8 +123,9 @@ end
         (; rachis_node.zenithal_angle_global, rachis_node.azimuthal_angle_global, rachis_node.torsion_angle_global),
         0.0u"°",
         0.0u"°",
-        plane_ref)
-    @test isapprox(leaflet_node.zenithal_angle, 17.00u"°", atol=3.00u"°") #! this uses randomness, and we can't control it atm.
+        plane_ref
+    )
+    @test isapprox(leaflet_node.zenithal_angle, 17.36u"°", atol=0.01u"°") #! this uses randomness, and we can't control it atm.
     @test leaflet_node.lamina_angle ≈ 140.0u"°"
     @test leaflet_node.tapering ≈ 0.5
 end
