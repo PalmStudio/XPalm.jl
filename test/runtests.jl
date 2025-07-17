@@ -10,9 +10,9 @@ using ReferenceTests
 using Test
 using Dates
 using Random
+import StableRNGs: StableRNG
 using MultiScaleTreeGraph, PlantGeom, PlantMeteo, PlantSimEngine
 using CSV, DataFrames, Statistics, Unitful
-import StableRNGs: StableRNG
 # Import the meteo data once:
 
 meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), DataFrame)

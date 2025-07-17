@@ -111,7 +111,7 @@ end
     vpalm_parameters_ = copy(vpalm_parameters)
     vpalm_parameters_["leaflet_stiffness_sd"] = 0.0u"MPa"
     plane_ref = PlantGeom.RefMesh("Plane", VPalm.plane())
-    mtg = VPalm.mtg_skeleton(vpalm_parameters_; rng=StableRNG(vpalm_parameters_["seed"]))
+    mtg = VPalm.mtg_skeleton(vpalm_parameters_; rng=nothing)
     leaflet_id = findfirst(i -> symbol(get_node(mtg, i)) == "Leaflet", 1:length(mtg))
     @test leaflet_id !== nothing
     leaflet_node = get_node(mtg, leaflet_id)
@@ -125,7 +125,7 @@ end
         0.0u"°",
         plane_ref
     )
-    @test isapprox(leaflet_node.zenithal_angle, 17.36u"°", atol=0.01u"°") #! this uses randomness, and we can't control it atm.
+    @test isapprox(leaflet_node.zenithal_angle, 16.6575840747922u"°", atol=0.01u"°") #! this uses randomness, and we can't control it atm.
     @test leaflet_node.lamina_angle ≈ 140.0u"°"
     @test leaflet_node.tapering ≈ 0.5
 end

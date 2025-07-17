@@ -1,6 +1,6 @@
 
 function plot_mockup(parameters)
-    mtg = build_mockup(parameters; merge_scale=:leaflet)
+    mtg = build_mockup(parameters; merge_scale=:leaflet, rng=nothing)
     traverse!(mtg) do node
         if symbol(node) == "Petiole"
             petiole_and_rachis_segments = descendants(node, symbol=["PetioleSegment", "RachisSegment"])
@@ -43,8 +43,8 @@ end
 
 @testset "static mockup with geometry" begin
     # Check that the mockup with /without geometry are the same
-    mtg = VPalm.mtg_skeleton(vpalm_parameters; rng=StableRNG(vpalm_parameters["seed"]))
-    mtg_geom = VPalm.build_mockup(vpalm_parameters)
+    mtg = VPalm.mtg_skeleton(vpalm_parameters; rng=nothing)
+    mtg_geom = VPalm.build_mockup(vpalm_parameters; rng=nothing)
     nb_symbols_mtg = Dict(sym => 0 for sym in get_classes(mtg).SYMBOL)
     traverse!(mtg) do node
         nb_symbols_mtg[symbol(node)] += 1
@@ -55,8 +55,8 @@ end
     end
     # we remove the LeafletSegment nodes in the geometry mockup, as it slows the rendering
     @test delete!(nb_symbols_mtg, "LeafletSegment") == nb_symbols_mtg_geom
-    @test length(mtg) == 92486
-    @test length(mtg_geom) == 20996
+    @test length(mtg) == 92474
+    @test length(mtg_geom) == 20994
 
     @test_reference "references/palm_mockup.png" plot_mockup(vpalm_parameters) # delete the file and re-execute interactively to update the reference image
 end

@@ -1,5 +1,5 @@
 """
-    build_mockup(parameters; merge_scale=:leaflet)
+    build_mockup(parameters; merge_scale=:leaflet, rng=Random.MersenneTwister(parameters["seed"]))
 
 Construct a mockup of an oil palm plant architecture using the specified parameters.
 
@@ -11,6 +11,7 @@ Construct a mockup of an oil palm plant architecture using the specified paramet
     - `:leaflet` (default): Geometry is merged at the leaflet level.
     - `:leaf`: All geometry for a leaf is merged into a single mesh.
     - `:plant`: All plant geometry is merged into a single mesh.
+- `rng`: (optional) A random number generator for stochastic processes. Defaults to a Mersenne Twister seeded with the value in `parameters["seed"]`. If set to `nothing`, randomness is disabled (useful for testing).
 
 # Description
 
@@ -32,10 +33,10 @@ parameters = read_parameters(file)
 mtg = build_mockup(parameters; merge_scale=:plant)
 ```
 """
-function build_mockup(parameters; merge_scale=:leaflet)
+function build_mockup(parameters; merge_scale=:leaflet, rng=Random.MersenneTwister(parameters["seed"]))
     @assert merge_scale in (:none, :leaflet, :leaf, :plant)
 
-    mtg = mtg_skeleton(parameters; rng=Random.MersenneTwister(parameters["seed"]))
+    mtg = mtg_skeleton(parameters; rng=rng)
 
     # Compute the geometry of the mtg
     # Note: we could do this at the same time than the architecture, but it is separated here for clarity. The downside is that we traverse the mtg twice, but it is pretty cheap.
