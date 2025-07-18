@@ -27,7 +27,7 @@ using Unitful
 file = joinpath(dirname(dirname(pathof(VPalm))), "test", "references", "vpalm-parameter_file.yml")
 parameters = read_parameters(file)
 nb_internodes = parameters["nb_leaves_emitted"] + parameters["nb_internodes_before_planting"] # The number of internodes emitted since the seed
-nb_leaves_alive = floor(Int, mean_and_sd(parameters["nb_leaves_mean"], parameters["nb_leaves_sd"]; rng=rng))
+nb_leaves_alive = floor(Int, mean_and_sd(parameters["nb_leaves_mean"], parameters["nb_leaves_sd"], rng))
 nb_leaves_alive = min(nb_leaves_alive, nb_internodes)
 # Plant / Scale 1
 plant = Node(NodeMTG("/", "Plant", 1, 1))
@@ -36,7 +36,7 @@ stem = Node(plant, NodeMTG("+", "Stem", 1, 2))
 compute_properties_stem!(stem, parameters, 3.0u"m"; rng=rng)
 ```
 """
-function compute_properties_stem!(node, parameters, length_reference_leaf; rng=Random.MersenneTwister(1234))
+function compute_properties_stem!(node, parameters, length_reference_leaf; rng)
     node[:stem_bending] = VPalm.stem_bending(
         parameters["stem_bending_mean"],
         parameters["stem_bending_sd"]; rng=rng

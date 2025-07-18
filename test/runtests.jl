@@ -5,17 +5,23 @@ import XPalm: Palm
 using Aqua
 using JET
 using Meshes
+using CairoMakie
+using ReferenceTests
 using Test
 using Dates
 using Random
-using MultiScaleTreeGraph, PlantMeteo, PlantSimEngine
+import StableRNGs: StableRNG
+using MultiScaleTreeGraph, PlantGeom, PlantMeteo, PlantSimEngine
 using CSV, DataFrames, Statistics, Unitful
-
 # Import the meteo data once:
 
 meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), DataFrame)
 
 dirtest = joinpath(dirname(dirname(pathof(XPalm))), "test/")
+
+# VPalm parameters
+vpalm_parameters = read_parameters(joinpath(dirtest, "references", "vpalm-parameter_file.yml"))
+vpalm_parameters2 = read_parameters(joinpath(dirtest, "references", "vpalm-parameter_file-missing_rachis_final_lengths.yml"))
 
 @testset "Code quality (Aqua.jl)" begin
     Aqua.test_all(XPalm, ambiguities=false)
@@ -90,6 +96,7 @@ end
 end
 
 @testset "VPalm" begin
+
     @testset "Parameters IO" begin
         include(joinpath(dirtest, "test-vpalm-parameters_IO.jl"))
     end
@@ -106,6 +113,10 @@ end
         include(joinpath(dirtest, "test-vpalm-petiole.jl"))
     end
 
+    @testset "Geometry" begin
+        include(joinpath(dirtest, "test-vpalm-geometry.jl"))
+    end
+
     @testset "Biomechanical model" begin
         include(joinpath(dirtest, "test-vpalm-interpolate_points.jl"))
         include(joinpath(dirtest, "test-vpalm-bend.jl"))
@@ -116,5 +127,4 @@ end
     @testset "Static mockup" begin
         include(joinpath(dirtest, "test-vpalm-static_mockup.jl"))
     end
-    # Write your tests here.
 end
