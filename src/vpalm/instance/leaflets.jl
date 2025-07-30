@@ -209,7 +209,7 @@ function create_single_leaflet(
     v_angle = leaflet_node.v_angle
 
     # Add stiffness with random variation to simulate natural variability
-    leaflet_node.stiffness_0 = parameters["leaflet_stiffness"] + rand(rng) * parameters["leaflet_stiffness_sd"]
+    leaflet_node.stiffness_0 = parameters["leaflet_stiffness"] + normal_deviation_draw(parameters["leaflet_stiffness_sd"], rng)
     stiffness = leaflet_node.stiffness_0
     # Set leaflet attribute data
     leaflet_node["relative_position"] = leaflet_relative_pos
@@ -663,12 +663,7 @@ function group_leaflets(leaflets_relative_position, leaflets_type_frequency, rng
             # First leaflet in group is always high position (plane=1)
             leaflets.plane[leaflet_index] = 1
         else
-            # Subsequent leaflets are medium or low based on frequencies
-            if rand(rng) > (frequencies.medium / (frequencies.medium + frequencies.low))
-                leaflets.plane[leaflet_index] = -1  # Low position
-            else
-                leaflets.plane[leaflet_index] = 0   # Medium position
-            end
+            leaflets.plane[leaflet_index] = draw_plane(frequencies, rng)
         end
 
         # Increment counter for leaflets in this group
@@ -678,6 +673,40 @@ function group_leaflets(leaflets_relative_position, leaflets_type_frequency, rng
     return leaflets
 end
 
+"""
+    draw_plane(frequencies, rng::Nothing)
+
+Draw the plane position for a leaflet based on its frequencies.
+
+# Arguments
+
+- `frequencies`: A NamedTuple with fields `high`, `medium`, and `low` representing the frequency of each leaflet type in the current rachis segment.
+- `rng`: A random number generator (optional, can be `Nothing` for deterministic behavior
+
+# Returns
+
+- The plane position for the leaflet, which can be:
+  - `1` for high position (upward)
+  - `0` for medium position (horizontal)
+  - `-1` for low position (downward)
+"""
+function draw_plane(frequencies, rng::Nothing)
+    # Deterministic assignment: choose medium if it has higher frequency, otherwise low
+    if frequencies.medium >= frequencies.low
+        return 0   # Medium position
+    else
+        return -1  # Low position
+    end
+end
+
+function draw_plane(frequencies, rng::T) where T<:Random.AbstractRNG
+    # Subsequent leaflets are medium or low based on frequencies
+    if rand(rng) > (frequencies.medium / (frequencies.medium + frequencies.low))
+        return -1  # Low position
+    else
+        return 0   # Medium position
+    end
+end
 
 """
     calculate_segment(relative_position, num_segments=10)
@@ -821,7 +850,7 @@ Determine the size of a leaflet group based on the relative position along the r
   - `high`: Frequency of plane=+1 leaflets (first leaflet in each group), *i.e.* leaflets on "high" position
   - `medium`: Frequency of plane=0 leaflets (intermediate leaflets in groups), *i.e.* leaflets on "medium" position, horizontally inserted on the rachis
   - `low`: Frequency of plane=-1 leaflets (terminal leaflets in groups), *i.e.* leaflets on "low" position
-- `rng`: Random number generator for stochastic determination.
+- `rng`: Random number generator for stochastic determination, or `nothing` for deterministic behavior.
 
 # Details
 
@@ -831,15 +860,16 @@ and group size, modeling a fundamental biological pattern in palm frond architec
 - Segments with high frequency of high leaflets produce many small groups of leaflets
 - Segments with low frequency of high leaflets produce fewer, larger groups of leaflets
 
-The calculation uses a probabilistic rounding mechanism to ensure proper statistical distribution 
-of group sizes. This creates the natural variation in leaflet grouping patterns seen along real palm
-fronds, where clustering patterns change systematically from base to tip.
+When `rng` is provided, the calculation uses a probabilistic rounding mechanism to ensure proper 
+statistical distribution of group sizes. When `rng` is `nothing`, it uses deterministic rounding
+to the nearest integer. This creates the natural variation in leaflet grouping patterns seen along 
+real palm fronds, where clustering patterns change systematically from base to tip.
 
 # Returns
 
 An integer representing the number of leaflets in the group.
 """
-function draw_group_size(group, leaflet_type_frequencies, rng)
+function draw_group_size(group, leaflet_type_frequencies, rng::T) where T<:Random.AbstractRNG
     size_d = 1.0 / leaflet_type_frequencies[group].high
     size_i = max(1, floor(Int, size_d))
     delta = size_d - size_i
@@ -850,6 +880,19 @@ function draw_group_size(group, leaflet_type_frequencies, rng)
 
     return size_i
 end
+
+
+function draw_group_size(group, leaflet_type_frequencies, rng::Nothing)
+    size_d = 1.0 / leaflet_type_frequencies[group].high
+    size_i = max(1, floor(Int, size_d))
+    delta = size_d - size_i
+
+    # Deterministic rounding: round to nearest integer:
+    size_i += delta >= 0.5 ? 1 : 0
+
+    return size_i
+end
+
 
 """
     shrink_leaflets_in_groups!(positions, leaflets, ratio=2.0)
@@ -1282,6 +1325,7 @@ end
 Calculate the leaflet insertion angle in the vertical plane (in degrees).
 
 # Arguments
+
 - `relative_pos`: Relative position of the leaflet on the rachis [0 to 1].
 - `leaflet_type`: Type of leaflet (-1=down, 0=medium, 1=up).
 - `side`: Side of the leaf (1 for right, -1 for left).
@@ -1321,5 +1365,5 @@ function leaflet_zenithal_angle(relative_pos, leaflet_type, side, high_a0_sup, h
     angle_max = leaflet_zenithal_angle_boundaries(relative_pos, a0_sup, a_max_sup, xm)
     angle_min = leaflet_zenithal_angle_boundaries(relative_pos, a0_inf, a_max_inf, xm)
 
-    return (angle_min + (angle_max - angle_min) * rand(rng)) * side
+    return (angle_min + normal_deviation_draw(angle_max - angle_min, rng)) * side
 end

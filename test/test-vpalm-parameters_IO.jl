@@ -1,9 +1,6 @@
-file = joinpath(dirname(dirname(pathof(XPalm))), "test", "references", "vpalm-parameter_file.yml")
-
 @testset "read_parameters" begin
-    params = read_parameters(file)
-    @test params["seed"] == 0
-    @test params["rachis_fresh_weight"] == uconvert.(u"kg", [
+    @test vpalm_parameters["seed"] == 0
+    @test vpalm_parameters["rachis_fresh_weight"] == uconvert.(u"kg", [
         2607.60521189879,
         2582.76405648725,
         2557.92290107571,
@@ -52,20 +49,23 @@ file = joinpath(dirname(dirname(pathof(XPalm))), "test", "references", "vpalm-pa
     ]u"g")
 end
 
-@testset "write_parameters" begin
-    params = read_parameters(file)
+@testset "read_parameters with missing rachis_final_lengths" begin
+    @test vpalm_parameters2["leaf_length_intercept"] == 3.6801281u"m"
+    @test vpalm_parameters2["leaf_length_slope"] == 0.08769u"m/kg"
+end
 
-    params2 = mktemp() do f, io
-        write_parameters(f, params)
-        params2 = read_parameters(f)
-        return params2
+@testset "write_parameters" begin
+    vpalm_parameters_w = mktemp() do f, io
+        write_parameters(f, vpalm_parameters)
+        vpalm_parameters_w = read_parameters(f)
+        return vpalm_parameters_w
     end
 
-    for (k, v) in params
-        isame = params[k] == params2[k]
+    for (k, v) in vpalm_parameters
+        isame = vpalm_parameters[k] == vpalm_parameters_w[k]
         if !isame
-            println("params[$k] = $(params[k]) != params2[$k] = $(params2[k])")
+            println("params[$k] = $(vpalm_parameters[k]) != params2[$k] = $(vpalm_parameters_w[k])")
         end
-        @test params[k] == params2[k]
+        @test vpalm_parameters[k] == vpalm_parameters_w[k]
     end
 end

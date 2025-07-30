@@ -32,7 +32,7 @@ struct LeafGeometryModel{I,T,D<:AbstractDict{String}} <: AbstractGeometryModel
     rng::T
 end
 
-function LeafGeometryModel(; mtg::Node, vpalm_parameters, rng=Random.MersenneTwister(1234))
+function LeafGeometryModel(; mtg::Node, vpalm_parameters, rng)
     LeafGeometryModel(length(mtg), vpalm_parameters, rng)
 end
 
@@ -136,7 +136,7 @@ function PlantSimEngine.run!(model::LeafGeometryModel, models, status, meteo, co
 end
 
 
-function build_leaf(unique_mtg_id, i, leaf, biomass_leaf, parameters; rng=Random.MersenneTwister(1234))
+function build_leaf(unique_mtg_id, i, leaf, biomass_leaf, parameters; rng)
     # Build the petiole
     petiole_node = petiole(
         unique_mtg_id, i, 5,

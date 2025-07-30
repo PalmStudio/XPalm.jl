@@ -20,7 +20,7 @@ end
 
 """
 
-    mean_and_sd(mean, sd; rng=Random.MersenneTwister(1234))
+    mean_and_sd(mean, sd, rng)
 
 Compute a random value from a normal distribution with a given mean and standard deviation.
 
@@ -28,18 +28,19 @@ Compute a random value from a normal distribution with a given mean and standard
 
 - `mean`: The mean of the normal distribution.
 - `sd`: The standard deviation of the normal distribution.
-
-# Optional arguments
-
 - `rng`: The random number generator.
 """
-function mean_and_sd(mean, sd; rng=Random.MersenneTwister(1234))
+function mean_and_sd(mean, sd, rng::T) where T<:Random.AbstractRNG
     return mean + randn(rng) * sd
+end
+
+function mean_and_sd(mean, sd, rng::Nothing)
+    return mean
 end
 
 """
 
-    normal_deviation_draw(sd, rng=Random.MersenneTwister(1234))
+    normal_deviation_draw(sd, rng)
 
 Draw a random value from a normal distribution with a given standard deviation.
 
@@ -51,8 +52,12 @@ Draw a random value from a normal distribution with a given standard deviation.
 
 - `rng`: The random number generator.
 """
-function normal_deviation_draw(sd, rng=Random.MersenneTwister(1234))
+function normal_deviation_draw(sd, rng::T) where T<:Random.AbstractRNG
     return sd * rand(rng)
+end
+
+function normal_deviation_draw(sd, rng::Nothing)
+    return zero(sd)
 end
 
 
