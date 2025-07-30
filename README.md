@@ -182,6 +182,7 @@ You can run `VPalm` simply by loading the submodule. Here is an example to load 
 ```julia
 using XPalm
 using XPalm.VPalm
+using PlantGeom, CairoMakie
 
 # Load example parameters
 file = joinpath(dirname(dirname(pathof(XPalm))), "test", "references", "vpalm-parameter_file.yml")
@@ -189,7 +190,7 @@ parameters = read_parameters(file)
 
 mtg = build_mockup(parameters)
 
-viz(mtg, color = :green)
+plantviz(mtg, color = :green)
 ```
 
 ![palm plant](docs/src/assets/palm_mockup.png)
@@ -203,6 +204,8 @@ To reproduce the image above, you can use the following code snippet. It will cr
 ```julia
 using XPalm
 using XPalm.VPalm
+using PlantGeom, CairoMakie
+
 file = joinpath(dirname(dirname(pathof(XPalm))), "test", "references", "vpalm-parameter_file.yml")
 parameters = read_parameters(file)
 mtg = build_mockup(parameters; merge_scale=:leaflet)
@@ -219,7 +222,7 @@ traverse!(mtg) do node
         node[:color_type] = :peachpuff4
     end
 end
-f, ax, p = viz(mtg, color=:color_type)
+f, ax, p = plantviz(mtg, color=:color_type)
 save("palm_mockup.png", f, size=(1200, 800), px_per_unit=3, update=false)
 ```
 </details>
