@@ -14,7 +14,7 @@ function plot_mockup(parameters)
             node[:color_type] = :peachpuff4
         end
     end
-    f = Figure(size=(900, 1200))
+    f = Figure(size=(1200, 900))
     ax = LScene(f[1, 1])
     plantviz!(ax, mtg, color=:color_type)
 
