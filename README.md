@@ -16,6 +16,11 @@ XPalm is a process-based model for simulating oil palm (*Elaeis guineensis*) gro
 - Reproductive organ development
 - Yield components
 
+![XPalm diagram](docs/src/assets/xpalm.svg)
+
+*Figure 1. Simplified diagram of the component models used in XPalm. The numbering is associated to the computational flow, from the first models to execute to the last.*
+
+
 XPalm implements a multiscale approach, modeling processes at different organizational levels:
 
 Scene: Environment and canopy-level processes
