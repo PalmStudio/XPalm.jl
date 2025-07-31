@@ -1,5 +1,5 @@
 """
-    mtg_skeleton(nb_internodes)
+    mtg_skeleton(parameters; rng=Random.MersenneTwister(parameters["seed"]))
 
 Makes an MTG skeleton with `nb_leaves_emitted` leaves, including all intermediate organs:
 
@@ -13,7 +13,8 @@ Note: this skeleton does not include reproductive organs (inflorescences, fruits
 
 # Arguments
 
-- `nb_internodes`: The number of internodes to emit.
+- `parameters`: The parameters for the MTG skeleton. See `VPalm.default_parameters()` for the default parameters.
+- `rng`: (optional) The random number generator to use for stochastic processes. Defaults to `Random.MersenneTwister(parameters["seed"])`, but can be set to `nothing` to disable randomness (for testing).
 
 # Examples
 
@@ -35,11 +36,12 @@ function mtg_skeleton(parameters; rng=Random.MersenneTwister(parameters["seed"])
     # This is optional, it may be computed from the biomass if not provided
     if haskey(parameters, "rachis_final_lengths")
         final_lengths = copy(parameters["rachis_final_lengths"])
-        rank_1_leaf_length = copy(final_lengths[end]) # The length of the youngest leaf (rank = 1)
-        @assert length(final_lengths) == nb_leaves_alive "The number of rachis final lengths (`rachis_final_lengths`) should be equal to the number of leaves alive ($nb_leaves_alive)."
     else # If the parameter is missing, we use leaf_length_intercept and leaf_length_slope to compute the final lengths from the fresh biomass
         final_lengths = rachis_length_from_biomass.(rachis_fresh_biomasses, parameters["leaf_length_intercept"], parameters["leaf_length_slope"])
     end
+
+    rank_1_leaf_length = copy(final_lengths[end]) # The length of the youngest leaf (rank = 1)
+    @assert length(final_lengths) == nb_leaves_alive "The number of rachis final lengths (`rachis_final_lengths`) should be equal to the number of leaves alive ($nb_leaves_alive)."
 
     unique_mtg_id = Ref(1)
     # Plant / Scale 1
@@ -102,7 +104,7 @@ function mtg_skeleton(parameters; rng=Random.MersenneTwister(parameters["seed"])
 
         if leaf_node.is_alive
             rachis_fresh_biomass = leaf_node.rank <= 0 ? rank_1_leaf_biomass : pop!(rachis_fresh_biomasses)
-            leaf(unique_mtg_id, i, rank, rachis_fresh_biomass, final_length, leaf_node, parameters; rng=Random.MersenneTwister(1234))
+            leaf(unique_mtg_id, i, rank, rachis_fresh_biomass, final_length, leaf_node, parameters; rng=rng)
         else
             compute_properties_leaf!(leaf_node, leaf_node.rank, final_length, parameters, rng)
         end
@@ -147,7 +149,7 @@ function init_attributes_seed!(plant, parameters; rng=Random.MersenneTwister(par
         leaf_node = internode[1]
         leaf_node.is_alive = true
 
-        leaf(unique_mtg_id, i, rank, biomass_first_leaf, final_length, leaf_node, parameters; rng=Random.MersenneTwister(1234))
+        leaf(unique_mtg_id, i, rank, biomass_first_leaf, final_length, leaf_node, parameters; rng)
     end
 
     return plant

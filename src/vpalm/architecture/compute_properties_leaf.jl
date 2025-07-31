@@ -34,7 +34,7 @@ using Unitful
 file = joinpath(dirname(dirname(pathof(VPalm))), "test", "files", "parameter_file.yml")
 parameters = read_parameters(file)
 nb_internodes = parameters["nb_leaves_emitted"] + parameters["nb_internodes_before_planting"] # The number of internodes emitted since the seed
-nb_leaves_alive = floor(Int, mean_and_sd(parameters["nb_leaves_mean"], parameters["nb_leaves_sd"]; rng=rng))
+nb_leaves_alive = floor(Int, mean_and_sd(parameters["nb_leaves_mean"], parameters["nb_leaves_sd"], rng))
 nb_leaves_alive = min(nb_leaves_alive, nb_internodes)
 # Plant / Scale 1
 plant = Node(NodeMTG("/", "Plant", 1, 1))
