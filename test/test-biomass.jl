@@ -68,7 +68,7 @@ end
     m = Dict(
         "Female" => (
             FemaleBiomass(),
-            Status(carbon_allocation=15.0, state="undetermined", biomass=10.0, carbon_demand_stalk=2.0, carbon_demand_non_oil=1.0, carbon_demand_oil=3.0)
+            Status(carbon_allocation=15.0, state="undetermined", biomass=10.0, carbon_demand_stalk=2.0, carbon_demand_non_oil=1.0, carbon_demand_oil=3.0, carbon_demand=6.0)
         )
     )
     vars = Dict{String,Any}("Female" => (:biomass, :biomass_stalk, :biomass_fruits))
@@ -79,5 +79,3 @@ end
     @test df.biomass_fruits[1] ≈ 4.079861111111111
     @test df.biomass == df.biomass_stalk + df.biomass_fruits
 end
-
-
