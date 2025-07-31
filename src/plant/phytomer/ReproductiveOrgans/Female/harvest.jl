@@ -2,23 +2,29 @@
 struct BunchHarvest <: AbstractHarvestModel end
 
 PlantSimEngine.inputs_(::BunchHarvest) = (state="undetermined", biomass=-Inf, biomass_stalk=-Inf, biomass_fruits=-Inf, biomass_oil=-Inf, fruits_number=-9999, final_potential_oil_biomass=-Inf)
-PlantSimEngine.outputs_(::BunchHarvest) = (biomass_bunch_harvested=0.0, biomass_stalk_harvested=0.0, biomass_fruit_harvested=0.0, biomass_oil_harvested=0.0, is_harvested=false, biomass_bunch_harvested_cum=0.0, biomass_oil_harvested_cum=0.0, litter=0.0, biomass_oil_harvested_potential=0.0, biomass_oil_harvested_potential_cum=0.0)
+PlantSimEngine.outputs_(::BunchHarvest) = (
+    biomass_bunch_harvested=0.0, biomass_stalk_harvested=0.0, biomass_fruit_harvested=0.0, biomass_oil_harvested=0.0,
+    is_harvested=false, biomass_bunch_harvested_cum=0.0, biomass_oil_harvested_cum=0.0, litter=0.0, biomass_oil_harvested_potential=0.0,
+    biomass_oil_harvested_potential_cum=0.0, fruits_number_harvested=0,
+)
 
 # Applied at the Female inflorescence scale:
 function PlantSimEngine.run!(m::BunchHarvest, models, st, meteo, constants, extra=nothing)
     if st.state == "Harvested" && st.is_harvested == false
         st.biomass_bunch_harvested = st.biomass
         st.biomass_stalk_harvested = st.biomass_stalk
-        st.biomass_fruit_harvested = st.biomass_fruits
+        st.biomass_fruit_harvested = copy(st.biomass_fruits)
         st.biomass_oil_harvested = st.biomass_oil
         st.biomass_bunch_harvested_cum = st.biomass
         st.biomass_oil_harvested_cum = st.biomass_oil
         st.biomass_oil_harvested_potential = st.final_potential_oil_biomass
         st.biomass_oil_harvested_potential_cum = st.final_potential_oil_biomass
+        st.fruits_number_harvested = st.fruits_number
         st.biomass = 0.0
         st.biomass_stalk = 0.0
         st.biomass_fruits = 0.0
         st.biomass_oil = 0.0
+        st.biomass_non_oil = 0.0
         st.is_harvested = true
         st.fruits_number = 0
     elseif st.state == "Aborted" && st.is_harvested == false
@@ -30,6 +36,7 @@ function PlantSimEngine.run!(m::BunchHarvest, models, st, meteo, constants, extr
         st.biomass_stalk = 0.0
         st.biomass_fruits = 0.0
         st.biomass_oil = 0.0
+        st.biomass_non_oil = 0.0
         st.is_harvested = true
         st.fruits_number = 0
     else# The biomass harvested should only appear on the day of harvest, otherwise it is 0 (before and after harvest)
