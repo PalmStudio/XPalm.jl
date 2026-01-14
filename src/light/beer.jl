@@ -64,8 +64,9 @@ m[:aPPFD]
 function PlantSimEngine.run!(m::Beer, models, status, meteo, constants, extra=nothing)
     status.aPPFD = # in mol[PAR] m[soil]⁻² d⁻¹
         meteo.Ri_PAR_f * # in MJ m[soil]⁻² d⁻¹
-        (1.0 - exp(-models.light_interception.k * status.lai)) *
+        (1.0 - exp(-m.k * status.lai)) *
         constants.J_to_umol
+
     return nothing
 end
 
