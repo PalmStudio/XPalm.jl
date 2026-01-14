@@ -28,7 +28,6 @@ Pluto = "c3e4b0f8-55cb-11ea-2926-15256bba5781"
 XPalmPluto = "Pluto"
 
 [compat]
-Coverage = "0.7.0"
 Dates = "1"
 Interpolations = "0.15.1, 0.16"
 Meshes = "0.54"
@@ -54,4 +53,4 @@ Test = "8dfed614-e22c-5e08-85e1-65c5234f0b40"
 Coverage = "a2441757-f6aa-5fb2-8edb-039e3f45d037"
 
 [targets]
-test = ["Test", "Coverage"]
+test = ["Test"]
