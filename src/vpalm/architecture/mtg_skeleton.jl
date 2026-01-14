@@ -120,7 +120,7 @@ end
 
 Initialize the attributes of a palm plant seed (one internode with one leaf), based on the provided parameters.
 """
-function init_attributes_seed!(plant, parameters; rng=Random.MersenneTwister(parameters["seed"]))
+function init_attributes_seed!(plant::MTG, parameters; rng=Random.MersenneTwister(parameters["seed"])) where {MTG<:Node}
     nb_leaves_in_sheath = 0# parameters["nb_leaves_in_sheath"]
     biomass_first_leaf =
         uconvert(

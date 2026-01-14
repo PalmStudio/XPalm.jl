@@ -30,7 +30,7 @@ end
 if VERSION >= v"1.10"
     # See this issue: https://github.com/aviatesk/JET.jl/issues/665
     @testset "Code linting (JET.jl)" begin
-        JET.test_package(XPalm; target_defined_modules=true)
+        JET.test_package(XPalm; target_modules=(XPalm, XPalm.Models, XPalm.VPalm))
     end
 end
 
