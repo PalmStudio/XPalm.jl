@@ -15,6 +15,9 @@ Defines the list of sub-models used in XPalm.
 - A multiscale list of models, as a dictionary of scale (keys) and list of models (values).
 """
 function model_mapping(p; architecture=false)
+    # This only works for recent versions of PlantSimEngine
+    input_binding = isdefined(PlantSimEngine, :InputBindings) ? PlantSimEngine.InputBindings(; state=(process=:state, scale="Phytomer")) : identity
+
     models = Dict(
         "Scene" => (
             ET0_BP(p.parameters["plot"]["latitude"], p.parameters["plot"]["altitude"]),
@@ -284,10 +287,10 @@ function model_mapping(p; architecture=false)
             MaleCarbonDemandModel(
                 respiration_cost=p.parameters["carbon_demand"]["male"]["respiration_cost"],
                 duration_flowering_male=p.parameters["phenology"]["male"]["duration_flowering_male"],
-            ) |> PlantSimEngine.InputBindings(; state=(process=:state, scale="Phytomer")),
+            ) |> input_binding,
             MaleBiomass(
                 p.parameters["carbon_demand"]["male"]["respiration_cost"],
-            ) |> PlantSimEngine.InputBindings(; state=(process=:state, scale="Phytomer")),
+            ) |> input_binding,
         ),
         "Female" => (
             MultiScaleModel(
@@ -338,12 +341,12 @@ function model_mapping(p; architecture=false)
                 duration_fruit_setting=p.parameters["phenology"]["female"]["duration_fruit_setting"],
                 fraction_period_oleosynthesis=p.parameters["phenology"]["female"]["fraction_period_oleosynthesis"],
                 fraction_period_stalk=p.parameters["phenology"]["female"]["fraction_period_stalk"],
-            ) |> PlantSimEngine.InputBindings(; state=(process=:state, scale="Phytomer")),
+            ) |> input_binding,
             FemaleBiomass(
                 p.parameters["carbon_demand"]["female"]["respiration_cost"],
                 p.parameters["carbon_demand"]["female"]["respiration_cost_oleosynthesis"],
-            ) |> PlantSimEngine.InputBindings(; state=(process=:state, scale="Phytomer")),
-            BunchHarvest() |> PlantSimEngine.InputBindings(; state=(process=:state, scale="Phytomer")),
+            ) |> input_binding,
+            BunchHarvest() |> input_binding,
         ),
         "RootSystem" => (
             MultiScaleModel(
