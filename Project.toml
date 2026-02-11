@@ -28,7 +28,7 @@ Pluto = "c3e4b0f8-55cb-11ea-2926-15256bba5781"
 XPalmPluto = "Pluto"
 
 [compat]
-Coverage = "0.7.0"
+Coverage = "0.7.0, 1"
 Dates = "1"
 Interpolations = "0.15.1, 0.16"
 Meshes = "0.54, 0.56"
