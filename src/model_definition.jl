@@ -284,10 +284,10 @@ function model_mapping(p; architecture=false)
             MaleCarbonDemandModel(
                 respiration_cost=p.parameters["carbon_demand"]["male"]["respiration_cost"],
                 duration_flowering_male=p.parameters["phenology"]["male"]["duration_flowering_male"],
-            ),
+            ) |> PlantSimEngine.InputBindings(; state=(process=:state, scale="Phytomer")),
             MaleBiomass(
                 p.parameters["carbon_demand"]["male"]["respiration_cost"],
-            ),
+            ) |> PlantSimEngine.InputBindings(; state=(process=:state, scale="Phytomer")),
         ),
         "Female" => (
             MultiScaleModel(
@@ -338,12 +338,12 @@ function model_mapping(p; architecture=false)
                 duration_fruit_setting=p.parameters["phenology"]["female"]["duration_fruit_setting"],
                 fraction_period_oleosynthesis=p.parameters["phenology"]["female"]["fraction_period_oleosynthesis"],
                 fraction_period_stalk=p.parameters["phenology"]["female"]["fraction_period_stalk"],
-            ),
+            ) |> PlantSimEngine.InputBindings(; state=(process=:state, scale="Phytomer")),
             FemaleBiomass(
                 p.parameters["carbon_demand"]["female"]["respiration_cost"],
                 p.parameters["carbon_demand"]["female"]["respiration_cost_oleosynthesis"],
-            ),
-            BunchHarvest(),
+            ) |> PlantSimEngine.InputBindings(; state=(process=:state, scale="Phytomer")),
+            BunchHarvest() |> PlantSimEngine.InputBindings(; state=(process=:state, scale="Phytomer")),
         ),
         "RootSystem" => (
             MultiScaleModel(
