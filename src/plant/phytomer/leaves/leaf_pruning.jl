@@ -29,7 +29,7 @@ function PlantSimEngine.run!(m::RankLeafPruning, models, status, meteo, constant
     # leaf by using its index. If the phytomer has a higher rank than m.rank or it is harvested, then
     # we put the leaf as pruned and define its biomass as litter.
     if status.rank > m.rank || status.state == :pruned
-        status.pruning_decision = status.rank > m.rank ? "Pruned at rank" : "Pruned at bunch harvest"
+        status.pruning_decision = status.rank > m.rank ? :pruned_at_rank : :pruned_at_bunch_harvest
         status.leaf_area = 0.0
         status.litter_leaf = status.biomass
         status.biomass = 0.0
