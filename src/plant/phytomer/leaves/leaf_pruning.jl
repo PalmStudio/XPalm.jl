@@ -46,7 +46,7 @@ function PlantSimEngine.run!(m::RankLeafPruning, models, status, meteo, constant
 
         # Give the information to the inflorescence if we find one:
         internode_children = MultiScaleTreeGraph.children(internode_node)
-        inflo_nodes = filter(x -> MultiScaleTreeGraph.symbol(x) == "Female" || MultiScaleTreeGraph.symbol(x) == "Male", internode_children)
+        inflo_nodes = filter(x -> MultiScaleTreeGraph.symbol(x) == :Female || MultiScaleTreeGraph.symbol(x) == :Male, internode_children)
         if length(inflo_nodes) == 1
             inflo_nodes[1][:plantsimengine_status].state = "Harvested"
         end

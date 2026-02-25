@@ -4,7 +4,7 @@ using XPalm.VPalm
 import XPalm: Palm
 using Aqua
 using JET
-using Meshes
+using GeometryBasics
 using CairoMakie
 using ReferenceTests
 using Test
@@ -16,6 +16,9 @@ using CSV, DataFrames, Statistics, Unitful
 # Import the meteo data once:
 
 meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), DataFrame)
+if :duration ∉ names(meteo)
+    meteo.duration = fill(Day(1), nrow(meteo))
+end
 
 dirtest = joinpath(dirname(dirname(pathof(XPalm))), "test/")
 

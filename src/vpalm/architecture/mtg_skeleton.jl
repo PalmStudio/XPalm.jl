@@ -45,12 +45,12 @@ function mtg_skeleton(parameters; rng=Random.MersenneTwister(parameters["seed"])
 
     unique_mtg_id = Ref(1)
     # Plant / Scale 1
-    plant = Node(NodeMTG("/", "Plant", 1, 1))
+    plant = Node(NodeMTG(:/, :Plant, 1, 1))
     unique_mtg_id[] += 1
 
     # Stem (& Roots) / Scale 2
-    #roots = Node(plant, NodeMTG("+", "RootSystem", 1, 2))
-    stem = Node(unique_mtg_id[], plant, NodeMTG("+", "Stem", 1, 2))
+    #roots = Node(plant, NodeMTG(:+, :RootSystem, 1, 2))
+    stem = Node(unique_mtg_id[], plant, NodeMTG(:+, :Stem, 1, 2))
     unique_mtg_id[] += 1
 
     # The reference leaf is usually the leaf at rank 17, but it can be less if there are not enough leaves (9, or 6 or 3, or 1).
@@ -72,22 +72,22 @@ function mtg_skeleton(parameters; rng=Random.MersenneTwister(parameters["seed"])
     stem_diameter = stem[:stem_diameter]
 
     # Phytomer / Scale 3
-    phytomer = Node(unique_mtg_id[], stem, NodeMTG("/", "Phytomer", 1, 3))
+    phytomer = Node(unique_mtg_id[], stem, NodeMTG(:/, :Phytomer, 1, 3))
     unique_mtg_id[] += 1
 
     # Loop on internodes
     for i in 1:nb_internodes
         if i > 1
-            phytomer = Node(unique_mtg_id[], phytomer, NodeMTG("<", "Phytomer", i, 3))
+            phytomer = Node(unique_mtg_id[], phytomer, NodeMTG(:<, :Phytomer, i, 3))
             unique_mtg_id[] += 1
         end
-        internode = Node(unique_mtg_id[], phytomer, NodeMTG("/", "Internode", i, 4))
+        internode = Node(unique_mtg_id[], phytomer, NodeMTG(:/, :Internode, i, 4))
         unique_mtg_id[] += 1
 
         rank = compute_leaf_rank(nb_internodes, i, parameters["nb_leaves_in_sheath"])
 
         compute_properties_internode!(internode, i, nb_internodes, rank, stem_height, stem_diameter, parameters, rng)
-        leaf_node = Node(unique_mtg_id[], internode, NodeMTG("+", "Leaf", i, 4))
+        leaf_node = Node(unique_mtg_id[], internode, NodeMTG(:+, :Leaf, i, 4))
         unique_mtg_id[] += 1
         leaf_node.rank = rank
         leaf_node.is_alive = leaf_node.rank <= nb_leaves_alive
@@ -138,10 +138,10 @@ function init_attributes_seed!(plant::MTG, parameters; rng=Random.MersenneTwiste
     stem_height = stem[:stem_height]
     stem_diameter = stem[:stem_diameter]
 
-    nb_internodes = descendants(plant, symbol="Internode") |> length
+    nb_internodes = descendants(plant, symbol=:Internode) |> length
     i = 0
     unique_mtg_id = Ref(new_id(plant))
-    traverse!(plant, symbol="Internode") do internode
+    traverse!(plant, symbol=:Internode) do internode
         i += 1
         rank = compute_leaf_rank(nb_internodes, i, nb_leaves_in_sheath)
 

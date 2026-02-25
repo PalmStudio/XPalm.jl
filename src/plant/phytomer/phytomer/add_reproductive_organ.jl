@@ -6,12 +6,12 @@ Add a new reproductive organ to a phytomer.
 struct ReproductiveOrganEmission <: AbstractReproductive_Organ_EmissionModel
     phytomer_count_init::Int
     graph_node_count_init::Int
-    phytomer_symbol::String
-    male_symbol::String
-    female_symbol::String
+    phytomer_symbol::Symbol
+    male_symbol::Symbol
+    female_symbol::Symbol
 end
 
-function ReproductiveOrganEmission(mtg::MultiScaleTreeGraph.Node; phytomer_symbol="Phytomer", male_symbol="Male", female_symbol="Female")
+function ReproductiveOrganEmission(mtg::MultiScaleTreeGraph.Node; phytomer_symbol=:Phytomer, male_symbol=:Male, female_symbol=:Female)
     phytomers = MultiScaleTreeGraph.descendants(mtg, symbol=phytomer_symbol, self=true)
     ReproductiveOrganEmission(length(phytomers), length(mtg), phytomer_symbol, male_symbol, female_symbol)
 end
@@ -34,7 +34,7 @@ PlantSimEngine.dep(m::ReproductiveOrganEmission) = (
 Add a new reproductive organ to a phytomer.
 """
 function PlantSimEngine.run!(m::ReproductiveOrganEmission, models, status, meteo, constants, sim_object)
-    @assert symbol(status.node) == "Phytomer" "The function should be applied to a Phytomer, but is applied to a $(symbol(status.node))"
+    @assert symbol(status.node) == :Phytomer "The function should be applied to a Phytomer, but is applied to a $(symbol(status.node))"
     @assert status.sex in ["undetermined", m.male_symbol, m.female_symbol]
     status.graph_node_count += 1
 
@@ -42,7 +42,7 @@ function PlantSimEngine.run!(m::ReproductiveOrganEmission, models, status, meteo
     st_repro_organ = add_organ!(
         status.node[1], # The phytomer's internode is its first child 
         sim_object,  # The simulation object, so we can add the new status 
-        "+", status.sex, 4;
+        :+, Symbol(status.sex), 4;
         index=status.phytomer_count,
         id=status.graph_node_count,
         attributes=Dict{Symbol,Any}()

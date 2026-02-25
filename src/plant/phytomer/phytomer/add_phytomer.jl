@@ -1,14 +1,14 @@
 """
-    PhytomerEmission(mtg; phytomer_symbol="Phytomer", internode_symbol="Internode", leaf_symbol="Leaf") <: AbstractPhytomer_EmissionModel
+    PhytomerEmission(mtg; phytomer_symbol=:Phytomer, internode_symbol=:Internode, leaf_symbol=:Leaf) <: AbstractPhytomer_EmissionModel
     
 A `PhytomerEmission` model, which emits a new phytomer when called. The new phytomer is composed of an internode and a leaf, and is added as a child of the last phytomer.
 
 # Arguments
 
 - `mtg::MultiScaleTreeGraph.Node`: The multiscale tree graph of the plant.
-- `phytomer_symbol::String`: The symbol of the phytomer, default to "Phytomer".
-- `internode_symbol::String`: The symbol of the internode, default to "Internode".
-- `leaf_symbol::String`: The symbol of the leaf, default to "Leaf".
+- `phytomer_symbol::Symbol`: The symbol of the phytomer, default to `:Phytomer`.
+- `internode_symbol::Symbol`: The symbol of the internode, default to `:Internode`.
+- `leaf_symbol::Symbol`: The symbol of the leaf, default to `:Leaf`.
 
 # Inputs
 
@@ -25,12 +25,12 @@ struct PhytomerEmission <: AbstractPhytomer_EmissionModel
     last_phytomer_init::MultiScaleTreeGraph.Node
     phytomer_count_init::Int
     graph_node_count_init::Int
-    phytomer_symbol::String
-    internode_symbol::String
-    leaf_symbol::String
+    phytomer_symbol::Symbol
+    internode_symbol::Symbol
+    leaf_symbol::Symbol
 end
 
-function PhytomerEmission(mtg::MultiScaleTreeGraph.Node; phytomer_symbol="Phytomer", internode_symbol="Internode", leaf_symbol="Leaf")
+function PhytomerEmission(mtg::MultiScaleTreeGraph.Node; phytomer_symbol=:Phytomer, internode_symbol=:Internode, leaf_symbol=:Leaf)
     phytomers = MultiScaleTreeGraph.descendants(mtg, symbol=phytomer_symbol, self=true)
     PhytomerEmission(phytomers[end], length(phytomers), length(mtg), phytomer_symbol, internode_symbol, leaf_symbol)
 end
@@ -60,7 +60,7 @@ function PlantSimEngine.run!(m::PhytomerEmission, models, status, meteo, constan
     st_phyto = add_organ!(
         status.last_phytomer, # parent, 
         sim_object,  # The simulation object, so we can add the new status 
-        "<", m.phytomer_symbol, 3;
+        :<, m.phytomer_symbol, 3;
         index=status.phytomer_count,
         id=status.graph_node_count,
         attributes=Dict{Symbol,Any}()
@@ -75,7 +75,7 @@ function PlantSimEngine.run!(m::PhytomerEmission, models, status, meteo, constan
     st_internode = add_organ!(
         st_phyto.node, # parent, 
         sim_object,  # The simulation object, so we can add the new status 
-        "/", m.internode_symbol, 4;
+        :/, m.internode_symbol, 4;
         index=status.phytomer_count,
         id=status.graph_node_count,
         attributes=Dict{Symbol,Any}()
@@ -91,7 +91,7 @@ function PlantSimEngine.run!(m::PhytomerEmission, models, status, meteo, constan
     st_leaf = add_organ!(
         st_internode.node, # parent, 
         sim_object,  # The simulation object, so we can add the new status 
-        "+", m.leaf_symbol, 4;
+        :+, m.leaf_symbol, 4;
         index=status.phytomer_count,
         id=status.graph_node_count,
         attributes=Dict{Symbol,Any}()

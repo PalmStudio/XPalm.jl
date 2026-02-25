@@ -46,23 +46,22 @@ function add_leaflet_geometry!(
     leaflet_base_position = rachis_position
 
     # Accumulate position and angle for segments
-    position_section = Ref(Meshes.Point(0.0, 0.0, 0.0))
+    position_section = Ref(_point3(0.0, 0.0, 0.0))
 
     # Calculate the orientation for the full leaflet
     # 1. Apply torsion around leaflet's own axis
     # 2. Apply leaflet's insertion angles (horizontal and vertical)
     # 3. Apply rachis orientation (inherit from parent)
-    rot_rachis =
-        Meshes.Rotate(
-            RotZYX(
-                deg2rad(rachis_orientation.azimuthal_angle_global),
-                -deg2rad(rachis_orientation.zenithal_angle_global),
-                deg2rad(rachis_orientation.torsion_angle_global)
-            )
+    rot_rachis = _rotate(
+        RotZYX(
+            deg2rad(rachis_orientation.azimuthal_angle_global),
+            -deg2rad(rachis_orientation.zenithal_angle_global),
+            deg2rad(rachis_orientation.torsion_angle_global)
         )
+    )
 
     # Process each leaflet segment
-    traverse!(leaflet_node, symbol="LeafletSegment") do segment
+    traverse!(leaflet_node, symbol=:LeafletSegment) do segment
         # Get segment properties
         leaflet_segment_width = segment["width"]
         leaflet_segment_length = segment["length"]
@@ -76,33 +75,31 @@ function add_leaflet_geometry!(
         # Calculate transformation for this segment
         # !Based on ElaeisArchiTree.java line 246-254, the leaflet shape is a V-shaped plane, but not working here!
         mesh_transformation =
-        # Scale to correct dimensions
-        # Meshes.Scale(ustrip(leaflet_segment_width), ustrip(leaflet_segment_width) * sin(lamina_angle / 2), ustrip(leaflet_segment_length)) →
-            Meshes.Scale(ustrip(leaflet_segment_length), 1e-6, ustrip(leaflet_segment_width)) →
+            _rotate(RotY(deg2rad(stem_bending))) ∘
+            _rotate(RotZ(deg2rad(rachis_rotation))) ∘
+            _translate(internode_width, zero(internode_width), internode_height) ∘
+            _translate(leaflet_base_position) ∘
+            rot_rachis ∘
+            _translate(position_section[]) ∘
+            _rotate(rot) ∘
             # Note: we use 1e-6 for the leaflet thickness because it's a plane so it's not really used, but we still need a non-zero value for scaling
-            Meshes.Rotate(rot) →
-            # Apply position offset from previous segments
-            Meshes.Translate(Meshes.to(position_section[])...) →
-            # Apply rachis orientation
-            rot_rachis →
-            # Translate to rachis position
-            Meshes.Translate(Meshes.to(leaflet_base_position)...) →
-            # Positioning along the stem:
-            Meshes.Translate(internode_width, zero(internode_width), internode_height) →
-            Meshes.Rotate(RotZ(deg2rad(rachis_rotation))) →
-            Meshes.Rotate(RotY(deg2rad(stem_bending)))
+            _scale(leaflet_segment_length, 1e-6, leaflet_segment_width)
 
         # Assign geometry to the segment
         segment.geometry = PlantGeom.Geometry(ref_mesh=refmesh_plane, transformation=mesh_transformation)
 
         # Update position using the rotation matrix directly
         # Create direction vector along X axis (rachis direction)
-        direction = Meshes.Vec(ustrip(leaflet_segment_length), 0.0, 0.0)
+        direction = _vec3(leaflet_segment_length, 0.0, 0.0)
 
         # Apply rotation to this direction
         rotated_direction = rot * direction
         # Update position
-        position_section[] += rotated_direction
+        position_section[] = _point3(
+            position_section[][1] + rotated_direction[1],
+            position_section[][2] + rotated_direction[2],
+            position_section[][3] + rotated_direction[3],
+        )
     end
 
     return nothing

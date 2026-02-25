@@ -2,15 +2,15 @@
 function plot_mockup(parameters)
     mtg = build_mockup(parameters; merge_scale=:leaflet, rng=nothing)
     traverse!(mtg) do node
-        if symbol(node) == "Petiole"
-            petiole_and_rachis_segments = descendants(node, symbol=["PetioleSegment", "RachisSegment"])
+        if symbol(node) == :Petiole
+            petiole_and_rachis_segments = descendants(node, symbol=[:PetioleSegment, :RachisSegment])
             colormap = cgrad([colorant"peachpuff4", colorant"blanchedalmond"], length(petiole_and_rachis_segments), scale=:log2)
             for (i, seg) in enumerate(petiole_and_rachis_segments)
                 seg[:color_type] = colormap[i]
             end
-        elseif symbol(node) == "Leaflet"
+        elseif symbol(node) == :Leaflet
             node[:color_type] = :mediumseagreen
-        elseif symbol(node) == "Leaf" # This will color the snags
+        elseif symbol(node) == :Leaf # This will color the snags
             node[:color_type] = :peachpuff4
         end
     end
@@ -37,7 +37,7 @@ end
     nb_rachis = nb_leaves_alive + vpalm_parameters["nb_leaves_in_sheath"]
     nb_rachis_sections = vpalm_parameters["rachis_nb_segments"] * nb_rachis
 
-    mtg_no_leaflets = MultiScaleTreeGraph.traverse(mtg, node -> node, symbol=["Plant", "Stem", "Phytomer", "Internode", "Leaf", "Petiole", "PetioleSegment", "Rachis", "RachisSegment"])
+    mtg_no_leaflets = MultiScaleTreeGraph.traverse(mtg, node -> node, symbol=[:Plant, :Stem, :Phytomer, :Internode, :Leaf, :Petiole, :PetioleSegment, :Rachis, :RachisSegment])
     @test length(mtg_no_leaflets) == nb_phytomers + nb_internodes + nb_leaves + nb_petioles + nb_petiole_sections + nb_rachis + nb_rachis_sections + 2 # 2 for stem and plant
     # Check the length of the mockup: nb leaves emitted * 3 (phytomer + internode + leaf) + 2 (stem + plant)
     @test typeof(mtg) == MultiScaleTreeGraph.Node{MultiScaleTreeGraph.NodeMTG,Dict{Symbol,Any}}
@@ -57,7 +57,7 @@ end
         nb_symbols_mtg_geom[symbol(node)] += 1
     end
     # we remove the LeafletSegment nodes in the geometry mockup, as it slows the rendering
-    @test delete!(nb_symbols_mtg, "LeafletSegment") == nb_symbols_mtg_geom
+    @test delete!(nb_symbols_mtg, :LeafletSegment) == nb_symbols_mtg_geom
     @test length(mtg) == 92474
     @test length(mtg_geom) == 20994
 

@@ -11,7 +11,7 @@ end
 @testset "MaleBiomass" begin
     @testset "Continuous growth" begin
         mtg = Palm().mtg
-        MultiScaleTreeGraph.Node(get_node(mtg, 7), NodeMTG("+", "Male", 1, 4))
+        MultiScaleTreeGraph.Node(get_node(mtg, 7), NodeMTG(:+, :Male, 1, 4))
         m = Dict(
             "Male" => (
                 MaleBiomass(),
@@ -28,7 +28,7 @@ end
 
     @testset "Harvested" begin
         mtg = Palm().mtg
-        MultiScaleTreeGraph.Node(get_node(mtg, 7), NodeMTG("+", "Male", 1, 4))
+        MultiScaleTreeGraph.Node(get_node(mtg, 7), NodeMTG(:+, :Male, 1, 4))
         m = Dict(
             "Male" => (
                 MaleBiomass(),
@@ -45,7 +45,7 @@ end
 
     @testset "Aborted" begin
         mtg = Palm().mtg
-        MultiScaleTreeGraph.Node(get_node(mtg, 7), NodeMTG("+", "Male", 1, 4))
+        MultiScaleTreeGraph.Node(get_node(mtg, 7), NodeMTG(:+, :Male, 1, 4))
         m = Dict(
             "Male" => (
                 MaleBiomass(),
@@ -64,7 +64,7 @@ end
 
 @testset "FemaleBiomass" begin
     mtg = Palm().mtg
-    MultiScaleTreeGraph.Node(get_node(mtg, 7), NodeMTG("+", "Female", 1, 4))
+    MultiScaleTreeGraph.Node(get_node(mtg, 7), NodeMTG(:+, :Female, 1, 4))
     m = Dict(
         "Female" => (
             FemaleBiomass(),

@@ -4,6 +4,8 @@ import MultiScaleTreeGraph: Node, NodeMTG, index, symbol#, addchild!, get_root
 import PlantSimEngine
 import PlantSimEngine: MultiScaleModel, PreviousTimeStep
 import Random
+import Dates
+import Tables
 import OrderedCollections: OrderedDict
 
 # Palm structure:

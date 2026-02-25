@@ -27,13 +27,31 @@ df = xpalm(meteo, DataFrame; vars= Dict("Scene" => (:lai,)))
 ```
 """
 function xpalm(meteo, sink; vars=Dict("Scene" => (:lai,)), architecture=false, palm=Palm(initiation_age=0, parameters=default_parameters(), architecture=architecture))
+    meteo_with_duration = _ensure_meteo_duration(meteo)
     models = model_mapping(palm, architecture=architecture)
-    out = PlantSimEngine.run!(palm.mtg, models, meteo, tracked_outputs=vars, executor=PlantSimEngine.SequentialEx(), check=false)
+    out = PlantSimEngine.run!(palm.mtg, models, meteo_with_duration, tracked_outputs=vars, executor=PlantSimEngine.SequentialEx(), check=false)
     return PlantSimEngine.convert_outputs(out, sink, no_value=missing)
 end
 
 function xpalm(meteo; vars=Dict("Scene" => (:lai,)), architecture=false, palm=Palm(initiation_age=0, parameters=default_parameters(), architecture=architecture))
+    meteo_with_duration = _ensure_meteo_duration(meteo)
     models = model_mapping(palm, architecture=architecture)
-    out = PlantSimEngine.run!(palm.mtg, models, meteo, tracked_outputs=vars, executor=PlantSimEngine.SequentialEx(), check=false)
+    out = PlantSimEngine.run!(palm.mtg, models, meteo_with_duration, tracked_outputs=vars, executor=PlantSimEngine.SequentialEx(), check=false)
     return out
+end
+
+"""
+    _ensure_meteo_duration(meteo)
+
+Ensure each meteo row defines `duration` (required by recent PlantSimEngine versions).
+When missing, default to a daily timestep (`Dates.Day(1)`).
+"""
+function _ensure_meteo_duration(meteo)
+    rows = Tables.rows(meteo)
+    first_state = iterate(rows)
+    isnothing(first_state) && return meteo
+    hasproperty(first_state[1], :duration) && return meteo
+
+    rowtable = Tables.rowtable(meteo)
+    return [merge(row, (duration=Dates.Day(1),)) for row in rowtable]
 end

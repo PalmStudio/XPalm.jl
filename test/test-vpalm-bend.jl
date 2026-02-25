@@ -36,7 +36,7 @@ ref = CSV.read(joinpath(@__DIR__, "references/6_EW01.22_17_kanan_unbent_bend.csv
     )
 
     # CSV.write(joinpath(@__DIR__, "references/6_EW01.22_17_kanan_unbent_bend.csv"), DataFrame(out))
-    ref_points = [Meshes.Point(row.x, row.y, row.z) for row in eachrow(ref)]
+    ref_points = [GeometryBasics.Point{3,typeof(1.0u"m")}(row.x * u"m", row.y * u"m", row.z * u"m") for row in eachrow(ref)]
     for (ref_p, p) in zip(ref_points, out.points)
         @test isapprox(ref_p, p, atol=atol_length)
     end
@@ -55,7 +55,7 @@ end
     )
 
     ref_points_data = CSV.read(joinpath(@__DIR__, "references/6_EW01.22_17_kanan_unbent.csv"), DataFrame)
-    ref_points = [Meshes.Point(row.x, row.y, row.z) for row in eachrow(ref_points_data)]
+    ref_points = [GeometryBasics.Point{3,typeof(1.0u"m")}(row.x * u"m", row.y * u"m", row.z * u"m") for row in eachrow(ref_points_data)]
 
     @test length(ref_points) == length(unbent_points)
     @test all(isapprox(ref, unbent, atol=atol_length) for (ref, unbent) in zip(ref_points, unbent_points))

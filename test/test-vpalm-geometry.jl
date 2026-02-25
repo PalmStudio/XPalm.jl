@@ -71,35 +71,31 @@ end
 
 @testset "add_geometry" begin
     mtg = VPalm.mtg_skeleton(vpalm_parameters)
-    refmesh_cylinder = PlantGeom.RefMesh("cylinder", VPalm.cylinder())
-    refmesh_snag = PlantGeom.RefMesh("Snag", VPalm.snag())
-    refmesh_plane = PlantGeom.RefMesh("Plane", VPalm.plane())
+    refmesh_cylinder = PlantGeom.RefMesh("cylinder", PlantGeom.to_geometrybasics(VPalm.cylinder()))
+    refmesh_snag = PlantGeom.RefMesh("Snag", PlantGeom.to_geometrybasics(VPalm.snag()))
+    refmesh_plane = PlantGeom.RefMesh("Plane", PlantGeom.to_geometrybasics(VPalm.plane()))
     VPalm.add_geometry!(mtg, refmesh_cylinder, refmesh_snag, refmesh_plane)
 
-    internode_id = findfirst(i -> symbol(get_node(mtg, i)) == "Internode", 1:length(mtg))
+    internode_id = findfirst(i -> symbol(get_node(mtg, i)) == :Internode, 1:length(mtg))
     @test internode_id !== nothing
     internode = get_node(mtg, internode_id)
     VPalm.add_geometry!(internode, refmesh_cylinder, refmesh_snag, refmesh_plane)
 
-    scale = internode.geometry.transformation.transforms[1]
-    @test scale.factors[1] ≈ ustrip(internode.width)
-    @test scale.factors[2] == scale.factors[1]
-    @test scale.factors[3] ≈ ustrip(internode.length)
+    t = internode.geometry.transformation
+    p0 = t(GeometryBasics.Point{3,Float64}(0.0, 0.0, 0.0))
+    p1 = t(GeometryBasics.Point{3,Float64}(0.0, 0.0, 1.0))
+    @test p0 ≈ GeometryBasics.Point{3,Float64}(0.0, 0.0, 0.0)
+    @test sqrt(sum((p1 .- p0) .^ 2)) ≈ ustrip(internode.length)
 
-    translate = internode.geometry.transformation.transforms[2]
-    @test translate.offsets[1] == 0.0u"m"
-    @test translate.offsets[2] == 0.0u"m"
-    @test translate.offsets[3] == 0.0u"m"
-
-    petiole_id = findfirst(i -> symbol(get_node(mtg, i)) == "Petiole", 1:length(mtg))
+    petiole_id = findfirst(i -> symbol(get_node(mtg, i)) == :Petiole, 1:length(mtg))
     @test petiole_id !== nothing
     petiole = get_node(mtg, petiole_id)
 
-    rachis_id = findfirst(i -> symbol(get_node(mtg, i)) == "Rachis", 1:length(mtg))
+    rachis_id = findfirst(i -> symbol(get_node(mtg, i)) == :Rachis, 1:length(mtg))
     @test rachis_id !== nothing
     rachis = get_node(mtg, rachis_id)
 
-    leaflet_id = findfirst(i -> symbol(get_node(mtg, i)) == "Leaflet", 1:length(mtg))
+    leaflet_id = findfirst(i -> symbol(get_node(mtg, i)) == :Leaflet, 1:length(mtg))
     @test leaflet_id !== nothing
     leaflet = get_node(mtg, leaflet_id)
     @test leaflet.relative_position == 0.0
@@ -110,16 +106,16 @@ end
 @testset "leaflets" begin
     vpalm_parameters_ = copy(vpalm_parameters)
     vpalm_parameters_["leaflet_stiffness_sd"] = 0.0u"MPa"
-    plane_ref = PlantGeom.RefMesh("Plane", VPalm.plane())
+    plane_ref = PlantGeom.RefMesh("Plane", PlantGeom.to_geometrybasics(VPalm.plane()))
     mtg = VPalm.mtg_skeleton(vpalm_parameters_; rng=nothing)
-    leaflet_id = findfirst(i -> symbol(get_node(mtg, i)) == "Leaflet", 1:length(mtg))
+    leaflet_id = findfirst(i -> symbol(get_node(mtg, i)) == :Leaflet, 1:length(mtg))
     @test leaflet_id !== nothing
     leaflet_node = get_node(mtg, leaflet_id)
     rachis_node = parent(leaflet_node)
     VPalm.add_leaflet_geometry!(leaflet_node,
         leaflet_node.width,
         1.5u"m",
-        Meshes.Point(0.0, 0.0, 1.5),
+        GeometryBasics.Point{3,Float64}(0.0, 0.0, 1.5),
         (; rachis_node.zenithal_angle_global, rachis_node.azimuthal_angle_global, rachis_node.torsion_angle_global),
         0.0u"°",
         0.0u"°",

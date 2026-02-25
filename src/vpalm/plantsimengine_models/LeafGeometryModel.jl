@@ -88,7 +88,7 @@ function PlantSimEngine.run!(model::LeafGeometryModel, models, status, meteo, co
     # Get the unique MTG ID
     unique_mtg_id = PlantSimEngine.refvalue(status, :graph_node_count)
 
-    symbol(leaf) != "Leaf" && error("Expected leaf node, got $(symbol(leaf))")
+    symbol(leaf) != :Leaf && error("Expected leaf node, got $(symbol(leaf))")
 
     leaf.plantsimengine_status.biomass <= 0.0 && return nothing # No biomass, no geometry
     biomass_leaf = uconvert(u"kg", leaf.plantsimengine_status.biomass * u"g")
@@ -183,7 +183,7 @@ function update_leaf!(leaf, biomass_leaf, parameters; unique_mtg_id=Ref(new_id(l
 
     VPalm.update_rachis_angles!(rachis, leaf.rank, leaf.rachis_length, petiole.height_cpoint, petiole.width_cpoint, leaf.zenithal_cpoint_angle, biomass_leaf, parameters; rng)
 
-    traverse!(rachis, symbol="Leaflet") do leaflet
+    traverse!(rachis, symbol=:Leaflet) do leaflet
         VPalm.update_leaflet_angles!(
             leaflet, leaf.rank;
             last_rank_unfolding=2, unique_mtg_id=unique_mtg_id,

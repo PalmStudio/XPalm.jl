@@ -145,19 +145,21 @@ function biomechanical_properties_rachis(
     y = fill(0.0u"m", 5)
     z = fill(0.0u"m", 5)
 
-    points = Vector{typeof(Meshes.Point(0.0, 0.0, 0.0))}(undef, npoints)
+    point_type = GeometryBasics.Point{3,typeof(distances[1])}
+    points = Vector{point_type}(undef, npoints)
     for n in eachindex(distances)
         # zenithal_cpoint_angle is at 0° when vertical (along the Z axis), or 90° when horizontal (along the X axis)
-        position_ref = Meshes.Point(0.0u"m", 0.0u"m", distances[n])
-        points[n] = Meshes.Rotate(RotY(deg2rad(zenithal_cpoint_angle)))(position_ref)
+        position_ref = point_type(zero(distances[n]), zero(distances[n]), distances[n])
+        rotated = RotY(deg2rad(zenithal_cpoint_angle)) * GeometryBasics.Vec{3,typeof(distances[n])}(position_ref[1], position_ref[2], position_ref[3])
+        points[n] = point_type(rotated[1], rotated[2], rotated[3])
     end
 
     step = rachis_length / (nb_sections - 1)
 
     # extract the points coordinates to give to bend:
-    x = [Meshes.coords(p).x for p in points]
-    y = [Meshes.coords(p).y for p in points]
-    z = [Meshes.coords(p).z for p in points]
+    x = [p[1] for p in points]
+    y = [p[2] for p in points]
+    z = [p[3] for p in points]
     #! Update bend so we can pass the points directly
 
     # Call the bend function, which returns a vector of arrays:
@@ -170,9 +172,9 @@ function biomechanical_properties_rachis(
 
     # points_bending = .-bending.angle_xy
     # points_bending[1] = -zenithal_cpoint_angle         # Initialize the first angle as the angle at C point
-    x_coordinates = [Meshes.coords(p).x for p in bending.points]
-    y_coordinates = [Meshes.coords(p).y for p in bending.points]
-    z_coordinates = [Meshes.coords(p).z for p in bending.points]
+    x_coordinates = [p[1] for p in bending.points]
+    y_coordinates = [p[2] for p in bending.points]
+    z_coordinates = [p[3] for p in bending.points]
 
     #! update this function to return the points directly
     return (

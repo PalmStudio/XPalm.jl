@@ -1,6 +1,6 @@
 
 
-function leaf(unique_mtg_id, index, rank, rachis_fresh_biomass, rachis_final_length, leaf_node=Node(NodeMTG("+", "Leaf", index, 4)), parameters=default_parameters(); rng)
+function leaf(unique_mtg_id, index, rank, rachis_fresh_biomass, rachis_final_length, leaf_node=Node(NodeMTG(:+, :Leaf, index, 4)), parameters=default_parameters(); rng)
     leaf_node.rank = rank
 
     compute_properties_leaf!(leaf_node, leaf_node.rank, rachis_final_length, parameters, rng)

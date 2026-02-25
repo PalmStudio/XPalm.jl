@@ -12,7 +12,9 @@ import YAML, OrderedCollections
 # For the 3D:
 import PlantGeom
 import Meshes
-import TransformsBase: →
+import GeometryBasics
+import CoordinateTransformations: LinearMap, Translation
+import LinearAlgebra: Diagonal
 import Rotations: RotX, RotY, RotZ, RotYZ, RotXYZ, RotZY, RotYZX, RotZYX
 import Rotations
 import PlyIO

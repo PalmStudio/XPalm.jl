@@ -61,7 +61,7 @@ function create_leaflets_for_side!(
 
     # Get all rachis section nodes in preorder traversal 
     # (from base to tip, including all hierarchical levels)
-    rachis_children = descendants(rachis_node, symbol="RachisSegment") # Starting at 1 because we don't want the rachis node
+    rachis_children = descendants(rachis_node, symbol=:RachisSegment) # Starting at 1 because we don't want the rachis node
 
     for i in 1:nb_leaflets
         # Determine which rachis segment this leaflet should be attached to
@@ -161,7 +161,7 @@ function create_single_leaflet(
     # Create a new leaflet node with unique ID
     leaflet_node = Node(
         unique_mtg_id[],
-        NodeMTG("+", "Leaflet", index, scale),
+        NodeMTG(:+, :Leaflet, index, scale),
         Dict{Symbol,Any}()
     )
     unique_mtg_id[] += 1
@@ -382,8 +382,8 @@ function create_leaflet_segments!(
             unique_mtg_id[],
             last_parent,
             NodeMTG(
-                j == 1 ? "/" : "<",  # First segment uses "/" edge type, others use "<" (successor)
-                "LeafletSegment",
+                j == 1 ? :/ : :<,  # First segment uses "/" edge type, others use "<" (successor)
+                :LeafletSegment,
                 j,
                 scale
             )
@@ -459,7 +459,7 @@ function update_leaflet_angles!(
     # Note: the torsion is not supposed to change over time
 
     children_leaflet = children(leaflet)
-    if length(children_leaflet) > 0 && symbol(children_leaflet[1]) == "LeafletSegment"
+    if length(children_leaflet) > 0 && symbol(children_leaflet[1]) == :LeafletSegment
         # If we have leaflet segments, we can simply update their angles:
         update_segment_angles!(leaflet, ustrip(leaflet.stiffness), deg2rad(leaflet.zenithal_angle), ustrip(leaflet.length), leaflet.tapering)
     else
