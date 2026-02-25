@@ -1,8 +1,8 @@
 
 
 """
-    xpalm(meteo; vars=Dict("Scene" => (:lai,)), architecture=false, palm=Palm(initiation_age=0, parameters=default_parameters()))
-    xpalm(meteo, sink; vars=Dict("Scene" => (:lai,)), architecture=false, palm=Palm(initiation_age=0, parameters=default_parameters()))
+    xpalm(meteo; vars=Dict(:Scene => (:lai,)), architecture=false, palm=Palm(initiation_age=0, parameters=default_parameters()))
+    xpalm(meteo, sink; vars=Dict(:Scene => (:lai,)), architecture=false, palm=Palm(initiation_age=0, parameters=default_parameters()))
 
 Run the XPalm model with the given meteo data and return the results in a DataFrame.
 
@@ -23,17 +23,17 @@ A simulation output, either as a dictionary of variables per scales (default) or
 ```julia
 using XPalm, CSV, DataFrames
 meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), DataFrame)
-df = xpalm(meteo, DataFrame; vars= Dict("Scene" => (:lai,)))
+df = xpalm(meteo, DataFrame; vars=Dict(:Scene => (:lai,)))
 ```
 """
-function xpalm(meteo, sink; vars=Dict("Scene" => (:lai,)), architecture=false, palm=Palm(initiation_age=0, parameters=default_parameters(), architecture=architecture))
+function xpalm(meteo, sink; vars=Dict(:Scene => (:lai,)), architecture=false, palm=Palm(initiation_age=0, parameters=default_parameters(), architecture=architecture))
     meteo_with_duration = _ensure_meteo_duration(meteo)
     models = model_mapping(palm, architecture=architecture)
     out = PlantSimEngine.run!(palm.mtg, models, meteo_with_duration, tracked_outputs=vars, executor=PlantSimEngine.SequentialEx(), check=false)
     return PlantSimEngine.convert_outputs(out, sink, no_value=missing)
 end
 
-function xpalm(meteo; vars=Dict("Scene" => (:lai,)), architecture=false, palm=Palm(initiation_age=0, parameters=default_parameters(), architecture=architecture))
+function xpalm(meteo; vars=Dict(:Scene => (:lai,)), architecture=false, palm=Palm(initiation_age=0, parameters=default_parameters(), architecture=architecture))
     meteo_with_duration = _ensure_meteo_duration(meteo)
     models = model_mapping(palm, architecture=architecture)
     out = PlantSimEngine.run!(palm.mtg, models, meteo_with_duration, tracked_outputs=vars, executor=PlantSimEngine.SequentialEx(), check=false)

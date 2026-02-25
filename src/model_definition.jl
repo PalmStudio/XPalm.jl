@@ -16,20 +16,20 @@ Defines the list of sub-models used in XPalm.
 """
 function model_mapping(p; architecture=false)
     # This only works for recent versions of PlantSimEngine
-    input_binding = isdefined(PlantSimEngine, :InputBindings) ? PlantSimEngine.InputBindings(; state=(process=:state, scale="Phytomer")) : identity
+    input_binding = isdefined(PlantSimEngine, :InputBindings) ? PlantSimEngine.InputBindings(; state=(process=:state, scale=:Phytomer)) : identity
 
     models = Dict(
-        "Scene" => (
+        :Scene => (
             ET0_BP(p.parameters["plot"]["latitude"], p.parameters["plot"]["altitude"]),
             DailyDegreeDays(),
             MultiScaleModel(
                 model=LAIModel(p.parameters["plot"]["scene_area"]),
-                mapped_variables=[:leaf_areas => ["Plant" => :leaf_area],],
+                mapped_variables=[:leaf_areas => [:Plant => :leaf_area],],
             ),
             Beer(k=p.parameters["radiation"]["k"]),
             GraphNodeCount(length(p.mtg)), # to have the `graph_node_count` variable initialised in the status
         ),
-        "Plant" => (
+        :Plant => (
             DailyDegreeDays(),
             DailyPlantAgeModel(),
             PhyllochronModel(
@@ -39,23 +39,23 @@ function model_mapping(p; architecture=false)
             ),
             MultiScaleModel(
                 model=PlantLeafAreaModel(),
-                mapped_variables=[:leaf_area_leaves => ["Leaf" => :leaf_area], :leaf_states => ["Leaf" => :state],],
+                mapped_variables=[:leaf_area_leaves => [:Leaf => :leaf_area], :leaf_states => [:Leaf => :state],],
             ),
             MultiScaleModel(
                 model=PhytomerEmission(p.mtg),
-                mapped_variables=[:graph_node_count => "Scene",],
+                mapped_variables=[:graph_node_count => (:Scene => :graph_node_count),],
             ),
             MultiScaleModel(
                 model=PlantRm(),
-                mapped_variables=[:Rm_organs => ["Leaf", "Internode", "Male", "Female"] .=> :Rm],
+                mapped_variables=[:Rm_organs => [:Leaf, :Internode, :Male, :Female] .=> :Rm],
             ),
             MultiScaleModel(
                 model=SceneToPlantLightPartitioning(p.parameters["plot"]["scene_area"]),
-                mapped_variables=[:aPPFD_scene => "Scene" => :aPPFD, :scene_leaf_area => "Scene" => :leaf_area],
+                mapped_variables=[:aPPFD_scene => :Scene => :aPPFD, :scene_leaf_area => :Scene => :leaf_area],
             ),
             MultiScaleModel(
                 model=RUE_FTSW(p.parameters["radiation"]["RUE"], p.parameters["radiation"]["threshold_ftsw"]),
-                mapped_variables=[PreviousTimeStep(:ftsw) => "Soil",],
+                mapped_variables=[PreviousTimeStep(:ftsw) => (:Soil => :ftsw),],
             ),
             CarbonOfferRm(),
             MultiScaleModel(
@@ -70,21 +70,21 @@ function model_mapping(p; architecture=false)
             MultiScaleModel(
                 model=OrganReserveFilling(),
                 mapped_variables=[
-                    :potential_reserve_organs => ["Internode", "Leaf"] .=> :potential_reserve,
-                    :reserve_organs => ["Internode", "Leaf"] .=> :reserve,
+                    :potential_reserve_organs => [:Internode, :Leaf] .=> :potential_reserve,
+                    :reserve_organs => [:Internode, :Leaf] .=> :reserve,
                 ],
             ),
             MultiScaleModel(
                 model=PlantBunchHarvest(),
                 mapped_variables=[
-                    :biomass_bunch_harvested_organs => ["Female"] .=> :biomass_bunch_harvested,
-                    :biomass_stalk_harvested_organs => ["Female"] .=> :biomass_stalk_harvested,
-                    :biomass_fruit_harvested_organs => ["Female"] .=> :biomass_fruit_harvested,
-                    :biomass_bunch_harvested_cum_organs => ["Female"] .=> :biomass_bunch_harvested_cum,
-                    :biomass_oil_harvested_organs => ["Female"] .=> :biomass_oil_harvested,
-                    :biomass_oil_harvested_cum_organs => ["Female"] .=> :biomass_oil_harvested_cum,
-                    :biomass_oil_harvested_potential_organs => ["Female"] .=> :biomass_oil_harvested_potential,
-                    :biomass_oil_harvested_potential_cum_organs => ["Female"] .=> :biomass_oil_harvested_potential_cum
+                    :biomass_bunch_harvested_organs => [:Female] .=> :biomass_bunch_harvested,
+                    :biomass_stalk_harvested_organs => [:Female] .=> :biomass_stalk_harvested,
+                    :biomass_fruit_harvested_organs => [:Female] .=> :biomass_fruit_harvested,
+                    :biomass_bunch_harvested_cum_organs => [:Female] .=> :biomass_bunch_harvested_cum,
+                    :biomass_oil_harvested_organs => [:Female] .=> :biomass_oil_harvested,
+                    :biomass_oil_harvested_cum_organs => [:Female] .=> :biomass_oil_harvested_cum,
+                    :biomass_oil_harvested_potential_organs => [:Female] .=> :biomass_oil_harvested_potential,
+                    :biomass_oil_harvested_potential_cum_organs => [:Female] .=> :biomass_oil_harvested_potential_cum
                 ],
             ),
         ),
@@ -93,17 +93,17 @@ function model_mapping(p; architecture=false)
         #     variables_check=false,
         #     nsteps=nsteps,
         # ),
-        "Phytomer" => (
+        :Phytomer => (
             MultiScaleModel(
                 model=InitiationAgeFromPlantAge(),
-                mapped_variables=[:plant_age => "Plant",],
+                mapped_variables=[:plant_age => :Plant,],
             ),
             # DegreeDaysFTSW(
             #     threshold_ftsw_stress=p.parameters["phyllochron"]["threshold_ftsw_stress"],
             # ), #! we should use this one instead of DailyDegreeDaysSinceInit I think
             MultiScaleModel(
                 model=DailyDegreeDaysSinceInit(),
-                mapped_variables=[:TEff => "Plant",], # Using TEff computed at plant scale
+                mapped_variables=[:TEff => :Plant,], # Using TEff computed at plant scale
             ),
             MultiScaleModel(
                 model=SexDetermination(
@@ -115,13 +115,13 @@ function model_mapping(p; architecture=false)
                     random_seed=p.parameters["reproduction"]["sex_ratio"]["random_seed"],
                 ),
                 mapped_variables=[
-                    PreviousTimeStep(:carbon_offer_plant) => "Plant" => :carbon_offer_after_rm,
-                    PreviousTimeStep(:carbon_demand_plant) => "Plant" => :carbon_demand,
+                    PreviousTimeStep(:carbon_offer_plant) => :Plant => :carbon_offer_after_rm,
+                    PreviousTimeStep(:carbon_demand_plant) => :Plant => :carbon_demand,
                 ],
             ),
             MultiScaleModel(
                 model=ReproductiveOrganEmission(p.mtg),
-                mapped_variables=[:graph_node_count => "Scene", :phytomer_count => "Plant"],
+                mapped_variables=[:graph_node_count => (:Scene => :graph_node_count), :phytomer_count => (:Plant => :phytomer_count)],
             ),
             MultiScaleModel(
                 model=AbortionRate(
@@ -132,8 +132,8 @@ function model_mapping(p; architecture=false)
                     random_seed=p.parameters["reproduction"]["abortion"]["random_seed"],
                 ),
                 mapped_variables=[
-                    PreviousTimeStep(:carbon_offer_plant) => "Plant" => :carbon_offer_after_rm,
-                    PreviousTimeStep(:carbon_demand_plant) => "Plant" => :carbon_demand,
+                    PreviousTimeStep(:carbon_offer_plant) => :Plant => :carbon_offer_after_rm,
+                    PreviousTimeStep(:carbon_demand_plant) => :Plant => :carbon_demand,
                 ],
             ),
             MultiScaleModel(
@@ -144,20 +144,20 @@ function model_mapping(p; architecture=false)
                     duration_bunch_development=p.parameters["phenology"]["female"]["duration_bunch_development"],
                     fraction_period_oleosynthesis=p.parameters["phenology"]["female"]["fraction_period_oleosynthesis"],
                 ), # Compute the state of the phytomer
-                mapped_variables=[:state_organs => ["Leaf", "Male", "Female"] .=> :state,],
+                mapped_variables=[:state_organs => [:Leaf, :Male, :Female] .=> :state,],
                 #! note: the mapping is artificial, we compute the state of those organs in the function directly because we use the status of a phytomer to give it to its children
                 #! second note: the models should really be associated to the organs (female and male inflo + leaves)
             ),
         ),
-        "Internode" =>
+        :Internode =>
             (
                 MultiScaleModel(
                     model=InitiationAgeFromPlantAge(),
-                    mapped_variables=[:plant_age => "Plant",],
+                    mapped_variables=[:plant_age => :Plant,],
                 ),
                 MultiScaleModel(
                     model=DailyDegreeDaysSinceInit(),
-                    mapped_variables=[:TEff => "Plant",], # Using TEff computed at plant scale
+                    mapped_variables=[:TEff => :Plant,], # Using TEff computed at plant scale
                 ),
                 MultiScaleModel(
                     model=RmQ10FixedN(
@@ -199,10 +199,10 @@ function model_mapping(p; architecture=false)
                     respiration_cost=p.parameters["carbon_demand"]["internode"]["respiration_cost"]
                 ),
             ),
-        "Leaf" => (
+        :Leaf => (
             MultiScaleModel(
                 model=DailyDegreeDaysSinceInit(),
-                mapped_variables=[:TEff => "Plant",], # Using TEff computed at plant scale
+                mapped_variables=[:TEff => :Plant,], # Using TEff computed at plant scale
             ),
             FinalPotentialAreaModel(
                 p.parameters["dimensions"]["leaf"]["age_first_mature_leaf"],
@@ -215,15 +215,15 @@ function model_mapping(p; architecture=false)
             ),
             MultiScaleModel(
                 model=LeafStateModel(),
-                mapped_variables=[:rank_leaves => ["Leaf" => :rank], :state_phytomers => ["Phytomer" => :state],],
+                mapped_variables=[:rank_leaves => [:Leaf => :rank], :state_phytomers => [:Phytomer => :state],],
             ),
             MultiScaleModel(
                 model=RankLeafPruning(p.parameters["management"]["rank_leaf_pruning"]),
-                mapped_variables=[:state_phytomers => ["Phytomer" => :state],],
+                mapped_variables=[:state_phytomers => [:Phytomer => :state],],
             ),
             MultiScaleModel(
                 model=InitiationAgeFromPlantAge(),
-                mapped_variables=[:plant_age => "Plant",],
+                mapped_variables=[:plant_age => :Plant,],
             ),
             MultiScaleModel(
                 model=LeafAreaModel(
@@ -261,14 +261,14 @@ function model_mapping(p; architecture=false)
                 respiration_cost=p.parameters["carbon_demand"]["leaf"]["respiration_cost"],
             ),
         ),
-        "Male" => (
+        :Male => (
             MultiScaleModel(
                 model=InitiationAgeFromPlantAge(),
-                mapped_variables=[:plant_age => "Plant",],
+                mapped_variables=[:plant_age => :Plant,],
             ),
             MultiScaleModel(
                 model=DailyDegreeDaysSinceInit(),
-                mapped_variables=[:TEff => "Plant",], # Using TEff computed at plant scale
+                mapped_variables=[:TEff => :Plant,], # Using TEff computed at plant scale
             ),
             MaleFinalPotentialBiomass(
                 p.parameters["biomass"]["male"]["max_biomass"],
@@ -292,14 +292,14 @@ function model_mapping(p; architecture=false)
                 p.parameters["carbon_demand"]["male"]["respiration_cost"],
             ) |> input_binding,
         ),
-        "Female" => (
+        :Female => (
             MultiScaleModel(
                 model=InitiationAgeFromPlantAge(),
-                mapped_variables=[:plant_age => "Plant",],
+                mapped_variables=[:plant_age => :Plant,],
             ),
             MultiScaleModel(
                 model=DailyDegreeDaysSinceInit(),
-                mapped_variables=[:TEff => "Plant",],
+                mapped_variables=[:TEff => :Plant,],
             ),
             MultiScaleModel(
                 model=RmQ10FixedN(
@@ -324,14 +324,14 @@ function model_mapping(p; architecture=false)
                     TT_flowering=p.parameters["phenology"]["inflorescence"]["TT_flowering"],
                     duration_dev_spikelets=p.parameters["phenology"]["female"]["duration_dev_spikelets"],
                 ),
-                mapped_variables=[PreviousTimeStep(:carbon_offer_plant) => "Plant" => :carbon_offer_after_rm, PreviousTimeStep(:carbon_demand_plant) => "Plant" => :carbon_demand],
+                mapped_variables=[PreviousTimeStep(:carbon_offer_plant) => :Plant => :carbon_offer_after_rm, PreviousTimeStep(:carbon_demand_plant) => :Plant => :carbon_demand],
             ),
             MultiScaleModel(
                 model=NumberFruits(
                     TT_flowering=p.parameters["phenology"]["inflorescence"]["TT_flowering"],
                     duration_fruit_setting=p.parameters["phenology"]["female"]["duration_fruit_setting"],
                 ),
-                mapped_variables=[PreviousTimeStep(:carbon_offer_plant) => "Plant" => :carbon_offer_after_rm, PreviousTimeStep(:carbon_demand_plant) => "Plant" => :carbon_demand],
+                mapped_variables=[PreviousTimeStep(:carbon_offer_plant) => :Plant => :carbon_offer_after_rm, PreviousTimeStep(:carbon_demand_plant) => :Plant => :carbon_demand],
             ),
             FemaleCarbonDemandModel(
                 respiration_cost=p.parameters["carbon_demand"]["female"]["respiration_cost"],
@@ -348,10 +348,10 @@ function model_mapping(p; architecture=false)
             ) |> input_binding,
             BunchHarvest() |> input_binding,
         ),
-        "RootSystem" => (
+        :RootSystem => (
             MultiScaleModel(
                 model=DailyDegreeDaysSinceInit(),
-                mapped_variables=[:TEff => "Scene",], # Using TEff computed at scene scale
+                mapped_variables=[:TEff => :Scene,], # Using TEff computed at scene scale
             ),
             # root_growth=RootGrowthFTSW(ini_root_depth=p.parameters["ini_root_depth"]),
             # soil_water=FTSW{RootSystem}(ini_root_depth=p.parameters["ini_root_depth"]),
@@ -369,7 +369,7 @@ function model_mapping(p; architecture=false)
             #     mapped_variables=[PreviousTimeStep(:biomass),],
             # ),
         ),
-        "Soil" => (
+        :Soil => (
             # light_interception=Beer{Soil}(),
             MultiScaleModel(
                 model=FTSW_BP(
@@ -384,13 +384,13 @@ function model_mapping(p; architecture=false)
                     TRESH_EVAP=p.parameters["water"]["evaporation_threshold"],
                     TRESH_FTSW_TRANSPI=p.parameters["water"]["transpiration_threshold"],
                 ),
-                mapped_variables=[:ET0 => "Scene", :aPPFD => "Scene"], # Using TEff computed at scene scale
+                mapped_variables=[:ET0 => :Scene, :aPPFD => :Scene], # Using TEff computed at scene scale
             ),
             #! Root growth should be in the roots part, but it is a hard-coupled model with 
             #! the FSTW, so we need it here for now.
             MultiScaleModel(
                 model=RootGrowthFTSW(ini_root_depth=p.parameters["water"]["ini_root_depth"]),
-                mapped_variables=[:TEff => "Scene",], # Using TEff computed at scene scale
+                mapped_variables=[:TEff => :Scene,], # Using TEff computed at scene scale
             ),
         )
     )
@@ -398,8 +398,8 @@ function model_mapping(p; architecture=false)
 
     if architecture
         # Add the architecture models
-        models["Phytomer"] = (
-            models["Phytomer"]...,
+        models[:Phytomer] = (
+            models[:Phytomer]...,
             MultiScaleModel(
                 model=VPalm.LeafGeometryModel(
                     mtg=p.mtg,
@@ -407,20 +407,20 @@ function model_mapping(p; architecture=false)
                     vpalm_parameters=p.parameters["vpalm"]
                 ),
                 mapped_variables=[
-                    :graph_node_count => "Scene" => :graph_node_count,
-                    :height_internodes => ["Internode" => :height],
-                    :radius_internodes => ["Internode" => :radius],
-                    :biomass_leaves => ["Leaf" => :biomass],
-                    :rank_leaves => ["Leaf" => :rank],
+                    :graph_node_count => :Scene => :graph_node_count,
+                    :height_internodes => [:Internode => :height],
+                    :radius_internodes => [:Internode => :radius],
+                    :biomass_leaves => [:Leaf => :biomass],
+                    :rank_leaves => [:Leaf => :rank],
                 ],
             ),
             # "Phytomer" => (
             #     MultiScaleModel(
             #         model=PhytomerGeometryModel(p.mtg, p.vpalm_parameters),
-            #         mapped_variables=[:phytomer_geometry => ["Phytomer" => :geometry],],
+            #         mapped_variables=[:phytomer_geometry => [:Phytomer => :geometry],],
             #     ),
             # ),
         )
     end
-    return models
+    return PlantSimEngine.ModelMapping(models)
 end
