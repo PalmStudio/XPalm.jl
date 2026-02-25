@@ -80,7 +80,7 @@ function PlantSimEngine.run!(model::LeafGeometryModel, models, status, meteo, co
     internode = phytomer[1]
     leaf = internode[1]
 
-    if status.state == "Pruned"
+    if status.state == :pruned
         leaf.is_alive = false # This is used in the reconstruction for putting snags
         return nothing
     end

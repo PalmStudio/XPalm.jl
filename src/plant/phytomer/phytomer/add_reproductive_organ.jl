@@ -35,7 +35,7 @@ Add a new reproductive organ to a phytomer.
 """
 function PlantSimEngine.run!(m::ReproductiveOrganEmission, models, status, meteo, constants, sim_object)
     @assert symbol(status.node) == :Phytomer "The function should be applied to a Phytomer, but is applied to a $(symbol(status.node))"
-    @assert status.sex in ["undetermined", m.male_symbol, m.female_symbol]
+    @assert status.sex in [:undetermined, m.male_symbol, m.female_symbol]
     status.graph_node_count += 1
 
     # Create the new organ as a child of the phytomer:

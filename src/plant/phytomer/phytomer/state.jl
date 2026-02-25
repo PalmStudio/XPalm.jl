@@ -27,21 +27,21 @@ The first method takes the thermal times directly as arguments, while the second
 
 The `state` of the phytomer. For a male inflorescence, the state can be one of the following:
 
-- "Aborted": the inflorescence is aborted (computed by the `AbortionModel`)
-- "Flowering": the inflorescence is flowering
-- "Senescent": the inflorescence is senescent
-- "Pruned": the inflorescence is pruned (this can happen if the inflorescence is not harvested)
+- :aborted: the inflorescence is aborted (computed by the `AbortionModel`)
+- :flowering: the inflorescence is flowering
+- :senescent: the inflorescence is senescent
+- :pruned: the inflorescence is pruned (this can happen if the inflorescence is not harvested)
 
 For a female inflorescence, the state can be one of the following:
 
-- "Aborted": the inflorescence is aborted (computed by the `AbortionModel`)
-- "Flowering": the inflorescence is flowering
-- "FruitSetting": the inflorescence is setting fruits
-- "Oleosynthesis": the inflorescence is synthesizing oil
-- "Harvested": the inflorescence is harvested
+- :aborted: the inflorescence is aborted (computed by the `AbortionModel`)
+- :flowering: the inflorescence is flowering
+- :fruit_setting: the inflorescence is setting fruits
+- :oleosynthesis: the inflorescence is synthesizing oil
+- :harvested: the inflorescence is harvested
 
 Note that the state is also given to the reproductive organ (the second child of the first child of the phytomer), and to the
-leaf if the inflorescence is harvested (in which case the leaf is set to "Pruned").
+leaf if the inflorescence is harvested (in which case the leaf is set to :pruned).
 """
 
 struct InfloStateModel{T} <: AbstractStateModel
@@ -69,39 +69,39 @@ function InfloStateModel(;
     InfloStateModel(promote(TT_flowering, TT_fruiting, TT_harvest, TT_ini_oleo, TT_senescence_male)...)
 end
 
-PlantSimEngine.inputs_(::InfloStateModel) = (TT_since_init=-Inf, sex="undetermined")
-PlantSimEngine.outputs_(::InfloStateModel) = (state="undetermined", state_organs=["undetermined"],)
+PlantSimEngine.inputs_(::InfloStateModel) = (TT_since_init=-Inf, sex=:undetermined)
+PlantSimEngine.outputs_(::InfloStateModel) = (state=:undetermined, state_organs=[:undetermined],)
 PlantSimEngine.dep(::InfloStateModel) = (abortion=AbstractAbortionModel,)
 
 # At phytomer scale
 function PlantSimEngine.run!(m::InfloStateModel, models, status, meteo, constants, extra=nothing)
-    status.state == "Aborted" && return # if the inflo is aborted, no need to compute 
-    status.state == "Harvested" && return # no need to compute if harvested (can also happen from the leaf side if pruned)
+    status.state == :aborted && return # if the inflo is aborted, no need to compute 
+    status.state == :harvested && return # no need to compute if harvested (can also happen from the leaf side if pruned)
 
     PlantSimEngine.run!(models.abortion, models, status, meteo, constants, extra)
 
-    if status.sex == "Male"
+    if status.sex == :Male
         if status.TT_since_init >= m.TT_senescence_male
-            status.state = "Senescent"
+            status.state = :senescent
         elseif status.TT_since_init >= m.TT_flowering
-            status.state = "Flowering" #NB: if before TT_flowering it is undetermined
+            status.state = :flowering #NB: if before TT_flowering it is undetermined
         end
 
         # Give the state to the reproductive organ (it is always the second child of the first child of the phytomer):
         status.node[1][2][:plantsimengine_status].state = status.state
-    elseif status.sex == "Female"
+    elseif status.sex == :Female
         if status.TT_since_init >= m.TT_harvest
-            status.state = "Harvested"
+            status.state = :harvested
             # Give the information to the leaf (prune it):
-            status.node[1][1][:plantsimengine_status].state = "Pruned"
+            status.node[1][1][:plantsimengine_status].state = :pruned
         elseif status.TT_since_init >= m.TT_ini_oleo
-            status.state = "Oleosynthesis"
+            status.state = :oleosynthesis
         elseif status.TT_since_init >= m.TT_fruiting
-            status.state = "FruitSetting"
+            status.state = :fruit_setting
         elseif status.TT_since_init >= m.TT_flowering
-            status.state = "Flowering"
+            status.state = :flowering
         end
-        # Else: status.state = "undetermined", but this is already the default value
+        # Else: status.state = :undetermined, but this is already the default value
 
         # Give the state to the reproductive organ:
         status.node[1][2][:plantsimengine_status].state = status.state

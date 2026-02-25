@@ -1,5 +1,5 @@
 @testset "Beer" begin
-    m = ModelList(
+    m = ModelMapping(
         light_interception=Beer(0.5),
         status=(lai=fill(2.0, nrow(meteo)),)
     )

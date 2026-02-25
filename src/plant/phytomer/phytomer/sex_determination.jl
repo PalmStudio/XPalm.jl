@@ -22,7 +22,7 @@ state of the plant during a given period in thermal time.
 
 # Outputs
 
-- `sex`: the sex of the phytomer (or bunch) ("undetermined", "Female" or "Male").
+- `sex`: the sex of the phytomer (or bunch) (:undetermined, :Female or :Male).
 - `carbon_demand_sex_determination`: carbon demand of the plant integrated over the period of sex determination (gC/plant)
 - `carbon_offer_sex_determination`: carbon offer of the plant integrated over the period of sex determination (gC/plant)
 
@@ -47,13 +47,13 @@ function SexDetermination(; TT_flowering=6300.0, duration_abortion=540.0, durati
 end
 
 PlantSimEngine.inputs_(::SexDetermination) = (TT_since_init=-Inf, carbon_offer_plant=-Inf, carbon_demand_plant=-Inf)
-PlantSimEngine.outputs_(::SexDetermination) = (sex="undetermined", carbon_demand_sex_determination=0.0, carbon_offer_sex_determination=0.0,)
+PlantSimEngine.outputs_(::SexDetermination) = (sex=:undetermined, carbon_demand_sex_determination=0.0, carbon_offer_sex_determination=0.0,)
 PlantSimEngine.dep(::SexDetermination) = (reproductive_organ_emission=AbstractReproductive_Organ_EmissionModel,)
 
 function PlantSimEngine.run!(m::SexDetermination, models, status, meteo, constants, extra=nothing)
-    status.sex != "undetermined" && return # if the sex is already determined, no need to compute it again
-    status.state == "Aborted" && return # if the phytomer is aborted, no reproductive organ can be emitted  
-    status.state == "Harvested" && return # no need to compute if harvested (e.g. the leaf was removed)
+    status.sex != :undetermined && return # if the sex is already determined, no need to compute it again
+    status.state == :aborted && return # if the phytomer is aborted, no reproductive organ can be emitted  
+    status.state == :harvested && return # no need to compute if harvested (e.g. the leaf was removed)
 
     # We only look into the period of sex determination:
     if status.TT_since_init > (m.TT_flowering - m.duration_abortion - m.duration_sex_determination)
@@ -78,9 +78,9 @@ function PlantSimEngine.run!(m::SexDetermination, models, status, meteo, constan
 
         #e.g. if threshold_sex is 0.7 we will have more chance to have a female
         if random_sex < threshold_sex
-            status.sex = "Female"
+            status.sex = :Female
         else
-            status.sex = "Male"
+            status.sex = :Male
         end
 
         PlantSimEngine.run!(models.reproductive_organ_emission, models, status, meteo, constants, extra)

@@ -23,6 +23,6 @@ mtg_ref = joinpath(dirname(dirname(pathof(XPalm))), "test/references/palm.mtg")
 
     @test new_mtg_text == ref_mtg_text
     @test new_palm.initiation_age == 0
-    @test typeof(new_palm.parameters) == Dict{AbstractString,Any}
+    @test typeof(new_palm.parameters) <: AbstractDict{String,Any}
     @test new_palm.parameters["mass_and_dimensions"]["roots"]["SRL"] == 0.4
 end

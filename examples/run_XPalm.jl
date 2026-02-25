@@ -17,8 +17,8 @@ out_vars = Dict{String,Any}(
     "Plant" => (:plant_age, :ftsw, :newPhytomerEmergence, :aPPFD, :leaf_area, :carbon_assimilation, :carbon_offer_after_rm, :Rm, :TT_since_init, :TEff, :phytomer_count, :newPhytomerEmergence),
     "Leaf" => (:Rm, :potential_area, :TT_since_init, :TEff, :A, :carbon_demand, :carbon_allocation,),
     "Internode" => (:Rm, :carbon_allocation, :carbon_demand),
-    "Male" => (:Rm,),
-    "Female" => (:biomass,),
+    :Male => (:Rm,),
+    :Female => (:biomass,),
     "Soil" => (:TEff, :ftsw, :root_depth),
 )
 

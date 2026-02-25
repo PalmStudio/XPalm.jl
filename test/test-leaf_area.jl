@@ -1,5 +1,5 @@
 @testset "FinalPotentialAreaModel" begin
-    m = ModelList(
+    m = ModelMapping(
         leaf_final_potential_area=FinalPotentialAreaModel(8 * 365, 0.0015, 12.0),
         status=(initiation_age=1825,)
     )
@@ -8,7 +8,7 @@
 end
 
 @testset "PotentialAreaModel" begin
-    m = ModelList(
+    m = ModelMapping(
         leaf_potential_area=PotentialAreaModel(560.0, 100.0),
         status=(TT_since_init=[1:1:10000;], final_potential_area=fill(8.0, 10000),)
     )
@@ -20,7 +20,7 @@ end
 end
 
 @testset "LeafAreaModel" begin
-    m = ModelList(
+    m = ModelMapping(
         leaf_area=LeafAreaModel(80.0, 0.35, 0.0),
         status=(biomass=2000.0,)
     )
@@ -29,7 +29,7 @@ end
 end
 
 @testset "LAIModel" begin
-    m = ModelList(
+    m = ModelMapping(
         LAIModel(30.0),
         status=(leaf_areas=[12.0],)
     )
@@ -41,19 +41,19 @@ end
 
 @testset "LAIModel" begin
     mtg = Palm().mtg
-    mapping = Dict(
-        "Leaf" => (
+    mapping = ModelMapping(
+        :Leaf => (
             LeafBiomass(),
             LeafAreaModel(80.0, 0.35, 0.0),
             Status(carbon_allocation=10.0),
         ),
-        "Scene" => (
-            MultiScaleModel(LAIModel(30.0), [:leaf_areas => "Leaf" => :leaf_area]),
+        :Scene => (
+            MultiScaleModel(LAIModel(30.0), [:leaf_areas => :Leaf => :leaf_area]),
         )
     )
-    vars = Dict{String,Any}("Scene" => (:lai, :leaf_area), "Leaf" => (:leaf_area,))
+    vars = Dict{Symbol,Any}(:Scene => (:lai, :leaf_area), :Leaf => (:leaf_area,))
     out = run!(mtg, mapping, meteo, tracked_outputs=vars, executor=SequentialEx())
-    df = convert_outputs(out, DataFrame)["Scene"]
+    df = convert_outputs(out, DataFrame)[:Scene]
     @test df.lai[1] ≈ 0.0010127314814814814
     @test df.lai[end] ≈ 4.2129629629632985
 end

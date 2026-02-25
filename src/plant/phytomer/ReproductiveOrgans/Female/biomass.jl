@@ -29,12 +29,12 @@ end
 
 FemaleBiomass(; respiration_cost=1.44, respiration_cost_oleosynthesis=3.2) = FemaleBiomass(respiration_cost, respiration_cost_oleosynthesis)
 
-PlantSimEngine.inputs_(::FemaleBiomass) = (carbon_allocation=0.0, state="undetermined", carbon_demand=0.0, carbon_demand_non_oil=0.0, carbon_demand_oil=0.0, carbon_demand_stalk=0.0)
+PlantSimEngine.inputs_(::FemaleBiomass) = (carbon_allocation=0.0, state=:undetermined, carbon_demand=0.0, carbon_demand_non_oil=0.0, carbon_demand_oil=0.0, carbon_demand_stalk=0.0)
 PlantSimEngine.outputs_(::FemaleBiomass) = (biomass=0.0, biomass_stalk=0.0, biomass_fruits=0.0, biomass_oil=0.0, biomass_non_oil=0.0)
 
 # Applied at the Female inflorescence scale:
 function PlantSimEngine.run!(m::FemaleBiomass, models, st, meteo, constants, extra=nothing)
-    st.state == "Aborted" || st.state == "Harvested" && return # if it is aborted, no need to compute 
+    st.state == :aborted || st.state == :harvested && return # if it is aborted, no need to compute 
 
     st.carbon_allocation == 0.0 && return # no carbon allocation -> no biomass increase
     st.carbon_demand == 0.0 && return # no carbon demand -> no biomass increase
