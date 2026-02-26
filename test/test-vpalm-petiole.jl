@@ -39,7 +39,13 @@ rng = Random.MersenneTwister(1)
     mtg = Node(NodeMTG(:/, :Plant, 1, 1))
     unique_id = Ref(2)
     petiole_node = VPalm.petiole(unique_id, 1, 5, rachis_length, zenithal_insertion_angle, zenithal_cpoint_angle, parameters; rng=rng)
-    df_petiole_sections = DataFrame(petiole_node[1], [:width, :height, :length, :zenithal_angle_global, :azimuthal_angle_global])
+    df_petiole_sections = DataFrame(
+        MultiScaleTreeGraph.to_table(
+            petiole_node[1],
+            symbol=:PetioleSegment,
+            vars=[:width, :height, :length, :zenithal_angle_global, :azimuthal_angle_global]
+        )
+    )
 
     # All petiole sections have the same length:
     @test only(unique(df_petiole_sections.length)) ≈ petiole_node.length / parameters["petiole_nb_segments"]

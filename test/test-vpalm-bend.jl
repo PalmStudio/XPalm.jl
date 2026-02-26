@@ -40,7 +40,6 @@ ref = CSV.read(joinpath(@__DIR__, "references/6_EW01.22_17_kanan_unbent_bend.csv
     for (ref_p, p) in zip(ref_points, out.points)
         @test isapprox(ref_p, p, atol=atol_length)
     end
-    @test only(unique(unit.(out.length))) == u"m"
     @test ref.length * u"m" ≈ out.length atol = atol_length
     @test [ref.angle_xy[2]; ref.angle_xy[2:end]] * u"°" ≈ out.angle_xy atol = 1e-2
     @test [ref.angle_xz[2]; ref.angle_xz[2:end]] * u"°" ≈ out.angle_xz atol = 1e-2

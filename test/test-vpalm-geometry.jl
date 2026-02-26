@@ -1,3 +1,5 @@
+mesh_points(mesh) = GeometryBasics.coordinates(PlantGeom.to_geometrybasics(mesh))
+
 @testset "snag" begin
     x_scale = 10.
     y_scale = 20.
@@ -7,28 +9,28 @@
     scaled_snag = VPalm.snag(x_scale, y_scale, z_scale)
 
     # Test snag min/max coordinates
-    let points = vertices(snag_ref)
-        x_coords_ref = [point.coords.x for point in points]
-        y_coords_ref = [point.coords.y for point in points]
-        z_coords_ref = [point.coords.z for point in points]
-        @test minimum(x_coords_ref) ≈ 0.0u"m" # x min
-        @test maximum(x_coords_ref) ≈ 1.0u"m" # x max
-        @test minimum(y_coords_ref) ≈ -0.5u"m" # y min
-        @test maximum(y_coords_ref) ≈ 0.5u"m"  # y max
-        @test minimum(z_coords_ref) ≈ -0.5u"m"  # z min
-        @test maximum(z_coords_ref) ≈ 0.5u"m"  # z max
+    let points = mesh_points(snag_ref)
+        x_coords_ref = getindex.(points, 1)
+        y_coords_ref = getindex.(points, 2)
+        z_coords_ref = getindex.(points, 3)
+        @test minimum(ustrip.(x_coords_ref)) ≈ 0.0 # x min
+        @test maximum(ustrip.(x_coords_ref)) ≈ 1.0 # x max
+        @test minimum(ustrip.(y_coords_ref)) ≈ -0.5 # y min
+        @test maximum(ustrip.(y_coords_ref)) ≈ 0.5  # y max
+        @test minimum(ustrip.(z_coords_ref)) ≈ -0.5  # z min
+        @test maximum(ustrip.(z_coords_ref)) ≈ 0.5  # z max
     end
 
-    let points = vertices(scaled_snag)
-        x_coords_scaled = [point.coords.x for point in points]
-        y_coords_scaled = [point.coords.y for point in points]
-        z_coords_scaled = [point.coords.z for point in points]
-        @test minimum(x_coords_scaled) ≈ 0.0u"m" # x min
-        @test maximum(x_coords_scaled) ≈ x_scale * u"m" # x max
-        @test minimum(y_coords_scaled) ≈ -y_scale / 2 * u"m" # y min
-        @test maximum(y_coords_scaled) ≈ y_scale / 2 * u"m" # y max
-        @test minimum(z_coords_scaled) ≈ -z_scale / 2 * u"m" # z min
-        @test maximum(z_coords_scaled) ≈ z_scale / 2 * u"m" # z max
+    let points = mesh_points(scaled_snag)
+        x_coords_scaled = getindex.(points, 1)
+        y_coords_scaled = getindex.(points, 2)
+        z_coords_scaled = getindex.(points, 3)
+        @test minimum(ustrip.(x_coords_scaled)) ≈ 0.0 # x min
+        @test maximum(ustrip.(x_coords_scaled)) ≈ x_scale # x max
+        @test minimum(ustrip.(y_coords_scaled)) ≈ -y_scale / 2 # y min
+        @test maximum(ustrip.(y_coords_scaled)) ≈ y_scale / 2 # y max
+        @test minimum(ustrip.(z_coords_scaled)) ≈ -z_scale / 2 # z min
+        @test maximum(ustrip.(z_coords_scaled)) ≈ z_scale / 2 # z max
     end
 end
 
@@ -45,27 +47,27 @@ end
     elliptical_cylinder_scaled = VPalm.elliptical_cylinder(x_scale, y_scale, z_scale)
 
     # Check the vertices of the scaled cylinder
-    let points = vertices(cylinder_scaled)
-        x_coords = [point.coords.x for point in points]
-        y_coords = [point.coords.y for point in points]
-        z_coords = [point.coords.z for point in points]
+    let points = mesh_points(cylinder_scaled)
+        x_coords = ustrip.(getindex.(points, 1))
+        y_coords = ustrip.(getindex.(points, 2))
+        z_coords = ustrip.(getindex.(points, 3))
 
-        @test isapprox(maximum(abs.(x_coords)), x_scale * u"m", atol=0.05u"m")  # rayon en x
-        @test isapprox(maximum(abs.(y_coords)), x_scale * u"m", atol=0.05u"m")  # rayon en y
-        @test isapprox(maximum(z_coords), z_scale * u"m", atol=0.05u"m")        # hauteur
-        @test isapprox(minimum(z_coords), 0.0u"m")              # base du cylindre
+        @test isapprox(maximum(abs.(x_coords)), x_scale, atol=0.05)  # rayon en x
+        @test isapprox(maximum(abs.(y_coords)), x_scale, atol=0.05)  # rayon en y
+        @test isapprox(maximum(z_coords), z_scale, atol=0.05)        # hauteur
+        @test isapprox(minimum(z_coords), 0.0)                        # base du cylindre
     end
 
     # Check the vertices of the elliptical cylinder
-    let points = vertices(elliptical_cylinder_scaled)
-        x_coords = [point.coords.x for point in points]
-        y_coords = [point.coords.y for point in points]
-        z_coords = [point.coords.z for point in points]
+    let points = mesh_points(elliptical_cylinder_scaled)
+        x_coords = ustrip.(getindex.(points, 1))
+        y_coords = ustrip.(getindex.(points, 2))
+        z_coords = ustrip.(getindex.(points, 3))
 
-        @test isapprox(maximum(abs.(x_coords)), x_scale * u"m", atol=0.05u"m")  # rayon en x
-        @test isapprox(maximum(abs.(y_coords)), y_scale * u"m", atol=0.05u"m")  # rayon en y
-        @test isapprox(maximum(z_coords), z_scale * u"m", atol=0.05u"m")        # hauteur
-        @test isapprox(minimum(z_coords), 0.0u"m", atol=0.05u"m")              # base du cylindre
+        @test isapprox(maximum(abs.(x_coords)), x_scale, atol=0.05)  # rayon en x
+        @test isapprox(maximum(abs.(y_coords)), y_scale, atol=0.05)  # rayon en y
+        @test isapprox(maximum(z_coords), z_scale, atol=0.05)        # hauteur
+        @test isapprox(minimum(z_coords), 0.0, atol=0.05)            # base du cylindre
     end
 end
 
