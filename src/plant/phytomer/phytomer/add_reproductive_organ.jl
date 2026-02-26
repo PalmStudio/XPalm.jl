@@ -52,6 +52,11 @@ function PlantSimEngine.run!(m::ReproductiveOrganEmission, models, status, meteo
     PlantSimEngine.run!(sim_object.models[status.sex].initiation_age, sim_object.models[status.sex], st_repro_organ, meteo, constants, sim_object)
     PlantSimEngine.run!(sim_object.models[status.sex].final_potential_biomass, sim_object.models[status.sex], st_repro_organ, meteo, constants, sim_object)
     st_repro_organ.TT_since_init = copy(status.TT_since_init)
+    # Ensure maintenance respiration is initialized on the emission timestep:
+    # newly created organs can be exported before their process pipeline runs.
+    if hasproperty(sim_object.models[status.sex], :maintenance_respiration)
+        PlantSimEngine.run!(sim_object.models[status.sex].maintenance_respiration, sim_object.models[status.sex], st_repro_organ, meteo, constants, sim_object)
+    end
     # Note: we initialize TT_since_init to the one from the phytomer, as the parameters for development are given from the phytomer point of view.
     # This is because the reproductive organ is only instantiated when its sex is determined, but it started to grow at the same time as the phytomer.
 end

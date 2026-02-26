@@ -13,3 +13,10 @@
     sim = xpalm(meteo; vars=Dict(:Scene => (:lai,)), palm=XPalm.Palm(initiation_age=0, parameters=XPalm.default_parameters()))
     @test only(sim[:Scene][end].lai) == df[:Scene].lai[end]
 end
+
+@testset "male Rm initialized at emission" begin
+    out = xpalm(meteo, DataFrame; vars=Dict(:Male => (:Rm,)))
+    male = out[:Male]
+    first_rm_per_node = [first(g.Rm) for g in groupby(male, :node)]
+    @test all(isfinite, first_rm_per_node)
+end
