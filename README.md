@@ -111,7 +111,7 @@ meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), 
 
 # Run simulation
 df = xpalm(meteo, DataFrame;
-    vars = Dict("Scene" => (:lai,)), # Request LAI as output
+    vars = Dict(:Scene => (:lai,)), # Request LAI as output
 )
 ```
 
@@ -138,9 +138,9 @@ results = xpalm(
     meteo,
     DataFrame,
     vars = Dict(
-        "Scene" => (:lai,),
-        "Plant" => (:leaf_area, :biomass_bunch_harvested),
-        "Soil" => (:ftsw,)
+        :Scene => (:lai,),
+        :Plant => (:leaf_area, :biomass_bunch_harvested),
+        :Soil => (:ftsw,)
     ),
     palm = p,
 )
