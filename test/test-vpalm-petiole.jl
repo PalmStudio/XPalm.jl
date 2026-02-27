@@ -38,7 +38,7 @@ rng = Random.MersenneTwister(1)
 
     mtg = Node(NodeMTG(:/, :Plant, 1, 1))
     unique_id = Ref(2)
-    petiole_node = VPalm.petiole(unique_id, 1, 5, rachis_length, zenithal_insertion_angle, zenithal_cpoint_angle, parameters; rng=rng)
+    petiole_node = VPalm.petiole(unique_id, mtg, 1, 5, rachis_length, zenithal_insertion_angle, zenithal_cpoint_angle, parameters; rng=rng)
     df_petiole_sections = DataFrame(
         MultiScaleTreeGraph.to_table(
             petiole_node[1],
