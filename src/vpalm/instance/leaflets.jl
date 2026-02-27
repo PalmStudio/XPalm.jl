@@ -80,8 +80,9 @@ function create_leaflets_for_side!(
         leaflet_relative_pos = leaflets_position[i] / rachis_length
 
         # Create a single leaflet and add it as a child to the rachis section
-        leaflet_node = create_single_leaflet(
+        create_single_leaflet(
             unique_mtg_id,
+            rachis_section_node,
             i,                     # Index for node identification
             scale,                 # Scale for the leaflet
             leaf_rank,
@@ -96,14 +97,13 @@ function create_leaflets_for_side!(
             last_rank_unfolding=last_rank_unfolding, # Rank at which leaflets are fully unfolded
             rng=rng
         )
-
-        addchild!(rachis_section_node, leaflet_node)
     end
 end
 
 """
     create_single_leaflet(
         unique_mtg_id,
+        parent_node,
         index,
         scale,
         leaf_rank,
@@ -124,6 +124,7 @@ Create a single leaflet with properly computed angles, dimensions and segments.
 # Arguments
 
 - `unique_mtg_id`: Reference to the unique ID counter
+- `parent_node`: Parent node to which this leaflet will be attached, e.g. `Node(NodeMTG(:/, :RachisSegment, index, scale))`
 - `index`: Index for the leaflet node (for identification in MTG)
 - `scale`: MTG scale level for the leaflet
 - `leaf_rank`: Rank of the leaf (affects unfolding for young leaves)
@@ -144,6 +145,7 @@ The created leaflet node with all its segment children
 """
 function create_single_leaflet(
     unique_mtg_id,
+    parent_node,
     index,
     scale,
     leaf_rank,
@@ -161,6 +163,7 @@ function create_single_leaflet(
     # Create a new leaflet node with unique ID
     leaflet_node = Node(
         unique_mtg_id[],
+        parent_node,
         NodeMTG(:+, :Leaflet, index, scale),
         Dict{Symbol,Any}()
     )

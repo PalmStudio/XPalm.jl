@@ -6,7 +6,7 @@ Make a leaf petiole.
 # Arguments 
 
 - `unique_mtg_id`: a next free unique id for the MTG nodes
-- `parent_node`: the parent node on which the petiole will be attached
+- `parent_node`: the parent node on which the petiole will be attached, e.g. the leaf node `Node(NodeMTG(:+, :Leaf, index, 4))`
 - `index`: the MTG index of the petiole
 - `scale`: the MTG scale of the petiole
 - `rachis_length`: the rachis length, used to feed allometries to compute the petiole dimensions
@@ -22,8 +22,8 @@ Make a leaf petiole.
     - "petiole_rachis_ratio_sd": its standard deviation
     - "petiole_nb_segments": the number of segments used to discretize the petiole
 """
-function petiole(unique_mtg_id, index, scale, rachis_length, zenithal_insertion_angle, zenithal_cpoint_angle, parameters; rng=Random.MersenneTwister(1))
-    petiole_node = Node(unique_mtg_id[], NodeMTG(:/, :Petiole, index, scale), Dict{Symbol,Any}())
+function petiole(unique_mtg_id, parent_node, index, scale, rachis_length, zenithal_insertion_angle, zenithal_cpoint_angle, parameters; rng=Random.MersenneTwister(1))
+    petiole_node = Node(unique_mtg_id[], parent_node, NodeMTG(:/, :Petiole, index, scale), Dict{Symbol,Any}())
     unique_mtg_id[] += 1
     compute_properties_petiole!(
         petiole_node,
