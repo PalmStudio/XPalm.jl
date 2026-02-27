@@ -61,7 +61,7 @@ function create_leaflets_for_side!(
 
     # Get all rachis section nodes in preorder traversal 
     # (from base to tip, including all hierarchical levels)
-    rachis_children = descendants(rachis_node, symbol="RachisSegment") # Starting at 1 because we don't want the rachis node
+    rachis_children = descendants(rachis_node, symbol=:RachisSegment) # Starting at 1 because we don't want the rachis node
 
     for i in 1:nb_leaflets
         # Determine which rachis segment this leaflet should be attached to
@@ -80,8 +80,9 @@ function create_leaflets_for_side!(
         leaflet_relative_pos = leaflets_position[i] / rachis_length
 
         # Create a single leaflet and add it as a child to the rachis section
-        leaflet_node = create_single_leaflet(
+        create_single_leaflet(
             unique_mtg_id,
+            rachis_section_node,
             i,                     # Index for node identification
             scale,                 # Scale for the leaflet
             leaf_rank,
@@ -96,14 +97,13 @@ function create_leaflets_for_side!(
             last_rank_unfolding=last_rank_unfolding, # Rank at which leaflets are fully unfolded
             rng=rng
         )
-
-        addchild!(rachis_section_node, leaflet_node)
     end
 end
 
 """
     create_single_leaflet(
         unique_mtg_id,
+        parent_node,
         index,
         scale,
         leaf_rank,
@@ -124,6 +124,7 @@ Create a single leaflet with properly computed angles, dimensions and segments.
 # Arguments
 
 - `unique_mtg_id`: Reference to the unique ID counter
+- `parent_node`: Parent node to which this leaflet will be attached, e.g. `Node(NodeMTG(:/, :RachisSegment, index, scale))`
 - `index`: Index for the leaflet node (for identification in MTG)
 - `scale`: MTG scale level for the leaflet
 - `leaf_rank`: Rank of the leaf (affects unfolding for young leaves)
@@ -144,6 +145,7 @@ The created leaflet node with all its segment children
 """
 function create_single_leaflet(
     unique_mtg_id,
+    parent_node,
     index,
     scale,
     leaf_rank,
@@ -161,7 +163,8 @@ function create_single_leaflet(
     # Create a new leaflet node with unique ID
     leaflet_node = Node(
         unique_mtg_id[],
-        NodeMTG("+", "Leaflet", index, scale),
+        parent_node,
+        NodeMTG(:+, :Leaflet, index, scale),
         Dict{Symbol,Any}()
     )
     unique_mtg_id[] += 1
@@ -382,8 +385,8 @@ function create_leaflet_segments!(
             unique_mtg_id[],
             last_parent,
             NodeMTG(
-                j == 1 ? "/" : "<",  # First segment uses "/" edge type, others use "<" (successor)
-                "LeafletSegment",
+                j == 1 ? :/ : :<,  # First segment uses "/" edge type, others use "<" (successor)
+                :LeafletSegment,
                 j,
                 scale
             )
@@ -459,7 +462,7 @@ function update_leaflet_angles!(
     # Note: the torsion is not supposed to change over time
 
     children_leaflet = children(leaflet)
-    if length(children_leaflet) > 0 && symbol(children_leaflet[1]) == "LeafletSegment"
+    if length(children_leaflet) > 0 && symbol(children_leaflet[1]) == :LeafletSegment
         # If we have leaflet segments, we can simply update their angles:
         update_segment_angles!(leaflet, ustrip(leaflet.stiffness), deg2rad(leaflet.zenithal_angle), ustrip(leaflet.length), leaflet.tapering)
     else

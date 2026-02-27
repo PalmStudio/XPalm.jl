@@ -164,12 +164,12 @@ function update_segment_angles!(leaflet, young_modulus, initial_angle, leaflet_l
     total_deflection = final_angle(young_modulus, initial_angle, leaflet_length, tapering)
 
     # Get angles at each segment boundary
-    segment_positions = descendants(leaflet, :segment_boundaries, symbol="LeafletSegment")
+    segment_positions = descendants(leaflet, :segment_boundaries, symbol=:LeafletSegment)
     boundary_angles = zeros(length(segment_positions))
 
     # And the following ones by traversal:
     i = Ref(1)
-    traverse!(leaflet, symbol="LeafletSegment") do segment
+    traverse!(leaflet, symbol=:LeafletSegment) do segment
         if i[] == 1
             boundary_angles[i[]] = initial_angle
             segment.zenithal_angle = rad2deg(boundary_angles[i[]])

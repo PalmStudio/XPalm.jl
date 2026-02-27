@@ -4,7 +4,7 @@ module VPalm
 import Random
 
 # For managing the MTG:
-import MultiScaleTreeGraph: Node, NodeMTG, traverse!, symbol, reparent!, addchild!, descendants, delete_nodes!, new_child_link, children, new_id, scale, index, node_id
+import MultiScaleTreeGraph: Node, NodeMTG, traverse!, symbol, reparent!, descendants, delete_nodes!, new_child_link, children, new_id, scale, index, node_id
 
 # IO:
 import YAML, OrderedCollections
@@ -12,7 +12,9 @@ import YAML, OrderedCollections
 # For the 3D:
 import PlantGeom
 import Meshes
-import TransformsBase: →
+import GeometryBasics
+import CoordinateTransformations: LinearMap, Translation
+import LinearAlgebra: Diagonal
 import Rotations: RotX, RotY, RotZ, RotYZ, RotXYZ, RotZY, RotYZX, RotZYX
 import Rotations
 import PlyIO

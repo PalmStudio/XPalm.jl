@@ -72,13 +72,13 @@ function default_parameters()
                 "T_ref" => 25.0,
                 "P_alive" => 0.90,
             ),
-            "Female" => Dict(
+            :Female => Dict(
                 "Mr" => 0.0022, # Kraalingen et al. 1989, AFM (and 1985 too)
                 "Q10" => 2.1,
                 "T_ref" => 25.0,
                 "P_alive" => 0.50,
             ),
-            "Male" => Dict( ## to check 
+            :Male => Dict( ## to check 
                 "Mr" => 0.0121, # Kraalingen et al. 1989, AFM
                 "Q10" => 2.1,
                 "T_ref" => 25.0,
@@ -100,8 +100,8 @@ function default_parameters()
         #     "Stem" => 0.004,
         #     "Internode" => 0.004,
         #     "Leaf" => 0.025,
-        #     "Female" => 0.01,
-        #     "Male" => 0.01,
+        #     :Female => 0.01,
+        #     :Male => 0.01,
         #     "RootSystem" => 0.008,
         # ),
         "water" => Dict(
@@ -153,10 +153,10 @@ function default_parameters()
                 "carbon_concentration" => 0.5, # g g-1
                 "respiration_cost" => 1.44, # g g-1
             ),
-            "male" => Dict(
+            :Male => Dict(
                 "respiration_cost" => 1.44, # g g-1
             ),
-            "female" => Dict(
+            :Female => Dict(
                 "respiration_cost" => 1.44, # g g-1
                 "respiration_cost_oleosynthesis" => 3.2, # g g-1
             ),
@@ -165,7 +165,7 @@ function default_parameters()
             )
         ),
         "biomass" => Dict(
-            "male" => Dict(
+            :Male => Dict(
                 "max_biomass" => 174.852, # in carbon, so 1200g in dry mass -> 1200 x 0.4857 gC g-1 dry mass x 0.3 dry mass content (0.7 water content)
                 "fraction_biomass_first_male" => 0.3,
             ),
@@ -198,10 +198,10 @@ function default_parameters()
                 "duration_sex_determination" => 1350.0,
                 "duration_abortion" => 540.0,
             ),
-            "male" => Dict(
+            :Male => Dict(
                 "duration_flowering_male" => 1800.0,
                 "age_mature_male" => 8.0 * 365,),
-            "female" => Dict(
+            :Female => Dict(
                 "days_increase_number_fruits" => 2379, # in days
                 "days_maximum_number_fruits" => 6500,
                 "duration_fruit_setting" => 405.0,
@@ -243,19 +243,18 @@ Create a new scene with one Palm plant. The scene contains a soil, a plant, a ro
 """
 function Palm(; initiation_age=0, parameters=default_parameters(), architecture=false)
     # Parameters should be a Dict{AbstractString,Any}:
-    if !(typeof(parameters) <: Dict{AbstractString})
-        @info "`parameters` should be a Dict{AbstractString,Any}, converting using: `Dict{AbstractString,Any}(string(k) => v for (k, v) in parameters)`"
-        parameters = Dict{AbstractString,Any}(string(k) => v for (k, v) in parameters)
-    end
 
-    scene = Node(1, NodeMTG("/", "Scene", 1, 0), Dict{Symbol,Any}(),)
+    @assert parameters isa AbstractDict "`parameters` should be a subtype of `AbstractDict` (e.g. a `Dict`), but is of type $(typeof(parameters))."
+    @assert keytype(parameters) <: AbstractString "`parameters` should have `String` keys. You can convert using: `Dict{String,Any}(string(k) => v for (k, v) in parameters)`"
+
+    scene = Node(1, NodeMTG(:/, :Scene, 1, 0), Dict{Symbol,Any}(),)
     architecture && (scene.vpalm_rng = Random.MersenneTwister(parameters["vpalm"]["seed"]))
-    soil = Node(scene, NodeMTG("+", "Soil", 1, 1),)
+    soil = Node(scene, NodeMTG(:+, :Soil, 1, 1),)
 
-    plant = Node(scene, NodeMTG("+", "Plant", 1, 1), Dict{Symbol,Any}(:parameters => parameters,),)
+    plant = Node(scene, NodeMTG(:+, :Plant, 1, 1), Dict{Symbol,Any}(:parameters => parameters,),)
 
     roots = Node(
-        plant, NodeMTG("+", "RootSystem", 1, 2),
+        plant, NodeMTG(:+, :RootSystem, 1, 2),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age,
             # :depth => parameters["RL0"], # total exploration depth m
@@ -263,28 +262,28 @@ function Palm(; initiation_age=0, parameters=default_parameters(), architecture=
     )
 
     stem = Node(
-        plant, NodeMTG("+", "Stem", 1, 2),
+        plant, NodeMTG(:+, :Stem, 1, 2),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
         ),
     )
 
     phyto = Node(
-        stem, NodeMTG("/", "Phytomer", 1, 3),
+        stem, NodeMTG(:/, :Phytomer, 1, 3),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
         ),
     )
 
     internode = Node(
-        phyto, NodeMTG("/", "Internode", 1, 4),
+        phyto, NodeMTG(:/, :Internode, 1, 4),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
         ),
     )
 
     leaf = Node(
-        internode, NodeMTG("+", "Leaf", 1, 4),
+        internode, NodeMTG(:+, :Leaf, 1, 4),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
         ),
