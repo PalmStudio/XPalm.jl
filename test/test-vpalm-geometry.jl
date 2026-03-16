@@ -75,13 +75,12 @@ end
     mtg = VPalm.mtg_skeleton(vpalm_parameters)
     refmesh_cylinder = PlantGeom.RefMesh("cylinder", PlantGeom.to_geometrybasics(VPalm.cylinder()))
     refmesh_snag = PlantGeom.RefMesh("Snag", PlantGeom.to_geometrybasics(VPalm.snag()))
-    refmesh_plane = PlantGeom.RefMesh("Plane", PlantGeom.to_geometrybasics(VPalm.plane()))
-    VPalm.add_geometry!(mtg, refmesh_cylinder, refmesh_snag, refmesh_plane)
+    VPalm.add_geometry!(mtg, refmesh_cylinder, refmesh_snag)
 
     internode_id = findfirst(i -> symbol(get_node(mtg, i)) == :Internode, 1:length(mtg))
     @test internode_id !== nothing
     internode = get_node(mtg, internode_id)
-    VPalm.add_geometry!(internode, refmesh_cylinder, refmesh_snag, refmesh_plane)
+    VPalm.add_geometry!(internode, refmesh_cylinder, refmesh_snag)
 
     t = internode.geometry.transformation
     p0 = t(GeometryBasics.Point{3,Float64}(0.0, 0.0, 0.0))
