@@ -127,7 +127,7 @@ function PlantSimEngine.run!(model::LeafGeometryModel, models, status, meteo, co
         status.graph_node_count += 1
         build_leaf(unique_mtg_id, i, leaf, biomass_leaf, vpalm_params; rng=model.rng)
     elseif update_in_rank
-        update_leaf!(leaf, biomass_leaf, vpalm_params; unique_mtg_id=unique_mtg_id, rng=model.rng)
+        update_leaf!(leaf, biomass_leaf, vpalm_params; rng=model.rng)
     end
 
     status.is_reconstructed = true
@@ -170,7 +170,7 @@ function build_leaf(unique_mtg_id, i, leaf, biomass_leaf, parameters; rng)
 end
 
 
-function update_leaf!(leaf, biomass_leaf, parameters; unique_mtg_id=Ref(new_id(leaf)), rng)
+function update_leaf!(leaf, biomass_leaf, parameters; rng)
     petiole = leaf[1]
     petiole.zenithal_insertion_angle = 90.0u"°" - leaf.zenithal_insertion_angle
     petiole.zenithal_cpoint_angle = 90.0u"°" - leaf.zenithal_cpoint_angle
@@ -184,7 +184,7 @@ function update_leaf!(leaf, biomass_leaf, parameters; unique_mtg_id=Ref(new_id(l
     traverse!(rachis, symbol=:Leaflet) do leaflet
         VPalm.update_leaflet_angles!(
             leaflet, leaf.rank;
-            last_rank_unfolding=2, unique_mtg_id=unique_mtg_id,
+            last_rank_unfolding=2,
             xm_intercept=parameters["leaflet_xm_intercept"], xm_slope=parameters["leaflet_xm_slope"],
             ym_intercept=parameters["leaflet_ym_intercept"], ym_slope=parameters["leaflet_ym_slope"]
         )

@@ -56,10 +56,10 @@ end
     traverse!(mtg_geom) do node
         nb_symbols_mtg_geom[symbol(node)] += 1
     end
-    # we remove the LeafletSegment nodes in the geometry mockup, as it slows the rendering
-    @test delete!(nb_symbols_mtg, :LeafletSegment) == nb_symbols_mtg_geom
-    @test length(mtg) == 92474
+    @test nb_symbols_mtg == nb_symbols_mtg_geom
+    @test length(mtg) == 20994
     @test length(mtg_geom) == 20994
+    @test isempty(descendants(mtg_geom, symbol=:LeafletSegment))
 
     @test_reference "references/palm_mockup.png" plot_mockup(vpalm_parameters) # delete the file and re-execute interactively to update the reference image
 end

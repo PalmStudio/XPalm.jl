@@ -7,8 +7,8 @@ Construct a mockup of an oil palm plant architecture using the specified paramet
 
 - `parameters::Dict`: Dictionary containing model parameters for the oil palm plant architecture.
 - `merge_scale::Symbol`: (optional) The scale at which to merge geometry.
-    - `:node`: Geometry is not merged, each node has its own mesh (finer scale is leaflet segments).
-    - `:leaflet` (default): Geometry is merged at the leaflet level.
+    - `:none`: Geometry is not merged, each node has its own mesh (finer scale is leaflets).
+    - `:leaflet` (default): Geometry is kept at the leaflet level.
     - `:leaf`: All geometry for a leaf is merged into a single mesh.
     - `:plant`: All plant geometry is merged into a single mesh.
 - `rng`: (optional) A random number generator for stochastic processes. Defaults to a Mersenne Twister seeded with the value in `parameters["seed"]`. If set to `nothing`, randomness is disabled (useful for testing).
@@ -47,13 +47,12 @@ function build_mockup(parameters; merge_scale=:leaflet, rng=Random.MersenneTwist
     add_geometry!(mtg, refmesh_cylinder, refmesh_snag, refmesh_plane)
 
     if merge_scale == :leaflet
-        # Merge leaflets segments geometry into the leaflets:
-        PlantGeom.merge_children_geometry!(mtg; from=:LeafletSegment, into=:Leaflet, child_link_fun=child_link_fun_no_warning)
+        # Geometry is already attached directly to each leaflet.
     elseif merge_scale == :leaf
-        PlantGeom.merge_children_geometry!(mtg; from=[:PetioleSegment, :RachisSegment, :LeafletSegment], into=:Leaf, child_link_fun=child_link_fun_no_warning, verbose=false)
+        PlantGeom.merge_children_geometry!(mtg; from=[:PetioleSegment, :RachisSegment, :Leaflet], into=:Leaf, child_link_fun=child_link_fun_no_warning, verbose=false)
         delete_nodes!(mtg, symbol=[:Rachis, :Petiole, :Leaflet], child_link_fun=child_link_fun_no_warning)
     elseif merge_scale == :plant
-        PlantGeom.merge_children_geometry!(mtg; from=[:Stem, :Leaf, :PetioleSegment, :RachisSegment, :LeafletSegment], into=:Plant, child_link_fun=child_link_fun_no_warning, verbose=false)
+        PlantGeom.merge_children_geometry!(mtg; from=[:Stem, :Leaf, :PetioleSegment, :RachisSegment, :Leaflet], into=:Plant, child_link_fun=child_link_fun_no_warning, verbose=false)
         delete_nodes!(mtg, symbol=[:Rachis, :Petiole, :Leaflet], child_link_fun=child_link_fun_no_warning)
     end
     return mtg

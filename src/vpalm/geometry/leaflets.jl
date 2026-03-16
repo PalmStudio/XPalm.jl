@@ -10,7 +10,7 @@
         refmesh_plane
     )
 
-Create the leaflet geometry based on its segments.
+Create the leaflet geometry based on its stored segment profile.
 
 # Arguments
 - `leaflet_node`: The MTG node of the leaflet
@@ -23,8 +23,12 @@ Create the leaflet geometry based on its segments.
 - `refmesh_plane`: Reference mesh used for the planar leaflet segments
 
 # Returns
-- Nothing (the geometry is added directly to the leaflet node and its segments)
+- Nothing (the geometry is added directly to the leaflet node)
 """
+_segment_width(segment) = segment isa NamedTuple ? segment.width : segment["width"]
+_segment_length(segment) = segment isa NamedTuple ? segment.length : segment["length"]
+_segment_angle_deg(segment) = segment isa NamedTuple ? segment.zenithal_angle : segment["zenithal_angle"]
+
 function add_leaflet_geometry!(
     leaflet_node,
     internode_width,
@@ -60,15 +64,21 @@ function add_leaflet_geometry!(
         )
     )
 
+    segments = [(
+        width=leaflet_node[:leaflet_segment_widths][i],
+        length=leaflet_node[:leaflet_segment_lengths][i],
+        zenithal_angle=leaflet_node[:leaflet_segment_angles_deg][i],
+    ) for i in eachindex(leaflet_node[:leaflet_segment_lengths])]
+    merged_meshes = GeometryBasics.AbstractMesh[]
+
     # Process each leaflet segment
-    traverse!(leaflet_node, symbol=:LeafletSegment) do segment
-        # Get segment properties
-        leaflet_segment_width = segment["width"]
-        leaflet_segment_length = segment["length"]
+    for segment in segments
+        leaflet_segment_width = _segment_width(segment)
+        leaflet_segment_length = _segment_length(segment)
         # Apply stiffness angle if available (segment bending due to weight)
         # Calculate the absolute angle of this segment by adding the stiffness angle to previous segment angle
         # segment_angle += side * deg2rad(segment["zenithal_angle"])
-        segment_angle = deg2rad(segment["zenithal_angle"])
+        segment_angle = deg2rad(_segment_angle_deg(segment))
         # segment_angle += deg2rad(15.0)
         # Rotation matrix for the section
         rot = RotZYX(h_angle, segment_angle, torsion)
@@ -85,8 +95,7 @@ function add_leaflet_geometry!(
             # Note: we use 1e-6 for the leaflet thickness because it's a plane so it's not really used, but we still need a non-zero value for scaling
             _scale(leaflet_segment_length, 1e-6, leaflet_segment_width)
 
-        # Assign geometry to the segment
-        segment.geometry = PlantGeom.Geometry(ref_mesh=refmesh_plane, transformation=mesh_transformation)
+        push!(merged_meshes, PlantGeom.geometry_to_mesh(PlantGeom.Geometry(ref_mesh=refmesh_plane, transformation=mesh_transformation)))
 
         # Update position using the rotation matrix directly
         # Create direction vector along X axis (rachis direction)
@@ -101,6 +110,9 @@ function add_leaflet_geometry!(
             position_section[][3] + rotated_direction[3],
         )
     end
+
+    leaflet_refmesh = PlantGeom.RefMesh("Leaflet$(node_id(leaflet_node))", PlantGeom._merge_meshes(merged_meshes))
+    leaflet_node.geometry = PlantGeom.Geometry(ref_mesh=leaflet_refmesh)
 
     return nothing
 end
