@@ -1,18 +1,18 @@
 pas = 0.4u"m"
 points = [
-    Meshes.Point(0.0006586895, 0.0, 0.0),
-    Meshes.Point(0.8833025660, 0.0, 1.0089883928),
-    Meshes.Point(1.7659464426, 0.0, 2.0172243707),
-    Meshes.Point(2.2731373269, 0.0, 2.5965838506),
-    Meshes.Point(2.7803282112, 0.0, 3.1759433304)
+    GeometryBasics.Point{3,typeof(1.0u"m")}(0.0006586895u"m", 0.0u"m", 0.0u"m"),
+    GeometryBasics.Point{3,typeof(1.0u"m")}(0.8833025660u"m", 0.0u"m", 1.0089883928u"m"),
+    GeometryBasics.Point{3,typeof(1.0u"m")}(1.7659464426u"m", 0.0u"m", 2.0172243707u"m"),
+    GeometryBasics.Point{3,typeof(1.0u"m")}(2.2731373269u"m", 0.0u"m", 2.5965838506u"m"),
+    GeometryBasics.Point{3,typeof(1.0u"m")}(2.7803282112u"m", 0.0u"m", 3.1759433304u"m")
 ]
 
 round_mm(x) = round.(typeof(1u"mm"), x)
 @testset "interp_points" begin
     out = VPalm.interp_points(points, pas)
-    vec_x = [coords(p).x for p in out.points] |> round_mm
-    vec_y = [coords(p).y for p in out.points] |> round_mm
-    vec_z = [coords(p).z for p in out.points] |> round_mm
+    vec_x = [p[1] for p in out.points] |> round_mm
+    vec_y = [p[2] for p in out.points] |> round_mm
+    vec_z = [p[3] for p in out.points] |> round_mm
     @test vec_x == [0, 253, 506, 758, 1011, 1264, 1516, 1769, 2022, 2275, 2528, 2780]u"mm"
     @test vec_y == repeat([0.0u"mm"], 12)
     @test vec_z == [0, 288, 577, 866, 1155, 1444, 1732, 2021, 2310, 2598, 2887, 3176]u"mm"

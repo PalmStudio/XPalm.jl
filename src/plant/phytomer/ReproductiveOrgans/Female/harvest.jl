@@ -1,7 +1,7 @@
 
 struct BunchHarvest <: AbstractHarvestModel end
 
-PlantSimEngine.inputs_(::BunchHarvest) = (state="undetermined", biomass=-Inf, biomass_stalk=-Inf, biomass_fruits=-Inf, biomass_oil=-Inf, fruits_number=-9999, final_potential_oil_biomass=-Inf)
+PlantSimEngine.inputs_(::BunchHarvest) = (state=:undetermined, biomass=-Inf, biomass_stalk=-Inf, biomass_fruits=-Inf, biomass_oil=-Inf, fruits_number=-9999, final_potential_oil_biomass=-Inf)
 PlantSimEngine.outputs_(::BunchHarvest) = (
     biomass_bunch_harvested=0.0, biomass_stalk_harvested=0.0, biomass_fruit_harvested=0.0, biomass_oil_harvested=0.0,
     is_harvested=false, biomass_bunch_harvested_cum=0.0, biomass_oil_harvested_cum=0.0, litter=0.0, biomass_oil_harvested_potential=0.0,
@@ -10,7 +10,7 @@ PlantSimEngine.outputs_(::BunchHarvest) = (
 
 # Applied at the Female inflorescence scale:
 function PlantSimEngine.run!(m::BunchHarvest, models, st, meteo, constants, extra=nothing)
-    if st.state == "Harvested" && st.is_harvested == false
+    if st.state == :harvested && st.is_harvested == false
         st.biomass_bunch_harvested = st.biomass
         st.biomass_stalk_harvested = st.biomass_stalk
         st.biomass_fruit_harvested = copy(st.biomass_fruits)
@@ -27,7 +27,7 @@ function PlantSimEngine.run!(m::BunchHarvest, models, st, meteo, constants, extr
         st.biomass_non_oil = 0.0
         st.is_harvested = true
         st.fruits_number = 0
-    elseif st.state == "Aborted" && st.is_harvested == false
+    elseif st.state == :aborted && st.is_harvested == false
         st.litter = st.biomass
         st.biomass_bunch_harvested_cum = 0.0
         st.biomass_oil_harvested_cum = 0.0

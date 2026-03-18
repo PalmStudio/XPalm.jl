@@ -4,17 +4,17 @@
 Interpolate points along a path to have equidistant points.
 
 # Arguments
-- `points`: Vector of Meshes.Point objects defining the original path.
+- `points`: Vector of `GeometryBasics.Point{3}` objects defining the original path.
 - `step`: Distance between interpolated points.
 
 # Returns
-- `vec_points`: Vector of interpolated Meshes.Point objects.
+- `vec_points`: Vector of interpolated `GeometryBasics.Point{3}` objects.
 - `i_discret_pts_exp`: Indices of the original points in the interpolated path.
 - `vec_dist_p2p1`: Vector of distances between consecutive points.
 - `vec_angle_xy`: Vector of angles between segments and the XY plane.
 - `vec_angle_xz`: Vector of angles between segments and the XZ plane.
 """
-function interp_points(points::AbstractVector{P}, step) where P<:Meshes.Point
+function interp_points(points::AbstractVector{P}, step) where P<:GeometryBasics.Point
     n_points_exp = length(points)
 
     # Calculate the distances and angles of the original path
@@ -47,7 +47,7 @@ function interp_points(points::AbstractVector{P}, step) where P<:Meshes.Point
         end
 
         # Get the start and end points for this segment
-        p1 = i == 1 ? Meshes.Point(zero_distance, zero_distance, zero_distance) : points[i-1]
+        p1 = i == 1 ? GeometryBasics.Point{3,typeof(zero_distance)}(zero_distance, zero_distance, zero_distance) : points[i-1]
         p2 = points[i]
 
         # Calculate the segment vector
@@ -66,10 +66,10 @@ function interp_points(points::AbstractVector{P}, step) where P<:Meshes.Point
                 vec_points[j] = p1 + segment_vector * rel_pos
             else
                 # Calculate the displacement vector
-                displacement = Meshes.Point(rel_pos * dist_p2p1[i], zero_distance, zero_distance)
+                displacement = GeometryBasics.Vec{3,typeof(zero_distance)}(rel_pos * dist_p2p1[i], zero_distance, zero_distance)
 
                 # Apply rotation to the displacement
-                rotated_displacement = rotation * Meshes.to(displacement)
+                rotated_displacement = rotation * displacement
 
                 # Apply the rotated displacement to the segment start point
                 vec_points[j] = p1 + rotated_displacement

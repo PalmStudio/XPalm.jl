@@ -111,7 +111,7 @@ meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), 
 
 # Run simulation
 df = xpalm(meteo, DataFrame;
-    vars = Dict("Scene" => (:lai,)), # Request LAI as output
+    vars = Dict(:Scene => (:lai,)), # Request LAI as output
 )
 ```
 
@@ -138,9 +138,9 @@ results = xpalm(
     meteo,
     DataFrame,
     vars = Dict(
-        "Scene" => (:lai,),
-        "Plant" => (:leaf_area, :biomass_bunch_harvested),
-        "Soil" => (:ftsw,)
+        :Scene => (:lai,),
+        :Plant => (:leaf_area, :biomass_bunch_harvested),
+        :Soil => (:ftsw,)
     ),
     palm = p,
 )
@@ -210,15 +210,15 @@ file = joinpath(dirname(dirname(pathof(XPalm))), "test", "references", "vpalm-pa
 parameters = read_parameters(file)
 mtg = build_mockup(parameters; merge_scale=:leaflet)
 traverse!(mtg) do node
-    if symbol(node) == "Petiole"
-        petiole_and_rachis_segments = descendants(node, symbol=["PetioleSegment", "RachisSegment"])
+    if symbol(node) == :Petiole
+        petiole_and_rachis_segments = descendants(node, symbol=[:PetioleSegment, :RachisSegment])
         colormap = cgrad([colorant"peachpuff4", colorant"blanchedalmond"], length(petiole_and_rachis_segments), scale=:log2)
         for (i, seg) in enumerate(petiole_and_rachis_segments)
             seg[:color_type] = colormap[i]
         end
-    elseif symbol(node) == "Leaflet"
+    elseif symbol(node) == :Leaflet
         node[:color_type] = :mediumseagreen
-    elseif symbol(node) == "Leaf" # This will color the snags
+    elseif symbol(node) == :Leaf # This will color the snags
         node[:color_type] = :peachpuff4
     end
 end
@@ -227,7 +227,7 @@ save("palm_mockup.png", f, size=(1200, 800), px_per_unit=3, update=false)
 ```
 </details>
 
-Note that the MTG is built with the following scales: `["Plant", "Stem", "Phytomer", "Internode", "Leaf", "Petiole", "PetioleSegment", "Rachis", "RachisSegment", "Leaflet", "LeafletSegment"]`.
+Note that the MTG is built with the following scales: `[:Plant, :Stem, :Phytomer, :Internode, :Leaf, :Petiole, :PetioleSegment, :Rachis, :RachisSegment, :Leaflet, :LeafletSegment]`.
 
 ## Funding
 

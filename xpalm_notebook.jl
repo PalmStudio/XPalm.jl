@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.6
+# v0.20.21
 
 using Markdown
 using InteractiveUtils
@@ -22,7 +22,8 @@ begin
     # activate a temporary environment
     Pkg.activate(mktempdir())
     Pkg.add([
-        Pkg.PackageSpec(url="https://github.com/PalmStudio/XPalm.jl", rev="main"),
+		Pkg.PackageSpec(url="https://github.com/VirtualPlantLab/PlantSimEngine.jl", rev="multiple-timesteps-take-3"),
+        Pkg.PackageSpec(url="https://github.com/PalmStudio/XPalm.jl", rev="PSe-with-multirate"),
         Pkg.PackageSpec(name="CairoMakie"),
         Pkg.PackageSpec(name="AlgebraOfGraphics"),
         Pkg.PackageSpec(name="PlantMeteo"),
@@ -150,7 +151,7 @@ end
 )
 
 # ╔═╡ 9bdd9351-c883-492f-adcc-062537fb9ecc
-variables_dict = filter(x -> length(last(x)) > 0, Dict{Symbol,Any}(zip(string.(keys(variables)), [(i...,) for i in values(variables)])))
+variables_dict = filter(x -> length(last(x)) > 0, Dict{Symbol,Any}(zip(keys(variables), [(i...,) for i in values(variables)])));
 
 # ╔═╡ 8bc0ac37-e34e-469b-9346-0231aa28be63
 df = let
@@ -243,7 +244,7 @@ end
 # ╠═73f8cf85-cb03-444e-bf9e-c65363e9ffb8
 # ╟─9ec6a0fc-cbe2-4710-a366-6d78173d0379
 # ╟─8bc0ac37-e34e-469b-9346-0231aa28be63
-# ╟─bde1793e-983a-47e4-94a6-fbbe53fe72d6
+# ╠═bde1793e-983a-47e4-94a6-fbbe53fe72d6
 # ╟─9bdd9351-c883-492f-adcc-062537fb9ecc
 # ╟─a8c2f2f2-e016-494d-9f7b-c445c62b0810
 # ╟─d6b7618a-c48e-404a-802f-b13c98257308

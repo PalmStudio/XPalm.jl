@@ -23,18 +23,18 @@ end
 
 MaleBiomass(; respiration_cost=1.44) = MaleBiomass(respiration_cost)
 
-PlantSimEngine.inputs_(::MaleBiomass) = (carbon_allocation=-Inf, state="undetermined")
+PlantSimEngine.inputs_(::MaleBiomass) = (carbon_allocation=-Inf, state=:undetermined)
 PlantSimEngine.outputs_(::MaleBiomass) = (biomass=0.0, litter_male=0.0,)
 
 # Applied at the male inflorescence scale:
 function PlantSimEngine.run!(m::MaleBiomass, models, st, meteo, constants, extra=nothing)
 
-    if st.state == "Aborted"
+    if st.state == :aborted
         st.biomass = 0.0
         return # if it is aborted, no biomass, because it is done before flowering
     end
 
-    if st.state == "Harvested" || st.state == "Senescent"
+    if st.state == :harvested || st.state == :senescent
         st.litter_male = copy(st.biomass)
         st.biomass = 0.0
         return # if it is aborted, no biomass

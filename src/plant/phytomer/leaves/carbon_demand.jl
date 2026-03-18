@@ -28,11 +28,11 @@ struct LeafCarbonDemandModelPotentialArea{T} <: AbstractCarbon_DemandModel
     leaflets_biomass_contribution::T
 end
 
-PlantSimEngine.inputs_(::LeafCarbonDemandModelPotentialArea) = (increment_potential_area=-Inf, state="undetermined")
+PlantSimEngine.inputs_(::LeafCarbonDemandModelPotentialArea) = (increment_potential_area=-Inf, state=:undetermined)
 PlantSimEngine.outputs_(::LeafCarbonDemandModelPotentialArea) = (carbon_demand=0.0,)
 
 function PlantSimEngine.run!(m::LeafCarbonDemandModelPotentialArea, models, status, meteo, constants, extra=nothing)
-    if status.state == "Pruned" #! No need for that no? `increment_potential_area` should be 0.0 when the leaf is mature
+    if status.state == :pruned #! No need for that no? `increment_potential_area` should be 0.0 when the leaf is mature
         status.carbon_demand = zero(eltype(status.carbon_demand))
         return nothing
     else

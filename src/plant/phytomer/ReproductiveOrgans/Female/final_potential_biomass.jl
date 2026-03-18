@@ -38,7 +38,7 @@ using MultiScaleTreeGraph
 using XPalm
 using XPalm.Models 
 
-node = Node(NodeMTG("/", "Plant", 1, 1))
+node = Node(NodeMTG(:/, :Plant, 1, 1))
 pot_model = FemaleFinalPotentialFruits(8.0 * 365, 0.3, 2000.0, 6.5, 2100.0)
 
 m = ModelList(

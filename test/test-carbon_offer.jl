@@ -1,5 +1,5 @@
 @testset "CarbonOfferRm" begin
-    m = ModelList(
+    m = ModelMapping(
         biomass=CarbonOfferRm(),
         status=(carbon_assimilation=10.0, Rm=2.0)
     )

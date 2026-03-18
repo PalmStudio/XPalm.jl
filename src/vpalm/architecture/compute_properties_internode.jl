@@ -37,16 +37,16 @@ using Unitful
 parameters = VPalm.default_parameters()
 nb_internodes = parameters["nb_leaves_emitted"] + parameters["nb_internodes_before_planting"] # The number of internodes emitted since the seed
 # Plant / Scale 1
-plant = Node(NodeMTG("/", "Plant", 1, 1))
+plant = Node(NodeMTG(:/, :Plant, 1, 1))
 # Stem (& Roots) / Scale 2
-stem = Node(plant, NodeMTG("+", "Stem", 1, 2))
+stem = Node(plant, NodeMTG(:+, :Stem, 1, 2))
 compute_properties_stem!(stem, parameters, 3.0u"m"; rng=rng)
 stem_height = stem[:stem_height]
 stem_diameter = stem[:stem_diameter]
 # Phytomer / Scale 3
-phytomer = Node(stem, NodeMTG("/", "Phytomer", 1, 3))
+phytomer = Node(stem, NodeMTG(:/, :Phytomer, 1, 3))
 # Internode & Leaf / Scale 4
-internode = Node(phytomer, NodeMTG("/", "Internode", 1, 4))
+internode = Node(phytomer, NodeMTG(:/, :Internode, 1, 4))
 compute_properties_internode!(internode, 1, nb_internodes, stem_height, stem_diameter, parameters, rng)
 ```
 """

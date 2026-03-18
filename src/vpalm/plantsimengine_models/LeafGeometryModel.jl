@@ -80,7 +80,7 @@ function PlantSimEngine.run!(model::LeafGeometryModel, models, status, meteo, co
     internode = phytomer[1]
     leaf = internode[1]
 
-    if status.state == "Pruned"
+    if status.state == :pruned
         leaf.is_alive = false # This is used in the reconstruction for putting snags
         return nothing
     end
@@ -88,7 +88,7 @@ function PlantSimEngine.run!(model::LeafGeometryModel, models, status, meteo, co
     # Get the unique MTG ID
     unique_mtg_id = PlantSimEngine.refvalue(status, :graph_node_count)
 
-    symbol(leaf) != "Leaf" && error("Expected leaf node, got $(symbol(leaf))")
+    symbol(leaf) != :Leaf && error("Expected leaf node, got $(symbol(leaf))")
 
     leaf.plantsimengine_status.biomass <= 0.0 && return nothing # No biomass, no geometry
     biomass_leaf = uconvert(u"kg", leaf.plantsimengine_status.biomass * u"g")
@@ -127,7 +127,7 @@ function PlantSimEngine.run!(model::LeafGeometryModel, models, status, meteo, co
         status.graph_node_count += 1
         build_leaf(unique_mtg_id, i, leaf, biomass_leaf, vpalm_params; rng=model.rng)
     elseif update_in_rank
-        update_leaf!(leaf, biomass_leaf, vpalm_params; unique_mtg_id=unique_mtg_id, rng=model.rng)
+        update_leaf!(leaf, biomass_leaf, vpalm_params; rng=model.rng)
     end
 
     status.is_reconstructed = true
@@ -139,18 +139,17 @@ end
 function build_leaf(unique_mtg_id, i, leaf, biomass_leaf, parameters; rng)
     # Build the petiole
     petiole_node = petiole(
-        unique_mtg_id, i, 5,
+        unique_mtg_id, leaf, i, 5,
         leaf.rachis_length,
         leaf.zenithal_insertion_angle,
         leaf.zenithal_cpoint_angle,
         parameters;
         rng=rng
     )
-    addchild!(leaf, petiole_node)
 
     # Build the rachis
     rachis_node = rachis(
-        unique_mtg_id, i, 5, leaf.plantsimengine_status.rank,
+        unique_mtg_id, petiole_node, i, 5, leaf.plantsimengine_status.rank,
         leaf.rachis_length,
         petiole_node.height_cpoint,
         petiole_node.width_cpoint,
@@ -159,7 +158,6 @@ function build_leaf(unique_mtg_id, i, leaf, biomass_leaf, parameters; rng)
         parameters;
         rng=rng
     )
-    addchild!(petiole_node, rachis_node)
 
     # Add the leaflets to the rachis
     leaflets!(
@@ -172,7 +170,7 @@ function build_leaf(unique_mtg_id, i, leaf, biomass_leaf, parameters; rng)
 end
 
 
-function update_leaf!(leaf, biomass_leaf, parameters; unique_mtg_id=Ref(new_id(leaf)), rng)
+function update_leaf!(leaf, biomass_leaf, parameters; rng)
     petiole = leaf[1]
     petiole.zenithal_insertion_angle = 90.0u"°" - leaf.zenithal_insertion_angle
     petiole.zenithal_cpoint_angle = 90.0u"°" - leaf.zenithal_cpoint_angle
@@ -183,10 +181,10 @@ function update_leaf!(leaf, biomass_leaf, parameters; unique_mtg_id=Ref(new_id(l
 
     VPalm.update_rachis_angles!(rachis, leaf.rank, leaf.rachis_length, petiole.height_cpoint, petiole.width_cpoint, leaf.zenithal_cpoint_angle, biomass_leaf, parameters; rng)
 
-    traverse!(rachis, symbol="Leaflet") do leaflet
+    traverse!(rachis, symbol=:Leaflet) do leaflet
         VPalm.update_leaflet_angles!(
             leaflet, leaf.rank;
-            last_rank_unfolding=2, unique_mtg_id=unique_mtg_id,
+            last_rank_unfolding=2,
             xm_intercept=parameters["leaflet_xm_intercept"], xm_slope=parameters["leaflet_xm_slope"],
             ym_intercept=parameters["leaflet_ym_intercept"], ym_slope=parameters["leaflet_ym_slope"]
         )
