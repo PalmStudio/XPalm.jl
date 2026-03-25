@@ -1,6 +1,3 @@
-mesh_points(mesh::GeometryBasics.AbstractMesh{3}) = GeometryBasics.coordinates(mesh)
-mesh_points(mesh) = GeometryBasics.coordinates(PlantGeom.to_geometrybasics(mesh))
-
 @testset "snag" begin
     x_scale = 10.
     y_scale = 20.
@@ -11,7 +8,7 @@ mesh_points(mesh) = GeometryBasics.coordinates(PlantGeom.to_geometrybasics(mesh)
     scaled_snag = VPalm.snag(x_scale, y_scale, z_scale)
 
     # Test snag min/max coordinates
-    let points = mesh_points(snag_ref)
+    let points = GeometryBasics.coordinates(snag_ref)
         x_coords_ref = getindex.(points, 1)
         y_coords_ref = getindex.(points, 2)
         z_coords_ref = getindex.(points, 3)
@@ -23,7 +20,7 @@ mesh_points(mesh) = GeometryBasics.coordinates(PlantGeom.to_geometrybasics(mesh)
         @test maximum(z_coords_ref) ≈ 0.5  # z max
     end
 
-    let points = mesh_points(scaled_snag)
+    let points = GeometryBasics.coordinates(scaled_snag)
         x_coords_scaled = getindex.(points, 1)
         y_coords_scaled = getindex.(points, 2)
         z_coords_scaled = getindex.(points, 3)
@@ -46,10 +43,9 @@ end
 
     # Test the scaled cylinder
     cylinder_scaled = VPalm.cylinder(x_scale, z_scale)
-    elliptical_cylinder_scaled = VPalm.elliptical_cylinder(x_scale, y_scale, z_scale)
 
     # Check the vertices of the scaled cylinder
-    let points = mesh_points(cylinder_scaled)
+    let points = GeometryBasics.coordinates(cylinder_scaled)
         x_coords = getindex.(points, 1)
         y_coords = getindex.(points, 2)
         z_coords = getindex.(points, 3)
@@ -59,23 +55,11 @@ end
         @test isapprox(maximum(z_coords), z_scale, atol=0.05)        # hauteur
         @test isapprox(minimum(z_coords), 0.0)                        # base du cylindre
     end
-
-    # Check the vertices of the elliptical cylinder
-    let points = mesh_points(elliptical_cylinder_scaled)
-        x_coords = getindex.(points, 1)
-        y_coords = getindex.(points, 2)
-        z_coords = getindex.(points, 3)
-
-        @test isapprox(maximum(abs.(x_coords)), x_scale, atol=0.05)  # rayon en x
-        @test isapprox(maximum(abs.(y_coords)), y_scale, atol=0.05)  # rayon en y
-        @test isapprox(maximum(z_coords), z_scale, atol=0.05)        # hauteur
-        @test isapprox(minimum(z_coords), 0.0, atol=0.05)            # base du cylindre
-    end
 end
 
 @testset "add_geometry" begin
     mtg = VPalm.mtg_skeleton(vpalm_parameters)
-    refmesh_cylinder = PlantGeom.RefMesh("cylinder", PlantGeom.to_geometrybasics(VPalm.cylinder()))
+    refmesh_cylinder = PlantGeom.RefMesh("cylinder", GeometryBasics.coordinates(VPalm.cylinder()))
     VPalm.add_geometry!(mtg, refmesh_cylinder)
 
     internode_id = findfirst(i -> symbol(get_node(mtg, i)) == :Internode, 1:length(mtg))

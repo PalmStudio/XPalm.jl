@@ -40,7 +40,7 @@ function build_mockup(parameters; merge_scale=:leaflet, rng=Random.MersenneTwist
 
     # Compute the geometry of the mtg
     # Note: we could do this at the same time than the architecture, but it is separated here for clarity. The downside is that we traverse the mtg twice, but it is pretty cheap.
-    refmesh_cylinder = PlantGeom.RefMesh("cylinder", PlantGeom.to_geometrybasics(VPalm.cylinder()))
+    refmesh_cylinder = PlantGeom.RefMesh("cylinder", GeometryBasics.coordinates(VPalm.cylinder()))
 
     add_geometry!(mtg, refmesh_cylinder)
 
