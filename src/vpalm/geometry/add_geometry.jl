@@ -1,6 +1,6 @@
 """
     add_geometry!(
-        mtg, refmesh_cylinder, refmesh_snag;
+        mtg, refmesh_cylinder;
         snag_width=0.20u"m", # see defaultOrthotropyAttribute in the trunk in the java implementation
         snag_height=0.15u"m",
         snag_length=3.0u"m",
@@ -19,7 +19,7 @@ _rotate(rot) = LinearMap(rot)
 function add_geometry!(
     mtg,
     refmesh_cylinder,
-    refmesh_snag;
+    refmesh_snag=nothing;
     snag_width=0.20u"m", # see defaultOrthotropyAttribute in the trunk in the java implementation
     snag_height=0.15u"m",
     snag_length=0.1u"m",
@@ -49,14 +49,14 @@ function add_geometry!(
             internode_height += node.length
         elseif symbol(node) == :Leaf
             if !node.is_alive
-                # Dead leaf, we keep the snag only
+                # Dead leaves keep a procedural snag geometry, as in the Java version.
                 mesh_transformation =
                     _rotate(RotY(deg2rad(stem_bending))) ∘
                     _rotate(RotZ(deg2rad(snag_rotation))) ∘
                     _translate(internode_width, 0.0u"m", internode_height) ∘
                     _rotate(RotY(snag_insertion_angle)) ∘
                     _scale(snag_length, snag_width, snag_height)
-                node.geometry = PlantGeom.Geometry(ref_mesh=refmesh_snag, transformation=mesh_transformation)
+                node.geometry = snag_geometry(transformation=mesh_transformation)
             else
                 nothing
             end

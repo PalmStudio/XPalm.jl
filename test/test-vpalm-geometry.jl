@@ -1,9 +1,11 @@
+mesh_points(mesh::GeometryBasics.AbstractMesh{3}) = GeometryBasics.coordinates(mesh)
 mesh_points(mesh) = GeometryBasics.coordinates(PlantGeom.to_geometrybasics(mesh))
 
 @testset "snag" begin
     x_scale = 10.
     y_scale = 20.
     z_scale = 30.
+    hexagon_half_span = sqrt(3.0) / 4.0
     snag_ref = VPalm.SNAG
     @test snag_ref == VPalm.snag(1.0, 1.0, 1.0)
     scaled_snag = VPalm.snag(x_scale, y_scale, z_scale)
@@ -15,8 +17,8 @@ mesh_points(mesh) = GeometryBasics.coordinates(PlantGeom.to_geometrybasics(mesh)
         z_coords_ref = getindex.(points, 3)
         @test minimum(x_coords_ref) ≈ 0.0 # x min
         @test maximum(x_coords_ref) ≈ 1.0 # x max
-        @test minimum(y_coords_ref) ≈ -0.5 # y min
-        @test maximum(y_coords_ref) ≈ 0.5  # y max
+        @test minimum(y_coords_ref) ≈ -hexagon_half_span # y min
+        @test maximum(y_coords_ref) ≈ hexagon_half_span  # y max
         @test minimum(z_coords_ref) ≈ -0.5  # z min
         @test maximum(z_coords_ref) ≈ 0.5  # z max
     end
@@ -27,8 +29,8 @@ mesh_points(mesh) = GeometryBasics.coordinates(PlantGeom.to_geometrybasics(mesh)
         z_coords_scaled = getindex.(points, 3)
         @test minimum(x_coords_scaled) ≈ 0.0 # x min
         @test maximum(x_coords_scaled) ≈ x_scale # x max
-        @test minimum(y_coords_scaled) ≈ -y_scale / 2 # y min
-        @test maximum(y_coords_scaled) ≈ y_scale / 2 # y max
+        @test minimum(y_coords_scaled) ≈ -y_scale * hexagon_half_span # y min
+        @test maximum(y_coords_scaled) ≈ y_scale * hexagon_half_span # y max
         @test minimum(z_coords_scaled) ≈ -z_scale / 2 # z min
         @test maximum(z_coords_scaled) ≈ z_scale / 2 # z max
     end
@@ -74,13 +76,12 @@ end
 @testset "add_geometry" begin
     mtg = VPalm.mtg_skeleton(vpalm_parameters)
     refmesh_cylinder = PlantGeom.RefMesh("cylinder", PlantGeom.to_geometrybasics(VPalm.cylinder()))
-    refmesh_snag = PlantGeom.RefMesh("Snag", PlantGeom.to_geometrybasics(VPalm.snag()))
-    VPalm.add_geometry!(mtg, refmesh_cylinder, refmesh_snag)
+    VPalm.add_geometry!(mtg, refmesh_cylinder)
 
     internode_id = findfirst(i -> symbol(get_node(mtg, i)) == :Internode, 1:length(mtg))
     @test internode_id !== nothing
     internode = get_node(mtg, internode_id)
-    VPalm.add_geometry!(internode, refmesh_cylinder, refmesh_snag)
+    VPalm.add_geometry!(internode, refmesh_cylinder)
 
     t = internode.geometry.transformation
     p0 = t(GeometryBasics.Point{3,Float64}(0.0, 0.0, 0.0))
@@ -95,6 +96,10 @@ end
     rachis_id = findfirst(i -> symbol(get_node(mtg, i)) == :Rachis, 1:length(mtg))
     @test rachis_id !== nothing
     rachis = get_node(mtg, rachis_id)
+
+    dead_leaf_id = findfirst(i -> symbol(get_node(mtg, i)) == :Leaf && !get_node(mtg, i).is_alive, 1:length(mtg))
+    @test dead_leaf_id !== nothing
+    @test get_node(mtg, dead_leaf_id).geometry isa PlantGeom.ExtrudedTubeGeometry
 
     # leaflet_id = findfirst(i -> symbol(get_node(mtg, i)) == :Leaflet, 1:length(mtg))
     # @test leaflet_id !== nothing
