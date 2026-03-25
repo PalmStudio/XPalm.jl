@@ -11,13 +11,11 @@ import YAML, OrderedCollections
 
 # For the 3D:
 import PlantGeom
-import Meshes
 import GeometryBasics
 import CoordinateTransformations: LinearMap, Translation
 import LinearAlgebra: Diagonal
 import Rotations: RotX, RotY, RotZ, RotYZ, RotXYZ, RotZY, RotYZX, RotZYX
 import Rotations
-import PlyIO
 import Unitful: @u_str, ustrip, unit, NoUnits, uconvert, Quantity
 
 # For the biomechanical model
@@ -56,7 +54,6 @@ include("vpalm/architecture/compute_properties_petiole.jl")
 include("vpalm/architecture/compute_properties_rachis.jl")
 
 # Geometry:
-include("vpalm/geometry/read_ply.jl")
 include("vpalm/geometry/snag.jl")
 include("vpalm/geometry/cylinder.jl")
 include("vpalm/geometry/plane.jl")
