@@ -56,7 +56,6 @@ include("vpalm/architecture/compute_properties_petiole.jl")
 include("vpalm/architecture/compute_properties_rachis.jl")
 
 # Geometry:
-include("vpalm/geometry/read_ply.jl")
 include("vpalm/geometry/snag.jl")
 include("vpalm/geometry/cylinder.jl")
 include("vpalm/geometry/plane.jl")
