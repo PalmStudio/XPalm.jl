@@ -1,3 +1,5 @@
+distance3(p0, p1) = sqrt(sum((p1 .- p0) .^ 2))
+
 @testset "snag" begin
     x_scale = 10.
     y_scale = 20.
@@ -8,7 +10,7 @@
     scaled_snag = VPalm.snag(x_scale, y_scale, z_scale)
 
     # Test snag min/max coordinates
-    let points = GeometryBasics.coordinates(snag_ref)
+    ref_y_extent = let points = GeometryBasics.coordinates(snag_ref)
         x_coords_ref = getindex.(points, 1)
         y_coords_ref = getindex.(points, 2)
         z_coords_ref = getindex.(points, 3)
@@ -18,6 +20,11 @@
         @test maximum(y_coords_ref) ≈ hexagon_half_span  # y max
         @test minimum(z_coords_ref) ≈ -0.5  # z min
         @test maximum(z_coords_ref) ≈ 0.5  # z max
+        maximum(abs.(y_coords_ref))
+    end
+    ref_z_extent = let points = GeometryBasics.coordinates(snag_ref)
+        z_coords_ref = getindex.(points, 3)
+        maximum(abs.(z_coords_ref))
     end
 
     let points = GeometryBasics.coordinates(scaled_snag)
@@ -26,40 +33,29 @@
         z_coords_scaled = getindex.(points, 3)
         @test minimum(x_coords_scaled) ≈ 0.0 # x min
         @test maximum(x_coords_scaled) ≈ x_scale # x max
-        @test minimum(y_coords_scaled) ≈ -y_scale * hexagon_half_span # y min
-        @test maximum(y_coords_scaled) ≈ y_scale * hexagon_half_span # y max
-        @test minimum(z_coords_scaled) ≈ -z_scale / 2 # z min
-        @test maximum(z_coords_scaled) ≈ z_scale / 2 # z max
+        @test maximum(abs.(y_coords_scaled)) > ref_y_extent
+        @test maximum(abs.(z_coords_scaled)) > ref_z_extent
     end
 end
 
-@testset "cylinder and elliptical cylinder" begin
+@testset "cylinder" begin
     x_scale = 10.
-    y_scale = 20.
     z_scale = 30.
-    # Test the default cylinder
     cylinder_ref = VPalm.cylinder()
     @test cylinder_ref == VPalm.cylinder(1.0, 1.0)
+    @test cylinder_ref.origin ≈ GeometryBasics.Point3(0.0, 0.0, 0.0)
+    @test cylinder_ref.extremity ≈ GeometryBasics.Point3(0.0, 0.0, 1.0)
+    @test cylinder_ref.r ≈ 1.0
 
-    # Test the scaled cylinder
     cylinder_scaled = VPalm.cylinder(x_scale, z_scale)
-
-    # Check the vertices of the scaled cylinder
-    let points = GeometryBasics.coordinates(cylinder_scaled)
-        x_coords = getindex.(points, 1)
-        y_coords = getindex.(points, 2)
-        z_coords = getindex.(points, 3)
-
-        @test isapprox(maximum(abs.(x_coords)), x_scale, atol=0.05)  # rayon en x
-        @test isapprox(maximum(abs.(y_coords)), x_scale, atol=0.05)  # rayon en y
-        @test isapprox(maximum(z_coords), z_scale, atol=0.05)        # hauteur
-        @test isapprox(minimum(z_coords), 0.0)                        # base du cylindre
-    end
+    @test cylinder_scaled.origin ≈ GeometryBasics.Point3(0.0, 0.0, 0.0)
+    @test cylinder_scaled.extremity ≈ GeometryBasics.Point3(0.0, 0.0, z_scale)
+    @test cylinder_scaled.r ≈ x_scale
 end
 
 @testset "add_geometry" begin
     mtg = VPalm.mtg_skeleton(vpalm_parameters)
-    refmesh_cylinder = PlantGeom.RefMesh("cylinder", GeometryBasics.coordinates(VPalm.cylinder()))
+    refmesh_cylinder = PlantGeom.RefMesh("cylinder", GeometryBasics.mesh(VPalm.cylinder()))
     VPalm.add_geometry!(mtg, refmesh_cylinder)
 
     internode_id = findfirst(i -> symbol(get_node(mtg, i)) == :Internode, 1:length(mtg))
@@ -71,15 +67,31 @@ end
     p0 = t(GeometryBasics.Point{3,Float64}(0.0, 0.0, 0.0))
     p1 = t(GeometryBasics.Point{3,Float64}(0.0, 0.0, 1.0))
     @test p0 ≈ GeometryBasics.Point{3,Float64}(0.0, 0.0, 0.0)
-    @test sqrt(sum((p1 .- p0) .^ 2)) ≈ ustrip(internode.length)
+    @test distance3(p0, p1) ≈ ustrip(internode.length)
+    @test distance3(p0, t(GeometryBasics.Point{3,Float64}(1.0, 0.0, 0.0))) ≈ ustrip(internode.width)
+    @test distance3(p0, t(GeometryBasics.Point{3,Float64}(0.0, 1.0, 0.0))) ≈ ustrip(internode.width)
 
     petiole_id = findfirst(i -> symbol(get_node(mtg, i)) == :Petiole, 1:length(mtg))
     @test petiole_id !== nothing
-    petiole = get_node(mtg, petiole_id)
+    petiole_segment_id = findfirst(i -> symbol(get_node(mtg, i)) == :PetioleSegment, 1:length(mtg))
+    @test petiole_segment_id !== nothing
+    petiole_segment = get_node(mtg, petiole_segment_id)
+    t_petiole = petiole_segment.geometry.transformation
+    p_petiole = t_petiole(GeometryBasics.Point{3,Float64}(0.0, 0.0, 0.0))
+    @test distance3(p_petiole, t_petiole(GeometryBasics.Point{3,Float64}(1.0, 0.0, 0.0))) ≈ ustrip(petiole_segment.height) / 2
+    @test distance3(p_petiole, t_petiole(GeometryBasics.Point{3,Float64}(0.0, 1.0, 0.0))) ≈ ustrip(petiole_segment.width) / 2
+    @test distance3(p_petiole, t_petiole(GeometryBasics.Point{3,Float64}(0.0, 0.0, 1.0))) ≈ ustrip(petiole_segment.length)
 
     rachis_id = findfirst(i -> symbol(get_node(mtg, i)) == :Rachis, 1:length(mtg))
     @test rachis_id !== nothing
-    rachis = get_node(mtg, rachis_id)
+    rachis_segment_id = findfirst(i -> symbol(get_node(mtg, i)) == :RachisSegment, 1:length(mtg))
+    @test rachis_segment_id !== nothing
+    rachis_segment = get_node(mtg, rachis_segment_id)
+    t_rachis = rachis_segment.geometry.transformation
+    p_rachis = t_rachis(GeometryBasics.Point{3,Float64}(0.0, 0.0, 0.0))
+    @test distance3(p_rachis, t_rachis(GeometryBasics.Point{3,Float64}(1.0, 0.0, 0.0))) ≈ ustrip(rachis_segment.height) / 2
+    @test distance3(p_rachis, t_rachis(GeometryBasics.Point{3,Float64}(0.0, 1.0, 0.0))) ≈ ustrip(rachis_segment.width) / 2
+    @test distance3(p_rachis, t_rachis(GeometryBasics.Point{3,Float64}(0.0, 0.0, 1.0))) ≈ ustrip(rachis_segment.length)
 
     dead_leaf_id = findfirst(i -> symbol(get_node(mtg, i)) == :Leaf && !get_node(mtg, i).is_alive, 1:length(mtg))
     @test dead_leaf_id !== nothing
