@@ -1,6 +1,6 @@
 name = "XPalm"
 uuid = "6b523e1e-d512-416c-8e51-a8fbef0064e7"
-version = "0.5.1"
+version = "0.6.0"
 authors = ["Rémi Vezy <VEZY@users.noreply.github.com> and contributors"]
 
 [deps]
