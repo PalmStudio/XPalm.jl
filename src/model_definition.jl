@@ -138,10 +138,10 @@ function model_mapping(p; architecture=false)
             MultiScaleModel(
                 model=InfloStateModel(
                     TT_flowering=p.parameters["phenology"]["inflorescence"]["TT_flowering"],
-                    duration_flowering_male=p.parameters["phenology"][:Male]["duration_flowering_male"],
-                    duration_fruit_setting=p.parameters["phenology"][:Female]["duration_fruit_setting"],
-                    duration_bunch_development=p.parameters["phenology"][:Female]["duration_bunch_development"],
-                    fraction_period_oleosynthesis=p.parameters["phenology"][:Female]["fraction_period_oleosynthesis"],
+                    duration_flowering_male=p.parameters["phenology"]["Male"]["duration_flowering_male"],
+                    duration_fruit_setting=p.parameters["phenology"]["Female"]["duration_fruit_setting"],
+                    duration_bunch_development=p.parameters["phenology"]["Female"]["duration_bunch_development"],
+                    fraction_period_oleosynthesis=p.parameters["phenology"]["Female"]["fraction_period_oleosynthesis"],
                 ), # Compute the state of the phytomer
                 mapped_variables=[:state_organs => [:Leaf, :Male, :Female] .=> :state,],
                 #! note: the mapping is artificial, we compute the state of those organs in the function directly because we use the status of a phytomer to give it to its children
@@ -270,28 +270,28 @@ function model_mapping(p; architecture=false)
                 mapped_variables=[:TEff => :Plant,], # Using TEff computed at plant scale
             ),
             MaleFinalPotentialBiomass(
-                p.parameters["biomass"][:Male]["max_biomass"],
-                p.parameters["phenology"][:Male]["age_mature_male"],
-                p.parameters["biomass"][:Male]["fraction_biomass_first_male"],
+                p.parameters["biomass"]["Male"]["max_biomass"],
+                p.parameters["phenology"]["Male"]["age_mature_male"],
+                p.parameters["biomass"]["Male"]["fraction_biomass_first_male"],
             ),
             MultiScaleModel(
                 model=RmQ10FixedN(
-                    p.parameters["respiration"][:Male]["Q10"],
-                    p.parameters["respiration"][:Male]["Mr"],
-                    p.parameters["respiration"][:Male]["T_ref"],
-                    p.parameters["respiration"][:Male]["P_alive"],
+                    p.parameters["respiration"]["Male"]["Q10"],
+                    p.parameters["respiration"]["Male"]["Mr"],
+                    p.parameters["respiration"]["Male"]["T_ref"],
+                    p.parameters["respiration"]["Male"]["P_alive"],
                 ),
                 mapped_variables=[PreviousTimeStep(:biomass),],
             ),
             MultiScaleModel(
                 model=MaleCarbonDemandModel(
-                    respiration_cost=p.parameters["carbon_demand"][:Male]["respiration_cost"],
-                    duration_flowering_male=p.parameters["phenology"][:Male]["duration_flowering_male"],
+                    respiration_cost=p.parameters["carbon_demand"]["Male"]["respiration_cost"],
+                    duration_flowering_male=p.parameters["phenology"]["Male"]["duration_flowering_male"],
                 ),
                 mapped_variables=[:state => :Phytomer, :TEff => :Scene], #! we should be able to remove state here, because it is written by the other scale
             ),
             MaleBiomass(
-                p.parameters["carbon_demand"][:Male]["respiration_cost"],
+                p.parameters["carbon_demand"]["Male"]["respiration_cost"],
             ) |> PlantSimEngine.InputBindings(; state=(process=:state, scale=:Phytomer)),
         ),
         :Female => (
@@ -305,16 +305,16 @@ function model_mapping(p; architecture=false)
             ),
             MultiScaleModel(
                 model=RmQ10FixedN(
-                    p.parameters["respiration"][:Female]["Q10"],
-                    p.parameters["respiration"][:Female]["Mr"],
-                    p.parameters["respiration"][:Female]["T_ref"],
-                    p.parameters["respiration"][:Female]["P_alive"],
+                    p.parameters["respiration"]["Female"]["Q10"],
+                    p.parameters["respiration"]["Female"]["Mr"],
+                    p.parameters["respiration"]["Female"]["T_ref"],
+                    p.parameters["respiration"]["Female"]["P_alive"],
                 ),
                 mapped_variables=[PreviousTimeStep(:biomass),],
             ),
             FemaleFinalPotentialFruits(
-                days_increase_number_fruits=p.parameters["phenology"][:Female]["days_increase_number_fruits"],
-                days_maximum_number_fruits=p.parameters["phenology"][:Female]["days_maximum_number_fruits"],
+                days_increase_number_fruits=p.parameters["phenology"]["Female"]["days_increase_number_fruits"],
+                days_maximum_number_fruits=p.parameters["phenology"]["Female"]["days_maximum_number_fruits"],
                 fraction_first_female=p.parameters["reproduction"]["yield_formation"]["fraction_first_female"],
                 potential_fruit_number_at_maturity=p.parameters["reproduction"]["yield_formation"]["potential_fruit_number_at_maturity"],
                 potential_fruit_weight_at_maturity=p.parameters["reproduction"]["yield_formation"]["potential_fruit_weight_at_maturity"],
@@ -324,29 +324,29 @@ function model_mapping(p; architecture=false)
             MultiScaleModel(
                 model=NumberSpikelets(
                     TT_flowering=p.parameters["phenology"]["inflorescence"]["TT_flowering"],
-                    duration_dev_spikelets=p.parameters["phenology"][:Female]["duration_dev_spikelets"],
+                    duration_dev_spikelets=p.parameters["phenology"]["Female"]["duration_dev_spikelets"],
                 ),
                 mapped_variables=[PreviousTimeStep(:carbon_offer_plant) => :Plant => :carbon_offer_after_rm, PreviousTimeStep(:carbon_demand_plant) => :Plant => :carbon_demand],
             ),
             MultiScaleModel(
                 model=NumberFruits(
                     TT_flowering=p.parameters["phenology"]["inflorescence"]["TT_flowering"],
-                    duration_fruit_setting=p.parameters["phenology"][:Female]["duration_fruit_setting"],
+                    duration_fruit_setting=p.parameters["phenology"]["Female"]["duration_fruit_setting"],
                 ),
                 mapped_variables=[PreviousTimeStep(:carbon_offer_plant) => :Plant => :carbon_offer_after_rm, PreviousTimeStep(:carbon_demand_plant) => :Plant => :carbon_demand],
             ),
             FemaleCarbonDemandModel(
-                respiration_cost=p.parameters["carbon_demand"][:Female]["respiration_cost"],
-                respiration_cost_oleosynthesis=p.parameters["carbon_demand"][:Female]["respiration_cost_oleosynthesis"],
+                respiration_cost=p.parameters["carbon_demand"]["Female"]["respiration_cost"],
+                respiration_cost_oleosynthesis=p.parameters["carbon_demand"]["Female"]["respiration_cost_oleosynthesis"],
                 TT_flowering=p.parameters["phenology"]["inflorescence"]["TT_flowering"],
-                duration_bunch_development=p.parameters["phenology"][:Female]["duration_bunch_development"],
-                duration_fruit_setting=p.parameters["phenology"][:Female]["duration_fruit_setting"],
-                fraction_period_oleosynthesis=p.parameters["phenology"][:Female]["fraction_period_oleosynthesis"],
-                fraction_period_stalk=p.parameters["phenology"][:Female]["fraction_period_stalk"],
+                duration_bunch_development=p.parameters["phenology"]["Female"]["duration_bunch_development"],
+                duration_fruit_setting=p.parameters["phenology"]["Female"]["duration_fruit_setting"],
+                fraction_period_oleosynthesis=p.parameters["phenology"]["Female"]["fraction_period_oleosynthesis"],
+                fraction_period_stalk=p.parameters["phenology"]["Female"]["fraction_period_stalk"],
             ) |> PlantSimEngine.InputBindings(; state=(process=:state, scale=:Phytomer)),
             FemaleBiomass(
-                p.parameters["carbon_demand"][:Female]["respiration_cost"],
-                p.parameters["carbon_demand"][:Female]["respiration_cost_oleosynthesis"],
+                p.parameters["carbon_demand"]["Female"]["respiration_cost"],
+                p.parameters["carbon_demand"]["Female"]["respiration_cost_oleosynthesis"],
             ) |> PlantSimEngine.InputBindings(; state=(process=:state, scale=:Phytomer)),
             BunchHarvest() |> PlantSimEngine.InputBindings(; state=(process=:state, scale=:Phytomer)),
         ),
