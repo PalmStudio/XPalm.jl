@@ -9,7 +9,9 @@ function build_model_graph_asset()
     isdefined(PlantSimEngine, :write_graph_view) ||
         error("PlantSimEngine.write_graph_view is required to build the XPalm model graph page. Dev or update the docs PlantSimEngine dependency.")
 
-    assets_dir = joinpath(@__DIR__, "build", "assets")
+    # assets_dir = joinpath(@__DIR__, "build", "assets")
+    assets_dir = joinpath(@__DIR__, "src", "www")
+
     mkpath(assets_dir)
 
     palm = XPalm.Palm()
@@ -18,6 +20,8 @@ function build_model_graph_asset()
 
     return nothing
 end
+
+build_model_graph_asset()
 
 makedocs(;
     modules=[XPalm, XPalm.VPalm],
@@ -50,8 +54,6 @@ makedocs(;
         ],
     ],
 )
-
-build_model_graph_asset()
 
 deploydocs(;
     repo="github.com/PalmStudio/XPalm.jl",
