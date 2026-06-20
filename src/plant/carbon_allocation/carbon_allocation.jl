@@ -14,7 +14,13 @@ end
 
 OrgansCarbonAllocationModel(; cost_reserve_mobilization=1.667) = OrgansCarbonAllocationModel(cost_reserve_mobilization)
 
-PlantSimEngine.inputs_(::OrgansCarbonAllocationModel) = (carbon_offer_after_rm=-Inf, carbon_demand_organs=[-Inf], reserve=0.0, reserve_organs=[0.0],)
+PlantSimEngine.inputs_(::OrgansCarbonAllocationModel) = (
+    carbon_offer_after_rm=-Inf,
+    carbon_demand_organs=[-Inf],
+    carbon_allocation_organs=[-Inf],
+    reserve=0.0,
+    reserve_organs=[0.0],
+)
 PlantSimEngine.outputs_(::OrgansCarbonAllocationModel) = (carbon_allocation=-Inf, carbon_allocation_organs=[-Inf], respiration_reserve_mobilization=-Inf, carbon_offer_after_allocation=-Inf, carbon_demand=0.0)
 
 function PlantSimEngine.run!(m::OrgansCarbonAllocationModel, models, status, meteo, constants, extra=nothing)

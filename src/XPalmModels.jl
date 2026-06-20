@@ -4,7 +4,7 @@ import ..XPalm: age_relative_value, age_modulation_logistic
 
 # Put all models into this submodule so users can import that submodule to get the models without prefixing them with `XPalm.`
 import PlantSimEngine
-import PlantSimEngine: @process, add_organ!
+import PlantSimEngine: @process
 import MultiScaleTreeGraph
 import MultiScaleTreeGraph: index, symbol
 import Random: MersenneTwister, AbstractRNG
@@ -12,6 +12,16 @@ import Dates
 import Tables
 import Statistics: mean
 import PlantMeteo
+
+function _run_hard_call!(name::Symbol, models, status, meteo, constants, extra; publish=true)
+    if extra isa PlantSimEngine.SceneRunContext
+        target = PlantSimEngine.call_target(extra, name)
+        PlantSimEngine.run_call!(target; publish=publish, meteo=meteo)
+        return target.status
+    end
+    PlantSimEngine.run!(getproperty(models, name), models, status, meteo, constants, extra)
+    return status
+end
 
 # Import the processes:
 include("light/0-process.jl")

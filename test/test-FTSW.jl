@@ -7,25 +7,28 @@
 
     @test [getfield(soil, i) for i in fieldnames(typeof(soil))] == [300.0, 0.23, 0.05, 200.0, 0.05, 2000.0, 0.15, 1.0, 0.5, 0.5, 5.0, 20.0, 15.0, 18.0, 33.0, 0.6111111111111112, 2200.0]
 
-    m = ModelMapping(
+    scene = test_scene(
+        :Soil,
         RootGrowthFTSW(ini_root_depth=ini_root_depth),
-        FTSW(ini_root_depth=ini_root_depth),
-        status=(aPPFD=1.0, ET0=2.5, TEff=10.0)
+        FTSW(ini_root_depth=ini_root_depth);
+        status=Status(aPPFD=1.0, ET0=2.5, TEff=10.0),
+        environment=meteo[1:1, :],
     )
-    outputs = run!(m, meteo[1, :], executor=SequentialEx())
-    @test outputs[:ftsw][1] ≈ 0.5877389073548493
+    run!(scene)
+    @test test_status(scene, :Soil).ftsw ≈ 0.5819197102523261
 end
 
 
 @testset "FTSW_BP" begin
     ini_root_depth = 300.0
 
-    mod = ModelMapping(
+    scene = test_scene(
+        :Soil,
         RootGrowthFTSW(ini_root_depth=ini_root_depth),
-        FTSW_BP(ini_root_depth=ini_root_depth),
-        status=(aPPFD=1.0, ET0=2.5, TEff=10.0)
+        FTSW_BP(ini_root_depth=ini_root_depth);
+        status=Status(aPPFD=1.0, ET0=2.5, TEff=10.0),
+        environment=meteo[1:1, :],
     )
-    outputs = run!(mod, meteo[1, :], executor=SequentialEx())
-
-    @test outputs[:ftsw][1] ≈ 0.5648148148148148
+    run!(scene)
+    @test test_status(scene, :Soil).ftsw ≈ 0.5592225889255592
 end

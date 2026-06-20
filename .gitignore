@@ -4,6 +4,7 @@ lcov.*
 *.jl.mem
 /Manifest.toml
 /docs/build/
+/docs/Manifest.toml
 .DS_Store
 test/testFTSW_BP.jl
 test/Manifest.toml

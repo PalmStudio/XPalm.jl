@@ -56,8 +56,8 @@ end
 
 @testset "write_parameters" begin
     vpalm_parameters_w = mktemp() do f, io
-        write_parameters(f, vpalm_parameters)
-        vpalm_parameters_w = read_parameters(f)
+        VPalm.write_parameters(f, vpalm_parameters)
+        vpalm_parameters_w = VPalm.read_parameters(f)
         return vpalm_parameters_w
     end
 

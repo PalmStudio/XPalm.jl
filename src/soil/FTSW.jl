@@ -104,7 +104,7 @@ PlantSimEngine.outputs_(m::FTSW) = (
     transpiration=-Inf,
 )
 
-PlantSimEngine.dep(::FTSW) = (root_growth=AbstractRoot_GrowthModel,)
+PlantSimEngine.dep(::FTSW) = (root_growth=PlantSimEngine.Call(process=:root_growth),)
 
 """
     KS(fillRate, tresh)
@@ -219,7 +219,7 @@ function PlantSimEngine.run!(m::FTSW, models, st, meteo, constants, extra=nothin
     st.soil_depth = m.soil_depth
 
     # Run the root growth model:
-    PlantSimEngine.run!(models.root_growth, models, st, meteo, constants, extra)
+    _run_hard_call!(:root_growth, models, st, meteo, constants, extra)
 
     compute_compartment_size(m, st)
 

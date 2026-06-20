@@ -51,8 +51,6 @@ function PlantSimEngine.outputs_(::LeafGeometryModel)
     (is_reconstructed=false,)
 end
 
-PlantSimEngine.ObjectDependencyTrait(::Type{<:LeafGeometryModel}) = PlantSimEngine.IsObjectDependent()
-PlantSimEngine.TimeStepDependencyTrait(::Type{<:LeafGeometryModel}) = PlantSimEngine.IsTimeStepIndependent()
 
 """
     run!(model, models, status, meteo, constants, node)
@@ -63,7 +61,7 @@ petiole, rachis, and leaflets.
 # Arguments
 
 - `model::LeafGeometryModel`: The leaf geometry model
-- `models`: A `ModelList` struct holding the parameters for the model
+- `models`: the compiled model bundle for the application
 - `status`: The status of the model with inputs (height, radius, biomass, rank)
 - `meteo`: Meteorology structure (not used by this model)
 - `constants`: Physical constants (not used by this model)

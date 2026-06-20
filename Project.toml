@@ -24,6 +24,9 @@ YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"
 [weakdeps]
 Pluto = "c3e4b0f8-55cb-11ea-2926-15256bba5781"
 
+[sources]
+PlantSimEngine = {path = "/Users/rvezy/Documents/dev/PlantSimEngine"}
+
 [extensions]
 XPalmPluto = "Pluto"
 
@@ -36,7 +39,7 @@ Interpolations = "0.15.1, 0.16"
 LinearAlgebra = "1"
 MultiScaleTreeGraph = "0.15.1"
 OrderedCollections = "1.6"
-PlantGeom = "0.18.2, 0.19"
+PlantGeom = "0.19"
 PlantMeteo = "0.8.2"
 PlantSimEngine = "0.14.0"
 Pluto = "0.20"

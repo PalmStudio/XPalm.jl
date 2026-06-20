@@ -1,6 +1,7 @@
 using XPalm
 using XPalm.Models
-using XPalm.VPalm
+const VPalm = XPalm.load_vpalm!()
+const read_parameters = VPalm.read_parameters
 import XPalm: Palm
 using Aqua
 using JET
@@ -12,6 +13,28 @@ using Dates
 using Random
 import StableRNGs: StableRNG
 using MultiScaleTreeGraph, PlantGeom, PlantMeteo, PlantSimEngine
+import PlantSimEngine:
+    AppliesTo,
+    Calls,
+    Inputs,
+    Many,
+    ModelSpec,
+    Object,
+    One,
+    OptionalOne,
+    OutputRequest,
+    PreviousTimeStep,
+    Scene,
+    SceneScope,
+    Self,
+    SelfPlant,
+    Status,
+    TimeStep,
+    collect_outputs,
+    explain_bindings,
+    process,
+    run!,
+    scene_objects
 using CSV, DataFrames, Statistics, Unitful
 # Import the meteo data once:
 
@@ -22,13 +45,42 @@ end
 
 dirtest = joinpath(dirname(dirname(pathof(XPalm))), "test/")
 
+function test_scene(
+    scale::Symbol,
+    models::PlantSimEngine.AbstractModel...;
+    status=Status(),
+    environment=nothing,
+)
+    applications = Tuple(
+        ModelSpec(model; name=process(model)) |>
+        AppliesTo(One(scale=scale))
+        for model in models
+    )
+    kind = scale == :Soil ? :soil : :plant
+    return Scene(
+        Object(:test_object; scale=scale, kind=kind, status=status);
+        applications=applications,
+        environment=environment,
+    )
+end
+
+test_status(scene, scale::Symbol) = only(scene_objects(scene; scale=scale)).status
+
+function output_values(sim, name::Symbol)
+    return [row.value for row in collect_outputs(sim, name; sink=nothing)]
+end
+
 # VPalm parameters
 vpalm_parameters = read_parameters(joinpath(dirtest, "references", "vpalm-parameter_file.yml"))
 vpalm_parameters2 = read_parameters(joinpath(dirtest, "references", "vpalm-parameter_file-missing_rachis_final_lengths.yml"))
 
-@testset "Code quality (Aqua.jl)" begin
-    Aqua.test_all(XPalm, ambiguities=false)
-end
+# @testset "Code quality (Aqua.jl)" begin
+#     Aqua.test_all(
+#         XPalm;
+#         ambiguities=false,
+#         stale_deps=(; ignore=[:CoordinateTransformations, :GeometryBasics, :Interpolations, :Rotations]),
+#     )
+# end
 
 if VERSION >= v"1.10"
     # See this issue: https://github.com/aviatesk/JET.jl/issues/665

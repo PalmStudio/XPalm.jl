@@ -1,6 +1,6 @@
 
 function plot_mockup(parameters)
-    mtg = build_mockup(parameters; merge_scale=:leaflet, rng=nothing)
+    mtg = VPalm.build_mockup(parameters; merge_scale=:leaflet, rng=nothing)
     traverse!(mtg) do node
         if symbol(node) == :Petiole
             petiole_and_rachis_segments = descendants(node, symbol=[:PetioleSegment, :RachisSegment])

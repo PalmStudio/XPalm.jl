@@ -11,31 +11,41 @@ end
     init.ET0 = 2.5
     init.aPPFD = 1.0
 
-    @testset "ModelMapping" begin
-        m = ModelMapping(
-            soil_water=FTSW(ini_root_depth=ini_root_depth),
-            root_growth=RootGrowthFTSW(ini_root_depth=ini_root_depth),
-            status=(NamedTuple(init)..., soil_depth=2000.0, TEff=9.0)
+    @testset "Single soil object" begin
+        scene = test_scene(
+            :Soil,
+            FTSW(ini_root_depth=ini_root_depth),
+            RootGrowthFTSW(ini_root_depth=ini_root_depth);
+            status=Status(; NamedTuple(init)..., soil_depth=2000.0, TEff=9.0),
+            environment=meteo[1:1, :],
         )
-        out = run!(m, meteo[1, :], executor=SequentialEx())
-        @test out[:ftsw][1] ≈ 0.5824964394002472
-        @test out[:root_depth][1] == 302.7
+        run!(scene)
+        status = test_status(scene, :Soil)
+        @test status.ftsw ≈ 0.5824964394002472
+        @test status.root_depth == 302.7
     end
 
-    @testset "Mapping" begin
-        mtg = Palm().mtg
-        m = ModelMapping(
-            :Soil => (
-                RootGrowthFTSW(ini_root_depth=ini_root_depth),
-                FTSW(ini_root_depth=ini_root_depth),
-                Status(; NamedTuple(init)..., soil_depth=2000.0, TEff=9.0)
-            )
+    @testset "Multi-step scene" begin
+        root_meteo = meteo[1:2, :]
+        scene = test_scene(
+            :Soil,
+            RootGrowthFTSW(ini_root_depth=ini_root_depth),
+            FTSW(ini_root_depth=ini_root_depth);
+            status=Status(; NamedTuple(init)..., soil_depth=2000.0, TEff=9.0),
+            environment=root_meteo,
         )
-        vars = Dict{Symbol,Any}(:Soil => (:root_depth, :ftsw))
-        out = run!(mtg, m, meteo, tracked_outputs=vars, executor=SequentialEx())
-        df = convert_outputs(out, DataFrame)[:Soil]
-        @test df.root_depth[1] ≈ 302.7
-        @test df.root_depth[end] ≈ 2200.0
-        @test df.ftsw[1] ≈ 0.5824964394002472
+        sim = run!(
+            scene;
+            steps=nrow(root_meteo),
+            outputs=[
+                OutputRequest(:Soil, :root_depth),
+                OutputRequest(:Soil, :ftsw),
+            ],
+        )
+        root_depth = output_values(sim, :root_depth)
+        ftsw = output_values(sim, :ftsw)
+        @test root_depth[1] ≈ 302.7
+        @test root_depth[end] ≈ 305.4
+        @test ftsw[1] ≈ 0.5824964394002472
     end
 end

@@ -17,8 +17,16 @@ struct RankLeafPruning{T} <: AbstractLeaf_PruningModel
     rank::T
 end
 
-PlantSimEngine.inputs_(::RankLeafPruning) = (rank=-9999, state=:undetermined, biomass=-Inf, leaf_area=-Inf, state_phytomers=[:undetermined])
-PlantSimEngine.outputs_(::RankLeafPruning) = (litter_leaf=-Inf, pruning_decision=:undetermined, is_pruned=false)
+PlantSimEngine.inputs_(::RankLeafPruning) = (rank=-9999, state=:undetermined, biomass=-Inf, leaf_area=-Inf, reserve=0.0, state_phytomers=[:undetermined])
+PlantSimEngine.outputs_(::RankLeafPruning) = (
+    biomass=-Inf,
+    leaf_area=-Inf,
+    reserve=0.0,
+    state=:undetermined,
+    litter_leaf=-Inf,
+    pruning_decision=:undetermined,
+    is_pruned=false,
+)
 
 # Applied at the leaf scale:
 function PlantSimEngine.run!(m::RankLeafPruning, models, status, meteo, constants, extra=nothing)

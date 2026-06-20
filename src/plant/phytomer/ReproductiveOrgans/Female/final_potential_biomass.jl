@@ -34,22 +34,18 @@ at maturity (dimensionless)
 
 ```jl
 using PlantSimEngine
-using MultiScaleTreeGraph
 using XPalm
 using XPalm.Models 
 
-node = Node(NodeMTG(:/, :Plant, 1, 1))
 pot_model = FemaleFinalPotentialFruits(8.0 * 365, 0.3, 2000.0, 6.5, 2100.0)
-
-m = ModelList(
-    pot_model,
-    status = (initiation_age = 5000.0, )
+scene = Scene(
+    Object(:female; scale=:Female, kind=:plant, status=Status(initiation_age=5000.0));
+    applications=(
+        ModelSpec(pot_model) |> AppliesTo(One(scale=:Female)),
+    ),
 )
-
-meteo = Atmosphere(T = 20.0, Wind = 1.0, P = 101.3, Rh = 0.65)
-run!(m, meteo, PlantMeteo.Constants(), node)
-
-m[:potential_fruits_number]
+run!(scene)
+only(scene_objects(scene; scale=:Female)).status.potential_fruits_number
 ```
 """
 struct FemaleFinalPotentialFruits{T,I} <: AbstractFinal_Potential_BiomassModel

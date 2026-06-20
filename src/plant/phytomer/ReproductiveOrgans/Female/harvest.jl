@@ -3,6 +3,12 @@ struct BunchHarvest <: AbstractHarvestModel end
 
 PlantSimEngine.inputs_(::BunchHarvest) = (state=:undetermined, biomass=-Inf, biomass_stalk=-Inf, biomass_fruits=-Inf, biomass_oil=-Inf, fruits_number=-9999, final_potential_oil_biomass=-Inf)
 PlantSimEngine.outputs_(::BunchHarvest) = (
+    biomass=0.0,
+    biomass_stalk=0.0,
+    biomass_fruits=0.0,
+    biomass_oil=0.0,
+    biomass_non_oil=0.0,
+    fruits_number=-9999,
     biomass_bunch_harvested=0.0, biomass_stalk_harvested=0.0, biomass_fruit_harvested=0.0, biomass_oil_harvested=0.0,
     is_harvested=false, biomass_bunch_harvested_cum=0.0, biomass_oil_harvested_cum=0.0, litter=0.0, biomass_oil_harvested_potential=0.0,
     biomass_oil_harvested_potential_cum=0.0, fruits_number_harvested=0,
@@ -54,19 +60,21 @@ struct PlantBunchHarvest <: AbstractHarvestModel end
 PlantSimEngine.inputs_(::PlantBunchHarvest) = (biomass_bunch_harvested_organs=[-Inf], biomass_stalk_harvested_organs=[-Inf], biomass_fruit_harvested_organs=[-Inf], biomass_bunch_harvested_cum_organs=[-Inf], biomass_oil_harvested_organs=[-Inf], biomass_oil_harvested_cum_organs=[-Inf], biomass_oil_harvested_potential_organs=[-Inf], biomass_oil_harvested_potential_cum_organs=[-Inf],)
 PlantSimEngine.outputs_(::PlantBunchHarvest) = (biomass_bunch_harvested=0.0, biomass_stalk_harvested=0.0, biomass_fruit_harvested=0.0, n_bunches_harvested=-9999, biomass_bunch_harvested_cum=0.0, n_bunches_harvested_cum=0, biomass_oil_harvested=0.0, biomass_oil_harvested_potential=0.0, biomass_oil_harvested_potential_cum=0.0, biomass_oil_harvested_cum=0.0, yield_gap_oil=0.0,)
 
+_sum_or_zero(values) = isempty(values) ? 0.0 : sum(values)
+
 # For plant scale:
 function PlantSimEngine.run!(m::PlantBunchHarvest, models, st, meteo, constants, extra=nothing)
-    st.biomass_bunch_harvested = sum(st.biomass_bunch_harvested_organs)
-    st.biomass_stalk_harvested = sum(st.biomass_stalk_harvested_organs)
-    st.biomass_fruit_harvested = sum(st.biomass_fruit_harvested_organs)
-    st.biomass_oil_harvested = sum(st.biomass_oil_harvested_organs)
-    st.biomass_oil_harvested_potential = sum(st.biomass_oil_harvested_potential_organs)
-    st.biomass_bunch_harvested_cum = sum(st.biomass_bunch_harvested_cum_organs)
-    st.biomass_oil_harvested_cum = sum(st.biomass_oil_harvested_cum_organs)
-    st.biomass_oil_harvested_potential_cum = sum(st.biomass_oil_harvested_potential_cum_organs)
+    st.biomass_bunch_harvested = _sum_or_zero(st.biomass_bunch_harvested_organs)
+    st.biomass_stalk_harvested = _sum_or_zero(st.biomass_stalk_harvested_organs)
+    st.biomass_fruit_harvested = _sum_or_zero(st.biomass_fruit_harvested_organs)
+    st.biomass_oil_harvested = _sum_or_zero(st.biomass_oil_harvested_organs)
+    st.biomass_oil_harvested_potential = _sum_or_zero(st.biomass_oil_harvested_potential_organs)
+    st.biomass_bunch_harvested_cum = _sum_or_zero(st.biomass_bunch_harvested_cum_organs)
+    st.biomass_oil_harvested_cum = _sum_or_zero(st.biomass_oil_harvested_cum_organs)
+    st.biomass_oil_harvested_potential_cum = _sum_or_zero(st.biomass_oil_harvested_potential_cum_organs)
 
     st.yield_gap_oil = st.biomass_oil_harvested_potential_cum == 0.0 ? NaN : (st.biomass_oil_harvested_potential_cum - st.biomass_oil_harvested_cum) / st.biomass_oil_harvested_potential_cum
 
-    st.n_bunches_harvested = length(filter(x -> x > zero(x), st.biomass_bunch_harvested_organs))
+    st.n_bunches_harvested = count(x -> x > zero(x), st.biomass_bunch_harvested_organs)
     st.n_bunches_harvested_cum += st.n_bunches_harvested
 end

@@ -5,14 +5,17 @@ VPalm is a submodule of XPalm that provides a set of functions to reconstruct th
 Parameters are defined in a YAML file and a template is [provided](https://github.com/PalmStudio/XPalm.jl/blob/main/test/references/vpalm-parameter_file.yml):
 
 ```julia
-using XPalm.VPalm
+using XPalm
+
+VPalm = XPalm.load_vpalm!()
+
 file = joinpath(dirname(dirname(pathof(XPalm))), "test", "references", "vpalm-parameter_file.yml")
-parameters = read_parameters(file)
+parameters = VPalm.read_parameters(file)
 ```
 
 ## Parameters definition
 
-Here is a list of all necessary parameters to run XPalm.VPalm:
+Here is a list of all necessary parameters to run `VPalm = XPalm.load_vpalm!()`:
 
 | Parameter | Value | Description |
 |-----------|--------|-------------|

@@ -1,6 +1,10 @@
 struct OrganReserveFilling <: AbstractReserve_FillingModel end
 
-PlantSimEngine.inputs_(::OrganReserveFilling) = (carbon_offer_after_allocation=-Inf, potential_reserve_organs=[-Inf],)
+PlantSimEngine.inputs_(::OrganReserveFilling) = (
+    carbon_offer_after_allocation=-Inf,
+    potential_reserve_organs=[-Inf],
+    reserve_organs=[0.0],
+)
 PlantSimEngine.outputs_(::OrganReserveFilling) = (reserve=0.0, carbon_allocation_reserve=-Inf, carbon_offer_after_storage=-Inf, reserve_organs=[0.0],)
 
 # Applied at the plant scale:

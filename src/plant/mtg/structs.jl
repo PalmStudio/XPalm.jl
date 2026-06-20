@@ -1,19 +1,15 @@
 """
     Palm(;
-        nsteps=1,
         initiation_age=0,
-        parameters=default_parameters(),
-        model_list=model_mapping(parameters, nsteps)
+        parameters=default_parameters()
     )
 
 Create a new scene with one Palm plant.
 
 # Arguments
 
-- `nsteps`: number of time steps to run the simulation for (default: 1, should match the number of rows in the meteo data)
 - `initiation_age`: date of the first phytomer initiation (default: 0)
 - `parameters`: a dictionary of parameters (default: `default_parameters()`)
-- `model_list`: a dictionary of models (default: `model_mapping(parameters, nsteps)`)
 """
 mutable struct Palm{T}
     mtg::Node
@@ -221,7 +217,7 @@ function default_parameters()
         )
     )
 
-    push!(p, "vpalm" => VPalm.default_parameters(; type="dynamic"))
+    push!(p, "vpalm" => _default_vpalm_parameters(; type="dynamic"))
 
     return p
 end
@@ -248,6 +244,7 @@ function Palm(; initiation_age=0, parameters=default_parameters(), architecture=
     @assert keytype(parameters) <: AbstractString "`parameters` should have `String` keys. You can convert using: `Dict{String,Any}(string(k) => v for (k, v) in parameters)`"
 
     scene = Node(1, NodeMTG(:/, :Scene, 1, 0), Dict{Symbol,Any}(),)
+    vpalm = architecture ? load_vpalm!() : nothing
     architecture && (scene.vpalm_rng = Random.MersenneTwister(parameters["vpalm"]["seed"]))
     soil = Node(scene, NodeMTG(:+, :Soil, 1, 1),)
 
@@ -289,7 +286,7 @@ function Palm(; initiation_age=0, parameters=default_parameters(), architecture=
         ),
     )
 
-    architecture && VPalm.init_attributes_seed!(plant, parameters; rng=scene.vpalm_rng)
+    architecture && vpalm.init_attributes_seed!(plant, parameters; rng=scene.vpalm_rng)
 
     return Palm(scene, initiation_age, parameters)
 end

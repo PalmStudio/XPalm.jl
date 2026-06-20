@@ -71,14 +71,16 @@ end
 
 PlantSimEngine.inputs_(::InfloStateModel) = (TT_since_init=-Inf, sex=:undetermined)
 PlantSimEngine.outputs_(::InfloStateModel) = (state=:undetermined, state_organs=[:undetermined],)
-PlantSimEngine.dep(::InfloStateModel) = (abortion=AbstractAbortionModel,)
+PlantSimEngine.dep(::InfloStateModel) = (
+    abortion=PlantSimEngine.Call(process=:abortion),
+)
 
 # At phytomer scale
 function PlantSimEngine.run!(m::InfloStateModel, models, status, meteo, constants, extra=nothing)
     status.state == :aborted && return # if the inflo is aborted, no need to compute 
     status.state == :harvested && return # no need to compute if harvested (can also happen from the leaf side if pruned)
 
-    PlantSimEngine.run!(models.abortion, models, status, meteo, constants, extra)
+    _run_hard_call!(:abortion, models, status, meteo, constants, extra)
 
     if status.sex == :Male
         if status.TT_since_init >= m.TT_senescence_male

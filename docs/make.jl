@@ -4,25 +4,6 @@ using PlantSimEngine
 
 DocMeta.setdocmeta!(XPalm, :DocTestSetup, :(using XPalm); recursive=true)
 
-
-function build_model_graph_asset()
-    isdefined(PlantSimEngine, :write_graph_view) ||
-        error("PlantSimEngine.write_graph_view is required to build the XPalm model graph page. Dev or update the docs PlantSimEngine dependency.")
-
-    # assets_dir = joinpath(@__DIR__, "build", "assets")
-    assets_dir = joinpath(@__DIR__, "src", "www")
-
-    mkpath(assets_dir)
-
-    palm = XPalm.Palm()
-    mapping = XPalm.model_mapping(palm)
-    PlantSimEngine.write_graph_view(joinpath(assets_dir, "xpalm_model_mapping.html"), mapping)
-
-    return nothing
-end
-
-build_model_graph_asset()
-
 makedocs(;
     modules=[XPalm, XPalm.VPalm],
     authors="Rémi Vezy <VEZY@users.noreply.github.com> and contributors",

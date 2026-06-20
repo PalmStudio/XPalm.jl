@@ -13,16 +13,19 @@ end
 end
 
 @testset "DailyPlantAgeModel" begin
-    mtg = Palm().mtg
-    m = ModelMapping(:Plant => DailyPlantAgeModel(10))
-    vars = Dict{Symbol,Any}(:Plant => (:plant_age,))
-    out = run!(mtg, m, meteo, tracked_outputs=vars, executor=SequentialEx())
-    df = convert_outputs(out, DataFrame)
-    @test df[:Plant].plant_age[452] ≈ 462
-    # m = ModelList(
-    #     plant_age=DailyPlantAgeModel(10.0),
-    #     status=(TT_since_init=[1:1:1000;],)
-    # )
-    # run!(m)
-    # @test status(m)[:age][452] ≈ 462
+    scene = Scene(
+        Object(:test_object; scale=:Plant, kind=:plant, status=Status());
+        applications=(
+            ModelSpec(DailyPlantAgeModel(10); name=:plant_age) |>
+            AppliesTo(One(scale=:Plant)),
+        ),
+        environment=meteo,
+    )
+    sim = run!(
+        scene;
+        steps=nrow(meteo),
+        outputs=OutputRequest(:Plant, :plant_age),
+    )
+    plant_age = [row.value for row in collect_outputs(sim, :plant_age; sink=nothing)]
+    @test plant_age[452] ≈ 462
 end

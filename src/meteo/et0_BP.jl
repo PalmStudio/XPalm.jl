@@ -37,8 +37,6 @@ function ET0_BP(;
     ET0_BP(LATITUDE, ALTITUDE)
 end
 
-PlantSimEngine.ObjectDependencyTrait(::Type{<:ET0_BP}) = PlantSimEngine.IsObjectDependent()
-PlantSimEngine.TimeStepDependencyTrait(::Type{<:ET0_BP}) = PlantSimEngine.IsTimeStepIndependent()
 
 function PlantSimEngine.run!(m::ET0_BP, models, status, meteo, constants, extra=nothing)
 

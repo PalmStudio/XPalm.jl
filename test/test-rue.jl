@@ -1,48 +1,61 @@
 
 aPPFD_radiation = 60.0
 @testset "RUE" begin
-    m = ModelMapping(carbon_assimilation=ConstantRUEModel(4.8), status=(aPPFD=aPPFD_radiation,))
-    out = run!(m, meteo[1, :], executor=SequentialEx())
-
-    @test out[:carbon_assimilation][1] ≈ aPPFD_radiation / Constants().J_to_umol * 4.8
+    scene = test_scene(
+        :Plant,
+        ConstantRUEModel(4.8);
+        status=Status(aPPFD=aPPFD_radiation),
+        environment=meteo[1:1, :],
+    )
+    run!(scene)
+    @test test_status(scene, :Plant).carbon_assimilation ≈ aPPFD_radiation / Constants().J_to_umol * 4.8
 end
 
 @testset "Multiscale RUE" begin
-    mtg = Palm().mtg
-    m = ModelMapping(
-        :Plant => (
-            ConstantRUEModel(4.8),
-            Status(aPPFD=aPPFD_radiation,) # aPPFD in mol[PAR] m[soil]⁻² d⁻¹
-        )
+    scene = test_scene(
+        :Plant,
+        ConstantRUEModel(4.8);
+        status=Status(aPPFD=aPPFD_radiation),
+        environment=meteo,
     )
-    vars = Dict{Symbol,Any}(:Plant => (:carbon_assimilation,))
-    out = run!(mtg, m, meteo, tracked_outputs=vars, executor=SequentialEx())
-    df = convert_outputs(out, DataFrame)[:Plant]
-
-    @test df.carbon_assimilation[1] ≈ aPPFD_radiation / Constants().J_to_umol * 4.8
-    # @test df.carbon_assimilation[end] ≈ 22.967373313544766
+    sim = run!(
+        scene;
+        steps=nrow(meteo),
+        outputs=OutputRequest(:Plant, :carbon_assimilation),
+    )
+    @test output_values(sim, :carbon_assimilation)[1] ≈ aPPFD_radiation / Constants().J_to_umol * 4.8
 end
 
 @testset "Beer+RUE" begin
     leaf_area_plant = 1.0
     plant_area = 10000.0 / 136.0
     scene_leaf_area = leaf_area_plant * plant_area
-    mtg = Palm().mtg
-    m = ModelMapping(
-        :Scene => (
-            Beer(0.5),
-            Status(lai=2.0,),
+    scene = Scene(
+        Object(:scene; scale=:Scene, kind=:scene, status=Status(lai=2.0)),
+        Object(
+            :plant;
+            scale=:Plant,
+            kind=:plant,
+            parent=:scene,
+            status=Status(leaf_area=leaf_area_plant, scene_leaf_area=scene_leaf_area),
+        );
+        applications=(
+            ModelSpec(Beer(0.5); name=:scene_light) |>
+            AppliesTo(One(scale=:Scene)),
+            ModelSpec(SceneToPlantLightPartitioning(plant_area); name=:plant_light) |>
+            AppliesTo(One(scale=:Plant)) |>
+            Inputs(:aPPFD_scene => One(scale=:Scene, var=:aPPFD, within=SceneScope())),
+            ModelSpec(ConstantRUEModel(4.8); name=:plant_rue) |>
+            AppliesTo(One(scale=:Plant)),
         ),
-        :Plant => (
-            MultiScaleModel(SceneToPlantLightPartitioning(plant_area), [:aPPFD_scene => :Scene => :aPPFD]),
-            ConstantRUEModel(4.8),
-            Status(leaf_area=leaf_area_plant, scene_leaf_area=scene_leaf_area,)
-        )
+        environment=meteo,
     )
-    vars = Dict{Symbol,Any}(:Plant => (:carbon_assimilation,))
-    out = run!(mtg, m, meteo, tracked_outputs=vars, executor=SequentialEx())
-    df = convert_outputs(out, DataFrame)[:Plant]
-
-    @test df.carbon_assimilation[1] ≈ 24.221335070384264
-    @test df.carbon_assimilation[end] ≈ 22.30710240739654
+    sim = run!(
+        scene;
+        steps=nrow(meteo),
+        outputs=OutputRequest(:Plant, :carbon_assimilation),
+    )
+    values = output_values(sim, :carbon_assimilation)
+    @test values[1] ≈ 24.221335070384264
+    @test values[end] ≈ 22.30710240739654
 end
