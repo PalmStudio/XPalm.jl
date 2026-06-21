@@ -526,7 +526,11 @@ function model_applications(p; architecture=false)
                 duration_fruit_setting=p.parameters["phenology"]["Female"]["duration_fruit_setting"],
                 fraction_period_oleosynthesis=p.parameters["phenology"]["Female"]["fraction_period_oleosynthesis"],
                 fraction_period_stalk=p.parameters["phenology"]["Female"]["fraction_period_stalk"],
-            ) |> _input_bindings(; state=(process=:state, scale=:Phytomer)),
+            ) |> _input_bindings(
+                ;
+                state=(process=:state, scale=:Phytomer),
+                fruits_number=(process=:number_fruits, scale=:Female),
+            ),
             FemaleBiomass(
                 p.parameters["carbon_demand"]["Female"]["respiration_cost"],
                 p.parameters["carbon_demand"]["Female"]["respiration_cost_oleosynthesis"],
