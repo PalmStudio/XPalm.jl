@@ -8,7 +8,7 @@ PlantSimEngine.inputs_(::OrganReserveFilling) = (
 PlantSimEngine.outputs_(::OrganReserveFilling) = (reserve=0.0, carbon_allocation_reserve=-Inf, carbon_offer_after_storage=-Inf, reserve_organs=[0.0],)
 
 # Applied at the plant scale:
-function PlantSimEngine.run!(::OrganReserveFilling, models, st, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(::OrganReserveFilling, st, environment, constants, context=nothing)
     total_reserve_potential_organ = sum(st.potential_reserve_organs)
 
     if total_reserve_potential_organ > 0.0

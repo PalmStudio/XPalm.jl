@@ -49,7 +49,7 @@ Compute root growth
 
 - `root_depth`: root depth (cm)
 """
-function PlantSimEngine.run!(m::RootGrowthFTSW, models, st, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::RootGrowthFTSW, st, environment, constants, context=nothing)
 
     if st.ftsw > m.TRESH_FTSW_SLOW_ROOTS
         coef_water_stress = 1.0

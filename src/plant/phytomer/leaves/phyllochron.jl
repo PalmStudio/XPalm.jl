@@ -46,7 +46,7 @@ PlantSimEngine.dep(::PhyllochronModel) = (
 )
 
 # Applied at the plant scale.
-function PlantSimEngine.run!(m::PhyllochronModel, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::PhyllochronModel, status, environment, constants, context=nothing)
     status.production_speed = age_relative_value(
         status.plant_age,
         0.0,
@@ -61,7 +61,7 @@ function PlantSimEngine.run!(m::PhyllochronModel, models, status, meteo, constan
         status.newPhytomerEmergence -= 1.0 # NB: -=1 because it can be > 1 so we pass along the remainder
         # Add a new phytomer to the palm using a phytomer emission model:
         PlantSimEngine.run_call!(
-            extra,
+            context,
             :phytomer_emission;
             publish=true,
         )

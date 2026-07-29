@@ -52,7 +52,7 @@ PlantSimEngine.dep(::SexDetermination) = (
     reproductive_organ_emission=PlantSimEngine.Call(process=:reproductive_organ_emission),
 )
 
-function PlantSimEngine.run!(m::SexDetermination, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::SexDetermination, status, environment, constants, context=nothing)
     status.sex != :undetermined && return # if the sex is already determined, no need to compute it again
     status.state == :aborted && return # if the phytomer is aborted, no reproductive organ can be emitted  
     status.state == :harvested && return # no need to compute if harvested (e.g. the leaf was removed)
@@ -86,7 +86,7 @@ function PlantSimEngine.run!(m::SexDetermination, models, status, meteo, constan
         end
 
         PlantSimEngine.run_call!(
-            extra,
+            context,
             :reproductive_organ_emission;
             publish=true,
         )

@@ -31,7 +31,7 @@ end
 PlantSimEngine.inputs_(::LeafCarbonDemandModelPotentialArea) = (increment_potential_area=-Inf, state=:undetermined)
 PlantSimEngine.outputs_(::LeafCarbonDemandModelPotentialArea) = (carbon_demand=0.0,)
 
-function PlantSimEngine.run!(m::LeafCarbonDemandModelPotentialArea, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::LeafCarbonDemandModelPotentialArea, status, environment, constants, context=nothing)
     if status.state == :pruned #! No need for that no? `increment_potential_area` should be 0.0 when the leaf is mature
         status.carbon_demand = zero(eltype(status.carbon_demand))
         return nothing
@@ -68,7 +68,7 @@ end
 PlantSimEngine.inputs_(::LeafCarbonDemandModelArea) = (potential_area=0.0, leaf_area=-Inf)
 PlantSimEngine.outputs_(::LeafCarbonDemandModelArea) = (carbon_demand=0.0,)
 
-function PlantSimEngine.run!(m::LeafCarbonDemandModelArea, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::LeafCarbonDemandModelArea, status, environment, constants, context=nothing)
     increment_potential_area = status.potential_area - status.leaf_area
     status.carbon_demand = increment_potential_area * (m.lma_min * m.respiration_cost) / m.leaflets_biomass_contribution
 end

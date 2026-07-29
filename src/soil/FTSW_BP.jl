@@ -231,17 +231,17 @@ function soil_init_default(m::FTSW_BP)
     return status
 end
 
-function PlantSimEngine.run!(m::FTSW_BP, models, st, meteo, constants, extra=nothing)
-    rain = meteo.Precipitations
+function PlantSimEngine.run!(m::FTSW_BP, st, environment, constants, context=nothing)
+    rain = environment.Precipitations
     st.soil_depth = m.soil_depth
 
     # Run the root growth model:
-    PlantSimEngine.run_call!(extra, :root_growth; publish=true)
+    PlantSimEngine.run_call!(context, :root_growth; publish=true)
 
     compute_compartment_size(m, st)
 
-    if meteo.Ri_PAR_f > 0.0
-        tree_ei = 1.0 - (meteo.Ri_PAR_f * constants.J_to_umol - st.aPPFD) / (meteo.Ri_PAR_f * constants.J_to_umol)
+    if environment.Ri_PAR_f > 0.0
+        tree_ei = 1.0 - (environment.Ri_PAR_f * constants.J_to_umol - st.aPPFD) / (environment.Ri_PAR_f * constants.J_to_umol)
     else
         tree_ei = 1.0
     end

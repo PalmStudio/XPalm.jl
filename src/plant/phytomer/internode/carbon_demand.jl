@@ -41,7 +41,7 @@ PlantSimEngine.inputs_(::InternodeCarbonDemandModel) = (
 )
 PlantSimEngine.outputs_(::InternodeCarbonDemandModel) = (potential_volume=0.0, carbon_demand=0.0,)
 
-function PlantSimEngine.run!(m::InternodeCarbonDemandModel, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::InternodeCarbonDemandModel, status, environment, constants, context=nothing)
     new_potential_volume = status.potential_height * π * status.potential_radius^2
     increment_potential = (new_potential_volume - status.potential_volume) * m.apparent_density
     status.carbon_demand = increment_potential * m.respiration_cost

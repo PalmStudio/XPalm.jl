@@ -25,7 +25,7 @@ PlantSimEngine.inputs_(::LAIModel) = (leaf_areas=[-Inf],)
 PlantSimEngine.outputs_(::LAIModel) = (lai=-Inf, leaf_area=-Inf)
 
 # Applied at the scene scale:
-function PlantSimEngine.run!(m::LAIModel, models, st, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::LAIModel, st, environment, constants, context=nothing)
     st.leaf_area = sum(st.leaf_areas)
     st.lai = st.leaf_area / m.area # m2 leaf / m2 soil
 end

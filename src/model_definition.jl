@@ -22,19 +22,17 @@ PlantSimEngine.outputs_(::_InitialMaintenanceRespiration) = (Rm=-Inf,)
 
 function PlantSimEngine.run!(
     model::_InitialMaintenanceRespiration,
-    models,
     status,
-    meteo,
+    environment,
     constants,
-    extra=nothing,
+    context=nothing,
 )
     return PlantSimEngine.run!(
         model.model,
-        models,
         status,
-        meteo,
+        environment,
         constants,
-        extra,
+        context,
     )
 end
 

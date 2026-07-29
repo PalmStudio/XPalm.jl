@@ -27,7 +27,7 @@ PlantSimEngine.inputs_(::MaleBiomass) = (carbon_allocation=-Inf, state=:undeterm
 PlantSimEngine.outputs_(::MaleBiomass) = (biomass=0.0, litter_male=0.0,)
 
 # Applied at the male inflorescence scale:
-function PlantSimEngine.run!(m::MaleBiomass, models, st, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::MaleBiomass, st, environment, constants, context=nothing)
 
     if st.state == :aborted
         st.biomass = 0.0

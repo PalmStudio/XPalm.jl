@@ -29,7 +29,7 @@ PlantSimEngine.outputs_(::RankLeafPruning) = (
 )
 
 # Applied at the leaf scale:
-function PlantSimEngine.run!(m::RankLeafPruning, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::RankLeafPruning, status, environment, constants, context=nothing)
     status.is_pruned && return # if the leaf is already pruned, no need to compute. Note that we don't use the state of the leaf here
     # because it may be pruned set to :pruned by the InfloStateModel, in which case the leaf is not really pruned yet.
 

@@ -46,7 +46,7 @@ PlantSimEngine.outputs_(m::FinalPotentialInternodeDimensionModel) = (
     final_potential_radius=m.min_radius,
 )
 
-function PlantSimEngine.run!(m::FinalPotentialInternodeDimensionModel, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::FinalPotentialInternodeDimensionModel, status, environment, constants, context=nothing)
     status.final_potential_height =
         age_relative_value(
             status.initiation_age,

@@ -26,7 +26,7 @@ PlantSimEngine.inputs_(::LeafAreaModel) = (biomass=0.0,)
 PlantSimEngine.outputs_(m::LeafAreaModel) = (leaf_area=m.leaf_area_ini,)
 
 # Applied at the phytomer scale:
-function PlantSimEngine.run!(m::LeafAreaModel, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::LeafAreaModel, status, environment, constants, context=nothing)
     status.leaf_area = status.biomass * m.leaflets_biomass_contribution / m.lma_min
 end
 
@@ -51,6 +51,6 @@ PlantSimEngine.inputs_(::PlantLeafAreaModel) = (leaf_area_leaves=[-Inf], leaf_st
 PlantSimEngine.outputs_(::PlantLeafAreaModel) = (leaf_area=-Inf,)
 
 # Applied at the plant / scene scale:
-function PlantSimEngine.run!(m::PlantLeafAreaModel, models, st, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::PlantLeafAreaModel, st, environment, constants, context=nothing)
     st.leaf_area = sum(st.leaf_area_leaves[st.leaf_states.==:opened])
 end

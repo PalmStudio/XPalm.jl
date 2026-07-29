@@ -85,7 +85,7 @@ end
 PlantSimEngine.inputs_(::FemaleFinalPotentialFruits) = (initiation_age=0,)
 PlantSimEngine.outputs_(::FemaleFinalPotentialFruits) = (potential_fruits_number=-9999, final_potential_fruit_biomass=-Inf, final_potential_biomass_stalk=-Inf, final_potential_biomass_oil_fruit=-Inf, final_potential_biomass_non_oil_fruit=-Inf, final_potential_oil_biomass=-Inf, final_potential_non_oil_biomass=-Inf)
 
-function PlantSimEngine.run!(m::FemaleFinalPotentialFruits, models, st, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::FemaleFinalPotentialFruits, st, environment, constants, context=nothing)
     coeff_dev = age_relative_value(st.initiation_age, m.days_increase_number_fruits, m.days_maximum_number_fruits, m.fraction_first_female, 1.0)
 
     st.potential_fruits_number = floor(Int, coeff_dev * m.potential_fruit_number_at_maturity)

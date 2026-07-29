@@ -26,6 +26,6 @@ PlantSimEngine.inputs_(::LeafBiomass) = (carbon_allocation=-Inf,)
 PlantSimEngine.outputs_(m::LeafBiomass) = (biomass=m.initial_biomass,)
 
 # Applied at the leaf scale:
-function PlantSimEngine.run!(m::LeafBiomass, models, st, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::LeafBiomass, st, environment, constants, context=nothing)
     st.biomass += st.carbon_allocation / m.respiration_cost
 end

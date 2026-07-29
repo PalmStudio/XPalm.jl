@@ -39,9 +39,9 @@ PlantSimEngine.inputs_(::RmQ10FixedN) = (biomass=0.0,)
 PlantSimEngine.outputs_(::RmQ10FixedN) = (Rm=-Inf,)
 
 # Standard way of computing the Rm of an organ:
-function PlantSimEngine.run!(m::RmQ10FixedN, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::RmQ10FixedN, status, environment, constants, context=nothing)
     status.Rm =
-        status.biomass * m.P_alive * m.Mr * m.Q10^(((meteo.Tmax + meteo.Tmin) / 2.0 - m.T_ref) / 10.0)
+        status.biomass * m.P_alive * m.Mr * m.Q10^(((environment.Tmax + environment.Tmin) / 2.0 - m.T_ref) / 10.0)
 end
 
 """
@@ -62,6 +62,6 @@ struct PlantRm <: AbstractMaintenance_RespirationModel end
 PlantSimEngine.inputs_(::PlantRm) = (Rm_organs=[-Inf],)
 PlantSimEngine.outputs_(::PlantRm) = (Rm=-Inf,)
 
-function PlantSimEngine.run!(::PlantRm, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(::PlantRm, status, environment, constants, context=nothing)
     status.Rm = sum(status.Rm_organs)
 end

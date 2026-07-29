@@ -53,7 +53,7 @@ end
 
 
 """
-    run!(model, models, status, meteo, constants, node)
+    run!(model, status, environment, constants, context)
 
 Builds the 3D geometry for a leaf by adding internode properties and creating child nodes for
 petiole, rachis, and leaflets.
@@ -61,17 +61,16 @@ petiole, rachis, and leaflets.
 # Arguments
 
 - `model::LeafGeometryModel`: The leaf geometry model
-- `models`: the compiled model bundle for the application
 - `status`: The status of the model with inputs (height, radius, biomass, rank)
-- `meteo`: Meteorology structure (not used by this model)
+- `environment`: Meteorology structure (not used by this model)
 - `constants`: Physical constants (not used by this model)
-- `node`: MTG node of the phytomer
+- `context`: PlantSimEngine runtime context (not used directly)
 
 # Notes
 
-The model expects `node` to be the phytomer MTG node and accesses VPalm parameters from `model.vpalm_parameters`.
+The model reads the phytomer MTG node from `status.node` and accesses VPalm parameters from `model.vpalm_parameters`.
 """
-function PlantSimEngine.run!(model::LeafGeometryModel, models, status, meteo, constants, extra)
+function PlantSimEngine.run!(model::LeafGeometryModel, status, environment, constants, context)
     # Extract the phytomer from the node
     phytomer = status.node
     # Get internode and leaf nodes:

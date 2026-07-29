@@ -13,7 +13,7 @@
         reserve=-1.0,
     )
 
-    run!(model, nothing, status, nothing, nothing)
+    run!(model, status, nothing, nothing, nothing)
 
     @test status.reserve_organs == [0.0, 0.0]
     @test status.reserve == 0.0

@@ -35,37 +35,36 @@ end
 
 
 """
-    run!(object, meteo, constants = Constants())
+    run!(object, environment, constants = Constants())
 
 Computes the light interception of an object using the Beer-Lambert law.
 
 # Arguments
 
 - `::Beer`: a Beer light-interception model.
-- `models`: the compiled model bundle for the application.
 - `status`: object state with `lai` initialized in m² m⁻².
-- `meteo`: meteorology structure, see [`Atmosphere`](https://palmstudio.github.io/PlantMeteo.jl/stable/#PlantMeteo.Atmosphere)
+- `environment`: meteorology structure, see [`Atmosphere`](https://palmstudio.github.io/PlantMeteo.jl/stable/#PlantMeteo.Atmosphere)
 - `constants = PlantMeteo.Constants()`: physical constants. See `PlantMeteo.Constants` for more details
 
 # Examples
 
 ```julia
 using XPalm, PlantSimEngine, PlantMeteo
-meteo = Atmosphere(T=20.0, Wind=1.0, P=101.3, Rh=0.65, Ri_PAR_f=300.0)
+environment = Atmosphere(T=20.0, Wind=1.0, P=101.3, Rh=0.65, Ri_PAR_f=300.0)
 scene = CompositeModel(
     Object(:scene; scale=:Scene, kind=:scene, status=Status(lai=2.0));
     applications=(
         ModelSpec(Beer(0.5)) |> AppliesTo(One(scale=:Scene)),
     ),
-    environment=meteo,
+    environment=environment,
 )
 run!(scene)
 only(model_objects(scene; scale=:Scene)).status.aPPFD
 ```
 """
-function PlantSimEngine.run!(m::Beer, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::Beer, status, environment, constants, context=nothing)
     status.aPPFD = # in mol[PAR] m[soil]⁻² d⁻¹
-        meteo.Ri_PAR_f * # in MJ m[soil]⁻² d⁻¹
+        environment.Ri_PAR_f * # in MJ m[soil]⁻² d⁻¹
         (1.0 - exp(-m.k * status.lai)) *
         constants.J_to_umol
 
@@ -106,7 +105,7 @@ function PlantSimEngine.outputs_(::SceneToPlantLightPartitioning)
 end
 
 # Partitioning between plants:
-function PlantSimEngine.run!(m::SceneToPlantLightPartitioning, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::SceneToPlantLightPartitioning, status, environment, constants, context=nothing)
     # aPPFD in mol[PAR] plant⁻¹ d⁻¹, from aPPFD in mol[PAR] m[scene]⁻² d⁻¹ and the plant's relative leaf area:
     status.aPPFD = status.aPPFD_scene * m.scene_area * status.leaf_area / status.scene_leaf_area
 end

@@ -26,7 +26,7 @@ PlantSimEngine.inputs_(::LeafStateModel) = (
 )
 PlantSimEngine.outputs_(::LeafStateModel) = (state=:undetermined, rank=-9999, rank_leaves=[-9999])
 
-function PlantSimEngine.run!(::LeafStateModel, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(::LeafStateModel, status, environment, constants, context=nothing)
     # If the phytomer is harvested, the leaf is pruned:
     i = index(status.node) # index of the leaf
     if status.state_phytomers[i] == :harvested

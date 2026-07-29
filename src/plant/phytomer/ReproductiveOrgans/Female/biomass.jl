@@ -33,7 +33,7 @@ PlantSimEngine.inputs_(::FemaleBiomass) = (carbon_allocation=0.0, state=:undeter
 PlantSimEngine.outputs_(::FemaleBiomass) = (biomass=0.0, biomass_stalk=0.0, biomass_fruits=0.0, biomass_oil=0.0, biomass_non_oil=0.0)
 
 # Applied at the Female inflorescence scale:
-function PlantSimEngine.run!(m::FemaleBiomass, models, st, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::FemaleBiomass, st, environment, constants, context=nothing)
     st.state == :aborted || st.state == :harvested && return # if it is aborted, no need to compute 
 
     st.carbon_allocation == 0.0 && return # no carbon allocation -> no biomass increase

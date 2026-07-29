@@ -76,11 +76,11 @@ PlantSimEngine.dep(::InfloStateModel) = (
 )
 
 # At phytomer scale
-function PlantSimEngine.run!(m::InfloStateModel, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::InfloStateModel, status, environment, constants, context=nothing)
     status.state == :aborted && return # if the inflo is aborted, no need to compute 
     status.state == :harvested && return # no need to compute if harvested (can also happen from the leaf side if pruned)
 
-    PlantSimEngine.run_call!(extra, :abortion; publish=true)
+    PlantSimEngine.run_call!(context, :abortion; publish=true)
 
     if status.sex == :Male
         if status.TT_since_init >= m.TT_senescence_male

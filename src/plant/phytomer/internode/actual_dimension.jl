@@ -36,7 +36,7 @@ PlantSimEngine.outputs_(::InternodeDimensionModel) = (
 )
 
 # Applied at the phytomer scale:
-function PlantSimEngine.run!(m::InternodeDimensionModel, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::InternodeDimensionModel, status, environment, constants, context=nothing)
     if status.potential_radius <= 0.0 || status.potential_height <= 0.0 || status.biomass <= 0.0
         status.height = 0.0
         status.radius = 0.0

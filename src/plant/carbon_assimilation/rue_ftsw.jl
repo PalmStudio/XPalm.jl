@@ -21,7 +21,7 @@ end
 PlantSimEngine.inputs_(::RUE_FTSW) = (aPPFD=-Inf, ftsw=-Inf)
 PlantSimEngine.outputs_(::RUE_FTSW) = (carbon_assimilation=-Inf,)
 
-function PlantSimEngine.run!(m::RUE_FTSW, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::RUE_FTSW, status, environment, constants, context=nothing)
     photo_reduc = status.ftsw > m.threshold_ftsw ? 1.0 : status.ftsw / m.threshold_ftsw
     status.carbon_assimilation = status.aPPFD / constants.J_to_umol * m.rue * photo_reduc
     # aPPFD is in mol[PAR] plant⁻¹ d⁻¹, we need MJ[PAR] plant⁻¹ d⁻¹ first, and then use RUE

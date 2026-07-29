@@ -31,6 +31,6 @@ PlantSimEngine.inputs_(::InternodeBiomass) = (carbon_allocation=-Inf,)
 PlantSimEngine.outputs_(m::InternodeBiomass) = (biomass=m.initial_biomass,)
 
 # Applied at the Internode scale:
-function PlantSimEngine.run!(m::InternodeBiomass, models, st, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::InternodeBiomass, st, environment, constants, context=nothing)
     st.biomass += st.carbon_allocation / m.respiration_cost
 end

@@ -39,7 +39,7 @@ end
 PlantSimEngine.inputs_(::AbortionRate) = (TT_since_init=-Inf, carbon_offer_plant=-Inf, carbon_demand_plant=-Inf)
 PlantSimEngine.outputs_(::AbortionRate) = (state=:undetermined, carbon_demand_abortion=0.0, carbon_offer_abortion=0.0, abortion_calculation_flag=false)
 
-function PlantSimEngine.run!(m::AbortionRate, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::AbortionRate, status, environment, constants, context=nothing)
     status.state == :aborted && return # if abortion is determined, no need to compute it again
 
     # We only look into the period of abortion :

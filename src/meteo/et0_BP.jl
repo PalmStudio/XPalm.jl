@@ -12,7 +12,7 @@ Compute potential evapotranspiration
 
 # Inputs
 
-- meteo
+- environment
 
 # Outputs
 
@@ -38,16 +38,16 @@ function ET0_BP(;
 end
 
 
-function PlantSimEngine.run!(m::ET0_BP, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::ET0_BP, status, environment, constants, context=nothing)
 
-    Tmin = meteo.Tmin
-    Tmax = meteo.Tmax
-    RHmin = meteo.Rh_min #check plantMeteo variable names
-    RHmax = meteo.Rh_max #check plantMeteo variable names
-    Rg = meteo.Rg
-    windspeed = meteo.Wind
+    Tmin = environment.Tmin
+    Tmax = environment.Tmax
+    RHmin = environment.Rh_min #check plantMeteo variable names
+    RHmax = environment.Rh_max #check plantMeteo variable names
+    Rg = environment.Rg
+    windspeed = environment.Wind
 
-    tDay = Dates.datetime2julian(Dates.DateTime(meteo.date))
+    tDay = Dates.datetime2julian(Dates.DateTime(environment.date))
 
     TMoy = (Tmax + Tmin) / 2
 

@@ -30,7 +30,7 @@ PlantSimEngine.outputs_(::ReproductiveOrganEmission) = NamedTuple()
 
 Add a new reproductive organ to a phytomer.
 """
-function PlantSimEngine.run!(m::ReproductiveOrganEmission, models, status, meteo, constants, sim_object)
+function PlantSimEngine.run!(m::ReproductiveOrganEmission, status, environment, constants, context)
     @assert symbol(status.node) == :Phytomer "The function should be applied to a Phytomer, but is applied to a $(symbol(status.node))"
     @assert status.sex in [:undetermined, m.male_symbol, m.female_symbol]
     status.graph_node_count += 1
@@ -38,7 +38,7 @@ function PlantSimEngine.run!(m::ReproductiveOrganEmission, models, status, meteo
     # Create the new organ as a child of the phytomer:
     st_reproductive_organ = PlantSimEngine.add_organ!(
         status.node[1], # The phytomer's internode is its first child 
-        sim_object,
+        context,
         :+,
         Symbol(status.sex),
         4;
@@ -54,17 +54,17 @@ function PlantSimEngine.run!(m::ReproductiveOrganEmission, models, status, meteo
     )
     organ = Symbol(lowercase(string(status.sex)))
     PlantSimEngine.run_call!(
-        sim_object,
+        context,
         Symbol(organ, "_initiation_age");
         objects=st_reproductive_organ,
     )
     PlantSimEngine.run_call!(
-        sim_object,
+        context,
         Symbol(organ, "_final_potential_biomass");
         objects=st_reproductive_organ,
     )
     PlantSimEngine.run_call!(
-        sim_object,
+        context,
         Symbol(organ, "_initial_maintenance_respiration");
         objects=st_reproductive_organ,
     )

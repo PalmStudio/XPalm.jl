@@ -15,7 +15,7 @@ PlantSimEngine.outputs_(::BunchHarvest) = (
 )
 
 # Applied at the Female inflorescence scale:
-function PlantSimEngine.run!(m::BunchHarvest, models, st, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::BunchHarvest, st, environment, constants, context=nothing)
     if st.state == :harvested && st.is_harvested == false
         st.biomass_bunch_harvested = st.biomass
         st.biomass_stalk_harvested = st.biomass_stalk
@@ -63,7 +63,7 @@ PlantSimEngine.outputs_(::PlantBunchHarvest) = (biomass_bunch_harvested=0.0, bio
 _sum_or_zero(values) = isempty(values) ? 0.0 : sum(values)
 
 # For plant scale:
-function PlantSimEngine.run!(m::PlantBunchHarvest, models, st, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::PlantBunchHarvest, st, environment, constants, context=nothing)
     st.biomass_bunch_harvested = _sum_or_zero(st.biomass_bunch_harvested_organs)
     st.biomass_stalk_harvested = _sum_or_zero(st.biomass_stalk_harvested_organs)
     st.biomass_fruit_harvested = _sum_or_zero(st.biomass_fruit_harvested_organs)

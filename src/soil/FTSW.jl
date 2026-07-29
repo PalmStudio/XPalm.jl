@@ -213,17 +213,17 @@ function soil_init_default(m)
     return status
 end
 
-function PlantSimEngine.run!(m::FTSW, models, st, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::FTSW, st, environment, constants, context=nothing)
 
-    rain = meteo.Precipitations
+    rain = environment.Precipitations
     st.soil_depth = m.soil_depth
 
     # Run the root growth model:
-    PlantSimEngine.run_call!(extra, :root_growth; publish=true)
+    PlantSimEngine.run_call!(context, :root_growth; publish=true)
 
     compute_compartment_size(m, st)
 
-    transmitted_light_fraction = (meteo.Ri_PAR_f * constants.J_to_umol - st.aPPFD) / (meteo.Ri_PAR_f * constants.J_to_umol)
+    transmitted_light_fraction = (environment.Ri_PAR_f * constants.J_to_umol - st.aPPFD) / (environment.Ri_PAR_f * constants.J_to_umol)
 
     EvapMax = transmitted_light_fraction * st.ET0 * m.KC
     Transp_Max = (1.0 - transmitted_light_fraction) * st.ET0 * m.KC
