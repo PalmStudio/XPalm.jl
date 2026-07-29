@@ -18,7 +18,7 @@ PlantSimEngine.inputs_(::OrgansCarbonAllocationModel) = (
     carbon_offer_after_rm=-Inf,
     carbon_demand_organs=[-Inf],
     carbon_allocation_organs=[-Inf],
-    previous_reserve_organs=[0.0],
+    reserve_organs=[0.0],
 )
 PlantSimEngine.outputs_(::OrgansCarbonAllocationModel) = (
     carbon_allocation=-Inf,
@@ -35,11 +35,6 @@ function PlantSimEngine.run!(m::OrgansCarbonAllocationModel, models, status, met
     # Trophic status, based on the carbon offer / demand ratio. Note that maintenance respiration 
     # was already removed from the carbon offer here:
     # status.trophic_status = status.carbon_offer_after_rm / status.carbon_demand
-
-    # Start the current reserve state from the previous accepted organ values.
-    # `previous_reserve_organs` is an application-local temporal input; `reserve`
-    # and `reserve_organs` are explicit current-timestep outputs.
-    status.reserve_organs .= status.previous_reserve_organs
 
     # Reserve at the plant scale is the sum of all reserves in the organs:
     status.reserve = sum(status.reserve_organs)

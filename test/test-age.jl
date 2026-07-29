@@ -14,11 +14,8 @@ end
 
 @testset "DailyPlantAgeModel" begin
     scene = CompositeModel(
-        Object(:test_object; scale=:Plant, kind=:plant, status=Status());
-        applications=(
-            ModelSpec(DailyPlantAgeModel(10); name=:plant_age) |>
-            AppliesTo(One(scale=:Plant)),
-        ),
+        DailyPlantAgeModel(10);
+        scale=:Plant,
         environment=meteo,
     )
     sim = run!(

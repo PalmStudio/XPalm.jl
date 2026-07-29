@@ -37,12 +37,11 @@ using PlantSimEngine
 using XPalm
 using XPalm.Models 
 
-pot_model = FemaleFinalPotentialFruits(8.0 * 365, 0.3, 2000.0, 6.5, 2100.0)
+model = FemaleFinalPotentialFruits()
 scene = CompositeModel(
-    Object(:female; scale=:Female, kind=:plant, status=Status(initiation_age=5000.0));
-    applications=(
-        ModelSpec(pot_model) |> AppliesTo(One(scale=:Female)),
-    ),
+    model;
+    scale=:Female,
+    status=(initiation_age=5000.0,),
 )
 run!(scene)
 only(model_objects(scene; scale=:Female)).status.potential_fruits_number

@@ -62,7 +62,6 @@ function PlantSimEngine.run!(m::PhytomerEmission, models, status, meteo, constan
         id=status.graph_node_count,
         attributes=Dict{Symbol,Any}(),
         initial_status=(plant_age=plant_age, initiation_age=plant_age),
-        kind=:plant,
     )
 
     status.last_phytomer = st_phyto.node
@@ -79,7 +78,6 @@ function PlantSimEngine.run!(m::PhytomerEmission, models, status, meteo, constan
         id=status.graph_node_count,
         attributes=Dict{Symbol,Any}(),
         initial_status=(plant_age=plant_age, initiation_age=plant_age),
-        kind=:plant,
     )
 
     # Add a leaf as its child:
@@ -95,7 +93,6 @@ function PlantSimEngine.run!(m::PhytomerEmission, models, status, meteo, constan
         id=status.graph_node_count,
         attributes=Dict{Symbol,Any}(),
         initial_status=(plant_age=plant_age, initiation_age=plant_age),
-        kind=:plant,
     )
 
     PlantSimEngine.run_call!(

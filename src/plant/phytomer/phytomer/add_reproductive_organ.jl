@@ -51,7 +51,6 @@ function PlantSimEngine.run!(m::ReproductiveOrganEmission, models, status, meteo
             state=status.state,
             sex=status.sex,
         ),
-        kind=:plant,
     )
     organ = Symbol(lowercase(string(status.sex)))
     PlantSimEngine.run_call!(

@@ -1,12 +1,16 @@
-
-
-struct _MappedModel{M,V}
-    model::M
-    mapped_variables::V
+function _xpalm_application(scale::Symbol, model; name=PlantSimEngine.process(model))
+    return PlantSimEngine.ModelSpec(
+        model;
+        name=Symbol(scale, "__", name),
+    ) |>
+           PlantSimEngine.AppliesTo(PlantSimEngine.Many(scale=scale))
 end
 
-_MappedModel(; model, mapped_variables=()) = _MappedModel(model, mapped_variables)
-
+# Organ maintenance respiration is normally scheduled before organ creation so
+# existing organs use their previous-step biomass, as in XPalm v0.6.1. A newly
+# created organ therefore needs one explicit initialization call. This separate
+# process can be a call target without removing the normal respiration
+# application from the root schedule.
 struct _InitialMaintenanceRespiration{M} <: PlantSimEngine.AbstractModel
     model::M
 end
@@ -34,314 +38,34 @@ function PlantSimEngine.run!(
     )
 end
 
-function _initial_maintenance_respiration(model, biomass_application::Symbol)
-    return _MappedModel(
-        model=PlantSimEngine.ModelSpec(
-            _InitialMaintenanceRespiration(model);
-        ) |>
-              PlantSimEngine.OutputRouting(Rm=:stream_only),
-        mapped_variables=[
-            :biomass => PlantSimEngine.One(
-                within=PlantSimEngine.Self(),
-                application=biomass_application,
-                var=:biomass,
-            ),
-        ],
-    )
-end
-
-struct _ReserveStateAdapter <: PlantSimEngine.AbstractModel end
-
-PlantSimEngine.process(::_ReserveStateAdapter) = :reserve_state_adapter
-PlantSimEngine.inputs_(::_ReserveStateAdapter) = NamedTuple()
-PlantSimEngine.outputs_(::_ReserveStateAdapter) = (reserve=0.0,)
-
-function PlantSimEngine.run!(
-    ::_ReserveStateAdapter,
-    models,
-    status,
-    meteo,
-    constants,
-    extra=nothing,
+function _initial_maintenance_respiration_application(
+    scale::Symbol,
+    model,
+    biomass_application::Symbol,
 )
-    return nothing
-end
-
-struct _ReserveStatePublisher <: PlantSimEngine.AbstractModel end
-
-PlantSimEngine.process(::_ReserveStatePublisher) = :reserve_state_publisher
-PlantSimEngine.inputs_(::_ReserveStatePublisher) = (reserve_plant=0.0,)
-PlantSimEngine.outputs_(::_ReserveStatePublisher) = (reserve=0.0,)
-
-function PlantSimEngine.run!(
-    ::_ReserveStatePublisher,
-    models,
-    status,
-    meteo,
-    constants,
-    extra=nothing,
-)
-    return nothing
-end
-
-struct _CarbonAllocationStateAdapter <: PlantSimEngine.AbstractModel end
-
-PlantSimEngine.process(::_CarbonAllocationStateAdapter) =
-    :carbon_allocation_state_adapter
-PlantSimEngine.inputs_(::_CarbonAllocationStateAdapter) = NamedTuple()
-PlantSimEngine.outputs_(::_CarbonAllocationStateAdapter) =
-    (carbon_allocation=0.0,)
-
-function PlantSimEngine.run!(
-    ::_CarbonAllocationStateAdapter,
-    models,
-    status,
-    meteo,
-    constants,
-    extra=nothing,
-)
-    return nothing
-end
-
-struct _CarbonAllocationStatePublisher <: PlantSimEngine.AbstractModel end
-
-PlantSimEngine.process(::_CarbonAllocationStatePublisher) =
-    :carbon_allocation_state_publisher
-PlantSimEngine.inputs_(::_CarbonAllocationStatePublisher) =
-    (carbon_allocation_plant=0.0,)
-PlantSimEngine.outputs_(::_CarbonAllocationStatePublisher) =
-    (carbon_allocation=0.0,)
-
-function PlantSimEngine.run!(
-    ::_CarbonAllocationStatePublisher,
-    models,
-    status,
-    meteo,
-    constants,
-    extra=nothing,
-)
-    return nothing
-end
-
-struct _BoundModel{M,B}
-    model::M
-    bindings::B
-end
-
-_input_bindings(; kwargs...) = model -> _BoundModel(model, (; kwargs...))
-
-function _source_scope(target_scale::Symbol, source_scale::Symbol)
-    source_scale == target_scale && return PlantSimEngine.Self()
-    source_scale == :Scene && return PlantSimEngine.SceneScope()
-    source_scale == :Soil && return PlantSimEngine.SceneScope()
-    source_scale == :Plant && return PlantSimEngine.SelfPlant()
-    source_scale == :Phytomer && return PlantSimEngine.Ancestor(scale=:Phytomer)
-    target_scale == :Scene && return PlantSimEngine.SceneScope()
-    target_scale == :Plant && return PlantSimEngine.Subtree()
-    return PlantSimEngine.SelfPlant()
-end
-
-function _one_source(target_scale::Symbol, source_scale::Symbol, source_var::Symbol; process=nothing)
-    scope = _source_scope(target_scale, source_scale)
-    kwargs = isnothing(process) ?
-             (; scale=source_scale, var=source_var) :
-             (; scale=source_scale, var=source_var, process=process)
-    if scope isa PlantSimEngine.Relation
-        return PlantSimEngine.One(; kwargs..., relation=scope.relation)
-    end
-    return PlantSimEngine.One(; kwargs..., within=scope)
-end
-
-function _many_source(target_scale::Symbol, sources, source_var::Symbol; process=nothing)
-    source_scales = Tuple(Symbol(first(source)) for source in sources)
-    scope = target_scale == :Phytomer ? PlantSimEngine.Subtree() :
-            target_scale in (:Scene, :Soil) ? PlantSimEngine.SceneScope() :
-            target_scale == :Plant ? PlantSimEngine.Subtree() :
-            PlantSimEngine.SelfPlant()
-    kwargs = isnothing(process) ?
-             (; scale=source_scales, var=source_var) :
-             (; scale=source_scales, var=source_var, process=process)
-    return PlantSimEngine.Many(; kwargs..., within=scope)
-end
-
-function _normalize_mapping_pair(binding)
-    binding isa PreviousTimeStep && return binding => (nothing => binding.variable)
-    binding isa Pair || error("Expected an XPalm mapping pair, got `$(typeof(binding))`.")
-    key = first(binding)
-    value = last(binding)
-    key isa Pair && return first(key) => (last(key) => value)
-    return key => value
-end
-
-function _selector_from_mapping(target_scale::Symbol, local_var::Symbol, source)
-    if source isa PlantSimEngine.AbstractObjectMultiplicity
-        return source
-    elseif source isa Pair && isnothing(first(source))
-        return _one_source(target_scale, target_scale, Symbol(last(source)))
-    elseif source isa Symbol
-        return _one_source(target_scale, source, local_var)
-    elseif source isa Pair
-        return _one_source(target_scale, Symbol(first(source)), Symbol(last(source)))
-    elseif source isa AbstractVector || source isa Tuple
-        isempty(source) && error("XPalm mapping for `$(local_var)` has no source.")
-        pairs = Tuple(source)
-        all(src -> src isa Pair, pairs) || error(
-            "Vector mappings for `$(local_var)` must contain `scale => variable` pairs."
-        )
-        source_vars = unique(Symbol(last(src)) for src in pairs)
-        length(source_vars) == 1 || error(
-            "CompositeModel/Object `Many(...)` mappings currently require one source variable per input. ",
-            "`$(local_var)` maps from several variables: $(source_vars)."
-        )
-        return _many_source(target_scale, pairs, only(source_vars))
-    end
-    error("Unsupported XPalm mapping source `$(source)` for `$(local_var)`.")
-end
-
-function _inputs_from_mapped_variables(target_scale::Symbol, mapped_variables)
-    pairs = Pair{Any,Any}[]
-    for raw_binding in mapped_variables
-        binding = _normalize_mapping_pair(raw_binding)
-        local_var = first(binding)
-        source = last(binding)
-        if local_var isa PreviousTimeStep
-            push!(
-                pairs,
-                local_var => _selector_from_mapping(target_scale, local_var.variable, source),
-            )
-        else
-            push!(
-                pairs,
-                Symbol(local_var) => _selector_from_mapping(target_scale, Symbol(local_var), source),
-            )
-        end
-    end
-    return pairs
-end
-
-function _inputs_from_bound_model(target_scale::Symbol, bindings)
-    input_pairs = Pair{Symbol,Any}[]
-    for (input, binding) in Base.pairs(bindings)
-        binding isa NamedTuple || error("XPalm input binding `$(input)` must be a NamedTuple.")
-        source_scale = Symbol(binding.scale)
-        process = haskey(binding, :process) ? Symbol(binding.process) : nothing
-        push!(
-            input_pairs,
-            Symbol(input) => _one_source(target_scale, source_scale, Symbol(input); process=process),
-        )
-    end
-    return input_pairs
-end
-
-function _calls_from_model(model)
-    call_pairs = Pair{Symbol,Any}[]
-    for (name, target) in Base.pairs(PlantSimEngine.dep(model))
-        target isa Union{PlantSimEngine.Input,PlantSimEngine.Call,Pair} && continue
-        push!(
-            call_pairs,
-            Symbol(name) => PlantSimEngine.One(
-                relation=:self,
-                process=Symbol(name),
-            ),
-        )
-    end
-    return call_pairs
-end
-
-function _scene_application(scale::Symbol, entry)
-    mapped_variables = ()
-    extra_inputs = Pair{Symbol,Any}[]
-    model_entry = entry
-    if model_entry isa _BoundModel
-        append!(extra_inputs, _inputs_from_bound_model(scale, model_entry.bindings))
-        model_entry = model_entry.model
-    end
-    if model_entry isa _MappedModel
-        mapped_variables = model_entry.mapped_variables
-        model_entry = model_entry.model
-    end
-    if model_entry isa _BoundModel
-        append!(extra_inputs, _inputs_from_bound_model(scale, model_entry.bindings))
-        model_entry = model_entry.model
-    end
-
-    model_entry isa Union{PlantSimEngine.AbstractModel,PlantSimEngine.ModelSpec} || error(
-        "XPalm model application at scale `$(scale)` must wrap an AbstractModel or ModelSpec, got `$(typeof(model_entry))`."
-    )
-
-    base_spec = model_entry isa PlantSimEngine.ModelSpec ?
-                model_entry :
-                PlantSimEngine.ModelSpec(model_entry)
-    model = PlantSimEngine.model_(base_spec)
-    inputs = (_inputs_from_mapped_variables(scale, mapped_variables)..., extra_inputs...)
-    calls = _calls_from_model(model)
-    base_name = PlantSimEngine.application_name(base_spec)
-    application_name = isnothing(base_name) ||
-                       base_name == PlantSimEngine.process(model) ?
-                       Symbol(scale, "__", PlantSimEngine.process(model)) :
-                       Symbol(scale, "__", base_name)
-    spec = PlantSimEngine.ModelSpec(
-        base_spec;
-        name=application_name,
-        applies_to=PlantSimEngine.Many(scale=scale),
-    )
-    isempty(inputs) || (spec = spec |> PlantSimEngine.Inputs(inputs...))
-    isempty(calls) || (spec = spec |> PlantSimEngine.Calls(calls...))
-    return spec
-end
-
-function _applications_from_model_dict(models)
-    applications = Any[]
-    for (scale, entries) in pairs(models)
-        for entry in entries
-            push!(applications, _scene_application(Symbol(scale), entry))
-        end
-    end
-
-    organ_early_order = (
-        (
-            Symbol(scale, :__thermal_time)
-            for scale in (:Phytomer, :Internode, :Leaf, :Male, :Female)
-        )...,
-        (
-            Symbol(scale, :__maintenance_respiration)
-            for scale in (:Internode, :Leaf, :Male, :Female)
-        )...,
-    )
-    applications_by_name = Dict(
-        PlantSimEngine.application_name(application) => application
-        for application in applications
-    )
-    organ_early = [
-        applications_by_name[name]
-        for name in organ_early_order
-        if haskey(applications_by_name, name)
-    ]
-    isempty(organ_early) && return Tuple(applications)
-    organ_early_names = Set(organ_early_order)
-
-    remaining = filter(
-        application ->
-            !(PlantSimEngine.application_name(application) in organ_early_names),
-        applications,
-    )
-    plant_thermal_index = findfirst(
-        application ->
-            PlantSimEngine.application_name(application) == :Plant__thermal_time,
-        remaining,
-    )
-    isnothing(plant_thermal_index) &&
-        error("XPalm requires the `Plant__thermal_time` application.")
-    ordered = Any[
-        remaining[1:plant_thermal_index]...,
-        organ_early...,
-        remaining[(plant_thermal_index + 1):end]...,
-    ]
-    return Tuple(ordered)
+    return _xpalm_application(
+        scale,
+        _InitialMaintenanceRespiration(model),
+    ) |>
+           PlantSimEngine.Inputs(
+        :biomass => PlantSimEngine.One(
+            within=PlantSimEngine.Self(),
+            application=biomass_application,
+            var=:biomass,
+        ),
+    ) |>
+           PlantSimEngine.OutputRouting(Rm=:stream_only)
 end
 
 function _phytomer_emission_application(mtg)
-    return PlantSimEngine.ModelSpec(PhytomerEmission(mtg)) |>
+    return _xpalm_application(:Plant, PhytomerEmission(mtg)) |>
+           PlantSimEngine.Inputs(
+        :graph_node_count => PlantSimEngine.One(
+            scale=:Scene,
+            within=PlantSimEngine.SceneScope(),
+            var=:graph_node_count,
+        ),
+    ) |>
            PlantSimEngine.Calls(
         :phytomer_initiation_age => PlantSimEngine.Many(
             scale=:Phytomer,
@@ -382,7 +106,29 @@ function _phytomer_emission_application(mtg)
 end
 
 function _reproductive_organ_emission_application(mtg)
-    return PlantSimEngine.ModelSpec(ReproductiveOrganEmission(mtg)) |>
+    return _xpalm_application(
+        :Phytomer,
+        ReproductiveOrganEmission(mtg),
+    ) |>
+           PlantSimEngine.Inputs(
+        :graph_node_count => PlantSimEngine.One(
+            scale=:Scene,
+            within=PlantSimEngine.SceneScope(),
+            var=:graph_node_count,
+        ),
+        :phytomer_count => PlantSimEngine.One(
+            scale=:Plant,
+            within=PlantSimEngine.SelfPlant(),
+            application=:Plant__phytomer_emission,
+            var=:phytomer_count,
+        ),
+        :plant_age => PlantSimEngine.One(
+            scale=:Plant,
+            within=PlantSimEngine.SelfPlant(),
+            application=:Plant__plant_age,
+            var=:plant_age,
+        ),
+    ) |>
            PlantSimEngine.Calls(
         :male_initiation_age => PlantSimEngine.Many(
             scale=:Male,
@@ -420,682 +166,992 @@ end
 """
     model_applications(p; architecture=false)
 
-Defines the scene/object model applications used in XPalm.
+Define the model applications used by XPalm.
+
+Applications are listed in their intended daily execution order. Each entry
+shows the model, the scale where it runs, and any cross-scale inputs or hard
+calls. PlantSimEngine may add dependency-order edges, but otherwise preserves
+this order.
 
 # Arguments
 
-- `p`: A palm object with the parameters of the model (*e.g.* p = Palm()).
-- `architecture`: A boolean indicating whether to compute the 3D architecture of the palm (default is false).
+- `p`: a [`Palm`](@ref) containing the MTG and model parameters.
+- `architecture`: also compute the 3D palm architecture when `true`.
 
 # Returns
 
-- A tuple of `PlantSimEngine.ModelSpec` applications.
+A tuple of `PlantSimEngine.ModelSpec` applications.
 """
 function model_applications(p; architecture=false)
+    parameters = p.parameters
 
-    # This only works for recent versions of PlantSimEngine
-    models = OrderedDict(
-        :Scene => (
-            ET0_BP(p.parameters["plot"]["latitude"], p.parameters["plot"]["altitude"]),
-            DailyDegreeDays(),
-            _MappedModel(
-                model=LAIModel(p.parameters["plot"]["scene_area"]),
-                mapped_variables=[:leaf_areas => [:Plant => :leaf_area],],
-            ),
-            Beer(k=p.parameters["radiation"]["k"]),
-            GraphNodeCount(length(p.mtg)), # to have the `graph_node_count` variable initialised in the status
-        ),
-        :Plant => (
-            DailyDegreeDays(),
-            DailyPlantAgeModel(),
-            PhyllochronModel(
-                p.parameters["phyllochron"]["age_palm_maturity"],
-                p.parameters["phyllochron"]["production_speed_initial"],
-                p.parameters["phyllochron"]["production_speed_mature"],
-            ),
-            PlantSimEngine.ModelSpec(PlantLeafAreaModel()) |>
-            PlantSimEngine.Inputs(
-                :leaf_area_leaves => PlantSimEngine.Many(
-                    scale=:Leaf,
-                    within=PlantSimEngine.Subtree(),
-                    application=:Leaf__leaf_area,
-                    var=:leaf_area,
-                ),
-                :leaf_states => PlantSimEngine.Many(
-                    scale=:Leaf,
-                    within=PlantSimEngine.Subtree(),
-                    application=:Leaf__state,
-                    var=:state,
-                ),
-            ),
-            _MappedModel(
-                model=_phytomer_emission_application(p.mtg),
-                mapped_variables=[:graph_node_count => (:Scene => :graph_node_count),],
-            ),
-            _MappedModel(
-                model=PlantRm(),
-                mapped_variables=[
-                    :Rm_organs => PlantSimEngine.Many(
-                        scale=(:Leaf, :Internode, :Male, :Female),
-                        within=PlantSimEngine.Subtree(),
-                        process=:maintenance_respiration,
-                        var=:Rm,
-                    ),
-                ],
-            ),
-            _MappedModel(
-                model=SceneToPlantLightPartitioning(p.parameters["plot"]["scene_area"]),
-                mapped_variables=[:aPPFD_scene => :Scene => :aPPFD, :scene_leaf_area => :Scene => :leaf_area],
-            ),
-            _MappedModel(
-                model=RUE_FTSW(p.parameters["radiation"]["RUE"], p.parameters["radiation"]["threshold_ftsw"]),
-                mapped_variables=[PreviousTimeStep(:ftsw) => (:Soil => :ftsw),],
-            ),
-            CarbonOfferRm(),
-            _MappedModel(
-                model=OrgansCarbonAllocationModel(p.parameters["carbon_demand"]["reserves"]["cost_reserve_mobilization"]),
-                mapped_variables=[
-                    :carbon_demand_organs => [:Leaf, :Internode, :Male, :Female] .=> :carbon_demand,
-                    :carbon_allocation_organs => PlantSimEngine.Many(
-                        scale=(:Leaf, :Internode, :Male, :Female),
-                        within=PlantSimEngine.Subtree(),
-                        process=:carbon_allocation_state_adapter,
-                        var=:carbon_allocation,
-                    ),
-                    PreviousTimeStep(:previous_reserve_organs) => PlantSimEngine.One(
-                        within=PlantSimEngine.Self(),
-                        application=:Plant__reserve_filling,
-                        var=:reserve_organs,
-                    ),
-                ],
-            ),
-            _MappedModel(
-                model=PlantSimEngine.ModelSpec(OrganReserveFilling()) |>
-                      PlantSimEngine.Updates(:reserve; after=:Plant__carbon_allocation) |>
-                      PlantSimEngine.Updates(:reserve_organs; after=:Plant__carbon_allocation),
-                mapped_variables=[
-                    :potential_reserve_organs => [:Internode, :Leaf] .=> :potential_reserve,
-                    :reserve_organs => PlantSimEngine.Many(
-                        scale=(:Internode, :Leaf),
-                        within=PlantSimEngine.Subtree(),
-                        process=:reserve_state_adapter,
-                        var=:reserve,
-                    ),
-                ],
-            ),
-            _MappedModel(
-                model=PlantBunchHarvest(),
-                mapped_variables=[
-                    :biomass_bunch_harvested_organs => PlantSimEngine.Many(
-                        scale=:Female,
-                        within=PlantSimEngine.Subtree(),
-                        application=:Female__harvest,
-                        var=:biomass_bunch_harvested,
-                    ),
-                    :biomass_stalk_harvested_organs => PlantSimEngine.Many(
-                        scale=:Female,
-                        within=PlantSimEngine.Subtree(),
-                        application=:Female__harvest,
-                        var=:biomass_stalk_harvested,
-                    ),
-                    :biomass_fruit_harvested_organs => PlantSimEngine.Many(
-                        scale=:Female,
-                        within=PlantSimEngine.Subtree(),
-                        application=:Female__harvest,
-                        var=:biomass_fruit_harvested,
-                    ),
-                    :biomass_bunch_harvested_cum_organs => PlantSimEngine.Many(
-                        scale=:Female,
-                        within=PlantSimEngine.Subtree(),
-                        application=:Female__harvest,
-                        var=:biomass_bunch_harvested_cum,
-                    ),
-                    :biomass_oil_harvested_organs => PlantSimEngine.Many(
-                        scale=:Female,
-                        within=PlantSimEngine.Subtree(),
-                        application=:Female__harvest,
-                        var=:biomass_oil_harvested,
-                    ),
-                    :biomass_oil_harvested_cum_organs => PlantSimEngine.Many(
-                        scale=:Female,
-                        within=PlantSimEngine.Subtree(),
-                        application=:Female__harvest,
-                        var=:biomass_oil_harvested_cum,
-                    ),
-                    :biomass_oil_harvested_potential_organs => PlantSimEngine.Many(
-                        scale=:Female,
-                        within=PlantSimEngine.Subtree(),
-                        application=:Female__harvest,
-                        var=:biomass_oil_harvested_potential,
-                    ),
-                    :biomass_oil_harvested_potential_cum_organs => PlantSimEngine.Many(
-                        scale=:Female,
-                        within=PlantSimEngine.Subtree(),
-                        application=:Female__harvest,
-                        var=:biomass_oil_harvested_potential_cum,
-                    ),
-                ],
+    # Scene drivers and canopy aggregation.
+    scene_applications = (
+        _xpalm_application(
+            :Scene,
+            ET0_BP(
+                parameters["plot"]["latitude"],
+                parameters["plot"]["altitude"],
             ),
         ),
-        :Phytomer => (
-            _MappedModel(
-                model=InitiationAgeFromPlantAge(),
-                mapped_variables=[:plant_age => :Plant,],
-            ),
-            # DegreeDaysFTSW(
-            #     threshold_ftsw_stress=p.parameters["phyllochron"]["threshold_ftsw_stress"],
-            # ), #! we should use this one instead of DailyDegreeDaysSinceInit I think
-            _MappedModel(
-                model=DailyDegreeDaysSinceInit(),
-                mapped_variables=[:TEff => :Plant,], # Using TEff computed at plant scale
-            ),
-            _MappedModel(
-                model=SexDetermination(
-                    TT_flowering=p.parameters["phenology"]["inflorescence"]["TT_flowering"],
-                    duration_abortion=p.parameters["phenology"]["inflorescence"]["duration_abortion"],
-                    duration_sex_determination=p.parameters["phenology"]["inflorescence"]["duration_sex_determination"],
-                    sex_ratio_min=p.parameters["reproduction"]["sex_ratio"]["sex_ratio_min"],
-                    sex_ratio_ref=p.parameters["reproduction"]["sex_ratio"]["sex_ratio_ref"],
-                    random_seed=p.parameters["reproduction"]["sex_ratio"]["random_seed"],
-                ),
-                mapped_variables=[
-                    PreviousTimeStep(:carbon_offer_plant) => :Plant => :carbon_offer_after_rm,
-                    PreviousTimeStep(:carbon_demand_plant) => :Plant => :carbon_demand,
-                ],
-            ),
-            _MappedModel(
-                model=_reproductive_organ_emission_application(p.mtg),
-                mapped_variables=[
-                    :graph_node_count => (:Scene => :graph_node_count),
-                    :phytomer_count => (:Plant => :phytomer_count),
-                    :plant_age => PlantSimEngine.One(
-                        scale=:Plant,
-                        within=PlantSimEngine.SelfPlant(),
-                        application=:Plant__plant_age,
-                        var=:plant_age,
-                    ),
-                ],
-            ),
-            _MappedModel(
-                model=AbortionRate(
-                    TT_flowering=p.parameters["phenology"]["inflorescence"]["TT_flowering"],
-                    duration_abortion=p.parameters["phenology"]["inflorescence"]["duration_abortion"],
-                    abortion_rate_max=p.parameters["reproduction"]["abortion"]["abortion_rate_max"],
-                    abortion_rate_ref=p.parameters["reproduction"]["abortion"]["abortion_rate_ref"],
-                    random_seed=p.parameters["reproduction"]["abortion"]["random_seed"],
-                ),
-                mapped_variables=[
-                    PreviousTimeStep(:carbon_offer_plant) => :Plant => :carbon_offer_after_rm,
-                    PreviousTimeStep(:carbon_demand_plant) => :Plant => :carbon_demand,
-                ],
-            ),
-            _MappedModel(
-                model=InfloStateModel(
-                    TT_flowering=p.parameters["phenology"]["inflorescence"]["TT_flowering"],
-                    duration_flowering_male=p.parameters["phenology"]["Male"]["duration_flowering_male"],
-                    duration_fruit_setting=p.parameters["phenology"]["Female"]["duration_fruit_setting"],
-                    duration_bunch_development=p.parameters["phenology"]["Female"]["duration_bunch_development"],
-                    fraction_period_oleosynthesis=p.parameters["phenology"]["Female"]["fraction_period_oleosynthesis"],
-                ), # Compute the state of the phytomer
-                #! note: the mapping is artificial, we compute the state of those organs in the function directly because we use the status of a phytomer to give it to its children
-                #! second note: the models should really be associated to the organs (female and male inflo + leaves)
+        _xpalm_application(:Scene, DailyDegreeDays()),
+        _xpalm_application(
+            :Scene,
+            LAIModel(parameters["plot"]["scene_area"]),
+        ) |>
+        PlantSimEngine.Inputs(
+            :leaf_areas => PlantSimEngine.Many(
+                scale=:Plant,
+                within=PlantSimEngine.SceneScope(),
+                application=:Plant__leaf_area,
+                var=:leaf_area,
             ),
         ),
-        :Internode =>
-            (
-                PlantSimEngine.ModelSpec(_ReserveStateAdapter()) |>
-                PlantSimEngine.OutputRouting(reserve=:stream_only),
-                PlantSimEngine.ModelSpec(_CarbonAllocationStateAdapter()) |>
-                PlantSimEngine.OutputRouting(carbon_allocation=:stream_only),
-                _MappedModel(
-                    model=InitiationAgeFromPlantAge(),
-                    mapped_variables=[:plant_age => :Plant,],
-                ),
-                _MappedModel(
-                    model=DailyDegreeDaysSinceInit(),
-                    mapped_variables=[:TEff => :Plant,], # Using TEff computed at plant scale
-                ),
-                _initial_maintenance_respiration(
-                    RmQ10FixedN(
-                        p.parameters["respiration"]["Internode"]["Q10"],
-                        p.parameters["respiration"]["Internode"]["Mr"],
-                        p.parameters["respiration"]["Internode"]["T_ref"],
-                        p.parameters["respiration"]["Internode"]["P_alive"],
-                    ),
-                    :Internode__biomass,
-                ),
-                _MappedModel(
-                    model=RmQ10FixedN(
-                        p.parameters["respiration"]["Internode"]["Q10"],
-                        p.parameters["respiration"]["Internode"]["Mr"],
-                        p.parameters["respiration"]["Internode"]["T_ref"],
-                        p.parameters["respiration"]["Internode"]["P_alive"],
-                    ),
-                    mapped_variables=[
-                        PreviousTimeStep(:biomass) => PlantSimEngine.One(
-                            within=PlantSimEngine.Self(),
-                            application=:Internode__biomass,
-                            var=:biomass,
-                        ),
-                    ],
-                ),
-                FinalPotentialInternodeDimensionModel(
-                    p.parameters["dimensions"]["internode"]["age_max_height"],
-                    p.parameters["dimensions"]["internode"]["age_max_radius"],
-                    p.parameters["dimensions"]["internode"]["min_height"],
-                    p.parameters["dimensions"]["internode"]["min_radius"],
-                    p.parameters["dimensions"]["internode"]["max_height"],
-                    p.parameters["dimensions"]["internode"]["max_radius"],
-                ),
-                PotentialInternodeDimensionModel(
-                    inflexion_point_height=p.parameters["dimensions"]["internode"]["inflexion_point_height"],
-                    slope_height=p.parameters["dimensions"]["internode"]["slope_height"],
-                    inflexion_point_radius=p.parameters["dimensions"]["internode"]["inflexion_point_radius"],
-                    slope_radius=p.parameters["dimensions"]["internode"]["slope_radius"],
-                ),
-                InternodeDimensionModel(p.parameters["carbon_demand"]["internode"]["apparent_density"]),
-                InternodeCarbonDemandModel(
-                    apparent_density=p.parameters["carbon_demand"]["internode"]["apparent_density"],
-                    carbon_concentration=p.parameters["carbon_demand"]["internode"]["carbon_concentration"],
-                    respiration_cost=p.parameters["carbon_demand"]["internode"]["respiration_cost"]
-                ),
-                _MappedModel(
-                    model=PotentialReserveInternode(
-                        p.parameters["reserves"]["nsc_max"]
-                    ),
-                    mapped_variables=[
-                        PreviousTimeStep(:biomass) => PlantSimEngine.One(
-                            within=PlantSimEngine.Self(),
-                            application=:Internode__biomass,
-                            var=:biomass,
-                        ),
-                        PreviousTimeStep(:reserve) => PlantSimEngine.One(
-                            within=PlantSimEngine.Self(),
-                            application=:Internode__reserve_state_publisher,
-                            var=:reserve,
-                        ),
-                    ],
-                ),
-                InternodeBiomass(
-                    initial_biomass=p.parameters["dimensions"]["internode"]["min_height"] * p.parameters["dimensions"]["internode"]["min_radius"] * p.parameters["carbon_demand"]["internode"]["apparent_density"],
-                    respiration_cost=p.parameters["carbon_demand"]["internode"]["respiration_cost"]
-                ),
-                _MappedModel(
-                    model=_CarbonAllocationStatePublisher(),
-                    mapped_variables=[
-                        :carbon_allocation_plant =>
-                            :Plant => :carbon_allocation,
-                    ],
-                ),
-                _MappedModel(
-                    model=_ReserveStatePublisher(),
-                    mapped_variables=[:reserve_plant => :Plant => :reserve],
-                ),
-            ),
-        :Leaf => (
-            PlantSimEngine.ModelSpec(_ReserveStateAdapter()) |>
-            PlantSimEngine.OutputRouting(reserve=:stream_only),
-            PlantSimEngine.ModelSpec(_CarbonAllocationStateAdapter()) |>
-            PlantSimEngine.OutputRouting(carbon_allocation=:stream_only),
-            _MappedModel(
-                model=InitiationAgeFromPlantAge(),
-                mapped_variables=[:plant_age => :Plant,],
-            ),
-            _MappedModel(
-                model=DailyDegreeDaysSinceInit(),
-                mapped_variables=[:TEff => :Plant,], # Using TEff computed at plant scale
-            ),
-            _initial_maintenance_respiration(
-                RmQ10FixedN(
-                    p.parameters["respiration"]["Leaf"]["Q10"],
-                    p.parameters["respiration"]["Leaf"]["Mr"],
-                    p.parameters["respiration"]["Leaf"]["T_ref"],
-                    p.parameters["respiration"]["Leaf"]["P_alive"],
-                ),
-                :Leaf__biomass,
-            ),
-            FinalPotentialAreaModel(
-                p.parameters["dimensions"]["leaf"]["age_first_mature_leaf"],
-                p.parameters["dimensions"]["leaf"]["leaf_area_first_leaf"],
-                p.parameters["dimensions"]["leaf"]["leaf_area_mature_leaf"],
-            ),
-            PotentialAreaModel(
-                p.parameters["dimensions"]["leaf"]["inflexion_index"],
-                p.parameters["dimensions"]["leaf"]["slope"],
-            ),
-            _MappedModel(
-                model=LeafStateModel(),
-                mapped_variables=[:rank_leaves => [:Leaf => :rank], :state_phytomers => [:Phytomer => :state],],
-            ),
-            _MappedModel(
-                model=LeafAreaModel(
-                    p.parameters["mass_and_dimensions"]["leaf"]["lma_min"],
-                    p.parameters["biomass"]["leaf"]["leaflets_biomass_contribution"],
-                    p.parameters["dimensions"]["leaf"]["leaf_area_first_leaf"],
-                ),
-                mapped_variables=[
-                    PreviousTimeStep(:biomass) => PlantSimEngine.One(
-                        within=PlantSimEngine.Self(),
-                        application=:Leaf__leaf_pruning,
-                        var=:biomass,
-                    ),
-                ],
-            ),
-            _MappedModel(
-                model=RmQ10FixedN(
-                    p.parameters["respiration"]["Leaf"]["Q10"],
-                    p.parameters["respiration"]["Leaf"]["Mr"],
-                    p.parameters["respiration"]["Leaf"]["T_ref"],
-                    p.parameters["respiration"]["Leaf"]["P_alive"],
-                ),
-                mapped_variables=[
-                    PreviousTimeStep(:biomass) => PlantSimEngine.One(
-                        within=PlantSimEngine.Self(),
-                        application=:Leaf__leaf_pruning,
-                        var=:biomass,
-                    ),
-                ],
-            ),
-            PlantSimEngine.ModelSpec(
-                LeafCarbonDemandModelPotentialArea(
-                    p.parameters["mass_and_dimensions"]["leaf"]["lma_min"],
-                    p.parameters["carbon_demand"]["leaf"]["respiration_cost"],
-                    p.parameters["biomass"]["leaf"]["leaflets_biomass_contribution"]
-                )
-            ) |>
-            PlantSimEngine.Inputs(
-                :state => PlantSimEngine.One(
-                    relation=:self,
-                    var=:state,
-                    process=:state,
-                ),
-            ),
-            _MappedModel(
-                model=PotentialReserveLeaf(
-                    p.parameters["mass_and_dimensions"]["leaf"]["lma_min"],
-                    p.parameters["mass_and_dimensions"]["leaf"]["lma_max"],
-                    p.parameters["biomass"]["leaf"]["leaflets_biomass_contribution"]
-                ),
-                mapped_variables=[
-                    PreviousTimeStep(:leaf_area) => PlantSimEngine.One(
-                        within=PlantSimEngine.Self(),
-                        application=:Leaf__leaf_pruning,
-                        var=:leaf_area,
-                    ),
-                    PreviousTimeStep(:reserve) => PlantSimEngine.One(
-                        within=PlantSimEngine.Self(),
-                        application=:Leaf__leaf_pruning,
-                        var=:reserve,
-                    ),
-                ],
-            ),
-            LeafBiomass(
-                initial_biomass=p.parameters["dimensions"]["leaf"]["leaf_area_first_leaf"] * p.parameters["mass_and_dimensions"]["leaf"]["lma_min"] /
-                                p.parameters["biomass"]["leaf"]["leaflets_biomass_contribution"],
-                respiration_cost=p.parameters["carbon_demand"]["leaf"]["respiration_cost"],
-            ),
-            _MappedModel(
-                model=_CarbonAllocationStatePublisher(),
-                mapped_variables=[
-                    :carbon_allocation_plant =>
-                        :Plant => :carbon_allocation,
-                ],
-            ),
-            _MappedModel(
-                model=_ReserveStatePublisher(),
-                mapped_variables=[:reserve_plant => :Plant => :reserve],
-            ),
-            _MappedModel(
-                model=PlantSimEngine.ModelSpec(
-                    RankLeafPruning(
-                        p.parameters["management"]["rank_leaf_pruning"],
-                    ),
-                ) |>
-                      PlantSimEngine.Updates(
-                    :biomass;
-                    after=:Leaf__biomass,
-                ) |>
-                      PlantSimEngine.Updates(
-                    :leaf_area;
-                    after=:Leaf__leaf_area,
-                ) |>
-                      PlantSimEngine.Updates(
-                    :reserve;
-                    after=:Leaf__reserve_state_publisher,
-                ) |>
-                      PlantSimEngine.Updates(
-                    :state;
-                    after=:Leaf__state,
-                ),
-                mapped_variables=[:state_phytomers => [:Phytomer => :state],],
-            ),
+        _xpalm_application(
+            :Scene,
+            Beer(k=parameters["radiation"]["k"]),
         ),
-        :Male => (
-            PlantSimEngine.ModelSpec(_CarbonAllocationStateAdapter()) |>
-            PlantSimEngine.OutputRouting(carbon_allocation=:stream_only),
-            _MappedModel(
-                model=InitiationAgeFromPlantAge(),
-                mapped_variables=[:plant_age => :Plant,],
-            ),
-            _MappedModel(
-                model=DailyDegreeDaysSinceInit(),
-                mapped_variables=[:TEff => :Plant,], # Using TEff computed at plant scale
-            ),
-            _initial_maintenance_respiration(
-                RmQ10FixedN(
-                    p.parameters["respiration"]["Male"]["Q10"],
-                    p.parameters["respiration"]["Male"]["Mr"],
-                    p.parameters["respiration"]["Male"]["T_ref"],
-                    p.parameters["respiration"]["Male"]["P_alive"],
-                ),
-                :Male__biomass,
-            ),
-            MaleFinalPotentialBiomass(
-                p.parameters["biomass"]["Male"]["max_biomass"],
-                p.parameters["phenology"]["Male"]["age_mature_male"],
-                p.parameters["biomass"]["Male"]["fraction_biomass_first_male"],
-            ),
-            _MappedModel(
-                model=RmQ10FixedN(
-                    p.parameters["respiration"]["Male"]["Q10"],
-                    p.parameters["respiration"]["Male"]["Mr"],
-                    p.parameters["respiration"]["Male"]["T_ref"],
-                    p.parameters["respiration"]["Male"]["P_alive"],
-                ),
-                mapped_variables=[
-                    PreviousTimeStep(:biomass) => PlantSimEngine.One(
-                        within=PlantSimEngine.Self(),
-                        application=:Male__biomass,
-                        var=:biomass,
-                    ),
-                ],
-            ),
-            _MappedModel(
-                model=MaleCarbonDemandModel(
-                    respiration_cost=p.parameters["carbon_demand"]["Male"]["respiration_cost"],
-                    duration_flowering_male=p.parameters["phenology"]["Male"]["duration_flowering_male"],
-                ),
-                mapped_variables=[:state => :Phytomer, :TEff => :Scene], #! we should be able to remove state here, because it is written by the other scale
-            ),
-            MaleBiomass(
-                p.parameters["carbon_demand"]["Male"]["respiration_cost"],
-            ) |> _input_bindings(; state=(process=:state, scale=:Phytomer)),
-            _MappedModel(
-                model=_CarbonAllocationStatePublisher(),
-                mapped_variables=[
-                    :carbon_allocation_plant =>
-                        :Plant => :carbon_allocation,
-                ],
-            ),
-        ),
-        :Female => (
-            PlantSimEngine.ModelSpec(_CarbonAllocationStateAdapter()) |>
-            PlantSimEngine.OutputRouting(carbon_allocation=:stream_only),
-            _MappedModel(
-                model=InitiationAgeFromPlantAge(),
-                mapped_variables=[:plant_age => :Plant,],
-            ),
-            _MappedModel(
-                model=DailyDegreeDaysSinceInit(),
-                mapped_variables=[:TEff => :Plant,],
-            ),
-            _initial_maintenance_respiration(
-                RmQ10FixedN(
-                    p.parameters["respiration"]["Female"]["Q10"],
-                    p.parameters["respiration"]["Female"]["Mr"],
-                    p.parameters["respiration"]["Female"]["T_ref"],
-                    p.parameters["respiration"]["Female"]["P_alive"],
-                ),
-                :Female__biomass,
-            ),
-            _MappedModel(
-                model=RmQ10FixedN(
-                    p.parameters["respiration"]["Female"]["Q10"],
-                    p.parameters["respiration"]["Female"]["Mr"],
-                    p.parameters["respiration"]["Female"]["T_ref"],
-                    p.parameters["respiration"]["Female"]["P_alive"],
-                ),
-                mapped_variables=[
-                    PreviousTimeStep(:biomass) => PlantSimEngine.One(
-                        within=PlantSimEngine.Self(),
-                        application=:Female__harvest,
-                        var=:biomass,
-                    ),
-                ],
-            ),
-            FemaleFinalPotentialFruits(
-                days_increase_number_fruits=p.parameters["phenology"]["Female"]["days_increase_number_fruits"],
-                days_maximum_number_fruits=p.parameters["phenology"]["Female"]["days_maximum_number_fruits"],
-                fraction_first_female=p.parameters["reproduction"]["yield_formation"]["fraction_first_female"],
-                potential_fruit_number_at_maturity=p.parameters["reproduction"]["yield_formation"]["potential_fruit_number_at_maturity"],
-                potential_fruit_weight_at_maturity=p.parameters["reproduction"]["yield_formation"]["potential_fruit_weight_at_maturity"],
-                stalk_max_biomass=p.parameters["reproduction"]["yield_formation"]["stalk_max_biomass"],
-                oil_content=p.parameters["reproduction"]["yield_formation"]["oil_content"],
-            ),
-            _MappedModel(
-                model=NumberSpikelets(
-                    TT_flowering=p.parameters["phenology"]["inflorescence"]["TT_flowering"],
-                    duration_dev_spikelets=p.parameters["phenology"]["Female"]["duration_dev_spikelets"],
-                ),
-                mapped_variables=[PreviousTimeStep(:carbon_offer_plant) => :Plant => :carbon_offer_after_rm, PreviousTimeStep(:carbon_demand_plant) => :Plant => :carbon_demand],
-            ),
-            _MappedModel(
-                model=NumberFruits(
-                    TT_flowering=p.parameters["phenology"]["inflorescence"]["TT_flowering"],
-                    duration_fruit_setting=p.parameters["phenology"]["Female"]["duration_fruit_setting"],
-                ),
-                mapped_variables=[PreviousTimeStep(:carbon_offer_plant) => :Plant => :carbon_offer_after_rm, PreviousTimeStep(:carbon_demand_plant) => :Plant => :carbon_demand],
-            ),
-            FemaleCarbonDemandModel(
-                respiration_cost=p.parameters["carbon_demand"]["Female"]["respiration_cost"],
-                respiration_cost_oleosynthesis=p.parameters["carbon_demand"]["Female"]["respiration_cost_oleosynthesis"],
-                TT_flowering=p.parameters["phenology"]["inflorescence"]["TT_flowering"],
-                duration_bunch_development=p.parameters["phenology"]["Female"]["duration_bunch_development"],
-                duration_fruit_setting=p.parameters["phenology"]["Female"]["duration_fruit_setting"],
-                fraction_period_oleosynthesis=p.parameters["phenology"]["Female"]["fraction_period_oleosynthesis"],
-                fraction_period_stalk=p.parameters["phenology"]["Female"]["fraction_period_stalk"],
-            ) |> _input_bindings(
-                ;
-                state=(process=:state, scale=:Phytomer),
-                fruits_number=(process=:number_fruits, scale=:Female),
-            ),
-            FemaleBiomass(
-                p.parameters["carbon_demand"]["Female"]["respiration_cost"],
-                p.parameters["carbon_demand"]["Female"]["respiration_cost_oleosynthesis"],
-            ) |> _input_bindings(; state=(process=:state, scale=:Phytomer)),
-            _MappedModel(
-                model=_CarbonAllocationStatePublisher(),
-                mapped_variables=[
-                    :carbon_allocation_plant =>
-                        :Plant => :carbon_allocation,
-                ],
-            ),
-            PlantSimEngine.ModelSpec(BunchHarvest()) |>
-                PlantSimEngine.Updates(
-                    :biomass,
-                    :biomass_stalk,
-                    :biomass_fruits,
-                    :biomass_oil,
-                    :biomass_non_oil;
-                    after=:biomass,
-                ) |>
-                PlantSimEngine.Updates(:fruits_number; after=:number_fruits) |>
-                _input_bindings(; state=(process=:state, scale=:Phytomer)),
-        ),
-        :RootSystem => (
-            _MappedModel(
-                model=DailyDegreeDaysSinceInit(),
-                mapped_variables=[:TEff => :Scene,], # Using TEff computed at scene scale
-            ),
-            # root_growth=RootGrowthFTSW(ini_root_depth=p.parameters["ini_root_depth"]),
-            # soil_water=FTSW{RootSystem}(ini_root_depth=p.parameters["ini_root_depth"]),
-            # _MappedModel(
-            #     model=RmQ10FixedN(
-            #         p.parameters["respiration"]["RootSystem"]["Q10"],
-            #         p.parameters["respiration"]["RootSystem"]["Turn"],
-            #         p.parameters["respiration"]["RootSystem"]["Prot"],
-            #         p.parameters["respiration"]["RootSystem"]["N"],
-            #         p.parameters["respiration"]["RootSystem"]["Gi"],
-            #         p.parameters["respiration"]["RootSystem"]["Mx"],
-            #         p.parameters["respiration"]["RootSystem"]["T_ref"],
-            #         p.parameters["respiration"]["RootSystem"]["P_alive"],
-            #     ),
-            #     mapped_variables=[PreviousTimeStep(:biomass),],
-            # ),
-        ),
-        :Soil => (
-            # light_interception=Beer{Soil}(),
-            _MappedModel(
-                model=FTSW_BP(
-                    ini_root_depth=p.parameters["water"]["ini_root_depth"],
-                    H_FC=p.parameters["water"]["field_capacity"],
-                    H_WP_Z1=p.parameters["water"]["wilting_point_1"],
-                    Z1=p.parameters["water"]["thickness_1"],
-                    H_WP_Z2=p.parameters["water"]["wilting_point_2"],
-                    Z2=p.parameters["water"]["thickness_2"],
-                    H_0=p.parameters["water"]["initial_water_content"],
-                    KC=p.parameters["water"]["Kc"],
-                    TRESH_EVAP=p.parameters["water"]["evaporation_threshold"],
-                    TRESH_FTSW_TRANSPI=p.parameters["water"]["transpiration_threshold"],
-                ),
-                mapped_variables=[:ET0 => :Scene, :aPPFD => :Scene], # Using TEff computed at scene scale
-            ),
-            #! Root growth should be in the roots part, but it is a hard-coupled model with 
-            #! the FSTW, so we need it here for now.
-            _MappedModel(
-                model=RootGrowthFTSW(ini_root_depth=p.parameters["water"]["ini_root_depth"]),
-                mapped_variables=[:TEff => :Scene,], # Using TEff computed at scene scale
-            ),
-        )
+        _xpalm_application(:Scene, GraphNodeCount(length(p.mtg))),
     )
 
+    plant_thermal_time_application =
+        _xpalm_application(:Plant, DailyDegreeDays())
 
-    if architecture
-        vpalm = load_vpalm!()
-        # Add the architecture models
-        models[:Phytomer] = (
-            models[:Phytomer]...,
-            _MappedModel(
-                model=vpalm.LeafGeometryModel(
-                    mtg=p.mtg,
-                    rng=Random.MersenneTwister(p.parameters["vpalm"]["seed"]),
-                    vpalm_parameters=p.parameters["vpalm"]
-                ),
-                mapped_variables=[
-                    :graph_node_count => :Scene => :graph_node_count,
-                    :height_internodes => [:Internode => :height],
-                    :radius_internodes => [:Internode => :radius],
-                    :biomass_leaves => [:Leaf => :biomass],
-                    :rank_leaves => [:Leaf => :rank],
-                ],
+    # Thermal time and maintenance respiration run before organ creation.
+    # Existing organs use previous-step biomass; the separate initialization
+    # applications below are called only for organs created during this step.
+    early_organ_applications = (
+        _xpalm_application(
+            :Phytomer,
+            DailyDegreeDaysSinceInit(),
+        ) |>
+        PlantSimEngine.Inputs(
+            :TEff => PlantSimEngine.One(
+                scale=:Plant,
+                within=PlantSimEngine.SelfPlant(),
+                application=:Plant__thermal_time,
+                var=:TEff,
             ),
-            # "Phytomer" => (
-            #     _MappedModel(
-            #         model=PhytomerGeometryModel(p.mtg, p.vpalm_parameters),
-            #         mapped_variables=[:phytomer_geometry => [:Phytomer => :geometry],],
-            #     ),
-            # ),
-        )
-    end
-    return _applications_from_model_dict(models)
+        ),
+        _xpalm_application(
+            :Internode,
+            DailyDegreeDaysSinceInit(),
+        ) |>
+        PlantSimEngine.Inputs(
+            :TEff => PlantSimEngine.One(
+                scale=:Plant,
+                within=PlantSimEngine.SelfPlant(),
+                application=:Plant__thermal_time,
+                var=:TEff,
+            ),
+        ),
+        _xpalm_application(
+            :Leaf,
+            DailyDegreeDaysSinceInit(),
+        ) |>
+        PlantSimEngine.Inputs(
+            :TEff => PlantSimEngine.One(
+                scale=:Plant,
+                within=PlantSimEngine.SelfPlant(),
+                application=:Plant__thermal_time,
+                var=:TEff,
+            ),
+        ),
+        _xpalm_application(
+            :Male,
+            DailyDegreeDaysSinceInit(),
+        ) |>
+        PlantSimEngine.Inputs(
+            :TEff => PlantSimEngine.One(
+                scale=:Plant,
+                within=PlantSimEngine.SelfPlant(),
+                application=:Plant__thermal_time,
+                var=:TEff,
+            ),
+        ),
+        _xpalm_application(
+            :Female,
+            DailyDegreeDaysSinceInit(),
+        ) |>
+        PlantSimEngine.Inputs(
+            :TEff => PlantSimEngine.One(
+                scale=:Plant,
+                within=PlantSimEngine.SelfPlant(),
+                application=:Plant__thermal_time,
+                var=:TEff,
+            ),
+        ),
+        _xpalm_application(
+            :Internode,
+            RmQ10FixedN(
+                parameters["respiration"]["Internode"]["Q10"],
+                parameters["respiration"]["Internode"]["Mr"],
+                parameters["respiration"]["Internode"]["T_ref"],
+                parameters["respiration"]["Internode"]["P_alive"],
+            ),
+        ) |>
+        PlantSimEngine.Inputs(
+            PreviousTimeStep(:biomass) => PlantSimEngine.One(
+                within=PlantSimEngine.Self(),
+                application=:Internode__biomass,
+                var=:biomass,
+            ),
+        ),
+        _xpalm_application(
+            :Leaf,
+            RmQ10FixedN(
+                parameters["respiration"]["Leaf"]["Q10"],
+                parameters["respiration"]["Leaf"]["Mr"],
+                parameters["respiration"]["Leaf"]["T_ref"],
+                parameters["respiration"]["Leaf"]["P_alive"],
+            ),
+        ) |>
+        PlantSimEngine.Inputs(
+            PreviousTimeStep(:biomass) => PlantSimEngine.One(
+                within=PlantSimEngine.Self(),
+                application=:Leaf__leaf_pruning,
+                var=:biomass,
+            ),
+        ),
+        _xpalm_application(
+            :Male,
+            RmQ10FixedN(
+                parameters["respiration"]["Male"]["Q10"],
+                parameters["respiration"]["Male"]["Mr"],
+                parameters["respiration"]["Male"]["T_ref"],
+                parameters["respiration"]["Male"]["P_alive"],
+            ),
+        ) |>
+        PlantSimEngine.Inputs(
+            PreviousTimeStep(:biomass) => PlantSimEngine.One(
+                within=PlantSimEngine.Self(),
+                application=:Male__biomass,
+                var=:biomass,
+            ),
+        ),
+        _xpalm_application(
+            :Female,
+            RmQ10FixedN(
+                parameters["respiration"]["Female"]["Q10"],
+                parameters["respiration"]["Female"]["Mr"],
+                parameters["respiration"]["Female"]["T_ref"],
+                parameters["respiration"]["Female"]["P_alive"],
+            ),
+        ) |>
+        PlantSimEngine.Inputs(
+            PreviousTimeStep(:biomass) => PlantSimEngine.One(
+                within=PlantSimEngine.Self(),
+                application=:Female__harvest,
+                var=:biomass,
+            ),
+        ),
+    )
+
+    plant_applications = (
+        _xpalm_application(:Plant, DailyPlantAgeModel()),
+        _xpalm_application(
+            :Plant,
+            PhyllochronModel(
+                parameters["phyllochron"]["age_palm_maturity"],
+                parameters["phyllochron"]["production_speed_initial"],
+                parameters["phyllochron"]["production_speed_mature"],
+            ),
+        ),
+        _xpalm_application(:Plant, PlantLeafAreaModel()) |>
+        PlantSimEngine.Inputs(
+            :leaf_area_leaves => PlantSimEngine.Many(
+                scale=:Leaf,
+                within=PlantSimEngine.Subtree(),
+                application=:Leaf__leaf_area,
+                var=:leaf_area,
+            ),
+            :leaf_states => PlantSimEngine.Many(
+                scale=:Leaf,
+                within=PlantSimEngine.Subtree(),
+                application=:Leaf__state,
+                var=:state,
+            ),
+        ),
+        _phytomer_emission_application(p.mtg),
+        _xpalm_application(:Plant, PlantRm()) |>
+        PlantSimEngine.Inputs(
+            :Rm_organs => PlantSimEngine.Many(
+                scale=(:Leaf, :Internode, :Male, :Female),
+                within=PlantSimEngine.Subtree(),
+                process=:maintenance_respiration,
+                var=:Rm,
+            ),
+        ),
+        _xpalm_application(
+            :Plant,
+            SceneToPlantLightPartitioning(parameters["plot"]["scene_area"]),
+        ) |>
+        PlantSimEngine.Inputs(
+            :aPPFD_scene => PlantSimEngine.One(
+                scale=:Scene,
+                within=PlantSimEngine.SceneScope(),
+                var=:aPPFD,
+            ),
+            :scene_leaf_area => PlantSimEngine.One(
+                scale=:Scene,
+                within=PlantSimEngine.SceneScope(),
+                var=:leaf_area,
+            ),
+        ),
+        _xpalm_application(
+            :Plant,
+            RUE_FTSW(
+                parameters["radiation"]["RUE"],
+                parameters["radiation"]["threshold_ftsw"],
+            ),
+        ) |>
+        PlantSimEngine.Inputs(
+            PreviousTimeStep(:ftsw) => PlantSimEngine.One(
+                scale=:Soil,
+                within=PlantSimEngine.SceneScope(),
+                var=:ftsw,
+            ),
+        ),
+        _xpalm_application(:Plant, CarbonOfferRm()),
+        _xpalm_application(
+            :Plant,
+            OrgansCarbonAllocationModel(
+                parameters["carbon_demand"]["reserves"]["cost_reserve_mobilization"],
+            ),
+        ) |>
+        PlantSimEngine.Inputs(
+            :carbon_demand_organs => PlantSimEngine.Many(
+                scale=(:Leaf, :Internode, :Male, :Female),
+                within=PlantSimEngine.Subtree(),
+                var=:carbon_demand,
+            ),
+            :carbon_allocation_organs => PlantSimEngine.Many(
+                scale=(:Leaf, :Internode, :Male, :Female),
+                within=PlantSimEngine.Subtree(),
+                var=:carbon_allocation,
+                from_status=true,
+            ),
+            :reserve_organs => PlantSimEngine.Many(
+                scale=(:Internode, :Leaf),
+                within=PlantSimEngine.Subtree(),
+                var=:reserve,
+                from_status=true,
+            ),
+        ),
+        _xpalm_application(:Plant, OrganReserveFilling()) |>
+        PlantSimEngine.Inputs(
+            :potential_reserve_organs => PlantSimEngine.Many(
+                scale=(:Internode, :Leaf),
+                within=PlantSimEngine.Subtree(),
+                var=:potential_reserve,
+            ),
+            :reserve_organs => PlantSimEngine.Many(
+                scale=(:Internode, :Leaf),
+                within=PlantSimEngine.Subtree(),
+                var=:reserve,
+                from_status=true,
+            ),
+        ) |>
+        PlantSimEngine.Updates(
+            :reserve;
+            after=:Plant__carbon_allocation,
+        ) |>
+        PlantSimEngine.Updates(
+            :reserve_organs;
+            after=:Plant__carbon_allocation,
+        ),
+        _xpalm_application(:Plant, PlantBunchHarvest()) |>
+        PlantSimEngine.Inputs(
+            :biomass_bunch_harvested_organs => PlantSimEngine.Many(
+                scale=:Female,
+                within=PlantSimEngine.Subtree(),
+                application=:Female__harvest,
+                var=:biomass_bunch_harvested,
+            ),
+            :biomass_stalk_harvested_organs => PlantSimEngine.Many(
+                scale=:Female,
+                within=PlantSimEngine.Subtree(),
+                application=:Female__harvest,
+                var=:biomass_stalk_harvested,
+            ),
+            :biomass_fruit_harvested_organs => PlantSimEngine.Many(
+                scale=:Female,
+                within=PlantSimEngine.Subtree(),
+                application=:Female__harvest,
+                var=:biomass_fruit_harvested,
+            ),
+            :biomass_bunch_harvested_cum_organs => PlantSimEngine.Many(
+                scale=:Female,
+                within=PlantSimEngine.Subtree(),
+                application=:Female__harvest,
+                var=:biomass_bunch_harvested_cum,
+            ),
+            :biomass_oil_harvested_organs => PlantSimEngine.Many(
+                scale=:Female,
+                within=PlantSimEngine.Subtree(),
+                application=:Female__harvest,
+                var=:biomass_oil_harvested,
+            ),
+            :biomass_oil_harvested_cum_organs => PlantSimEngine.Many(
+                scale=:Female,
+                within=PlantSimEngine.Subtree(),
+                application=:Female__harvest,
+                var=:biomass_oil_harvested_cum,
+            ),
+            :biomass_oil_harvested_potential_organs => PlantSimEngine.Many(
+                scale=:Female,
+                within=PlantSimEngine.Subtree(),
+                application=:Female__harvest,
+                var=:biomass_oil_harvested_potential,
+            ),
+            :biomass_oil_harvested_potential_cum_organs => PlantSimEngine.Many(
+                scale=:Female,
+                within=PlantSimEngine.Subtree(),
+                application=:Female__harvest,
+                var=:biomass_oil_harvested_potential_cum,
+            ),
+        ),
+    )
+
+    phytomer_applications = (
+        _xpalm_application(
+            :Phytomer,
+            InitiationAgeFromPlantAge(),
+        ) |>
+        PlantSimEngine.Inputs(
+            :plant_age => PlantSimEngine.One(
+                scale=:Plant,
+                within=PlantSimEngine.SelfPlant(),
+                application=:Plant__plant_age,
+                var=:plant_age,
+            ),
+        ),
+        _xpalm_application(
+            :Phytomer,
+            SexDetermination(
+                TT_flowering=parameters["phenology"]["inflorescence"]["TT_flowering"],
+                duration_abortion=parameters["phenology"]["inflorescence"]["duration_abortion"],
+                duration_sex_determination=parameters["phenology"]["inflorescence"]["duration_sex_determination"],
+                sex_ratio_min=parameters["reproduction"]["sex_ratio"]["sex_ratio_min"],
+                sex_ratio_ref=parameters["reproduction"]["sex_ratio"]["sex_ratio_ref"],
+                random_seed=parameters["reproduction"]["sex_ratio"]["random_seed"],
+            ),
+        ) |>
+        PlantSimEngine.Inputs(
+            PreviousTimeStep(:carbon_offer_plant) => PlantSimEngine.One(
+                scale=:Plant,
+                within=PlantSimEngine.SelfPlant(),
+                application=:Plant__carbon_offer,
+                var=:carbon_offer_after_rm,
+            ),
+            PreviousTimeStep(:carbon_demand_plant) => PlantSimEngine.One(
+                scale=:Plant,
+                within=PlantSimEngine.SelfPlant(),
+                application=:Plant__carbon_allocation,
+                var=:carbon_demand,
+            ),
+        ),
+        _reproductive_organ_emission_application(p.mtg),
+        _xpalm_application(
+            :Phytomer,
+            AbortionRate(
+                TT_flowering=parameters["phenology"]["inflorescence"]["TT_flowering"],
+                duration_abortion=parameters["phenology"]["inflorescence"]["duration_abortion"],
+                abortion_rate_max=parameters["reproduction"]["abortion"]["abortion_rate_max"],
+                abortion_rate_ref=parameters["reproduction"]["abortion"]["abortion_rate_ref"],
+                random_seed=parameters["reproduction"]["abortion"]["random_seed"],
+            ),
+        ) |>
+        PlantSimEngine.Inputs(
+            PreviousTimeStep(:carbon_offer_plant) => PlantSimEngine.One(
+                scale=:Plant,
+                within=PlantSimEngine.SelfPlant(),
+                application=:Plant__carbon_offer,
+                var=:carbon_offer_after_rm,
+            ),
+            PreviousTimeStep(:carbon_demand_plant) => PlantSimEngine.One(
+                scale=:Plant,
+                within=PlantSimEngine.SelfPlant(),
+                application=:Plant__carbon_allocation,
+                var=:carbon_demand,
+            ),
+        ),
+        _xpalm_application(
+            :Phytomer,
+            InfloStateModel(
+                TT_flowering=parameters["phenology"]["inflorescence"]["TT_flowering"],
+                duration_flowering_male=parameters["phenology"]["Male"]["duration_flowering_male"],
+                duration_fruit_setting=parameters["phenology"]["Female"]["duration_fruit_setting"],
+                duration_bunch_development=parameters["phenology"]["Female"]["duration_bunch_development"],
+                fraction_period_oleosynthesis=parameters["phenology"]["Female"]["fraction_period_oleosynthesis"],
+            ),
+        ),
+    )
+
+    internode_applications = (
+        _initial_maintenance_respiration_application(
+            :Internode,
+            RmQ10FixedN(
+                parameters["respiration"]["Internode"]["Q10"],
+                parameters["respiration"]["Internode"]["Mr"],
+                parameters["respiration"]["Internode"]["T_ref"],
+                parameters["respiration"]["Internode"]["P_alive"],
+            ),
+            :Internode__biomass,
+        ),
+        _xpalm_application(
+            :Internode,
+            InitiationAgeFromPlantAge(),
+        ) |>
+        PlantSimEngine.Inputs(
+            :plant_age => PlantSimEngine.One(
+                scale=:Plant,
+                within=PlantSimEngine.SelfPlant(),
+                application=:Plant__plant_age,
+                var=:plant_age,
+            ),
+        ),
+        _xpalm_application(
+            :Internode,
+            FinalPotentialInternodeDimensionModel(
+                parameters["dimensions"]["internode"]["age_max_height"],
+                parameters["dimensions"]["internode"]["age_max_radius"],
+                parameters["dimensions"]["internode"]["min_height"],
+                parameters["dimensions"]["internode"]["min_radius"],
+                parameters["dimensions"]["internode"]["max_height"],
+                parameters["dimensions"]["internode"]["max_radius"],
+            ),
+        ),
+        _xpalm_application(
+            :Internode,
+            PotentialInternodeDimensionModel(
+                inflexion_point_height=parameters["dimensions"]["internode"]["inflexion_point_height"],
+                slope_height=parameters["dimensions"]["internode"]["slope_height"],
+                inflexion_point_radius=parameters["dimensions"]["internode"]["inflexion_point_radius"],
+                slope_radius=parameters["dimensions"]["internode"]["slope_radius"],
+            ),
+        ),
+        _xpalm_application(
+            :Internode,
+            InternodeDimensionModel(
+                parameters["carbon_demand"]["internode"]["apparent_density"],
+            ),
+        ),
+        _xpalm_application(
+            :Internode,
+            InternodeCarbonDemandModel(
+                apparent_density=parameters["carbon_demand"]["internode"]["apparent_density"],
+                carbon_concentration=parameters["carbon_demand"]["internode"]["carbon_concentration"],
+                respiration_cost=parameters["carbon_demand"]["internode"]["respiration_cost"],
+            ),
+        ),
+        _xpalm_application(
+            :Internode,
+            PotentialReserveInternode(parameters["reserves"]["nsc_max"]),
+        ) |>
+        PlantSimEngine.Inputs(
+            PreviousTimeStep(:biomass) => PlantSimEngine.One(
+                within=PlantSimEngine.Self(),
+                application=:Internode__biomass,
+                var=:biomass,
+            ),
+            :reserve => PlantSimEngine.One(
+                within=PlantSimEngine.Self(),
+                var=:reserve,
+                from_status=true,
+            ),
+        ),
+        _xpalm_application(
+            :Internode,
+            InternodeBiomass(
+                initial_biomass=parameters["dimensions"]["internode"]["min_height"] *
+                                parameters["dimensions"]["internode"]["min_radius"] *
+                                parameters["carbon_demand"]["internode"]["apparent_density"],
+                respiration_cost=parameters["carbon_demand"]["internode"]["respiration_cost"],
+            ),
+        ) |>
+        PlantSimEngine.Inputs(
+            :carbon_allocation => PlantSimEngine.One(
+                within=PlantSimEngine.Self(),
+                var=:carbon_allocation,
+                from_status=true,
+                after=:Plant__carbon_allocation,
+            ),
+        ),
+    )
+
+    leaf_applications = (
+        _initial_maintenance_respiration_application(
+            :Leaf,
+            RmQ10FixedN(
+                parameters["respiration"]["Leaf"]["Q10"],
+                parameters["respiration"]["Leaf"]["Mr"],
+                parameters["respiration"]["Leaf"]["T_ref"],
+                parameters["respiration"]["Leaf"]["P_alive"],
+            ),
+            :Leaf__biomass,
+        ),
+        _xpalm_application(
+            :Leaf,
+            InitiationAgeFromPlantAge(),
+        ) |>
+        PlantSimEngine.Inputs(
+            :plant_age => PlantSimEngine.One(
+                scale=:Plant,
+                within=PlantSimEngine.SelfPlant(),
+                application=:Plant__plant_age,
+                var=:plant_age,
+            ),
+        ),
+        _xpalm_application(
+            :Leaf,
+            FinalPotentialAreaModel(
+                parameters["dimensions"]["leaf"]["age_first_mature_leaf"],
+                parameters["dimensions"]["leaf"]["leaf_area_first_leaf"],
+                parameters["dimensions"]["leaf"]["leaf_area_mature_leaf"],
+            ),
+        ),
+        _xpalm_application(
+            :Leaf,
+            PotentialAreaModel(
+                parameters["dimensions"]["leaf"]["inflexion_index"],
+                parameters["dimensions"]["leaf"]["slope"],
+            ),
+        ),
+        _xpalm_application(:Leaf, LeafStateModel()) |>
+        PlantSimEngine.Inputs(
+            :rank_leaves => PlantSimEngine.Many(
+                scale=:Leaf,
+                within=PlantSimEngine.SelfPlant(),
+                var=:rank,
+            ),
+            :state_phytomers => PlantSimEngine.Many(
+                scale=:Phytomer,
+                within=PlantSimEngine.SelfPlant(),
+                application=:Phytomer__state,
+                var=:state,
+            ),
+        ),
+        _xpalm_application(
+            :Leaf,
+            LeafAreaModel(
+                parameters["mass_and_dimensions"]["leaf"]["lma_min"],
+                parameters["biomass"]["leaf"]["leaflets_biomass_contribution"],
+                parameters["dimensions"]["leaf"]["leaf_area_first_leaf"],
+            ),
+        ) |>
+        PlantSimEngine.Inputs(
+            PreviousTimeStep(:biomass) => PlantSimEngine.One(
+                within=PlantSimEngine.Self(),
+                application=:Leaf__leaf_pruning,
+                var=:biomass,
+            ),
+        ),
+        _xpalm_application(
+            :Leaf,
+            LeafCarbonDemandModelPotentialArea(
+                parameters["mass_and_dimensions"]["leaf"]["lma_min"],
+                parameters["carbon_demand"]["leaf"]["respiration_cost"],
+                parameters["biomass"]["leaf"]["leaflets_biomass_contribution"],
+            ),
+        ) |>
+        PlantSimEngine.Inputs(
+            :state => PlantSimEngine.One(
+                within=PlantSimEngine.Self(),
+                application=:Leaf__state,
+                var=:state,
+            ),
+        ),
+        _xpalm_application(
+            :Leaf,
+            PotentialReserveLeaf(
+                parameters["mass_and_dimensions"]["leaf"]["lma_min"],
+                parameters["mass_and_dimensions"]["leaf"]["lma_max"],
+                parameters["biomass"]["leaf"]["leaflets_biomass_contribution"],
+            ),
+        ) |>
+        PlantSimEngine.Inputs(
+            PreviousTimeStep(:leaf_area) => PlantSimEngine.One(
+                within=PlantSimEngine.Self(),
+                application=:Leaf__leaf_pruning,
+                var=:leaf_area,
+            ),
+            PreviousTimeStep(:reserve) => PlantSimEngine.One(
+                within=PlantSimEngine.Self(),
+                application=:Leaf__leaf_pruning,
+                var=:reserve,
+            ),
+        ),
+        _xpalm_application(
+            :Leaf,
+            LeafBiomass(
+                initial_biomass=parameters["dimensions"]["leaf"]["leaf_area_first_leaf"] *
+                                parameters["mass_and_dimensions"]["leaf"]["lma_min"] /
+                                parameters["biomass"]["leaf"]["leaflets_biomass_contribution"],
+                respiration_cost=parameters["carbon_demand"]["leaf"]["respiration_cost"],
+            ),
+        ) |>
+        PlantSimEngine.Inputs(
+            :carbon_allocation => PlantSimEngine.One(
+                within=PlantSimEngine.Self(),
+                var=:carbon_allocation,
+                from_status=true,
+                after=:Plant__carbon_allocation,
+            ),
+        ),
+        _xpalm_application(
+            :Leaf,
+            RankLeafPruning(parameters["management"]["rank_leaf_pruning"]),
+        ) |>
+        PlantSimEngine.Inputs(
+            :state_phytomers => PlantSimEngine.Many(
+                scale=:Phytomer,
+                within=PlantSimEngine.SelfPlant(),
+                application=:Phytomer__state,
+                var=:state,
+            ),
+        ) |>
+        PlantSimEngine.Updates(
+            :biomass;
+            after=:Leaf__biomass,
+        ) |>
+        PlantSimEngine.Updates(
+            :leaf_area;
+            after=:Leaf__leaf_area,
+        ) |>
+        PlantSimEngine.Updates(
+            :state;
+            after=:Leaf__state,
+        ),
+    )
+
+    male_applications = (
+        _initial_maintenance_respiration_application(
+            :Male,
+            RmQ10FixedN(
+                parameters["respiration"]["Male"]["Q10"],
+                parameters["respiration"]["Male"]["Mr"],
+                parameters["respiration"]["Male"]["T_ref"],
+                parameters["respiration"]["Male"]["P_alive"],
+            ),
+            :Male__biomass,
+        ),
+        _xpalm_application(
+            :Male,
+            InitiationAgeFromPlantAge(),
+        ) |>
+        PlantSimEngine.Inputs(
+            :plant_age => PlantSimEngine.One(
+                scale=:Plant,
+                within=PlantSimEngine.SelfPlant(),
+                application=:Plant__plant_age,
+                var=:plant_age,
+            ),
+        ),
+        _xpalm_application(
+            :Male,
+            MaleFinalPotentialBiomass(
+                parameters["biomass"]["Male"]["max_biomass"],
+                parameters["phenology"]["Male"]["age_mature_male"],
+                parameters["biomass"]["Male"]["fraction_biomass_first_male"],
+            ),
+        ),
+        _xpalm_application(
+            :Male,
+            MaleCarbonDemandModel(
+                respiration_cost=parameters["carbon_demand"]["Male"]["respiration_cost"],
+                duration_flowering_male=parameters["phenology"]["Male"]["duration_flowering_male"],
+            ),
+        ) |>
+        PlantSimEngine.Inputs(
+            :state => PlantSimEngine.One(
+                scale=:Phytomer,
+                within=PlantSimEngine.Ancestor(scale=:Phytomer),
+                application=:Phytomer__state,
+                var=:state,
+            ),
+            :TEff => PlantSimEngine.One(
+                scale=:Scene,
+                within=PlantSimEngine.SceneScope(),
+                application=:Scene__thermal_time,
+                var=:TEff,
+            ),
+        ),
+        _xpalm_application(
+            :Male,
+            MaleBiomass(
+                parameters["carbon_demand"]["Male"]["respiration_cost"],
+            ),
+        ) |>
+        PlantSimEngine.Inputs(
+            :carbon_allocation => PlantSimEngine.One(
+                within=PlantSimEngine.Self(),
+                var=:carbon_allocation,
+                from_status=true,
+                after=:Plant__carbon_allocation,
+            ),
+            :state => PlantSimEngine.One(
+                scale=:Phytomer,
+                within=PlantSimEngine.Ancestor(scale=:Phytomer),
+                application=:Phytomer__state,
+                var=:state,
+            ),
+        ),
+    )
+
+    female_applications = (
+        _initial_maintenance_respiration_application(
+            :Female,
+            RmQ10FixedN(
+                parameters["respiration"]["Female"]["Q10"],
+                parameters["respiration"]["Female"]["Mr"],
+                parameters["respiration"]["Female"]["T_ref"],
+                parameters["respiration"]["Female"]["P_alive"],
+            ),
+            :Female__biomass,
+        ),
+        _xpalm_application(
+            :Female,
+            InitiationAgeFromPlantAge(),
+        ) |>
+        PlantSimEngine.Inputs(
+            :plant_age => PlantSimEngine.One(
+                scale=:Plant,
+                within=PlantSimEngine.SelfPlant(),
+                application=:Plant__plant_age,
+                var=:plant_age,
+            ),
+        ),
+        _xpalm_application(
+            :Female,
+            FemaleFinalPotentialFruits(
+                days_increase_number_fruits=parameters["phenology"]["Female"]["days_increase_number_fruits"],
+                days_maximum_number_fruits=parameters["phenology"]["Female"]["days_maximum_number_fruits"],
+                fraction_first_female=parameters["reproduction"]["yield_formation"]["fraction_first_female"],
+                potential_fruit_number_at_maturity=parameters["reproduction"]["yield_formation"]["potential_fruit_number_at_maturity"],
+                potential_fruit_weight_at_maturity=parameters["reproduction"]["yield_formation"]["potential_fruit_weight_at_maturity"],
+                stalk_max_biomass=parameters["reproduction"]["yield_formation"]["stalk_max_biomass"],
+                oil_content=parameters["reproduction"]["yield_formation"]["oil_content"],
+            ),
+        ),
+        _xpalm_application(
+            :Female,
+            NumberSpikelets(
+                TT_flowering=parameters["phenology"]["inflorescence"]["TT_flowering"],
+                duration_dev_spikelets=parameters["phenology"]["Female"]["duration_dev_spikelets"],
+            ),
+        ) |>
+        PlantSimEngine.Inputs(
+            PreviousTimeStep(:carbon_offer_plant) => PlantSimEngine.One(
+                scale=:Plant,
+                within=PlantSimEngine.SelfPlant(),
+                application=:Plant__carbon_offer,
+                var=:carbon_offer_after_rm,
+            ),
+            PreviousTimeStep(:carbon_demand_plant) => PlantSimEngine.One(
+                scale=:Plant,
+                within=PlantSimEngine.SelfPlant(),
+                application=:Plant__carbon_allocation,
+                var=:carbon_demand,
+            ),
+        ),
+        _xpalm_application(
+            :Female,
+            NumberFruits(
+                TT_flowering=parameters["phenology"]["inflorescence"]["TT_flowering"],
+                duration_fruit_setting=parameters["phenology"]["Female"]["duration_fruit_setting"],
+            ),
+        ) |>
+        PlantSimEngine.Inputs(
+            PreviousTimeStep(:carbon_offer_plant) => PlantSimEngine.One(
+                scale=:Plant,
+                within=PlantSimEngine.SelfPlant(),
+                application=:Plant__carbon_offer,
+                var=:carbon_offer_after_rm,
+            ),
+            PreviousTimeStep(:carbon_demand_plant) => PlantSimEngine.One(
+                scale=:Plant,
+                within=PlantSimEngine.SelfPlant(),
+                application=:Plant__carbon_allocation,
+                var=:carbon_demand,
+            ),
+        ),
+        _xpalm_application(
+            :Female,
+            FemaleCarbonDemandModel(
+                respiration_cost=parameters["carbon_demand"]["Female"]["respiration_cost"],
+                respiration_cost_oleosynthesis=parameters["carbon_demand"]["Female"]["respiration_cost_oleosynthesis"],
+                TT_flowering=parameters["phenology"]["inflorescence"]["TT_flowering"],
+                duration_bunch_development=parameters["phenology"]["Female"]["duration_bunch_development"],
+                duration_fruit_setting=parameters["phenology"]["Female"]["duration_fruit_setting"],
+                fraction_period_oleosynthesis=parameters["phenology"]["Female"]["fraction_period_oleosynthesis"],
+                fraction_period_stalk=parameters["phenology"]["Female"]["fraction_period_stalk"],
+            ),
+        ) |>
+        PlantSimEngine.Inputs(
+            :state => PlantSimEngine.One(
+                scale=:Phytomer,
+                within=PlantSimEngine.Ancestor(scale=:Phytomer),
+                application=:Phytomer__state,
+                var=:state,
+            ),
+            :fruits_number => PlantSimEngine.One(
+                within=PlantSimEngine.Self(),
+                application=:Female__number_fruits,
+                var=:fruits_number,
+            ),
+        ),
+        _xpalm_application(
+            :Female,
+            FemaleBiomass(
+                parameters["carbon_demand"]["Female"]["respiration_cost"],
+                parameters["carbon_demand"]["Female"]["respiration_cost_oleosynthesis"],
+            ),
+        ) |>
+        PlantSimEngine.Inputs(
+            :carbon_allocation => PlantSimEngine.One(
+                within=PlantSimEngine.Self(),
+                var=:carbon_allocation,
+                from_status=true,
+                after=:Plant__carbon_allocation,
+            ),
+            :state => PlantSimEngine.One(
+                scale=:Phytomer,
+                within=PlantSimEngine.Ancestor(scale=:Phytomer),
+                application=:Phytomer__state,
+                var=:state,
+            ),
+        ),
+        _xpalm_application(:Female, BunchHarvest()) |>
+        PlantSimEngine.Inputs(
+            :state => PlantSimEngine.One(
+                scale=:Phytomer,
+                within=PlantSimEngine.Ancestor(scale=:Phytomer),
+                application=:Phytomer__state,
+                var=:state,
+            ),
+        ) |>
+        PlantSimEngine.Updates(
+            :biomass,
+            :biomass_stalk,
+            :biomass_fruits,
+            :biomass_oil,
+            :biomass_non_oil;
+            after=:Female__biomass,
+        ) |>
+        PlantSimEngine.Updates(
+            :fruits_number;
+            after=:Female__number_fruits,
+        ),
+    )
+
+    root_and_soil_applications = (
+        _xpalm_application(
+            :RootSystem,
+            DailyDegreeDaysSinceInit(),
+        ) |>
+        PlantSimEngine.Inputs(
+            :TEff => PlantSimEngine.One(
+                scale=:Scene,
+                within=PlantSimEngine.SceneScope(),
+                application=:Scene__thermal_time,
+                var=:TEff,
+            ),
+        ),
+        _xpalm_application(
+            :Soil,
+            FTSW_BP(
+                ini_root_depth=parameters["water"]["ini_root_depth"],
+                H_FC=parameters["water"]["field_capacity"],
+                H_WP_Z1=parameters["water"]["wilting_point_1"],
+                Z1=parameters["water"]["thickness_1"],
+                H_WP_Z2=parameters["water"]["wilting_point_2"],
+                Z2=parameters["water"]["thickness_2"],
+                H_0=parameters["water"]["initial_water_content"],
+                KC=parameters["water"]["Kc"],
+                TRESH_EVAP=parameters["water"]["evaporation_threshold"],
+                TRESH_FTSW_TRANSPI=parameters["water"]["transpiration_threshold"],
+            ),
+        ) |>
+        PlantSimEngine.Inputs(
+            :ET0 => PlantSimEngine.One(
+                scale=:Scene,
+                within=PlantSimEngine.SceneScope(),
+                var=:ET0,
+            ),
+            :aPPFD => PlantSimEngine.One(
+                scale=:Scene,
+                within=PlantSimEngine.SceneScope(),
+                var=:aPPFD,
+            ),
+        ),
+        _xpalm_application(
+            :Soil,
+            RootGrowthFTSW(
+                ini_root_depth=parameters["water"]["ini_root_depth"],
+            ),
+        ) |>
+        PlantSimEngine.Inputs(
+            :TEff => PlantSimEngine.One(
+                scale=:Scene,
+                within=PlantSimEngine.SceneScope(),
+                application=:Scene__thermal_time,
+                var=:TEff,
+            ),
+        ),
+    )
+
+    applications = (
+        scene_applications...,
+        plant_thermal_time_application,
+        early_organ_applications...,
+        plant_applications...,
+        phytomer_applications...,
+        internode_applications...,
+        leaf_applications...,
+        male_applications...,
+        female_applications...,
+        root_and_soil_applications...,
+    )
+
+    architecture || return applications
+
+    vpalm = load_vpalm!()
+    architecture_application = _xpalm_application(
+        :Phytomer,
+        vpalm.LeafGeometryModel(
+            mtg=p.mtg,
+            rng=Random.MersenneTwister(parameters["vpalm"]["seed"]),
+            vpalm_parameters=parameters["vpalm"],
+        ),
+    ) |>
+                               PlantSimEngine.Inputs(
+        :graph_node_count => PlantSimEngine.One(
+            scale=:Scene,
+            within=PlantSimEngine.SceneScope(),
+            var=:graph_node_count,
+        ),
+        :height_internodes => PlantSimEngine.Many(
+            scale=:Internode,
+            within=PlantSimEngine.Subtree(),
+            var=:height,
+        ),
+        :radius_internodes => PlantSimEngine.Many(
+            scale=:Internode,
+            within=PlantSimEngine.Subtree(),
+            var=:radius,
+        ),
+        :biomass_leaves => PlantSimEngine.Many(
+            scale=:Leaf,
+            within=PlantSimEngine.Subtree(),
+            var=:biomass,
+        ),
+        :rank_leaves => PlantSimEngine.Many(
+            scale=:Leaf,
+            within=PlantSimEngine.Subtree(),
+            var=:rank,
+        ),
+    )
+
+    return (applications..., architecture_application)
 end
