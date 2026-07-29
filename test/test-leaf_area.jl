@@ -57,7 +57,7 @@ end
         AppliesTo(One(scale=:Scene)) |>
         Inputs(:leaf_areas => Many(scale=:Leaf, var=:leaf_area, within=SceneScope())),
     )
-    scene = Scene(
+    scene = CompositeModel(
         mtg;
         applications=applications,
         environment=meteo,

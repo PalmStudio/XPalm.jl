@@ -14,8 +14,12 @@
         status=Status(aPPFD=1.0, ET0=2.5, TEff=10.0),
         environment=meteo[1:1, :],
     )
-    run!(scene)
+    simulation = run!(scene; outputs=:all)
     @test test_status(scene, :Soil).ftsw ≈ 0.5819197102523261
+    @test any(
+        row -> row.application_id == :root_growth && row.variable == :root_depth,
+        collect_outputs(simulation; sink=nothing),
+    )
 end
 
 
@@ -29,6 +33,10 @@ end
         status=Status(aPPFD=1.0, ET0=2.5, TEff=10.0),
         environment=meteo[1:1, :],
     )
-    run!(scene)
+    simulation = run!(scene; outputs=:all)
     @test test_status(scene, :Soil).ftsw ≈ 0.5592225889255592
+    @test any(
+        row -> row.application_id == :root_growth && row.variable == :root_depth,
+        collect_outputs(simulation; sink=nothing),
+    )
 end

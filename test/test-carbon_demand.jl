@@ -18,7 +18,7 @@
         ModelSpec(InternodeCarbonDemandModel(300000.0, 1.44); name=:internode_carbon_demand) |>
         AppliesTo(Many(scale=:Internode)),
     )
-    scene = Scene(
+    scene = CompositeModel(
         mtg;
         applications=applications,
         environment=meteo,

@@ -149,7 +149,7 @@ end
     let
         scene = xpalm_scene(XPalm.Palm())
         compiled = PlantSimEngine.refresh_bindings!(scene)
-        objects = Dict(object.id.value => object for object in PlantSimEngine.scene_objects(scene))
+        objects = Dict(object.id.value => object for object in PlantSimEngine.model_objects(scene))
         available = Dict{Symbol,Set{Symbol}}()
         for writer in PlantSimEngine.explain_writers(compiled)
             object = objects[writer.object_id]

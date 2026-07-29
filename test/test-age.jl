@@ -13,7 +13,7 @@ end
 end
 
 @testset "DailyPlantAgeModel" begin
-    scene = Scene(
+    scene = CompositeModel(
         Object(:test_object; scale=:Plant, kind=:plant, status=Status());
         applications=(
             ModelSpec(DailyPlantAgeModel(10); name=:plant_age) |>

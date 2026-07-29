@@ -13,16 +13,6 @@ import Tables
 import Statistics: mean
 import PlantMeteo
 
-function _run_hard_call!(name::Symbol, models, status, meteo, constants, extra; publish=true)
-    if extra isa PlantSimEngine.SceneRunContext
-        target = PlantSimEngine.call_target(extra, name)
-        PlantSimEngine.run_call!(target; publish=publish, meteo=meteo)
-        return target.status
-    end
-    PlantSimEngine.run!(getproperty(models, name), models, status, meteo, constants, extra)
-    return status
-end
-
 # Import the processes:
 include("light/0-process.jl")
 include("soil/0-process.jl")

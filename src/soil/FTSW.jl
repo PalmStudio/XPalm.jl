@@ -219,7 +219,7 @@ function PlantSimEngine.run!(m::FTSW, models, st, meteo, constants, extra=nothin
     st.soil_depth = m.soil_depth
 
     # Run the root growth model:
-    _run_hard_call!(:root_growth, models, st, meteo, constants, extra)
+    PlantSimEngine.run_call!(extra, :root_growth; publish=true)
 
     compute_compartment_size(m, st)
 

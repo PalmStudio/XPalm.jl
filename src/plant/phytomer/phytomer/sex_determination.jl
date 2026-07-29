@@ -85,6 +85,10 @@ function PlantSimEngine.run!(m::SexDetermination, models, status, meteo, constan
             status.sex = :Male
         end
 
-        _run_hard_call!(:reproductive_organ_emission, models, status, meteo, constants, extra)
+        PlantSimEngine.run_call!(
+            extra,
+            :reproductive_organ_emission;
+            publish=true,
+        )
     end
 end

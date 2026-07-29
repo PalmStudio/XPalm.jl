@@ -60,6 +60,10 @@ function PlantSimEngine.run!(m::PhyllochronModel, models, status, meteo, constan
     if status.newPhytomerEmergence >= 1.0
         status.newPhytomerEmergence -= 1.0 # NB: -=1 because it can be > 1 so we pass along the remainder
         # Add a new phytomer to the palm using a phytomer emission model:
-        _run_hard_call!(:phytomer_emission, models, status, meteo, constants, extra)
+        PlantSimEngine.run_call!(
+            extra,
+            :phytomer_emission;
+            publish=true,
+        )
     end
 end

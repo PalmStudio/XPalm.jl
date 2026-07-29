@@ -16,7 +16,7 @@ Run the XPalm model with the given meteo data and return the results in a DataFr
 
 # Returns
 
-A `PlantSimEngine.SceneSimulation`, or collected output rows when `sink` is supplied.
+A `PlantSimEngine.Simulation`, or collected output rows when `sink` is supplied.
 
 # Example
 
@@ -48,7 +48,7 @@ function xpalm(meteo; vars=Dict(:Scene => (:lai,)), architecture=false, palm=Pal
 end
 
 function xpalm_scene(palm::Palm; architecture=false, environment=nothing)
-    return PlantSimEngine.Scene(
+    return PlantSimEngine.CompositeModel(
         palm.mtg;
         applications=model_applications(palm; architecture=architecture),
         environment=environment,

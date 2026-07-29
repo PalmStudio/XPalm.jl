@@ -30,7 +30,7 @@ end
     leaf_area_plant = 1.0
     plant_area = 10000.0 / 136.0
     scene_leaf_area = leaf_area_plant * plant_area
-    scene = Scene(
+    scene = CompositeModel(
         Object(:scene; scale=:Scene, kind=:scene, status=Status(lai=2.0)),
         Object(
             :plant;

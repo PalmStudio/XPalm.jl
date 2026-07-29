@@ -52,7 +52,7 @@ Computes the light interception of an object using the Beer-Lambert law.
 ```julia
 using XPalm, PlantSimEngine, PlantMeteo
 meteo = Atmosphere(T=20.0, Wind=1.0, P=101.3, Rh=0.65, Ri_PAR_f=300.0)
-scene = Scene(
+scene = CompositeModel(
     Object(:scene; scale=:Scene, kind=:scene, status=Status(lai=2.0));
     applications=(
         ModelSpec(Beer(0.5)) |> AppliesTo(One(scale=:Scene)),
@@ -60,7 +60,7 @@ scene = Scene(
     environment=meteo,
 )
 run!(scene)
-only(scene_objects(scene; scale=:Scene)).status.aPPFD
+only(model_objects(scene; scale=:Scene)).status.aPPFD
 ```
 """
 function PlantSimEngine.run!(m::Beer, models, status, meteo, constants, extra=nothing)

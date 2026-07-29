@@ -1,3 +1,24 @@
+using Test
+
+const reference_regression_only =
+    length(ARGS) == 1 &&
+    only(ARGS) == "reference-regression"
+
+if reference_regression_only
+using XPalm
+using Test
+using Dates
+using SHA
+using TOML
+using PlantSimEngine
+using CSV
+using DataFrames
+using Statistics
+
+const dirtest = @__DIR__
+include("reference_regression_helpers.jl")
+include("test-reference-regression.jl")
+else
 using XPalm
 using XPalm.Models
 const VPalm = XPalm.load_vpalm!()
@@ -11,6 +32,8 @@ using ReferenceTests
 using Test
 using Dates
 using Random
+using SHA
+using TOML
 import StableRNGs: StableRNG
 using MultiScaleTreeGraph, PlantGeom, PlantMeteo, PlantSimEngine
 import PlantSimEngine:
@@ -24,7 +47,7 @@ import PlantSimEngine:
     OptionalOne,
     OutputRequest,
     PreviousTimeStep,
-    Scene,
+    CompositeModel,
     SceneScope,
     Self,
     SelfPlant,
@@ -34,7 +57,7 @@ import PlantSimEngine:
     explain_bindings,
     process,
     run!,
-    scene_objects
+    model_objects
 using CSV, DataFrames, Statistics, Unitful
 # Import the meteo data once:
 
@@ -57,14 +80,14 @@ function test_scene(
         for model in models
     )
     kind = scale == :Soil ? :soil : :plant
-    return Scene(
+    return CompositeModel(
         Object(:test_object; scale=scale, kind=kind, status=status);
         applications=applications,
         environment=environment,
     )
 end
 
-test_status(scene, scale::Symbol) = only(scene_objects(scene; scale=scale)).status
+test_status(scene, scale::Symbol) = only(model_objects(scene; scale=scale)).status
 
 function output_values(sim, name::Symbol)
     return [row.value for row in collect_outputs(sim, name; sink=nothing)]
@@ -101,9 +124,9 @@ end
     include(joinpath(dirtest, "test-micrometeo.jl"))
 end
 
-# @testset "Carbon_allocation" begin
-#     include(joinpath(dirtest, "test-carbon_allocation.jl"))
-# end
+@testset "Carbon_allocation" begin
+    include(joinpath(dirtest, "test-carbon_allocation.jl"))
+end
 
 @testset "Carbon_assimilation" begin
     include(joinpath(dirtest, "test-rue.jl"))
@@ -150,6 +173,12 @@ end
     include("test-run.jl")
 end
 
+if lowercase(get(ENV, "XPALM_RUN_REFERENCE_REGRESSION", "false")) in
+   ("1", "true", "yes")
+    include("reference_regression_helpers.jl")
+    include("test-reference-regression.jl")
+end
+
 @testset "VPalm" begin
 
     @testset "Parameters IO" begin
@@ -182,4 +211,5 @@ end
     @testset "Static mockup" begin
         include(joinpath(dirtest, "test-vpalm-static_mockup.jl"))
     end
+end
 end

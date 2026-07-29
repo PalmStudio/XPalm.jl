@@ -85,7 +85,7 @@ function PlantSimEngine.run!(m::PhytomerEmission, models, status, meteo, constan
     # Add a leaf as its child:
     status.graph_node_count += 1
 
-    PlantSimEngine.add_organ!(
+    st_leaf = PlantSimEngine.add_organ!(
         st_internode.node, # parent, 
         sim_object,
         :+,
@@ -96,6 +96,42 @@ function PlantSimEngine.run!(m::PhytomerEmission, models, status, meteo, constan
         attributes=Dict{Symbol,Any}(),
         initial_status=(plant_age=plant_age, initiation_age=plant_age),
         kind=:plant,
+    )
+
+    PlantSimEngine.run_call!(
+        sim_object,
+        :phytomer_initiation_age;
+        objects=st_phyto,
+    )
+    PlantSimEngine.run_call!(
+        sim_object,
+        :internode_initiation_age;
+        objects=st_internode,
+    )
+    PlantSimEngine.run_call!(
+        sim_object,
+        :internode_final_potential_dimensions;
+        objects=st_internode,
+    )
+    PlantSimEngine.run_call!(
+        sim_object,
+        :internode_initial_maintenance_respiration;
+        objects=st_internode,
+    )
+    PlantSimEngine.run_call!(
+        sim_object,
+        :leaf_initiation_age;
+        objects=st_leaf,
+    )
+    PlantSimEngine.run_call!(
+        sim_object,
+        :leaf_final_potential_area;
+        objects=st_leaf,
+    )
+    PlantSimEngine.run_call!(
+        sim_object,
+        :leaf_initial_maintenance_respiration;
+        objects=st_leaf,
     )
 
     return nothing

@@ -19,6 +19,7 @@ end
 PlantSimEngine.inputs_(m::ReproductiveOrganEmission) = (
     graph_node_count=m.graph_node_count_init, # Also modified in the model, but can't be an output, other models have it too
     phytomer_count=m.phytomer_count_init,
+    plant_age=-9999,
     TT_since_init=-Inf,
 )
 
@@ -35,7 +36,7 @@ function PlantSimEngine.run!(m::ReproductiveOrganEmission, models, status, meteo
     status.graph_node_count += 1
 
     # Create the new organ as a child of the phytomer:
-    PlantSimEngine.add_organ!(
+    st_reproductive_organ = PlantSimEngine.add_organ!(
         status.node[1], # The phytomer's internode is its first child 
         sim_object,
         :+,
@@ -45,12 +46,28 @@ function PlantSimEngine.run!(m::ReproductiveOrganEmission, models, status, meteo
         id=status.graph_node_count,
         attributes=Dict{Symbol,Any}(),
         initial_status=(
-            initiation_age=status.initiation_age,
+            initiation_age=copy(status.plant_age),
             TT_since_init=copy(status.TT_since_init),
             state=status.state,
             sex=status.sex,
         ),
         kind=:plant,
+    )
+    organ = Symbol(lowercase(string(status.sex)))
+    PlantSimEngine.run_call!(
+        sim_object,
+        Symbol(organ, "_initiation_age");
+        objects=st_reproductive_organ,
+    )
+    PlantSimEngine.run_call!(
+        sim_object,
+        Symbol(organ, "_final_potential_biomass");
+        objects=st_reproductive_organ,
+    )
+    PlantSimEngine.run_call!(
+        sim_object,
+        Symbol(organ, "_initial_maintenance_respiration");
+        objects=st_reproductive_organ,
     )
     # Note: we initialize TT_since_init to the one from the phytomer, as the parameters for development are given from the phytomer point of view.
     # This is because the reproductive organ is only instantiated when its sex is determined, but it started to grow at the same time as the phytomer.

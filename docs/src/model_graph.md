@@ -14,7 +14,7 @@ Use PlantSimEngine's structured explanation functions to inspect the compiled
 model:
 
 ```julia
-explain_scene_applications(compiled)
+explain_applications(compiled)
 explain_bindings(compiled)
 explain_calls(compiled)
 explain_schedule(compiled)
