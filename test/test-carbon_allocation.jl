@@ -33,7 +33,7 @@
     compiled = PlantSimEngine.Advanced.refresh_bindings!(scene)
     schedule_positions = Dict(
         row.application_id => row.execution_index
-        for row in PlantSimEngine.explain_schedule(compiled)
+        for row in PlantSimEngine.Diagnostics.explain_schedule(compiled)
     )
 
     @test schedule_positions[:Plant__carbon_allocation] <
@@ -50,7 +50,7 @@
     )
     @test reserve_binding.policy isa PlantSimEngine.HoldLast
     @test isempty(reserve_binding.source_application_ids)
-    @test PlantSimEngine.has_reference_carrier(reserve_binding)
+    @test PlantSimEngine.Diagnostics.has_reference_carrier(reserve_binding)
 
     run!(scene; steps=1, outputs=:none)
     for organ in model_objects(scene)

@@ -151,7 +151,7 @@ end
         compiled = PlantSimEngine.refresh_bindings!(scene)
         objects = Dict(object.id.value => object for object in PlantSimEngine.model_objects(scene))
         available = Dict{Symbol,Set{Symbol}}()
-        for writer in PlantSimEngine.explain_writers(compiled)
+        for writer in PlantSimEngine.Diagnostics.explain_writers(compiled)
             object = objects[writer.object_id]
             value = getproperty(object.status, writer.variable)
             value isa AbstractVector && continue

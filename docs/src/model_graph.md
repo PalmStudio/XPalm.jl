@@ -7,18 +7,18 @@ using XPalm, PlantSimEngine
 
 palm = Palm()
 scene = xpalm_scene(palm)
-compiled = refresh_bindings!(scene)
+compiled = Advanced.refresh_bindings!(scene)
 ```
 
 Use PlantSimEngine's structured explanation functions to inspect the compiled
 model:
 
 ```julia
-explain_applications(compiled)
-explain_bindings(compiled)
-explain_calls(compiled)
-explain_schedule(compiled)
-explain_writers(compiled)
+Diagnostics.explain_applications(compiled)
+Diagnostics.explain_bindings(compiled)
+Diagnostics.explain_calls(compiled)
+Diagnostics.explain_schedule(compiled)
+Diagnostics.explain_writers(compiled)
 ```
 
 These tables are the authoritative representation of XPalm's application
