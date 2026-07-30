@@ -13,7 +13,7 @@ include("vpalm_parameters.jl")
 
 function load_vpalm!()
     isdefined(@__MODULE__, :VPalm) || Base.include(@__MODULE__, joinpath(@__DIR__, "VPalm.jl"))
-    return getfield(@__MODULE__, :VPalm)
+    return Base.invokelatest(getfield, @__MODULE__, :VPalm)
 end
 
 # Palm structure:
