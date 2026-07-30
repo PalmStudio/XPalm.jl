@@ -17,10 +17,10 @@ function ReproductiveOrganEmission(mtg::MultiScaleTreeGraph.Node; phytomer_symbo
 end
 
 PlantSimEngine.inputs_(m::ReproductiveOrganEmission) = (
-    graph_node_count=m.graph_node_count_init, # Also modified in the model, but can't be an output, other models have it too
-    phytomer_count=m.phytomer_count_init,
-    plant_age=-9999,
-    TT_since_init=-Inf,
+    graph_node_count=PlantSimEngine.Default(m.graph_node_count_init), # Also modified in the model, but can't be an output, other models have it too
+    phytomer_count=PlantSimEngine.Default(m.phytomer_count_init),
+    plant_age=PlantSimEngine.Required(Real),
+    TT_since_init=PlantSimEngine.Required(Real),
 )
 
 PlantSimEngine.outputs_(::ReproductiveOrganEmission) = NamedTuple()

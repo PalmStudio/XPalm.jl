@@ -46,7 +46,11 @@ function SexDetermination(; TT_flowering=6300.0, duration_abortion=540.0, durati
     SexDetermination(promote(TT_flowering, duration_abortion, duration_sex_determination, sex_ratio_min, sex_ratio_ref)..., MersenneTwister(random_seed))
 end
 
-PlantSimEngine.inputs_(::SexDetermination) = (TT_since_init=-Inf, carbon_offer_plant=-Inf, carbon_demand_plant=-Inf)
+PlantSimEngine.inputs_(::SexDetermination) = (
+    TT_since_init=PlantSimEngine.Required(Real),
+    carbon_offer_plant=PlantSimEngine.Default(0.0),
+    carbon_demand_plant=PlantSimEngine.Default(0.0),
+)
 PlantSimEngine.outputs_(::SexDetermination) = (sex=:undetermined, carbon_demand_sex_determination=0.0, carbon_offer_sex_determination=0.0,)
 PlantSimEngine.dep(::SexDetermination) = (
     reproductive_organ_emission=PlantSimEngine.Call(process=:reproductive_organ_emission),

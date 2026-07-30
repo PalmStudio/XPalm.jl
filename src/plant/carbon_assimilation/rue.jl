@@ -17,7 +17,9 @@ struct ConstantRUEModel{T} <: AbstractCarbon_AssimilationModel
     rue::T
 end
 
-PlantSimEngine.inputs_(::ConstantRUEModel) = (aPPFD=-Inf,)
+PlantSimEngine.inputs_(::ConstantRUEModel) = (
+    aPPFD=PlantSimEngine.Required(Real),
+)
 PlantSimEngine.outputs_(::ConstantRUEModel) = (carbon_assimilation=-Inf,)
 
 function PlantSimEngine.run!(m::ConstantRUEModel, status, environment, constants, context=nothing)

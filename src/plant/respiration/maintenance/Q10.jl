@@ -35,7 +35,9 @@ function RmQ10FixedN(Q10, Turn, Prot, N, Gi, Mx, T_ref, P_alive)
     RmQ10FixedN(Q10, Mr, T_ref, P_alive)
 end
 
-PlantSimEngine.inputs_(::RmQ10FixedN) = (biomass=0.0,)
+PlantSimEngine.inputs_(::RmQ10FixedN) = (
+    biomass=PlantSimEngine.Required(Real),
+)
 PlantSimEngine.outputs_(::RmQ10FixedN) = (Rm=-Inf,)
 
 # Standard way of computing the Rm of an organ:
@@ -59,7 +61,9 @@ Total plant maintenance respiration based on the sum of `Rm`.
 """
 struct PlantRm <: AbstractMaintenance_RespirationModel end
 
-PlantSimEngine.inputs_(::PlantRm) = (Rm_organs=[-Inf],)
+PlantSimEngine.inputs_(::PlantRm) = (
+    Rm_organs=PlantSimEngine.Required(AbstractVector),
+)
 PlantSimEngine.outputs_(::PlantRm) = (Rm=-Inf,)
 
 function PlantSimEngine.run!(::PlantRm, status, environment, constants, context=nothing)

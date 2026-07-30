@@ -22,7 +22,9 @@ struct LeafAreaModel{T} <: AbstractLeaf_AreaModel
     leaf_area_ini::T
 end
 
-PlantSimEngine.inputs_(::LeafAreaModel) = (biomass=0.0,)
+PlantSimEngine.inputs_(::LeafAreaModel) = (
+    biomass=PlantSimEngine.Required(Real),
+)
 PlantSimEngine.outputs_(m::LeafAreaModel) = (leaf_area=m.leaf_area_ini,)
 
 # Applied at the phytomer scale:
@@ -47,7 +49,10 @@ Sum of the leaf area at plant scale.
 """
 struct PlantLeafAreaModel <: AbstractLeaf_AreaModel end
 
-PlantSimEngine.inputs_(::PlantLeafAreaModel) = (leaf_area_leaves=[-Inf], leaf_states=[:undetermined])
+PlantSimEngine.inputs_(::PlantLeafAreaModel) = (
+    leaf_area_leaves=PlantSimEngine.Required(AbstractVector),
+    leaf_states=PlantSimEngine.Required(AbstractVector),
+)
 PlantSimEngine.outputs_(::PlantLeafAreaModel) = (leaf_area=-Inf,)
 
 # Applied at the plant / scene scale:

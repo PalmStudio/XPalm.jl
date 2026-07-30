@@ -28,7 +28,10 @@ struct LeafCarbonDemandModelPotentialArea{T} <: AbstractCarbon_DemandModel
     leaflets_biomass_contribution::T
 end
 
-PlantSimEngine.inputs_(::LeafCarbonDemandModelPotentialArea) = (increment_potential_area=-Inf, state=:undetermined)
+PlantSimEngine.inputs_(::LeafCarbonDemandModelPotentialArea) = (
+    increment_potential_area=PlantSimEngine.Required(Real),
+    state=PlantSimEngine.Required(Symbol),
+)
 PlantSimEngine.outputs_(::LeafCarbonDemandModelPotentialArea) = (carbon_demand=0.0,)
 
 function PlantSimEngine.run!(m::LeafCarbonDemandModelPotentialArea, status, environment, constants, context=nothing)
@@ -65,7 +68,10 @@ struct LeafCarbonDemandModelArea{T} <: AbstractCarbon_DemandModel
     leaflets_biomass_contribution::T
 end
 
-PlantSimEngine.inputs_(::LeafCarbonDemandModelArea) = (potential_area=0.0, leaf_area=-Inf)
+PlantSimEngine.inputs_(::LeafCarbonDemandModelArea) = (
+    potential_area=PlantSimEngine.Required(Real),
+    leaf_area=PlantSimEngine.Required(Real),
+)
 PlantSimEngine.outputs_(::LeafCarbonDemandModelArea) = (carbon_demand=0.0,)
 
 function PlantSimEngine.run!(m::LeafCarbonDemandModelArea, status, environment, constants, context=nothing)

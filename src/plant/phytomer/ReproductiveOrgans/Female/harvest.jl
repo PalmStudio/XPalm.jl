@@ -1,7 +1,15 @@
 
 struct BunchHarvest <: AbstractHarvestModel end
 
-PlantSimEngine.inputs_(::BunchHarvest) = (state=:undetermined, biomass=-Inf, biomass_stalk=-Inf, biomass_fruits=-Inf, biomass_oil=-Inf, fruits_number=-9999, final_potential_oil_biomass=-Inf)
+PlantSimEngine.inputs_(::BunchHarvest) = (
+    state=PlantSimEngine.Required(Symbol),
+    biomass=PlantSimEngine.Required(Real),
+    biomass_stalk=PlantSimEngine.Required(Real),
+    biomass_fruits=PlantSimEngine.Required(Real),
+    biomass_oil=PlantSimEngine.Required(Real),
+    fruits_number=PlantSimEngine.Required(Integer),
+    final_potential_oil_biomass=PlantSimEngine.Required(Real),
+)
 PlantSimEngine.outputs_(::BunchHarvest) = (
     biomass=0.0,
     biomass_stalk=0.0,
@@ -57,7 +65,16 @@ end
 
 struct PlantBunchHarvest <: AbstractHarvestModel end
 
-PlantSimEngine.inputs_(::PlantBunchHarvest) = (biomass_bunch_harvested_organs=[-Inf], biomass_stalk_harvested_organs=[-Inf], biomass_fruit_harvested_organs=[-Inf], biomass_bunch_harvested_cum_organs=[-Inf], biomass_oil_harvested_organs=[-Inf], biomass_oil_harvested_cum_organs=[-Inf], biomass_oil_harvested_potential_organs=[-Inf], biomass_oil_harvested_potential_cum_organs=[-Inf],)
+PlantSimEngine.inputs_(::PlantBunchHarvest) = (
+    biomass_bunch_harvested_organs=PlantSimEngine.Required(AbstractVector),
+    biomass_stalk_harvested_organs=PlantSimEngine.Required(AbstractVector),
+    biomass_fruit_harvested_organs=PlantSimEngine.Required(AbstractVector),
+    biomass_bunch_harvested_cum_organs=PlantSimEngine.Required(AbstractVector),
+    biomass_oil_harvested_organs=PlantSimEngine.Required(AbstractVector),
+    biomass_oil_harvested_cum_organs=PlantSimEngine.Required(AbstractVector),
+    biomass_oil_harvested_potential_organs=PlantSimEngine.Required(AbstractVector),
+    biomass_oil_harvested_potential_cum_organs=PlantSimEngine.Required(AbstractVector),
+)
 PlantSimEngine.outputs_(::PlantBunchHarvest) = (biomass_bunch_harvested=0.0, biomass_stalk_harvested=0.0, biomass_fruit_harvested=0.0, n_bunches_harvested=-9999, biomass_bunch_harvested_cum=0.0, n_bunches_harvested_cum=0, biomass_oil_harvested=0.0, biomass_oil_harvested_potential=0.0, biomass_oil_harvested_potential_cum=0.0, biomass_oil_harvested_cum=0.0, yield_gap_oil=0.0,)
 
 _sum_or_zero(values) = isempty(values) ? 0.0 : sum(values)

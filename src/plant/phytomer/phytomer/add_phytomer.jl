@@ -35,7 +35,9 @@ function PhytomerEmission(mtg::MultiScaleTreeGraph.Node; phytomer_symbol=:Phytom
     PhytomerEmission(phytomers[end], length(phytomers), length(mtg), phytomer_symbol, internode_symbol, leaf_symbol)
 end
 
-PlantSimEngine.inputs_(m::PhytomerEmission) = (graph_node_count=m.graph_node_count_init,)
+PlantSimEngine.inputs_(m::PhytomerEmission) = (
+    graph_node_count=PlantSimEngine.Default(m.graph_node_count_init),
+)
 PlantSimEngine.outputs_(m::PhytomerEmission) = (last_phytomer=m.last_phytomer_init, phytomer_count=m.phytomer_count_init,)
 """
     add_phytomer!(palm, initiation_age)

@@ -20,9 +20,9 @@ None
 struct LeafStateModel <: AbstractStateModel end
 
 PlantSimEngine.inputs_(::LeafStateModel) = (
-    maturity=false,
-    state_phytomers=[:undetermined],
-    rank_leaves=[-9999],
+    maturity=PlantSimEngine.Required(Bool),
+    state_phytomers=PlantSimEngine.Required(AbstractVector),
+    rank_leaves=PlantSimEngine.Required(AbstractVector),
 )
 PlantSimEngine.outputs_(::LeafStateModel) = (state=:undetermined, rank=-9999, rank_leaves=[-9999])
 

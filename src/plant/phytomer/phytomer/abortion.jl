@@ -36,7 +36,11 @@ function AbortionRate(; TT_flowering=6300.0, duration_abortion=540.0, abortion_r
     AbortionRate(promote(TT_flowering, duration_abortion, abortion_rate_max, abortion_rate_ref)..., MersenneTwister(random_seed))
 end
 
-PlantSimEngine.inputs_(::AbortionRate) = (TT_since_init=-Inf, carbon_offer_plant=-Inf, carbon_demand_plant=-Inf)
+PlantSimEngine.inputs_(::AbortionRate) = (
+    TT_since_init=PlantSimEngine.Required(Real),
+    carbon_offer_plant=PlantSimEngine.Default(0.0),
+    carbon_demand_plant=PlantSimEngine.Default(0.0),
+)
 PlantSimEngine.outputs_(::AbortionRate) = (state=:undetermined, carbon_demand_abortion=0.0, carbon_offer_abortion=0.0, abortion_calculation_flag=false)
 
 function PlantSimEngine.run!(m::AbortionRate, status, environment, constants, context=nothing)

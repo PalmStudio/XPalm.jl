@@ -15,7 +15,11 @@ end
 
 NumberSpikelets(; TT_flowering=6300.0, duration_dev_spikelets=675.0) = NumberSpikelets(promote(TT_flowering, duration_dev_spikelets)...)
 
-PlantSimEngine.inputs_(::NumberSpikelets) = (carbon_offer_plant=0.0, carbon_demand_plant=0.0, potential_fruits_number=-9999)
+PlantSimEngine.inputs_(::NumberSpikelets) = (
+    carbon_offer_plant=PlantSimEngine.Default(0.0),
+    carbon_demand_plant=PlantSimEngine.Default(0.0),
+    potential_fruits_number=PlantSimEngine.Required(Integer),
+)
 PlantSimEngine.outputs_(::NumberSpikelets) = (spikelets_number=-Inf, carbon_demand_spikelets=0.0, carbon_offer_spikelets=0.0, nb_spikelets_flag=false)
 
 # applied at the female inflorescence level

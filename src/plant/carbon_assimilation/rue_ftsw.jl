@@ -18,7 +18,10 @@ struct RUE_FTSW{T} <: AbstractCarbon_AssimilationModel
     threshold_ftsw::T
 end
 
-PlantSimEngine.inputs_(::RUE_FTSW) = (aPPFD=-Inf, ftsw=-Inf)
+PlantSimEngine.inputs_(::RUE_FTSW) = (
+    aPPFD=PlantSimEngine.Required(Real),
+    ftsw=PlantSimEngine.Default(1.0),
+)
 PlantSimEngine.outputs_(::RUE_FTSW) = (carbon_assimilation=-Inf,)
 
 function PlantSimEngine.run!(m::RUE_FTSW, status, environment, constants, context=nothing)

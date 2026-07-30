@@ -6,7 +6,10 @@ end
 
 PotentialReserveLeaf(; lma_min=80.0, lma_max=200.0, leaflets_biomass_contribution=0.35) = PotentialReserveLeaf(lma_min, lma_max, leaflets_biomass_contribution)
 
-PlantSimEngine.inputs_(::PotentialReserveLeaf) = (leaf_area=-Inf, reserve=0.0,)
+PlantSimEngine.inputs_(::PotentialReserveLeaf) = (
+    leaf_area=PlantSimEngine.Required(Real),
+    reserve=PlantSimEngine.Default(0.0),
+)
 PlantSimEngine.outputs_(::PotentialReserveLeaf) = (potential_reserve=0.0,)
 
 function PlantSimEngine.run!(m::PotentialReserveLeaf, st, environment, constants, context)
@@ -18,5 +21,4 @@ function PlantSimEngine.run!(m::PotentialReserveLeaf, st, environment, constants
 
     return nothing
 end
-
 

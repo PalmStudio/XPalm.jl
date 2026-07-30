@@ -21,7 +21,9 @@ struct LAIModel{T} <: AbstractLai_DynamicModel
     area::T
 end
 
-PlantSimEngine.inputs_(::LAIModel) = (leaf_areas=[-Inf],)
+PlantSimEngine.inputs_(::LAIModel) = (
+    leaf_areas=PlantSimEngine.Required(AbstractVector),
+)
 PlantSimEngine.outputs_(::LAIModel) = (lai=-Inf, leaf_area=-Inf)
 
 # Applied at the scene scale:

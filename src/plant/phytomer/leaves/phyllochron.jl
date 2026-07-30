@@ -32,8 +32,8 @@ function PhyllochronModel(; age_palm_maturity=2920, production_speed_initial=0.0
 end
 
 PlantSimEngine.inputs_(::PhyllochronModel) = (
-    plant_age=0,
-    TEff=-Inf,
+    plant_age=PlantSimEngine.Required(Real),
+    TEff=PlantSimEngine.Required(Real),
 )
 
 PlantSimEngine.outputs_(m::PhyllochronModel) = (

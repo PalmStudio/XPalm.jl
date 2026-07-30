@@ -43,10 +43,10 @@ struct FTSW_BP{T} <: AbstractFTSWModel
     soil_depth::T
 end
 
-PlantSimEngine.inputs_(::FTSW_BP) = (
-    root_depth=0.0,
-    ET0=-Inf, #potential evapotranspiration
-    aPPFD=-Inf,
+PlantSimEngine.inputs_(m::FTSW_BP) = (
+    root_depth=PlantSimEngine.Default(m.ini_root_depth),
+    ET0=PlantSimEngine.Required(Real), #potential evapotranspiration
+    aPPFD=PlantSimEngine.Required(Real),
 )
 
 function FTSW_BP(;
@@ -196,7 +196,7 @@ function soil_init_default(m::FTSW_BP)
     @assert m.H_0 <= m.H_FC "H_0 cannot be higher than H_FC"
 
     # init status
-    status = PlantSimEngine.Status(merge(PlantSimEngine.inputs_(m), PlantSimEngine.outputs_(m)))
+    status = PlantSimEngine.Status(PlantSimEngine.init_variables(m))
     ## init compartments size
     status.root_depth = m.ini_root_depth
     compute_compartment_size(m, status)

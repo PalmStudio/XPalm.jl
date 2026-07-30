@@ -6,7 +6,9 @@ end
 
 RmQ10{O}(Q10::T, Rm_base::T, T_base::T=25.0) where {O,T} = RmQ10{O,T}(Q10, Rm_base, T_base)
 
-PlantSimEngine.inputs_(::RmQ10_BP) = (biomass=-Inf,)
+PlantSimEngine.inputs_(::RmQ10_BP) = (
+    biomass=PlantSimEngine.Required(Real),
+)
 PlantSimEngine.outputs_(::RmQ10_BP) = (Rm=-Inf,)
 
 function PlantSimEngine.run!(m::RmQ10_BP, status, environment, constants, context=nothing)

@@ -6,7 +6,10 @@ maintenance respiration.
 """
 struct CarbonOfferRm <: AbstractCarbon_OfferModel end
 
-PlantSimEngine.inputs_(::CarbonOfferRm) = (carbon_assimilation=-Inf, Rm=-Inf)
+PlantSimEngine.inputs_(::CarbonOfferRm) = (
+    carbon_assimilation=PlantSimEngine.Required(Real),
+    Rm=PlantSimEngine.Required(Real),
+)
 PlantSimEngine.outputs_(::CarbonOfferRm) = (carbon_offer_after_rm=-Inf,)
 
 # Should be applied at the plant scale:

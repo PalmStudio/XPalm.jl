@@ -39,7 +39,9 @@ Compute final potential height and radius of internode according to plant age at
 """
 
 
-PlantSimEngine.inputs_(::FinalPotentialInternodeDimensionModel) = (initiation_age=0,)
+PlantSimEngine.inputs_(::FinalPotentialInternodeDimensionModel) = (
+    initiation_age=PlantSimEngine.Required(Real),
+)
 
 PlantSimEngine.outputs_(m::FinalPotentialInternodeDimensionModel) = (
     final_potential_height=m.min_height, # Need initialisations for the first leaf because this model is only called at the creation of the phytomer (see add_phytomer.jl)

@@ -92,7 +92,14 @@ function FemaleCarbonDemandModel(;
     )
 end
 
-PlantSimEngine.inputs_(::FemaleCarbonDemandModel) = (final_potential_biomass_non_oil_fruit=-Inf, final_potential_biomass_oil_fruit=-Inf, fruits_number=-Inf, TEff=-Inf, state=:undetermined, TT_since_init=-Inf)
+PlantSimEngine.inputs_(::FemaleCarbonDemandModel) = (
+    final_potential_biomass_non_oil_fruit=PlantSimEngine.Required(Real),
+    final_potential_biomass_oil_fruit=PlantSimEngine.Required(Real),
+    fruits_number=PlantSimEngine.Required(Real),
+    TEff=PlantSimEngine.Required(Real),
+    state=PlantSimEngine.Required(Symbol),
+    TT_since_init=PlantSimEngine.Required(Real),
+)
 PlantSimEngine.outputs_(::FemaleCarbonDemandModel) = (carbon_demand=0.0, carbon_demand_oil=-Inf, carbon_demand_non_oil=-Inf, carbon_demand_stalk=-Inf)
 
 function PlantSimEngine.run!(m::FemaleCarbonDemandModel, status, environment, constants, context=nothing)

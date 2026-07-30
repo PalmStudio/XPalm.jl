@@ -19,9 +19,9 @@ struct RootGrowthFTSW{T} <: AbstractRoot_GrowthModel
 end
 
 PlantSimEngine.inputs_(::RootGrowthFTSW) = (
-    ftsw=-Inf,
-    TEff=-Inf, # daily efficient temperature for plant growth (degree C days)
-    soil_depth=-Inf, # soil depth (cm)
+    ftsw=PlantSimEngine.Required(Real),
+    TEff=PlantSimEngine.Required(Real), # daily efficient temperature for plant growth (degree C days)
+    soil_depth=PlantSimEngine.Required(Real), # soil depth (cm)
 )
 
 PlantSimEngine.outputs_(m::RootGrowthFTSW) = (

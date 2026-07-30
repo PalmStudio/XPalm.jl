@@ -69,7 +69,10 @@ function InfloStateModel(;
     InfloStateModel(promote(TT_flowering, TT_fruiting, TT_harvest, TT_ini_oleo, TT_senescence_male)...)
 end
 
-PlantSimEngine.inputs_(::InfloStateModel) = (TT_since_init=-Inf, sex=:undetermined)
+PlantSimEngine.inputs_(::InfloStateModel) = (
+    TT_since_init=PlantSimEngine.Required(Real),
+    sex=PlantSimEngine.Required(Symbol),
+)
 PlantSimEngine.outputs_(::InfloStateModel) = (state=:undetermined, state_organs=[:undetermined],)
 PlantSimEngine.dep(::InfloStateModel) = (
     abortion=PlantSimEngine.Call(process=:abortion),

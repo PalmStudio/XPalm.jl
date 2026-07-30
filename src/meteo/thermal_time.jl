@@ -106,7 +106,9 @@ Compute thermal time since organ initiation using `:TEff`.
 """
 struct DailyDegreeDaysSinceInit <: AbstractThermal_TimeModel end
 
-PlantSimEngine.inputs_(::DailyDegreeDaysSinceInit) = (TEff=-Inf,)
+PlantSimEngine.inputs_(::DailyDegreeDaysSinceInit) = (
+    TEff=PlantSimEngine.Required(Real),
+)
 PlantSimEngine.outputs_(::DailyDegreeDaysSinceInit) = (TT_since_init=0.0,)
 
 function PlantSimEngine.run!(m::DailyDegreeDaysSinceInit, status, environment, constants, context=nothing)

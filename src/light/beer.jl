@@ -26,7 +26,7 @@ end
 Beer(; k=0.6) = Beer(k)
 
 function PlantSimEngine.inputs_(::Beer)
-    (lai=-Inf,)
+    (lai=PlantSimEngine.Required(Real),)
 end
 
 function PlantSimEngine.outputs_(::Beer)
@@ -97,7 +97,11 @@ struct SceneToPlantLightPartitioning{T} <: AbstractLight_InterceptionModel
 end
 
 function PlantSimEngine.inputs_(::SceneToPlantLightPartitioning)
-    (aPPFD_scene=-Inf, leaf_area=-Inf, scene_leaf_area=-Inf)
+    (
+        aPPFD_scene=PlantSimEngine.Required(Real),
+        leaf_area=PlantSimEngine.Required(Real),
+        scene_leaf_area=PlantSimEngine.Required(Real),
+    )
 end
 
 function PlantSimEngine.outputs_(::SceneToPlantLightPartitioning)

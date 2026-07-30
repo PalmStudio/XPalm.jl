@@ -38,9 +38,11 @@ end
 
 function PlantSimEngine.inputs_(m::LeafGeometryModel)
     (
-        graph_node_count=m.graph_node_count_init,
-        height_internodes=-Inf, radius_internodes=-Inf, # From the internode scale
-        biomass_leaves=-Inf, rank_leaves=-Inf # From the leaf scale
+        graph_node_count=PlantSimEngine.Default(m.graph_node_count_init),
+        height_internodes=PlantSimEngine.Required(AbstractVector),
+        radius_internodes=PlantSimEngine.Required(AbstractVector),
+        biomass_leaves=PlantSimEngine.Required(AbstractVector),
+        rank_leaves=PlantSimEngine.Required(AbstractVector),
     )
 end
 #! Note: we artificially declare those inputs as multiscale to be sure that this model is run after the internode and leaf scale models, 

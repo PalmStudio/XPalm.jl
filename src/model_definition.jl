@@ -17,7 +17,9 @@ end
 
 PlantSimEngine.process(::_InitialMaintenanceRespiration) =
     :initial_maintenance_respiration
-PlantSimEngine.inputs_(::_InitialMaintenanceRespiration) = (biomass=0.0,)
+PlantSimEngine.inputs_(::_InitialMaintenanceRespiration) = (
+    biomass=PlantSimEngine.Required(Real),
+)
 PlantSimEngine.outputs_(::_InitialMaintenanceRespiration) = (Rm=-Inf,)
 
 function PlantSimEngine.run!(

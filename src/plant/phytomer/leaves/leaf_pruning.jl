@@ -17,7 +17,14 @@ struct RankLeafPruning{T} <: AbstractLeaf_PruningModel
     rank::T
 end
 
-PlantSimEngine.inputs_(::RankLeafPruning) = (rank=-9999, state=:undetermined, biomass=-Inf, leaf_area=-Inf, reserve=0.0, state_phytomers=[:undetermined])
+PlantSimEngine.inputs_(::RankLeafPruning) = (
+    rank=PlantSimEngine.Required(Real),
+    state=PlantSimEngine.Required(Symbol),
+    biomass=PlantSimEngine.Required(Real),
+    leaf_area=PlantSimEngine.Required(Real),
+    reserve=PlantSimEngine.Required(Real),
+    state_phytomers=PlantSimEngine.Required(AbstractVector),
+)
 PlantSimEngine.outputs_(::RankLeafPruning) = (
     biomass=-Inf,
     leaf_area=-Inf,

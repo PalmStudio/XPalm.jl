@@ -23,7 +23,10 @@ end
 
 MaleBiomass(; respiration_cost=1.44) = MaleBiomass(respiration_cost)
 
-PlantSimEngine.inputs_(::MaleBiomass) = (carbon_allocation=-Inf, state=:undetermined)
+PlantSimEngine.inputs_(::MaleBiomass) = (
+    carbon_allocation=PlantSimEngine.Default(0.0),
+    state=PlantSimEngine.Required(Symbol),
+)
 PlantSimEngine.outputs_(::MaleBiomass) = (biomass=0.0, litter_male=0.0,)
 
 # Applied at the male inflorescence scale:

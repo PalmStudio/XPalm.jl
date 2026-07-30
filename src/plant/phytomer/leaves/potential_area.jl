@@ -28,7 +28,10 @@ struct PotentialAreaModel{T} <: AbstractLeaf_Potential_AreaModel
     slope::T
 end
 
-PlantSimEngine.inputs_(::PotentialAreaModel) = (TT_since_init=-Inf, final_potential_area=-Inf,)
+PlantSimEngine.inputs_(::PotentialAreaModel) = (
+    TT_since_init=PlantSimEngine.Required(Real),
+    final_potential_area=PlantSimEngine.Required(Real),
+)
 
 PlantSimEngine.outputs_(::PotentialAreaModel) = (
     potential_area=0.0, # Potential area (during leaf development)

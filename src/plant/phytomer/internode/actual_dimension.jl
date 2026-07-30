@@ -26,9 +26,9 @@ Compute internode dimensions (height and radius) from the biomass, with the prop
 
 
 PlantSimEngine.inputs_(::InternodeDimensionModel) = (
-    potential_height=-Inf,
-    potential_radius=-Inf,
-    biomass=-Inf
+    potential_height=PlantSimEngine.Required(Real),
+    potential_radius=PlantSimEngine.Required(Real),
+    biomass=PlantSimEngine.Required(Real),
 )
 PlantSimEngine.outputs_(::InternodeDimensionModel) = (
     height=-Inf,

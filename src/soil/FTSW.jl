@@ -78,9 +78,9 @@ function FTSW(ini_root_depth, H_FC, H_WP_Z1, Z1, H_WP_Z2, Z2, H_0, KC, TRESH_EVA
 end
 
 PlantSimEngine.inputs_(m::FTSW) = (
-    root_depth=m.ini_root_depth,
-    ET0=-Inf, #potential evapotranspiration
-    aPPFD=-Inf, # light intercepted by the crop
+    root_depth=PlantSimEngine.Default(m.ini_root_depth),
+    ET0=PlantSimEngine.Required(Real), #potential evapotranspiration
+    aPPFD=PlantSimEngine.Required(Real), # light intercepted by the crop
 )
 
 PlantSimEngine.outputs_(m::FTSW) = (

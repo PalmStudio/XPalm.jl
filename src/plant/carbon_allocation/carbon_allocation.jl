@@ -15,10 +15,10 @@ end
 OrgansCarbonAllocationModel(; cost_reserve_mobilization=1.667) = OrgansCarbonAllocationModel(cost_reserve_mobilization)
 
 PlantSimEngine.inputs_(::OrgansCarbonAllocationModel) = (
-    carbon_offer_after_rm=-Inf,
-    carbon_demand_organs=[-Inf],
-    carbon_allocation_organs=[-Inf],
-    reserve_organs=[0.0],
+    carbon_offer_after_rm=PlantSimEngine.Required(Real),
+    carbon_demand_organs=PlantSimEngine.Required(AbstractVector),
+    carbon_allocation_organs=PlantSimEngine.Required(AbstractVector),
+    reserve_organs=PlantSimEngine.Required(AbstractVector),
 )
 PlantSimEngine.outputs_(::OrgansCarbonAllocationModel) = (
     carbon_allocation=-Inf,

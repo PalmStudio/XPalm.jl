@@ -36,8 +36,8 @@ function InternodeCarbonDemandModel(; apparent_density=300000.0, carbon_concentr
 end
 
 PlantSimEngine.inputs_(::InternodeCarbonDemandModel) = (
-    potential_height=-Inf,
-    potential_radius=-Inf,
+    potential_height=PlantSimEngine.Required(Real),
+    potential_radius=PlantSimEngine.Required(Real),
 )
 PlantSimEngine.outputs_(::InternodeCarbonDemandModel) = (potential_volume=0.0, carbon_demand=0.0,)
 

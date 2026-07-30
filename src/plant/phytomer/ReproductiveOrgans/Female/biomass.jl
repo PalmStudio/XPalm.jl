@@ -29,7 +29,14 @@ end
 
 FemaleBiomass(; respiration_cost=1.44, respiration_cost_oleosynthesis=3.2) = FemaleBiomass(respiration_cost, respiration_cost_oleosynthesis)
 
-PlantSimEngine.inputs_(::FemaleBiomass) = (carbon_allocation=0.0, state=:undetermined, carbon_demand=0.0, carbon_demand_non_oil=0.0, carbon_demand_oil=0.0, carbon_demand_stalk=0.0)
+PlantSimEngine.inputs_(::FemaleBiomass) = (
+    carbon_allocation=PlantSimEngine.Default(0.0),
+    state=PlantSimEngine.Required(Symbol),
+    carbon_demand=PlantSimEngine.Required(Real),
+    carbon_demand_non_oil=PlantSimEngine.Required(Real),
+    carbon_demand_oil=PlantSimEngine.Required(Real),
+    carbon_demand_stalk=PlantSimEngine.Required(Real),
+)
 PlantSimEngine.outputs_(::FemaleBiomass) = (biomass=0.0, biomass_stalk=0.0, biomass_fruits=0.0, biomass_oil=0.0, biomass_non_oil=0.0)
 
 # Applied at the Female inflorescence scale:

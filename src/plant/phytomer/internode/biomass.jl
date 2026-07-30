@@ -27,7 +27,9 @@ end
 
 InternodeBiomass(; initial_biomass=0.0, respiration_cost=1.44) = InternodeBiomass(initial_biomass, respiration_cost)
 
-PlantSimEngine.inputs_(::InternodeBiomass) = (carbon_allocation=-Inf,)
+PlantSimEngine.inputs_(::InternodeBiomass) = (
+    carbon_allocation=PlantSimEngine.Default(0.0),
+)
 PlantSimEngine.outputs_(m::InternodeBiomass) = (biomass=m.initial_biomass,)
 
 # Applied at the Internode scale:
