@@ -22,7 +22,9 @@ end
 # existing organs use their previous-step biomass, as in XPalm v0.6.1. A newly
 # created organ therefore needs one explicit initialization call. This separate
 # process can be a call target without removing the normal respiration
-# application from the root schedule.
+# application from the root schedule. Call-only applications are excluded from
+# root-writer ownership, so this initializer intentionally publishes canonical
+# `Rm` without conflicting with the scheduled respiration application.
 struct _InitialMaintenanceRespiration{M} <: PlantSimEngine.AbstractModel
     model::M
 end
@@ -63,7 +65,6 @@ function _initial_maintenance_respiration_application(
             application=biomass_application,
             var=:biomass,
         ),),
-        output_routing=(Rm=:stream_only,),
     )
 end
 
