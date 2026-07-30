@@ -2,10 +2,12 @@ using XPalm
 using Documenter
 using PlantSimEngine
 
+const VPalm = XPalm.load_vpalm!()
+
 DocMeta.setdocmeta!(XPalm, :DocTestSetup, :(using XPalm); recursive=true)
 
 makedocs(;
-    modules=[XPalm, XPalm.VPalm],
+    modules=[XPalm, VPalm],
     authors="Rémi Vezy <VEZY@users.noreply.github.com> and contributors",
     repo=Documenter.Remotes.GitHub("PalmStudio", "XPalm.jl"),
     sitename="XPalm.jl",
