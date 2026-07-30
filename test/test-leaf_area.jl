@@ -49,13 +49,9 @@ end
 @testset "LAIModel" begin
     mtg = Palm().mtg
     applications = (
-        ModelSpec(LeafBiomass(); name=:leaf_biomass) |>
-        AppliesTo(Many(scale=:Leaf)),
-        ModelSpec(LeafAreaModel(80.0, 0.35, 0.0); name=:leaf_area) |>
-        AppliesTo(Many(scale=:Leaf)),
-        ModelSpec(LAIModel(30.0); name=:scene_lai) |>
-        AppliesTo(One(scale=:Scene)) |>
-        Inputs(:leaf_areas => Many(scale=:Leaf, var=:leaf_area, within=SceneScope())),
+        ModelSpec(LeafBiomass(); name=:leaf_biomass, on=Many(scale=:Leaf)),
+        ModelSpec(LeafAreaModel(80.0, 0.35, 0.0); name=:leaf_area, on=Many(scale=:Leaf)),
+        ModelSpec(LAIModel(30.0); name=:scene_lai, on=One(scale=:Scene), inputs=(:leaf_areas => Many(scale=:Leaf, var=:leaf_area, within=SceneScope()))),
     )
     scene = CompositeModel(
         mtg;

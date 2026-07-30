@@ -40,13 +40,9 @@ end
             status=Status(leaf_area=leaf_area_plant, scene_leaf_area=scene_leaf_area),
         );
         applications=(
-            ModelSpec(Beer(0.5); name=:scene_light) |>
-            AppliesTo(One(scale=:Scene)),
-            ModelSpec(SceneToPlantLightPartitioning(plant_area); name=:plant_light) |>
-            AppliesTo(One(scale=:Plant)) |>
-            Inputs(:aPPFD_scene => One(scale=:Scene, var=:aPPFD, within=SceneScope())),
-            ModelSpec(ConstantRUEModel(4.8); name=:plant_rue) |>
-            AppliesTo(One(scale=:Plant)),
+            ModelSpec(Beer(0.5); name=:scene_light, on=One(scale=:Scene)),
+            ModelSpec(SceneToPlantLightPartitioning(plant_area); name=:plant_light, on=One(scale=:Plant), inputs=(:aPPFD_scene => One(scale=:Scene, var=:aPPFD, within=SceneScope()))),
+            ModelSpec(ConstantRUEModel(4.8); name=:plant_rue, on=One(scale=:Plant)),
         ),
         environment=meteo,
     )

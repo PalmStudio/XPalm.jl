@@ -1,22 +1,13 @@
 @testset "InternodeCarbonDemandModel" begin
     mtg = Palm().mtg
     applications = (
-        ModelSpec(DailyPlantAgeModel(); name=:plant_age) |>
-        AppliesTo(One(scale=:Plant)),
-        ModelSpec(DailyDegreeDays(); name=:plant_thermal_time) |>
-        AppliesTo(One(scale=:Plant)),
-        ModelSpec(InitiationAgeFromPlantAge(); name=:internode_initiation_age) |>
-        AppliesTo(Many(scale=:Internode)) |>
-        Inputs(:plant_age => One(scale=:Plant, var=:plant_age, within=SelfPlant())),
-        ModelSpec(DailyDegreeDaysSinceInit(); name=:internode_thermal_time) |>
-        AppliesTo(Many(scale=:Internode)) |>
-        Inputs(:TEff => One(scale=:Plant, var=:TEff, within=SelfPlant())),
-        ModelSpec(FinalPotentialInternodeDimensionModel(); name=:internode_final_dimensions) |>
-        AppliesTo(Many(scale=:Internode)),
-        ModelSpec(PotentialInternodeDimensionModel(); name=:internode_potential_dimensions) |>
-        AppliesTo(Many(scale=:Internode)),
-        ModelSpec(InternodeCarbonDemandModel(300000.0, 1.44); name=:internode_carbon_demand) |>
-        AppliesTo(Many(scale=:Internode)),
+        ModelSpec(DailyPlantAgeModel(); name=:plant_age, on=One(scale=:Plant)),
+        ModelSpec(DailyDegreeDays(); name=:plant_thermal_time, on=One(scale=:Plant)),
+        ModelSpec(InitiationAgeFromPlantAge(); name=:internode_initiation_age, on=Many(scale=:Internode), inputs=(:plant_age => One(scale=:Plant, var=:plant_age, within=SelfPlant()))),
+        ModelSpec(DailyDegreeDaysSinceInit(); name=:internode_thermal_time, on=Many(scale=:Internode), inputs=(:TEff => One(scale=:Plant, var=:TEff, within=SelfPlant()))),
+        ModelSpec(FinalPotentialInternodeDimensionModel(); name=:internode_final_dimensions, on=Many(scale=:Internode)),
+        ModelSpec(PotentialInternodeDimensionModel(); name=:internode_potential_dimensions, on=Many(scale=:Internode)),
+        ModelSpec(InternodeCarbonDemandModel(300000.0, 1.44); name=:internode_carbon_demand, on=Many(scale=:Internode)),
     )
     scene = CompositeModel(
         mtg;

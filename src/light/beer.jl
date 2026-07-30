@@ -54,7 +54,7 @@ environment = Atmosphere(T=20.0, Wind=1.0, P=101.3, Rh=0.65, Ri_PAR_f=300.0)
 scene = CompositeModel(
     Object(:scene; scale=:Scene, kind=:scene, status=Status(lai=2.0));
     applications=(
-        ModelSpec(Beer(0.5)) |> AppliesTo(One(scale=:Scene)),
+        ModelSpec(Beer(0.5); on=One(scale=:Scene)),
     ),
     environment=environment,
 )

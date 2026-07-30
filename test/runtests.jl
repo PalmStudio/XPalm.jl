@@ -37,9 +37,6 @@ using TOML
 import StableRNGs: StableRNG
 using MultiScaleTreeGraph, PlantGeom, PlantMeteo, PlantSimEngine
 import PlantSimEngine:
-    AppliesTo,
-    Calls,
-    Inputs,
     Many,
     ModelSpec,
     Object,
@@ -52,7 +49,6 @@ import PlantSimEngine:
     Self,
     SelfPlant,
     Status,
-    TimeStep,
     collect_outputs,
     explain_bindings,
     process,
@@ -75,8 +71,7 @@ function test_scene(
     environment=nothing,
 )
     applications = Tuple(
-        ModelSpec(model; name=process(model)) |>
-        AppliesTo(One(scale=scale))
+        ModelSpec(model; name=process(model), on=One(scale=scale))
         for model in models
     )
     kind = scale == :Soil ? :soil : :plant
