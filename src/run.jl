@@ -70,18 +70,10 @@ function _xpalm_status(node)
             TT_since_init=0.0,
             state=:undetermined,
             sex=:undetermined,
-            reserve=0.0,
         )
         for (key, value) in pairs(defaults)
             get!(status_data, key, value)
         end
-    end
-    if MultiScaleTreeGraph.symbol(node) in (:Leaf, :Internode, :Male, :Female) &&
-       !haskey(attrs, :carbon_allocation)
-        status_data[:carbon_allocation] = 0.0
-    end
-    if MultiScaleTreeGraph.symbol(node) in (:Leaf, :Internode) && !haskey(attrs, :reserve)
-        status_data[:reserve] = 0.0
     end
     status = PlantSimEngine.Status((; status_data...))
     node[:plantsimengine_status] = status

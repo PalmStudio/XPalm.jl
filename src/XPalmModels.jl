@@ -13,6 +13,8 @@ import Tables
 import Statistics: mean
 import PlantMeteo
 
+include("distributed_output_utils.jl")
+
 # Import the processes:
 include("light/0-process.jl")
 include("soil/0-process.jl")

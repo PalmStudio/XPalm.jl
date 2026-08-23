@@ -4,6 +4,7 @@ function _xpalm_application(
     name=PlantSimEngine.process(model),
     inputs=NamedTuple(),
     calls=NamedTuple(),
+    outputs_to=NamedTuple(),
     output_routing=NamedTuple(),
     updates=(),
 )
@@ -13,6 +14,7 @@ function _xpalm_application(
         on=PlantSimEngine.Many(scale=scale),
         inputs=inputs,
         calls=calls,
+        outputs_to=outputs_to,
         output_routing=output_routing,
         updates=updates,
     )
@@ -404,18 +406,27 @@ function model_applications(p; architecture=false)
                 within=PlantSimEngine.Subtree(),
                 var=:carbon_demand,
             ),
-            :carbon_allocation_organs => PlantSimEngine.Many(
-                scale=(:Leaf, :Internode, :Male, :Female),
-                within=PlantSimEngine.Subtree(),
-                var=:carbon_allocation,
-                from_status=true,
-            ),
-            :reserve_organs => PlantSimEngine.Many(
+            PreviousTimeStep(:previous_reserve_organs) => PlantSimEngine.Many(
                 scale=(:Internode, :Leaf),
                 within=PlantSimEngine.Subtree(),
                 var=:reserve,
-                from_status=true,
             ),),
+            outputs_to=(
+                carbon_allocation=PlantSimEngine.OutputTo(
+                    PlantSimEngine.Many(
+                        scale=(:Leaf, :Internode, :Male, :Female),
+                        within=PlantSimEngine.Subtree(),
+                    );
+                    vars=(carbon_allocation=PlantSimEngine.Default(0.0),),
+                ),
+                reserve=PlantSimEngine.OutputTo(
+                    PlantSimEngine.Many(
+                        scale=(:Internode, :Leaf),
+                        within=PlantSimEngine.Subtree(),
+                    );
+                    vars=(reserve=PlantSimEngine.Default(0.0),),
+                ),
+            ),
         ),
         _xpalm_application(
             :Plant, OrganReserveFilling();
@@ -427,12 +438,20 @@ function model_applications(p; architecture=false)
             :reserve_organs => PlantSimEngine.Many(
                 scale=(:Internode, :Leaf),
                 within=PlantSimEngine.Subtree(),
+                application=:Plant__carbon_allocation,
                 var=:reserve,
-                from_status=true,
             ),),
-            updates=(PlantSimEngine.Updates(:reserve;
-            after=:Plant__carbon_allocation,), PlantSimEngine.Updates(:reserve_organs;
-            after=:Plant__carbon_allocation,),),
+            outputs_to=(reserve=PlantSimEngine.OutputTo(
+                PlantSimEngine.Many(
+                    scale=(:Internode, :Leaf),
+                    within=PlantSimEngine.Subtree(),
+                );
+                vars=(reserve=PlantSimEngine.Default(0.0),),
+            ),),
+            updates=PlantSimEngine.Updates(
+                :reserve;
+                after=:Plant__carbon_allocation,
+            ),
         ),
         _xpalm_application(
             :Plant, PlantBunchHarvest();
@@ -619,10 +638,9 @@ function model_applications(p; architecture=false)
                 application=:Internode__biomass,
                 var=:biomass,
             ),
-            :reserve => PlantSimEngine.One(
+            PreviousTimeStep(:reserve) => PlantSimEngine.One(
                 within=PlantSimEngine.Self(),
                 var=:reserve,
-                from_status=true,
             ),),
         ),
         _xpalm_application(
@@ -636,8 +654,6 @@ function model_applications(p; architecture=false)
             inputs=(:carbon_allocation => PlantSimEngine.One(
                 within=PlantSimEngine.Self(),
                 var=:carbon_allocation,
-                from_status=true,
-                after=:Plant__carbon_allocation,
             ),),
         ),
     )
@@ -747,14 +763,17 @@ function model_applications(p; architecture=false)
             inputs=(:carbon_allocation => PlantSimEngine.One(
                 within=PlantSimEngine.Self(),
                 var=:carbon_allocation,
-                from_status=true,
-                after=:Plant__carbon_allocation,
             ),),
         ),
         _xpalm_application(
             :Leaf,
             RankLeafPruning(parameters["management"]["rank_leaf_pruning"]);
-            inputs=(:state_phytomers => PlantSimEngine.Many(
+            inputs=(:reserve => PlantSimEngine.One(
+                within=PlantSimEngine.Self(),
+                application=:Plant__reserve_filling,
+                var=:reserve,
+            ),
+            :state_phytomers => PlantSimEngine.Many(
                 scale=:Phytomer,
                 within=PlantSimEngine.SelfPlant(),
                 application=:Phytomer__state,
@@ -763,7 +782,8 @@ function model_applications(p; architecture=false)
             updates=(PlantSimEngine.Updates(:biomass;
             after=:Leaf__biomass,), PlantSimEngine.Updates(:leaf_area;
             after=:Leaf__leaf_area,), PlantSimEngine.Updates(:state;
-            after=:Leaf__state,),),
+            after=:Leaf__state,), PlantSimEngine.Updates(:reserve;
+            after=:Plant__reserve_filling,),),
         ),
     )
 
@@ -823,8 +843,6 @@ function model_applications(p; architecture=false)
             inputs=(:carbon_allocation => PlantSimEngine.One(
                 within=PlantSimEngine.Self(),
                 var=:carbon_allocation,
-                from_status=true,
-                after=:Plant__carbon_allocation,
             ),
             :state => PlantSimEngine.One(
                 scale=:Phytomer,
@@ -938,8 +956,6 @@ function model_applications(p; architecture=false)
             inputs=(:carbon_allocation => PlantSimEngine.One(
                 within=PlantSimEngine.Self(),
                 var=:carbon_allocation,
-                from_status=true,
-                after=:Plant__carbon_allocation,
             ),
             :state => PlantSimEngine.One(
                 scale=:Phytomer,
