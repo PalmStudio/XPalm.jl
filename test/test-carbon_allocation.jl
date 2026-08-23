@@ -329,7 +329,7 @@ end
         @test result.carbon_allocation == 6.0
         @test result.reserve == 4.0
         @test current_reserves == previous_reserves
-        @test result.respiration_reserve_mobilization == -Inf
+        @test result.respiration_reserve_mobilization == 0.0
         @test result.carbon_offer_after_allocation == 4.0
 
         zero_demands = zeros(2)
@@ -344,7 +344,7 @@ end
         @test result.carbon_allocation == 0.0
         @test carbon_allocations == [0.0, 0.0]
         @test current_reserves == previous_reserves
-        @test result.respiration_reserve_mobilization == -Inf
+        @test result.respiration_reserve_mobilization == 0.0
         @test result.carbon_offer_after_allocation == 5.0
 
         zero_reserves = zeros(2)
@@ -493,7 +493,7 @@ end
         plant_2 = xpalm_test_status(identified_scene, 207)
         @test plant_2.carbon_allocation == 4.0
         @test plant_2.reserve == 12.0
-        @test plant_2.respiration_reserve_mobilization == -Inf
+        @test plant_2.respiration_reserve_mobilization == 0.0
         @test xpalm_test_status(identified_scene, 31).carbon_allocation == 1.0
         @test xpalm_test_status(identified_scene, 888).carbon_allocation == 3.0
         @test xpalm_test_status(identified_scene, 31).reserve == 7.0

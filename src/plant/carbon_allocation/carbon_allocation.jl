@@ -21,7 +21,7 @@ PlantSimEngine.inputs_(::OrgansCarbonAllocationModel) = (
 )
 PlantSimEngine.outputs_(::OrgansCarbonAllocationModel) = (
     carbon_allocation=-Inf,
-    respiration_reserve_mobilization=-Inf,
+    respiration_reserve_mobilization=0.0,
     carbon_offer_after_allocation=-Inf,
     carbon_demand=0.0,
     reserve=0.0,
@@ -34,27 +34,6 @@ PlantSimEngine.outputs_(::OrgansCarbonAllocationModel) = (
     carbon_allocations,
     current_reserves,
     carbon_offer_after_rm,
-)
-    initial_respiration = oftype(float(carbon_offer_after_rm), -Inf)
-    return _allocate_organ_carbon!(
-        m,
-        carbon_demands,
-        previous_reserves,
-        carbon_allocations,
-        current_reserves,
-        carbon_offer_after_rm,
-        initial_respiration,
-    )
-end
-
-@inline function _allocate_organ_carbon!(
-    m::OrgansCarbonAllocationModel,
-    carbon_demands,
-    previous_reserves,
-    carbon_allocations,
-    current_reserves,
-    carbon_offer_after_rm,
-    respiration_reserve_mobilization,
 )
     carbon_demand =
         _sum_with_initial(carbon_demands, zero(carbon_offer_after_rm))
@@ -72,8 +51,7 @@ end
     carbon_offer = convert(calculation_type, carbon_offer_after_rm)
     mobilization_cost =
         convert(calculation_type, m.cost_reserve_mobilization)
-    respiration_reserve_mobilization =
-        convert(calculation_type, respiration_reserve_mobilization)
+    respiration_reserve_mobilization = zero(calculation_type)
 
     if carbon_demand > zero(carbon_demand)
         if carbon_demand <= carbon_offer
@@ -169,7 +147,6 @@ function PlantSimEngine.run!(
         allocation_targets.columns.carbon_allocation,
         reserve_targets.columns.reserve,
         status.carbon_offer_after_rm,
-        status.respiration_reserve_mobilization,
     )
     status.carbon_demand = result.carbon_demand
     status.reserve = result.reserve
