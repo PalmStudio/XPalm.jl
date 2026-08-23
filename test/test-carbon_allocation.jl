@@ -58,4 +58,28 @@
         @test isfinite(organ.status.carbon_allocation)
         @test organ.status.reserve >= 0.0
     end
+
+    lifecycle_scene = XPalm.xpalm_scene(
+        Palm(
+            initiation_age=0,
+            parameters=XPalm.default_parameters(),
+        );
+        architecture=false,
+        environment=meteo[1:12, :],
+    )
+    initial_phytomer_count = length(
+        model_objects(lifecycle_scene; scale=:Phytomer),
+    )
+    run!(lifecycle_scene; steps=12, outputs=:none)
+    @test length(model_objects(lifecycle_scene; scale=:Phytomer)) >
+          initial_phytomer_count
+    lifecycle_plant = only(model_objects(lifecycle_scene; scale=:Plant))
+    last_phytomer = lifecycle_plant.status.last_phytomer
+    @test last_phytomer isa PlantSimEngine.ObjectId
+    last_phytomer_object = PlantSimEngine.model_object(
+        lifecycle_scene,
+        last_phytomer,
+    )
+    @test last_phytomer_object.id == last_phytomer
+    @test last_phytomer_object.scale == :Phytomer
 end

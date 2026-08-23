@@ -18,11 +18,12 @@ No other inputs; the execution context is supplied as the last argument to `run!
 
 # Outputs
 
-- `last_phytomer::MultiScaleTreeGraph.Node`: The last phytomer of the palm, takes its values from the struct above as its first value.
+- `last_phytomer::PlantSimEngine.ObjectId`: Stable identity of the last phytomer
+  of the palm.
 - `phytomer_count::Int`: The number of phytomers in the palm.
 """
 struct PhytomerEmission <: AbstractPhytomer_EmissionModel
-    last_phytomer_init::MultiScaleTreeGraph.Node
+    last_phytomer_init::PlantSimEngine.ObjectId
     phytomer_count_init::Int
     graph_node_count_init::Int
     phytomer_symbol::Symbol
@@ -32,7 +33,14 @@ end
 
 function PhytomerEmission(mtg::MultiScaleTreeGraph.Node; phytomer_symbol=:Phytomer, internode_symbol=:Internode, leaf_symbol=:Leaf)
     phytomers = MultiScaleTreeGraph.descendants(mtg, symbol=phytomer_symbol, self=true)
-    PhytomerEmission(phytomers[end], length(phytomers), length(mtg), phytomer_symbol, internode_symbol, leaf_symbol)
+    PhytomerEmission(
+        PlantSimEngine.ObjectId(MultiScaleTreeGraph.node_id(phytomers[end])),
+        length(phytomers),
+        length(mtg),
+        phytomer_symbol,
+        internode_symbol,
+        leaf_symbol,
+    )
 end
 
 PlantSimEngine.inputs_(m::PhytomerEmission) = (
@@ -54,8 +62,12 @@ function PlantSimEngine.run!(m::PhytomerEmission, status, environment, constants
     status.graph_node_count += 1
     plant_age = status.plant_age
     # Create the new phytomer as a child of the last one (younger one):
+    last_phytomer = PlantSimEngine.model_object(
+        PlantSimEngine.runtime_model(context),
+        status.last_phytomer,
+    ).status.node
     st_phyto = PlantSimEngine.add_organ!(
-        status.last_phytomer, # parent, 
+        last_phytomer, # parent,
         context,
         :<,
         m.phytomer_symbol,
@@ -66,7 +78,7 @@ function PlantSimEngine.run!(m::PhytomerEmission, status, environment, constants
         initial_status=(plant_age=plant_age, initiation_age=plant_age),
     )
 
-    status.last_phytomer = st_phyto.node
+    status.last_phytomer = PlantSimEngine.object_id(context, st_phyto)
     # Add an Internode as its child:
     status.graph_node_count += 1
 
