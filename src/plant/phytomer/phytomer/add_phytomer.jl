@@ -62,10 +62,10 @@ function PlantSimEngine.run!(m::PhytomerEmission, status, environment, constants
     status.graph_node_count += 1
     plant_age = status.plant_age
     # Create the new phytomer as a child of the last one (younger one):
-    last_phytomer = PlantSimEngine.model_object(
-        PlantSimEngine.runtime_model(context),
+    last_phytomer = PlantSimEngine.source_node(
+        context,
         status.last_phytomer,
-    ).status.node
+    )
     st_phyto = PlantSimEngine.add_organ!(
         last_phytomer, # parent,
         context,
@@ -78,12 +78,13 @@ function PlantSimEngine.run!(m::PhytomerEmission, status, environment, constants
         initial_status=(plant_age=plant_age, initiation_age=plant_age),
     )
 
-    status.last_phytomer = PlantSimEngine.object_id(context, st_phyto)
+    phytomer_id = PlantSimEngine.object_id(context, st_phyto)
+    status.last_phytomer = phytomer_id
     # Add an Internode as its child:
     status.graph_node_count += 1
 
     st_internode = PlantSimEngine.add_organ!(
-        st_phyto.node, # parent, 
+        PlantSimEngine.source_node(context, phytomer_id), # parent,
         context,
         :/,
         m.internode_symbol,
@@ -93,12 +94,13 @@ function PlantSimEngine.run!(m::PhytomerEmission, status, environment, constants
         attributes=Dict{Symbol,Any}(),
         initial_status=(plant_age=plant_age, initiation_age=plant_age),
     )
+    internode_id = PlantSimEngine.object_id(context, st_internode)
 
     # Add a leaf as its child:
     status.graph_node_count += 1
 
     st_leaf = PlantSimEngine.add_organ!(
-        st_internode.node, # parent, 
+        PlantSimEngine.source_node(context, internode_id), # parent,
         context,
         :+,
         m.leaf_symbol,
@@ -108,41 +110,42 @@ function PlantSimEngine.run!(m::PhytomerEmission, status, environment, constants
         attributes=Dict{Symbol,Any}(),
         initial_status=(plant_age=plant_age, initiation_age=plant_age),
     )
+    leaf_id = PlantSimEngine.object_id(context, st_leaf)
 
     PlantSimEngine.run_call!(
         context,
         :phytomer_initiation_age;
-        objects=st_phyto,
+        objects=phytomer_id,
     )
     PlantSimEngine.run_call!(
         context,
         :internode_initiation_age;
-        objects=st_internode,
+        objects=internode_id,
     )
     PlantSimEngine.run_call!(
         context,
         :internode_final_potential_dimensions;
-        objects=st_internode,
+        objects=internode_id,
     )
     PlantSimEngine.run_call!(
         context,
         :internode_initial_maintenance_respiration;
-        objects=st_internode,
+        objects=internode_id,
     )
     PlantSimEngine.run_call!(
         context,
         :leaf_initiation_age;
-        objects=st_leaf,
+        objects=leaf_id,
     )
     PlantSimEngine.run_call!(
         context,
         :leaf_final_potential_area;
-        objects=st_leaf,
+        objects=leaf_id,
     )
     PlantSimEngine.run_call!(
         context,
         :leaf_initial_maintenance_respiration;
-        objects=st_leaf,
+        objects=leaf_id,
     )
 
     return nothing

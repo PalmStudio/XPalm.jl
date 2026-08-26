@@ -79,7 +79,7 @@ PlantSimEngine.dep(::InfloStateModel) = (
 )
 
 # At phytomer scale
-function PlantSimEngine.run!(m::InfloStateModel, status, environment, constants, context=nothing)
+function PlantSimEngine.run!(m::InfloStateModel, status, environment, constants, context)
     status.state == :aborted && return # if the inflo is aborted, no need to compute 
     status.state == :harvested && return # no need to compute if harvested (can also happen from the leaf side if pruned)
 
@@ -93,12 +93,14 @@ function PlantSimEngine.run!(m::InfloStateModel, status, environment, constants,
         end
 
         # Give the state to the reproductive organ (it is always the second child of the first child of the phytomer):
-        status.node[1][2][:plantsimengine_status].state = status.state
+        phytomer = PlantSimEngine.source_node(context)
+        PlantSimEngine.model_status(context, phytomer[1][2]).state = status.state
     elseif status.sex == :Female
+        phytomer = PlantSimEngine.source_node(context)
         if status.TT_since_init >= m.TT_harvest
             status.state = :harvested
             # Give the information to the leaf (prune it):
-            status.node[1][1][:plantsimengine_status].state = :pruned
+            PlantSimEngine.model_status(context, phytomer[1][1]).state = :pruned
         elseif status.TT_since_init >= m.TT_ini_oleo
             status.state = :oleosynthesis
         elseif status.TT_since_init >= m.TT_fruiting
@@ -109,6 +111,6 @@ function PlantSimEngine.run!(m::InfloStateModel, status, environment, constants,
         # Else: status.state = :undetermined, but this is already the default value
 
         # Give the state to the reproductive organ:
-        status.node[1][2][:plantsimengine_status].state = status.state
+        PlantSimEngine.model_status(context, phytomer[1][2]).state = status.state
     end
 end

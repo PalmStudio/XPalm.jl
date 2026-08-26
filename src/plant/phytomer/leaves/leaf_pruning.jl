@@ -36,7 +36,7 @@ PlantSimEngine.outputs_(::RankLeafPruning) = (
 )
 
 # Applied at the leaf scale:
-function PlantSimEngine.run!(m::RankLeafPruning, status, environment, constants, context=nothing)
+function PlantSimEngine.run!(m::RankLeafPruning, status, environment, constants, context)
     status.is_pruned && return # if the leaf is already pruned, no need to compute. Note that we don't use the state of the leaf here
     # because it may be pruned set to :pruned by the InfloStateModel, in which case the leaf is not really pruned yet.
 
@@ -53,17 +53,19 @@ function PlantSimEngine.run!(m::RankLeafPruning, status, environment, constants,
         status.is_pruned = true
 
         # Get the internode node to check if the phytomer is harvested:
-        internode_node = parent(status.node)
+        leaf_node = PlantSimEngine.source_node(context)
+        internode_node = parent(leaf_node)
 
         # If the leaf is pruned but the phytomer is not harvested, then we harvest:
         phytomer_node = parent(internode_node)
-        phytomer_node[:plantsimengine_status].state = :harvested
+        PlantSimEngine.model_status(context, phytomer_node).state = :harvested
 
         # Give the information to the inflorescence if we find one:
         internode_children = MultiScaleTreeGraph.children(internode_node)
         inflo_nodes = filter(x -> MultiScaleTreeGraph.symbol(x) == :Female || MultiScaleTreeGraph.symbol(x) == :Male, internode_children)
         if length(inflo_nodes) == 1
-            inflo_nodes[1][:plantsimengine_status].state = :harvested
+            PlantSimEngine.model_status(context, only(inflo_nodes)).state =
+                :harvested
         end
     end
 end

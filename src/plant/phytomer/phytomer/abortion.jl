@@ -43,7 +43,7 @@ PlantSimEngine.inputs_(::AbortionRate) = (
 )
 PlantSimEngine.outputs_(::AbortionRate) = (state=:undetermined, carbon_demand_abortion=0.0, carbon_offer_abortion=0.0, abortion_calculation_flag=false)
 
-function PlantSimEngine.run!(m::AbortionRate, status, environment, constants, context=nothing)
+function PlantSimEngine.run!(m::AbortionRate, status, environment, constants, context)
     status.state == :aborted && return # if abortion is determined, no need to compute it again
 
     # We only look into the period of abortion :
@@ -72,7 +72,10 @@ function PlantSimEngine.run!(m::AbortionRate, status, environment, constants, co
         if random_abort <= threshold_abortion
             status.state = :aborted
             # Give the state to the reproductive organ:
-            status.node[1][2][:plantsimengine_status].state = status.state
+            phytomer = PlantSimEngine.source_node(context)
+            reproductive_organ = phytomer[1][2]
+            PlantSimEngine.model_status(context, reproductive_organ).state =
+                status.state
         end
 
         status.abortion_calculation_flag = true  # Update the flag, so that we do not compute it again

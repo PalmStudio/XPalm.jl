@@ -1060,6 +1060,11 @@ function model_applications(p; architecture=false)
             within=PlantSimEngine.SceneScope(),
             var=:graph_node_count,
         ),
+        :state => PlantSimEngine.One(
+            within=PlantSimEngine.Self(),
+            application=:Phytomer__state,
+            var=:state,
+        ),
         :height_internodes => PlantSimEngine.Many(
             scale=:Internode,
             within=PlantSimEngine.Subtree(),

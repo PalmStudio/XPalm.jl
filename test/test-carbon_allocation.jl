@@ -213,7 +213,50 @@ function xpalm_test_reserve_kernel_allocations(
     )
 end
 
+function xpalm_test_registry_status_ownership(model)
+    for object in model_objects(model)
+        node = PlantSimEngine.source_node(model, object)
+        @test PlantSimEngine.model_object(model, node) === object
+        @test PlantSimEngine.model_status(model, node) === object.status
+        @test !haskey(
+            MultiScaleTreeGraph.node_attributes(node),
+            :plantsimengine_status,
+        )
+    end
+    return nothing
+end
+
+function xpalm_test_polluted_status_attribute_rejection()
+    palm = Palm(
+        initiation_age=0,
+        parameters=XPalm.default_parameters(),
+    )
+    palm.mtg[:plantsimengine_status] = Status(polluted=true)
+    exception = try
+        XPalm.xpalm_scene(
+            palm;
+            architecture=false,
+            environment=meteo[1:1, :],
+        )
+        nothing
+    catch err
+        err
+    end
+    @test exception isa ErrorException
+    if exception isa Exception
+        message = sprint(showerror, exception)
+        @test occursin("legacy `plantsimengine_status`", message)
+        @test occursin("Remove it from the persisted graph", message)
+        @test occursin("PlantSimEngine.model_status", message)
+    end
+    return nothing
+end
+
 @testset "carbon_allocation" begin
+    @testset "runtime status ownership" begin
+        xpalm_test_polluted_status_attribute_rejection()
+    end
+
     @testset "allocation and reserve math" begin
         homogeneous_float32 = Float32[0.25, 0.5]
         homogeneous_float32_sum = @inferred XPalm.Models._sum_with_initial(
@@ -575,6 +618,7 @@ end
         architecture=false,
         environment=meteo[1:1, :],
     )
+    xpalm_test_registry_status_ownership(scene)
     for organ in model_objects(scene)
         organ.scale in (:Internode, :Leaf) || continue
         @test :carbon_allocation ∉ propertynames(organ.status)
@@ -638,10 +682,12 @@ end
         architecture=false,
         environment=meteo[1:12, :],
     )
+    xpalm_test_registry_status_ownership(lifecycle_scene)
     initial_phytomer_count = length(
         model_objects(lifecycle_scene; scale=:Phytomer),
     )
     run!(lifecycle_scene; steps=12, outputs=:none)
+    xpalm_test_registry_status_ownership(lifecycle_scene)
     @test length(model_objects(lifecycle_scene; scale=:Phytomer)) >
           initial_phytomer_count
     lifecycle_plant = only(model_objects(lifecycle_scene; scale=:Plant))

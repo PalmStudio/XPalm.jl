@@ -26,15 +26,17 @@ PlantSimEngine.inputs_(::LeafStateModel) = (
 )
 PlantSimEngine.outputs_(::LeafStateModel) = (state=:undetermined, rank=-9999, rank_leaves=[-9999])
 
-function PlantSimEngine.run!(::LeafStateModel, status, environment, constants, context=nothing)
+function PlantSimEngine.run!(::LeafStateModel, status, environment, constants, context)
+    leaf = PlantSimEngine.source_node(context)
+    i = index(leaf)
+
     # If the phytomer is harvested, the leaf is pruned:
-    i = index(status.node) # index of the leaf
     if status.state_phytomers[i] == :harvested
         status.state = :pruned
         #! This is already done in the InfloStateModel...
     end
 
-    if (status.maturity == true || index(status.node) == 1) && status.state == :undetermined
+    if (status.maturity == true || i == 1) && status.state == :undetermined
         #! We should add an effect of water stress here (or on the maturity side?)
 
         # Enter here only once, when the leaf is mature and the leaf state was not changed to Opened yet.
@@ -43,7 +45,7 @@ function PlantSimEngine.run!(::LeafStateModel, status, environment, constants, c
         status.rank = 1 # When a leaf open, it becomes the leaf at rank 1, and all the older leaves are shifted by one rank.
         # Compute the rank of each phytomer based on the index of the opened leaf:
         # NB: the values are from the oldest to youngest phytomer
-        status.rank_leaves .= (index(status.node) + 1) .- collect(1:length(status.rank_leaves))
+        status.rank_leaves .= (i + 1) .- collect(1:length(status.rank_leaves))
     end
 
     return nothing

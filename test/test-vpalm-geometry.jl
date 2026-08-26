@@ -104,6 +104,69 @@ end
     # @test leaflet.leaflet_rank == 0.0
 end
 
+@testset "dynamic geometry uses registered status inputs" begin
+    palm = Palm(
+        initiation_age=0,
+        parameters=XPalm.default_parameters(),
+        architecture=true,
+    )
+    scene = XPalm.xpalm_scene(
+        palm;
+        architecture=true,
+        environment=meteo[1:1, :],
+    )
+
+    compiled = PlantSimEngine.Advanced.refresh_bindings!(scene)
+    geometry_state_binding = only(
+        row for row in PlantSimEngine.Diagnostics.explain_bindings(compiled)
+        if row.application_id == :Phytomer__geometry && row.input == :state
+    )
+    @test geometry_state_binding.source_application_ids == [:Phytomer__state]
+    @test geometry_state_binding.carrier_hint != :temporal_stream
+    schedule = Dict(
+        row.application_id => row.execution_index
+        for row in PlantSimEngine.Diagnostics.explain_schedule(compiled)
+    )
+    @test schedule[:Phytomer__state] < schedule[:Phytomer__geometry]
+
+    run!(scene; steps=1, outputs=:none)
+
+    phytomer_object = only(model_objects(scene; scale=:Phytomer))
+    phytomer = PlantSimEngine.source_node(scene, phytomer_object)
+    internode = phytomer[1]
+    leaf = internode[1]
+    @test PlantSimEngine.model_status(scene, phytomer) ===
+          phytomer_object.status
+    @test phytomer_object.status.is_reconstructed
+    @test isfinite(ustrip(internode.width))
+    @test isfinite(ustrip(internode.length))
+    @test isfinite(ustrip(leaf.rachis_length))
+    @test !haskey(
+        MultiScaleTreeGraph.node_attributes(phytomer),
+        :plantsimengine_status,
+    )
+
+    pruned_scene = XPalm.xpalm_scene(
+        Palm(
+            initiation_age=0,
+            parameters=XPalm.default_parameters(),
+            architecture=true,
+        );
+        architecture=true,
+        environment=meteo[1:1, :],
+    )
+    pruned_object = only(model_objects(pruned_scene; scale=:Phytomer))
+    pruned_object.status.state = :pruned
+    pruned_phytomer = PlantSimEngine.source_node(pruned_scene, pruned_object)
+    pruned_leaf = pruned_phytomer[1][1]
+    pruned_leaf.is_alive = true
+
+    run!(pruned_scene; steps=1, outputs=:none)
+
+    @test pruned_object.status.state == :pruned
+    @test !pruned_leaf.is_alive
+end
+
 
 # @testset "leaflets" begin
 #     vpalm_parameters_ = copy(vpalm_parameters)

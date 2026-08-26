@@ -31,13 +31,14 @@ PlantSimEngine.outputs_(::ReproductiveOrganEmission) = NamedTuple()
 Add a new reproductive organ to a phytomer.
 """
 function PlantSimEngine.run!(m::ReproductiveOrganEmission, status, environment, constants, context)
-    @assert symbol(status.node) == :Phytomer "The function should be applied to a Phytomer, but is applied to a $(symbol(status.node))"
+    phytomer = PlantSimEngine.source_node(context)
+    @assert symbol(phytomer) == :Phytomer "The function should be applied to a Phytomer, but is applied to a $(symbol(phytomer))"
     @assert status.sex in [:undetermined, m.male_symbol, m.female_symbol]
     status.graph_node_count += 1
 
     # Create the new organ as a child of the phytomer:
     st_reproductive_organ = PlantSimEngine.add_organ!(
-        status.node[1], # The phytomer's internode is its first child 
+        phytomer[1], # The phytomer's internode is its first child
         context,
         :+,
         Symbol(status.sex),
@@ -52,21 +53,22 @@ function PlantSimEngine.run!(m::ReproductiveOrganEmission, status, environment, 
             sex=status.sex,
         ),
     )
+    reproductive_organ_id = PlantSimEngine.object_id(context, st_reproductive_organ)
     organ = Symbol(lowercase(string(status.sex)))
     PlantSimEngine.run_call!(
         context,
         Symbol(organ, "_initiation_age");
-        objects=st_reproductive_organ,
+        objects=reproductive_organ_id,
     )
     PlantSimEngine.run_call!(
         context,
         Symbol(organ, "_final_potential_biomass");
-        objects=st_reproductive_organ,
+        objects=reproductive_organ_id,
     )
     PlantSimEngine.run_call!(
         context,
         Symbol(organ, "_initial_maintenance_respiration");
-        objects=st_reproductive_organ,
+        objects=reproductive_organ_id,
     )
     # Note: we initialize TT_since_init to the one from the phytomer, as the parameters for development are given from the phytomer point of view.
     # This is because the reproductive organ is only instantiated when its sex is determined, but it started to grow at the same time as the phytomer.

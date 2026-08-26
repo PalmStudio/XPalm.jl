@@ -52,18 +52,24 @@ function xpalm_scene(palm::Palm; architecture=false, environment=nothing)
         palm.mtg;
         applications=model_applications(palm; architecture=architecture),
         environment=environment,
-        status=_xpalm_status,
+        status=_xpalm_initial_status,
     )
 end
 
-function _xpalm_status(node)
+function _xpalm_initial_status(node)
     attrs = MultiScaleTreeGraph.node_attributes(node)
-    status_data = Dict{Symbol,Any}(:node => node)
-    for (key, value) in Base.pairs(attrs)
-        key == :plantsimengine_status && continue
-        status_data[Symbol(key)] = value
+    status_data = Dict{Symbol,Any}()
+    for (key, value) in pairs(attrs)
+        key_symbol = Symbol(key)
+        key_symbol == :plantsimengine_status && error(
+            "XPalm cannot import the legacy `plantsimengine_status` MTG " *
+            "attribute as runtime state. Remove it from the persisted graph " *
+            "and resolve live status with `PlantSimEngine.model_status`.",
+        )
+        status_data[key_symbol] = value
     end
-    if MultiScaleTreeGraph.symbol(node) in (:Phytomer, :Internode, :Leaf, :Male, :Female)
+    if MultiScaleTreeGraph.symbol(node) in
+       (:Phytomer, :Internode, :Leaf, :Male, :Female)
         defaults = (
             plant_age=-9999,
             initiation_age=0,
@@ -75,9 +81,8 @@ function _xpalm_status(node)
             get!(status_data, key, value)
         end
     end
-    status = PlantSimEngine.Status((; status_data...))
-    node[:plantsimengine_status] = status
-    return status
+    status_data[:node] = node
+    return PlantSimEngine.Status((; status_data...))
 end
 
 function _output_requests(vars)
