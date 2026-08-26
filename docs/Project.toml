@@ -4,5 +4,5 @@ PlantSimEngine = "9a576370-710b-4269-adf9-4f603a9c6423"
 XPalm = "6b523e1e-d512-416c-8e51-a8fbef0064e7"
 
 [sources]
-PlantSimEngine = {path = "/Users/rvezy/Documents/dev/PlantSimEngine"}
+PlantSimEngine = {path = "../../PlantSimEngine"}
 XPalm = {path = ".."}

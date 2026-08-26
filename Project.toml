@@ -25,7 +25,7 @@ YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"
 Pluto = "c3e4b0f8-55cb-11ea-2926-15256bba5781"
 
 [sources]
-PlantSimEngine = {path = "/Users/rvezy/Documents/dev/PlantSimEngine"}
+PlantSimEngine = {path = "../PlantSimEngine"}
 
 [extensions]
 XPalmPluto = "Pluto"
