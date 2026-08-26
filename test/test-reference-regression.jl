@@ -50,8 +50,10 @@ end
     @test metadata["environment"]["julia_version"] == "1.12.1"
     @test metadata["environment"]["plantsimengine_version"] == "0.14.1"
     @test metadata["inputs"]["meteo_sha256"] == current_meteo_sha256
+    @test metadata["inputs"]["nsteps"] == 4160
 
     scenario = run_reference_regression_scenario(; meteo_path=meteo_path)
+    @test nrow(scenario.meteo) == 4160
     current = scenario.tables
     reference_trajectory =
         CSV.read(

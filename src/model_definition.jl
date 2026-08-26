@@ -20,56 +20,6 @@ function _xpalm_application(
     )
 end
 
-# Organ maintenance respiration is normally scheduled before organ creation so
-# existing organs use their previous-step biomass, as in XPalm v0.6.1. A newly
-# created organ therefore needs one explicit initialization call. This separate
-# process can be a call target without removing the normal respiration
-# application from the root schedule. Call-only applications are excluded from
-# root-writer ownership, so this initializer intentionally publishes canonical
-# `Rm` without conflicting with the scheduled respiration application.
-struct _InitialMaintenanceRespiration{M} <: PlantSimEngine.AbstractModel
-    model::M
-end
-
-PlantSimEngine.process(::_InitialMaintenanceRespiration) =
-    :initial_maintenance_respiration
-PlantSimEngine.inputs_(::_InitialMaintenanceRespiration) = (
-    biomass=PlantSimEngine.Required(Real),
-)
-PlantSimEngine.outputs_(::_InitialMaintenanceRespiration) = (Rm=-Inf,)
-
-function PlantSimEngine.run!(
-    model::_InitialMaintenanceRespiration,
-    status,
-    environment,
-    constants,
-    context=nothing,
-)
-    return PlantSimEngine.run!(
-        model.model,
-        status,
-        environment,
-        constants,
-        context,
-    )
-end
-
-function _initial_maintenance_respiration_application(
-    scale::Symbol,
-    model,
-    biomass_application::Symbol,
-)
-    return _xpalm_application(
-        scale,
-        _InitialMaintenanceRespiration(model);
-        inputs=(:biomass => PlantSimEngine.One(
-            within=PlantSimEngine.Self(),
-            application=biomass_application,
-            var=:biomass,
-        ),),
-    )
-end
-
 function _phytomer_emission_application(mtg)
     return _xpalm_application(
         :Plant, PhytomerEmission(mtg);
@@ -77,6 +27,16 @@ function _phytomer_emission_application(mtg)
             scale=:Scene,
             within=PlantSimEngine.SceneScope(),
             var=:graph_node_count,
+        ),
+        :plant_age => PlantSimEngine.One(
+            within=PlantSimEngine.Self(),
+            application=:Plant__plant_age,
+            var=:plant_age,
+        ),
+        :emit_phytomer => PlantSimEngine.One(
+            within=PlantSimEngine.Self(),
+            application=:Plant__phyllochron,
+            var=:emit_phytomer,
         ),),
         calls=(:phytomer_initiation_age => PlantSimEngine.Many(
             scale=:Phytomer,
@@ -93,10 +53,12 @@ function _phytomer_emission_application(mtg)
             within=PlantSimEngine.SelfPlant(),
             application=:Internode__internode_final_potential_dimensions,
         ),
-        :internode_initial_maintenance_respiration => PlantSimEngine.Many(
-            scale=:Internode,
-            within=PlantSimEngine.SelfPlant(),
-            application=:Internode__initial_maintenance_respiration,
+        :internode_initial_maintenance_respiration => PlantSimEngine.Initializer(
+            PlantSimEngine.One(
+                scale=:Internode,
+                within=PlantSimEngine.SelfPlant(),
+                application=:Internode__maintenance_respiration,
+            ),
         ),
         :leaf_initiation_age => PlantSimEngine.Many(
             scale=:Leaf,
@@ -108,10 +70,12 @@ function _phytomer_emission_application(mtg)
             within=PlantSimEngine.SelfPlant(),
             application=:Leaf__leaf_final_potential_area,
         ),
-        :leaf_initial_maintenance_respiration => PlantSimEngine.Many(
-            scale=:Leaf,
-            within=PlantSimEngine.SelfPlant(),
-            application=:Leaf__initial_maintenance_respiration,
+        :leaf_initial_maintenance_respiration => PlantSimEngine.Initializer(
+            PlantSimEngine.One(
+                scale=:Leaf,
+                within=PlantSimEngine.SelfPlant(),
+                application=:Leaf__maintenance_respiration,
+            ),
         ),),
     )
 end
@@ -136,6 +100,21 @@ function _reproductive_organ_emission_application(mtg)
             within=PlantSimEngine.SelfPlant(),
             application=:Plant__plant_age,
             var=:plant_age,
+        ),
+        :sex => PlantSimEngine.One(
+            within=PlantSimEngine.Self(),
+            application=:Phytomer__sex_determination,
+            var=:sex,
+        ),
+        :state => PlantSimEngine.One(
+            within=PlantSimEngine.Self(),
+            var=:state,
+            from_status=true,
+        ),
+        :emit_reproductive_organ => PlantSimEngine.One(
+            within=PlantSimEngine.Self(),
+            application=:Phytomer__sex_determination,
+            var=:emit_reproductive_organ,
         ),),
         calls=(:male_initiation_age => PlantSimEngine.Many(
             scale=:Male,
@@ -147,10 +126,12 @@ function _reproductive_organ_emission_application(mtg)
             within=PlantSimEngine.Subtree(),
             application=:Male__final_potential_biomass,
         ),
-        :male_initial_maintenance_respiration => PlantSimEngine.Many(
-            scale=:Male,
-            within=PlantSimEngine.Subtree(),
-            application=:Male__initial_maintenance_respiration,
+        :male_initial_maintenance_respiration => PlantSimEngine.Initializer(
+            PlantSimEngine.One(
+                scale=:Male,
+                within=PlantSimEngine.Subtree(),
+                application=:Male__maintenance_respiration,
+            ),
         ),
         :female_initiation_age => PlantSimEngine.Many(
             scale=:Female,
@@ -162,10 +143,12 @@ function _reproductive_organ_emission_application(mtg)
             within=PlantSimEngine.Subtree(),
             application=:Female__final_potential_biomass,
         ),
-        :female_initial_maintenance_respiration => PlantSimEngine.Many(
-            scale=:Female,
-            within=PlantSimEngine.Subtree(),
-            application=:Female__initial_maintenance_respiration,
+        :female_initial_maintenance_respiration => PlantSimEngine.Initializer(
+            PlantSimEngine.One(
+                scale=:Female,
+                within=PlantSimEngine.Subtree(),
+                application=:Female__maintenance_respiration,
+            ),
         ),),
     )
 end
@@ -223,8 +206,8 @@ function model_applications(p; architecture=false)
         _xpalm_application(:Plant, DailyDegreeDays())
 
     # Thermal time and maintenance respiration run before organ creation.
-    # Existing organs use previous-step biomass; the separate initialization
-    # applications below are called only for organs created during this step.
+    # Existing organs use previous-step biomass. The same scheduled respiration
+    # applications are initializer targets for organs created during this step.
     early_organ_applications = (
         _xpalm_application(
             :Phytomer,
@@ -344,6 +327,7 @@ function model_applications(p; architecture=false)
                 parameters["phyllochron"]["production_speed_mature"],
             ),
         ),
+        _phytomer_emission_application(p.mtg),
         _xpalm_application(
             :Plant, PlantLeafAreaModel();
             inputs=(:leaf_area_leaves => PlantSimEngine.Many(
@@ -359,7 +343,6 @@ function model_applications(p; architecture=false)
                 var=:state,
             ),),
         ),
-        _phytomer_emission_application(p.mtg),
         _xpalm_application(
             :Plant, PlantRm();
             inputs=(:Rm_organs => PlantSimEngine.Many(
@@ -538,6 +521,11 @@ function model_applications(p; architecture=false)
                 within=PlantSimEngine.SelfPlant(),
                 application=:Plant__carbon_allocation,
                 var=:carbon_demand,
+            ),
+            :state => PlantSimEngine.One(
+                within=PlantSimEngine.Self(),
+                var=:state,
+                from_status=true,
             ),),
         ),
         _reproductive_organ_emission_application(p.mtg),
@@ -576,16 +564,6 @@ function model_applications(p; architecture=false)
     )
 
     internode_applications = (
-        _initial_maintenance_respiration_application(
-            :Internode,
-            RmQ10FixedN(
-                parameters["respiration"]["Internode"]["Q10"],
-                parameters["respiration"]["Internode"]["Mr"],
-                parameters["respiration"]["Internode"]["T_ref"],
-                parameters["respiration"]["Internode"]["P_alive"],
-            ),
-            :Internode__biomass,
-        ),
         _xpalm_application(
             :Internode,
             InitiationAgeFromPlantAge();
@@ -659,16 +637,6 @@ function model_applications(p; architecture=false)
     )
 
     leaf_applications = (
-        _initial_maintenance_respiration_application(
-            :Leaf,
-            RmQ10FixedN(
-                parameters["respiration"]["Leaf"]["Q10"],
-                parameters["respiration"]["Leaf"]["Mr"],
-                parameters["respiration"]["Leaf"]["T_ref"],
-                parameters["respiration"]["Leaf"]["P_alive"],
-            ),
-            :Leaf__biomass,
-        ),
         _xpalm_application(
             :Leaf,
             InitiationAgeFromPlantAge();
@@ -788,16 +756,6 @@ function model_applications(p; architecture=false)
     )
 
     male_applications = (
-        _initial_maintenance_respiration_application(
-            :Male,
-            RmQ10FixedN(
-                parameters["respiration"]["Male"]["Q10"],
-                parameters["respiration"]["Male"]["Mr"],
-                parameters["respiration"]["Male"]["T_ref"],
-                parameters["respiration"]["Male"]["P_alive"],
-            ),
-            :Male__biomass,
-        ),
         _xpalm_application(
             :Male,
             InitiationAgeFromPlantAge();
@@ -854,16 +812,6 @@ function model_applications(p; architecture=false)
     )
 
     female_applications = (
-        _initial_maintenance_respiration_application(
-            :Female,
-            RmQ10FixedN(
-                parameters["respiration"]["Female"]["Q10"],
-                parameters["respiration"]["Female"]["Mr"],
-                parameters["respiration"]["Female"]["T_ref"],
-                parameters["respiration"]["Female"]["P_alive"],
-            ),
-            :Female__biomass,
-        ),
         _xpalm_application(
             :Female,
             InitiationAgeFromPlantAge();

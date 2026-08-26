@@ -25,6 +25,8 @@ state of the plant during a given period in thermal time.
 - `sex`: the sex of the phytomer (or bunch) (:undetermined, :Female or :Male).
 - `carbon_demand_sex_determination`: carbon demand of the plant integrated over the period of sex determination (gC/plant)
 - `carbon_offer_sex_determination`: carbon offer of the plant integrated over the period of sex determination (gC/plant)
+- `emit_reproductive_organ`: one-timestep pulse requesting emission of the
+  determined reproductive organ.
 
 # Note
 
@@ -50,13 +52,17 @@ PlantSimEngine.inputs_(::SexDetermination) = (
     TT_since_init=PlantSimEngine.Required(Real),
     carbon_offer_plant=PlantSimEngine.Default(0.0),
     carbon_demand_plant=PlantSimEngine.Default(0.0),
+    state=PlantSimEngine.Required(Symbol),
 )
-PlantSimEngine.outputs_(::SexDetermination) = (sex=:undetermined, carbon_demand_sex_determination=0.0, carbon_offer_sex_determination=0.0,)
-PlantSimEngine.dep(::SexDetermination) = (
-    reproductive_organ_emission=PlantSimEngine.Call(process=:reproductive_organ_emission),
+PlantSimEngine.outputs_(::SexDetermination) = (
+    sex=:undetermined,
+    carbon_demand_sex_determination=0.0,
+    carbon_offer_sex_determination=0.0,
+    emit_reproductive_organ=false,
 )
 
 function PlantSimEngine.run!(m::SexDetermination, status, environment, constants, context=nothing)
+    status.emit_reproductive_organ = false
     status.sex != :undetermined && return # if the sex is already determined, no need to compute it again
     status.state == :aborted && return # if the phytomer is aborted, no reproductive organ can be emitted  
     status.state == :harvested && return # no need to compute if harvested (e.g. the leaf was removed)
@@ -89,10 +95,6 @@ function PlantSimEngine.run!(m::SexDetermination, status, environment, constants
             status.sex = :Male
         end
 
-        PlantSimEngine.run_call!(
-            context,
-            :reproductive_organ_emission;
-            publish=true,
-        )
+        status.emit_reproductive_organ = true
     end
 end

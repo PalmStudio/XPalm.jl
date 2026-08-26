@@ -13,14 +13,18 @@ A `PhytomerEmission` model, which emits a new phytomer when called. The new phyt
 # Inputs
 
 - `graph_node_count::Int`: The number of nodes in the graph.
-
-No other inputs; the execution context is supplied as the last argument to `run!`.
+- `plant_age::Real`: Current plant age, copied to newborn organs.
+- `emit_phytomer::Bool`: One-timestep emission pulse.
 
 # Outputs
 
 - `last_phytomer::PlantSimEngine.ObjectId`: Stable identity of the last phytomer
   of the palm.
 - `phytomer_count::Int`: The number of phytomers in the palm.
+
+The application is scheduled every timestep but mutates the graph only when
+`emit_phytomer` is true. Consequently, `phytomer_count` is published at the
+regular application cadence, including timesteps without an emission.
 """
 struct PhytomerEmission <: AbstractPhytomer_EmissionModel
     last_phytomer_init::PlantSimEngine.ObjectId
@@ -45,6 +49,8 @@ end
 
 PlantSimEngine.inputs_(m::PhytomerEmission) = (
     graph_node_count=PlantSimEngine.Default(m.graph_node_count_init),
+    plant_age=PlantSimEngine.Required(Real),
+    emit_phytomer=PlantSimEngine.Required(Bool),
 )
 PlantSimEngine.outputs_(m::PhytomerEmission) = (last_phytomer=m.last_phytomer_init, phytomer_count=m.phytomer_count_init,)
 """
@@ -58,6 +64,7 @@ Add a new phytomer to the palm
 - `initiation_age::Dates.Date`: date of initiation of the phytomer 
 """
 function PlantSimEngine.run!(m::PhytomerEmission, status, environment, constants, context)
+    status.emit_phytomer || return nothing
     status.phytomer_count += 1
     status.graph_node_count += 1
     plant_age = status.plant_age
@@ -127,10 +134,10 @@ function PlantSimEngine.run!(m::PhytomerEmission, status, environment, constants
         :internode_final_potential_dimensions;
         objects=internode_id,
     )
-    PlantSimEngine.run_call!(
+    PlantSimEngine.run_initializer!(
         context,
-        :internode_initial_maintenance_respiration;
-        objects=internode_id,
+        :internode_initial_maintenance_respiration,
+        internode_id,
     )
     PlantSimEngine.run_call!(
         context,
@@ -142,10 +149,10 @@ function PlantSimEngine.run!(m::PhytomerEmission, status, environment, constants
         :leaf_final_potential_area;
         objects=leaf_id,
     )
-    PlantSimEngine.run_call!(
+    PlantSimEngine.run_initializer!(
         context,
-        :leaf_initial_maintenance_respiration;
-        objects=leaf_id,
+        :leaf_initial_maintenance_respiration,
+        leaf_id,
     )
 
     return nothing

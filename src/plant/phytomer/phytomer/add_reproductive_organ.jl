@@ -21,6 +21,9 @@ PlantSimEngine.inputs_(m::ReproductiveOrganEmission) = (
     phytomer_count=PlantSimEngine.Default(m.phytomer_count_init),
     plant_age=PlantSimEngine.Required(Real),
     TT_since_init=PlantSimEngine.Required(Real),
+    sex=PlantSimEngine.Required(Symbol),
+    state=PlantSimEngine.Required(Symbol),
+    emit_reproductive_organ=PlantSimEngine.Required(Bool),
 )
 
 PlantSimEngine.outputs_(::ReproductiveOrganEmission) = NamedTuple()
@@ -31,9 +34,10 @@ PlantSimEngine.outputs_(::ReproductiveOrganEmission) = NamedTuple()
 Add a new reproductive organ to a phytomer.
 """
 function PlantSimEngine.run!(m::ReproductiveOrganEmission, status, environment, constants, context)
+    status.emit_reproductive_organ || return nothing
     phytomer = PlantSimEngine.source_node(context)
-    @assert symbol(phytomer) == :Phytomer "The function should be applied to a Phytomer, but is applied to a $(symbol(phytomer))"
-    @assert status.sex in [:undetermined, m.male_symbol, m.female_symbol]
+    @assert symbol(phytomer) == m.phytomer_symbol "The function should be applied to a $(m.phytomer_symbol), but is applied to a $(symbol(phytomer))"
+    @assert status.sex in (m.male_symbol, m.female_symbol)
     status.graph_node_count += 1
 
     # Create the new organ as a child of the phytomer:
@@ -65,10 +69,10 @@ function PlantSimEngine.run!(m::ReproductiveOrganEmission, status, environment, 
         Symbol(organ, "_final_potential_biomass");
         objects=reproductive_organ_id,
     )
-    PlantSimEngine.run_call!(
+    PlantSimEngine.run_initializer!(
         context,
-        Symbol(organ, "_initial_maintenance_respiration");
-        objects=reproductive_organ_id,
+        Symbol(organ, "_initial_maintenance_respiration"),
+        reproductive_organ_id,
     )
     # Note: we initialize TT_since_init to the one from the phytomer, as the parameters for development are given from the phytomer point of view.
     # This is because the reproductive organ is only instantiated when its sex is determined, but it started to grow at the same time as the phytomer.

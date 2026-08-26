@@ -683,6 +683,10 @@ end
         environment=meteo[1:12, :],
     )
     xpalm_test_registry_status_ownership(lifecycle_scene)
+    initial_vegetative_organ_ids = Set(
+        organ.id for organ in model_objects(lifecycle_scene)
+        if organ.scale in (:Internode, :Leaf)
+    )
     initial_phytomer_count = length(
         model_objects(lifecycle_scene; scale=:Phytomer),
     )
@@ -699,8 +703,16 @@ end
     )
     @test last_phytomer_object.id == last_phytomer
     @test last_phytomer_object.scale == :Phytomer
+    newborn_vegetative_organs = [
+        organ for organ in model_objects(lifecycle_scene)
+        if organ.scale in (:Internode, :Leaf) &&
+           !(organ.id in initial_vegetative_organ_ids)
+    ]
+    @test !isempty(newborn_vegetative_organs)
+    @test all(organ -> isfinite(organ.status.Rm), newborn_vegetative_organs)
     for organ in model_objects(lifecycle_scene)
         organ.scale in (:Internode, :Leaf, :Male, :Female) || continue
+        @test isfinite(organ.status.Rm)
         @test isfinite(organ.status.carbon_allocation)
         if organ.scale in (:Internode, :Leaf)
             @test organ.status.reserve >= 0.0

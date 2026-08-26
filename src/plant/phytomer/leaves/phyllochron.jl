@@ -19,6 +19,7 @@ by TEff if it is itself modulated by *e.g.* the available water in the soil.
 
 - `newPhytomerEmergence`: fraction of time during two successive phytomer (at 1 the new phytomer emerge)
 - `production_speed`= phyllochron at the current plant age (leaf.degreeC days-1)
+- `emit_phytomer`: one-timestep pulse requesting one phytomer emission.
 
 """
 struct PhyllochronModel{I,T} <: AbstractPhyllochronModel
@@ -39,14 +40,12 @@ PlantSimEngine.inputs_(::PhyllochronModel) = (
 PlantSimEngine.outputs_(m::PhyllochronModel) = (
     newPhytomerEmergence=0.0,
     production_speed=-Inf,
-)
-
-PlantSimEngine.dep(::PhyllochronModel) = (
-    phytomer_emission=PlantSimEngine.Call(process=:phytomer_emission),
+    emit_phytomer=false,
 )
 
 # Applied at the plant scale.
 function PlantSimEngine.run!(m::PhyllochronModel, status, environment, constants, context=nothing)
+    status.emit_phytomer = false
     status.production_speed = age_relative_value(
         status.plant_age,
         0.0,
@@ -59,11 +58,6 @@ function PlantSimEngine.run!(m::PhyllochronModel, status, environment, constants
 
     if status.newPhytomerEmergence >= 1.0
         status.newPhytomerEmergence -= 1.0 # NB: -=1 because it can be > 1 so we pass along the remainder
-        # Add a new phytomer to the palm using a phytomer emission model:
-        PlantSimEngine.run_call!(
-            context,
-            :phytomer_emission;
-            publish=true,
-        )
+        status.emit_phytomer = true
     end
 end
