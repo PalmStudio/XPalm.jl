@@ -26,6 +26,7 @@ import PlantSimEngine
 
 include("vpalm/units.jl")
 include("vpalm/utils.jl")
+include("vpalm/IO/parameter_normalization.jl")
 include("vpalm/IO/parameters_IO.jl")
 
 # Entry point:

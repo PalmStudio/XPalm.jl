@@ -9,6 +9,7 @@ import Dates
 import Tables
 import OrderedCollections: OrderedDict
 
+include("vpalm/IO/parameter_normalization.jl")
 include("vpalm_parameters.jl")
 
 function load_vpalm!()
