@@ -17,6 +17,11 @@ Fraction of Transpirable Soil Water model.
 - `KC`: cultural coefficient (unitless)
 - `TRESH_EVAP`: fraction of water content in the evaporative layer below which evaporation is reduced (g[H20] g[Soil])
 - `TRESH_FTSW_TRANSPI`: FTSW treshold below which transpiration is reduced (g[H20] g[Soil])
+
+# Environment inputs
+
+- `Precipitations`: daily precipitation.
+- `Ri_PAR_f`: incident PAR radiation used to estimate transpiration.
 """
 struct FTSW_BP{T} <: AbstractFTSWModel
     ini_root_depth::T   # root depth at initialization (mm)
@@ -47,6 +52,11 @@ PlantSimEngine.inputs_(m::FTSW_BP) = (
     root_depth=PlantSimEngine.Default(m.ini_root_depth),
     ET0=PlantSimEngine.Required(Real), #potential evapotranspiration
     aPPFD=PlantSimEngine.Required(Real),
+)
+
+PlantSimEngine.environment_inputs_(::FTSW_BP) = (
+    Precipitations=0.0,
+    Ri_PAR_f=0.0,
 )
 
 function FTSW_BP(;

@@ -128,6 +128,10 @@ end
     include(joinpath(dirtest, "test-micrometeo.jl"))
 end
 
+@testset "Environment input contracts" begin
+    include(joinpath(dirtest, "test-environment-inputs.jl"))
+end
+
 @testset "Carbon_allocation" begin
     include(joinpath(dirtest, "test-carbon_allocation.jl"))
 end

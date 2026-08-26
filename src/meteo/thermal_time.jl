@@ -12,6 +12,9 @@ Compute thermal time from daily environment data
 - `TBase`: Tbase temperature for thermal time calculation (degree Celsius)
 - `TLim`: limit temperature for thermal time calculation (degree Celsius)
 
+# Environment inputs
+
+- `Tmin`, `Tmax`: daily minimum and maximum air temperatures (degree Celsius).
 
 # Outputs
 - `TEff`: daily efficient temperature for plant growth (degree C days) 
@@ -25,6 +28,11 @@ struct DailyDegreeDays{T} <: AbstractThermal_TimeModel
 end
 
 PlantSimEngine.inputs_(::DailyDegreeDays) = NamedTuple()
+
+PlantSimEngine.environment_inputs_(::DailyDegreeDays) = (
+    Tmin=0.0,
+    Tmax=0.0,
+)
 
 PlantSimEngine.outputs_(::DailyDegreeDays) = (
     TEff=-Inf,

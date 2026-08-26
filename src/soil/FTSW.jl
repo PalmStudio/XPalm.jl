@@ -28,6 +28,11 @@ Note that there is also a method for `FTSW` that takes an organ type as type, *e
 - `KC`: crop coefficient (unitless)
 - `TRESH_EVAP`: fraction of water content in the evaporative layer below which evaporation is reduced (g[H20] g[Soil])
 - `TRESH_FTSW_TRANSPI`: FTSW treshold below which transpiration is reduced (g[H20] g[Soil])
+
+# Environment inputs
+
+- `Precipitations`: daily precipitation.
+- `Ri_PAR_f`: incident PAR radiation used to estimate transpiration.
 """
 struct FTSW{T} <: AbstractFTSWModel where {T} # T: type of the values
     ini_root_depth::T   # root depth at initialization (mm)
@@ -81,6 +86,11 @@ PlantSimEngine.inputs_(m::FTSW) = (
     root_depth=PlantSimEngine.Default(m.ini_root_depth),
     ET0=PlantSimEngine.Required(Real), #potential evapotranspiration
     aPPFD=PlantSimEngine.Required(Real), # light intercepted by the crop
+)
+
+PlantSimEngine.environment_inputs_(::FTSW) = (
+    Precipitations=0.0,
+    Ri_PAR_f=0.0,
 )
 
 PlantSimEngine.outputs_(m::FTSW) = (

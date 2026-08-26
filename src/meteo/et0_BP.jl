@@ -10,9 +10,13 @@ Compute potential evapotranspiration
 - `LATITUDE`: latitude (radian)
 - `ALTITUDE`: altitude (m)
 
-# Inputs
+# Environment inputs
 
-- environment
+- `Tmin`, `Tmax`: daily minimum and maximum air temperatures.
+- `Rh_min`, `Rh_max`: daily minimum and maximum relative humidities.
+- `Rg`: daily global radiation.
+- `Wind`: wind speed.
+- `date`: date of the meteorological record.
 
 # Outputs
 
@@ -25,6 +29,16 @@ end
 
 
 PlantSimEngine.inputs_(::ET0_BP) = NamedTuple()
+
+PlantSimEngine.environment_inputs_(::ET0_BP) = (
+    Tmin=0.0,
+    Tmax=0.0,
+    Rh_min=0.0,
+    Rh_max=0.0,
+    Rg=0.0,
+    Wind=0.0,
+    date=Dates.Date(2000, 1, 1),
+)
 
 PlantSimEngine.outputs_(::ET0_BP) = (
     ET0=-Inf, # potential evpotranspiration (mm)

@@ -11,7 +11,7 @@ Beer-Lambert law for light interception.
 
 - `lai` in m² m⁻².
 
-# Required meteorology data
+# Environment inputs
 
 - `Ri_PAR_f`: incident flux of atmospheric radiation in the PAR, in MJ m⁻² d⁻¹.
 
@@ -28,6 +28,8 @@ Beer(; k=0.6) = Beer(k)
 function PlantSimEngine.inputs_(::Beer)
     (lai=PlantSimEngine.Required(Real),)
 end
+
+PlantSimEngine.environment_inputs_(::Beer) = (Ri_PAR_f=0.0,)
 
 function PlantSimEngine.outputs_(::Beer)
     (aPPFD=-Inf,)

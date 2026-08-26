@@ -22,6 +22,10 @@ DE VRIES, « The Cost of Maintenance Processes in Plant Cells ».
 - `N`: nitrogen content of the organ (gN gDM⁻¹)
 - `Gi`: maintenance cost coefficient of the ionic gradient
 - `Mx`:mineral content of the organ (g gDM⁻¹)
+
+# Environment inputs
+
+- `Tmin`, `Tmax`: daily minimum and maximum air temperatures (°C).
 """
 struct RmQ10FixedN{T} <: AbstractMaintenance_RespirationModel
     Q10::T
@@ -37,6 +41,10 @@ end
 
 PlantSimEngine.inputs_(::RmQ10FixedN) = (
     biomass=PlantSimEngine.Required(Real),
+)
+PlantSimEngine.environment_inputs_(::RmQ10FixedN) = (
+    Tmin=0.0,
+    Tmax=0.0,
 )
 PlantSimEngine.outputs_(::RmQ10FixedN) = (Rm=-Inf,)
 

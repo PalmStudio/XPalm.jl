@@ -15,6 +15,10 @@ Compute thermal time from daily environment data, corrected by FTSW
 # Inputs
 - `ftsw`: fraction of transpirable soil water (unitless)
 
+# Environment inputs
+
+- `Tmin`, `Tmax`: daily minimum and maximum air temperatures (degree Celsius).
+
 # Ouputs
 - `TEff`: daily efficient temperature for plant growth (degree C days) 
 - `TT_since_init`: cumulated thermal time from the first day (degree C days)
@@ -30,6 +34,11 @@ end
 
 PlantSimEngine.inputs_(::DegreeDaysFTSW) = (
     ftsw=PlantSimEngine.Default(0.3),
+)
+
+PlantSimEngine.environment_inputs_(::DegreeDaysFTSW) = (
+    Tmin=0.0,
+    Tmax=0.0,
 )
 
 PlantSimEngine.outputs_(::DegreeDaysFTSW) = (

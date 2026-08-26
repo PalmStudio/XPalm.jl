@@ -57,6 +57,23 @@ end
 !!! note
     The configuration file must contain all the parameters required by the model. Template files are available from the `examples` folder.
 
+## Meteorological input contracts
+
+Models that read meteorological forcing declare those fields separately from
+their status inputs. PlantSimEngine checks the declarations before numerical
+execution and reports missing fields with the affected model application.
+
+| Model | Environment fields |
+|---|---|
+| `ET0_BP` | `Tmin`, `Tmax`, `Rh_min`, `Rh_max`, `Rg`, `Wind`, `date` |
+| `DailyDegreeDays`, `DegreeDaysFTSW`, `RmQ10FixedN` | `Tmin`, `Tmax` |
+| `Beer` | `Ri_PAR_f` |
+| `FTSW`, `FTSW_BP` | `Precipitations`, `Ri_PAR_f` |
+
+These are the existing names read by the kernels. A scenario can remap source
+names with `PlantSimEngine.Environment`. The declarations check field presence;
+the numerical formulas and their unit assumptions are unchanged.
+
 #### Importing the models
 
 The models are available from the `Models` submodule. To import all models, you can use the following command:
