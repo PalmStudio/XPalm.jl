@@ -34,6 +34,7 @@ include("meteo/thermal_time.jl")
 include("meteo/thermal_time_ftsw.jl")
 include("meteo/et0_BP.jl")
 
+include("light/radiation_contracts.jl")
 include("light/beer.jl")
 include("plant/plant_age/palm_age_increment.jl")
 include("plant/plant_age/initiation_age.jl")

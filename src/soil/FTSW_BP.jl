@@ -1,7 +1,16 @@
-#! Do not use, this is a prototype model
-
 """
-    FTSW_BP(H_FC::Float64, H_WP_Z1::Float64,Z1::Float64,H_WP_Z2::Float64,Z2::Float64,H_0::Float64,KC::Float64,TRESH_EVAP::Float64,TRESH_FTSW_TRANSPI::Float64)
+    FTSW_BP(;
+        ini_root_depth,
+        H_FC=0.23,
+        H_WP_Z1=0.05,
+        Z1=200.0,
+        H_WP_Z2=0.05,
+        Z2=2000.0,
+        H_0=0.15,
+        KC=1.0,
+        TRESH_EVAP=0.5,
+        TRESH_FTSW_TRANSPI=0.5,
+    )
 
 Fraction of Transpirable Soil Water model.
 
@@ -21,7 +30,13 @@ Fraction of Transpirable Soil Water model.
 # Environment inputs
 
 - `Precipitations`: daily precipitation.
-- `Ri_PAR_f`: incident PAR radiation used to estimate transpiration.
+- `Ri_PAR_f`: daily incident PAR energy in MJ m[ground]⁻² d⁻¹, used to
+  estimate transpiration.
+
+# Inputs
+
+- `ET0`: daily reference evapotranspiration.
+- `aPPFD`: absorbed daily PAR in mol[photon] m[ground]⁻² d⁻¹.
 """
 struct FTSW_BP{T} <: AbstractFTSWModel
     ini_root_depth::T   # root depth at initialization (mm)
@@ -57,6 +72,10 @@ PlantSimEngine.inputs_(m::FTSW_BP) = (
 PlantSimEngine.environment_inputs_(::FTSW_BP) = (
     Precipitations=0.0,
     Ri_PAR_f=0.0,
+)
+
+PlantSimEngine.variable_contracts_(::FTSW_BP) = (
+    aPPFD=_GROUND_DAILY_PAR_PHOTONS,
 )
 
 function FTSW_BP(;

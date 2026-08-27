@@ -13,11 +13,11 @@ Beer-Lambert law for light interception.
 
 # Environment inputs
 
-- `Ri_PAR_f`: incident flux of atmospheric radiation in the PAR, in MJ m⁻² d⁻¹.
+- `Ri_PAR_f`: incident daily PAR energy, in MJ m[ground]⁻² d⁻¹.
 
 # Outputs
 
-- `aPPFD`: absorbed Photosynthetic Photon Flux Density in mol[PAR] m[soil]⁻² d⁻¹.
+- `aPPFD`: absorbed daily PAR in mol[photon] m[ground]⁻² d⁻¹.
 """
 struct Beer{T} <: AbstractLight_InterceptionModel
     k::T
@@ -35,6 +35,10 @@ function PlantSimEngine.outputs_(::Beer)
     (aPPFD=-Inf,)
 end
 
+PlantSimEngine.variable_contracts_(::Beer) = (
+    aPPFD=_GROUND_DAILY_PAR_PHOTONS,
+)
+
 
 """
     run!(object, environment, constants = Constants())
@@ -51,8 +55,11 @@ Computes the light interception of an object using the Beer-Lambert law.
 # Examples
 
 ```julia
-using XPalm, PlantSimEngine, PlantMeteo
-environment = Atmosphere(T=20.0, Wind=1.0, P=101.3, Rh=0.65, Ri_PAR_f=300.0)
+using XPalm, PlantSimEngine, PlantMeteo, Dates
+environment = (
+    Ri_PAR_f=8.0, # daily PAR energy in MJ m[ground]^-2 d^-1
+    duration=Day(1),
+)
 scene = CompositeModel(
     Object(:scene; scale=:Scene, kind=:scene, status=Status(lai=2.0));
     applications=(
@@ -65,8 +72,8 @@ only(model_objects(scene; scale=:Scene)).status.aPPFD
 ```
 """
 function PlantSimEngine.run!(m::Beer, status, environment, constants, context=nothing)
-    status.aPPFD = # in mol[PAR] m[soil]⁻² d⁻¹
-        environment.Ri_PAR_f * # in MJ m[soil]⁻² d⁻¹
+    status.aPPFD = # in mol[photon] m[ground]⁻² d⁻¹
+        environment.Ri_PAR_f * # in MJ m[ground]⁻² d⁻¹
         (1.0 - exp(-m.k * status.lai)) *
         constants.J_to_umol
 
@@ -75,24 +82,29 @@ end
 
 
 """
-    SceneToPlantLightPartitioning()
+    SceneToPlantLightPartitioning(scene_area)
 
 Partitioning from aPPFD at the scene scale to the plant scale based on the relative 
 leaf area of the plant.
 
 # Arguments
 
-- `scene_area`: the surface area of the scene (m⁻²) occupied by the plant.
+- `scene_area`: represented ground area of the scene (m²). In XPalm's default
+  one-palm scene this is `10000 / planting_density` for a density in palm ha⁻¹.
 
 # Inputs 
 
-- `aPPFD`: absorbed Photosynthetic Photon Flux Density in mol[PAR] m[soil]⁻² d⁻¹ (scene scale).
-- `leaf_area`: the target plant leaf area
-- `scene_leaf_area`: the total scene leaf area
+- `aPPFD_scene`: absorbed PAR in mol[photon] m[ground]⁻² d⁻¹.
+- `leaf_area`: the target plant leaf area in m².
+- `scene_leaf_area`: the total scene leaf area in m².
 
 # Outputs
 
-- `aPPFD`: absorbed Photosynthetic Photon Flux Density in mol[PAR] plant⁻¹ s⁻¹.
+- `aPPFD`: absorbed PAR in mol[photon] plant⁻¹ d⁻¹.
+
+The local input name `aPPFD_scene` distinguishes the ground-area value from the
+plant-total `aPPFD` output because both coexist inside this conversion model.
+The ordinary published variable remains `aPPFD` at both object scales.
 """
 struct SceneToPlantLightPartitioning{T} <: AbstractLight_InterceptionModel
     scene_area::T
@@ -109,6 +121,11 @@ end
 function PlantSimEngine.outputs_(::SceneToPlantLightPartitioning)
     (aPPFD=-Inf,)
 end
+
+PlantSimEngine.variable_contracts_(::SceneToPlantLightPartitioning) = (
+    aPPFD_scene=_GROUND_DAILY_PAR_PHOTONS,
+    aPPFD=_PLANT_DAILY_PAR_PHOTONS,
+)
 
 # Partitioning between plants:
 function PlantSimEngine.run!(m::SceneToPlantLightPartitioning, status, environment, constants, context=nothing)

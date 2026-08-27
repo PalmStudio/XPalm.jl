@@ -32,7 +32,13 @@ Note that there is also a method for `FTSW` that takes an organ type as type, *e
 # Environment inputs
 
 - `Precipitations`: daily precipitation.
-- `Ri_PAR_f`: incident PAR radiation used to estimate transpiration.
+- `Ri_PAR_f`: daily incident PAR energy in MJ m[ground]⁻² d⁻¹, used to
+  estimate transpiration.
+
+# Inputs
+
+- `ET0`: daily reference evapotranspiration.
+- `aPPFD`: absorbed daily PAR in mol[photon] m[ground]⁻² d⁻¹.
 """
 struct FTSW{T} <: AbstractFTSWModel where {T} # T: type of the values
     ini_root_depth::T   # root depth at initialization (mm)
@@ -91,6 +97,10 @@ PlantSimEngine.inputs_(m::FTSW) = (
 PlantSimEngine.environment_inputs_(::FTSW) = (
     Precipitations=0.0,
     Ri_PAR_f=0.0,
+)
+
+PlantSimEngine.variable_contracts_(::FTSW) = (
+    aPPFD=_GROUND_DAILY_PAR_PHOTONS,
 )
 
 PlantSimEngine.outputs_(m::FTSW) = (

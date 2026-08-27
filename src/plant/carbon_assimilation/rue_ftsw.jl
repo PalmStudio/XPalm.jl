@@ -1,14 +1,15 @@
 """
-    ConstantRUEModel(rue)
+    RUE_FTSW(rue, threshold_ftsw)
 
 Computes the `carbon_assimilation` using a constant radiation use efficiency (`rue`).
 
 # Arguments
 
 - `rue`: radiation use efficiency (gC MJ⁻¹)
+- `threshold_ftsw`: unitless FTSW threshold below which RUE is reduced.
 
 # Inputs
-- `aPPFD`: the absorbed Photosynthetic Photon Flux Density in mol[PAR] m[leaf]⁻² s⁻¹.
+- `aPPFD`: absorbed PAR in mol[photon] plant⁻¹ d⁻¹.
 
 # Outputs
 - `carbon_assimilation`: carbon offer from photosynthesis
@@ -23,6 +24,9 @@ PlantSimEngine.inputs_(::RUE_FTSW) = (
     ftsw=PlantSimEngine.Default(1.0),
 )
 PlantSimEngine.outputs_(::RUE_FTSW) = (carbon_assimilation=-Inf,)
+PlantSimEngine.variable_contracts_(::RUE_FTSW) = (
+    aPPFD=_PLANT_DAILY_PAR_PHOTONS,
+)
 
 function PlantSimEngine.run!(m::RUE_FTSW, status, environment, constants, context=nothing)
     photo_reduc = status.ftsw > m.threshold_ftsw ? 1.0 : status.ftsw / m.threshold_ftsw

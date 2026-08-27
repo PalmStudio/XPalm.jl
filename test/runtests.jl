@@ -122,6 +122,7 @@ end
 
 @testset "Light" begin
     include(joinpath(dirtest, "test-beer.jl"))
+    include(joinpath(dirtest, "test-radiation-contracts.jl"))
 end
 
 @testset "Micrometeorology" begin
