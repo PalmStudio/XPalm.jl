@@ -87,7 +87,7 @@ function bend(type, width_bend, height_bend, init_torsion, x, y, z, mass_rachis,
     shear_modulus = [@check_unit s u"MPa" for s in shear_modulus]
 
     # use coordinates x,y,z to make points:
-    points = [Meshes.Point(x[i], y[i], z[i]) for i in eachindex(x)]
+    points = [GeometryBasics.Point{3,typeof(x[i])}(x[i], y[i], z[i]) for i in eachindex(x)]
     gravity = 9.8u"m/s^2"
 
     # Distances and angles of each segment P2P1
@@ -242,13 +242,15 @@ function bend(type, width_bend, height_bend, init_torsion, x, y, z, mass_rachis,
         end
 
         # New coordinates of the points
-        neo_points = fill(Meshes.Point(0.0u"m", 0.0u"m", 0.0u"m"), nlin)
+        point_type = GeometryBasics.Point{3,typeof(step)}
+        zero_point = point_type(zero(step), zero(step), zero(step))
+        neo_points = fill(zero_point, nlin)
 
         for iter in 1:nlin
             # Origin P1
             p2 = vec_points[iter]
             if iter == 1
-                p1 = Meshes.Point(0.0u"m", 0.0u"m", 0.0u"m")
+                p1 = zero_point
             else
                 p1 = vec_points[iter-1]
             end
@@ -257,23 +259,23 @@ function bend(type, width_bend, height_bend, init_torsion, x, y, z, mass_rachis,
 
             # Change of basis
             # Segment becomes collinear to the OX axis
-            p2_rot = Meshes.Rotate(RotYZ(vec_angle_xy[iter], -vec_angle_xz[iter]))(p2p1_vec)
+            p2_rot = RotYZ(vec_angle_xy[iter], -vec_angle_xz[iter]) * p2p1_vec
 
             # Flexion equivalent to a rotation around OY
             # Rotation around OY: The rotation is wrong for strong angles
-            flex_point = Meshes.Point(p2_rot[1], p2_rot[2], step * vec_angle_flexion[iter])
+            flex_point = GeometryBasics.Vec{3,typeof(step)}(p2_rot[1], p2_rot[2], step * vec_angle_flexion[iter])
             # Torsion
             # Equivalent to a rotation around OX, initially the section is rotated but without torsion
             agl_tor_geom = som_cum_vec_agl_tor[iter] - vec_agl_tor[iter]
-            # point_rot = Meshes.Rotate(RotXYZ(agl_tor_geom, -vec_angle_xy[iter], -vec_angle_xz[iter]))(flex_point)
-            point_rot = Meshes.Rotate(Rotations.RotZYX(vec_angle_xz[iter], -vec_angle_xy[iter], agl_tor_geom))(flex_point)
-            # point_rot = Meshes.Rotate(Rotations.RotZY(vec_angle_xz[iter], agl_tor_geom))(flex_point)
+            # point_rot = RotXYZ(agl_tor_geom, -vec_angle_xy[iter], -vec_angle_xz[iter]) * flex_point
+            point_rot = Rotations.RotZYX(vec_angle_xz[iter], -vec_angle_xy[iter], agl_tor_geom) * flex_point
+            # point_rot = Rotations.RotZY(vec_angle_xz[iter], agl_tor_geom) * flex_point
 
             # Re-writing the points:
             if iter == 1
-                neo_points[iter] = point_rot
+                neo_points[iter] = point_type(point_rot[1], point_rot[2], point_rot[3])
             else
-                neo_points[iter] = neo_points[iter-1] + Meshes.to(point_rot)
+                neo_points[iter] = neo_points[iter-1] + point_rot
             end
         end
 
@@ -284,11 +286,11 @@ function bend(type, width_bend, height_bend, init_torsion, x, y, z, mass_rachis,
         # Calculation of the distances of the experimental points
         # Between before and after deformation
         for i in 1:npoints_exp
-            vec_p = Meshes.coords(vec_points[i_discret_pts_exp[i]])
-            p = Meshes.coords(points[i])
-            c1 = (p.x - vec_p.x)^2
-            c2 = (p.y - vec_p.y)^2
-            c3 = (p.z - vec_p.z)^2
+            vec_p = vec_points[i_discret_pts_exp[i]]
+            p = points[i]
+            c1 = (p[1] - vec_p[1])^2
+            c2 = (p[2] - vec_p[2])^2
+            c3 = (p[3] - vec_p[3])^2
 
             mat_dist_pts_exp[iter_poids, i] = sqrt(c1 + c2 + c3)
         end

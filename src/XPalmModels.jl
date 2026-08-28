@@ -4,7 +4,7 @@ import ..XPalm: age_relative_value, age_modulation_logistic
 
 # Put all models into this submodule so users can import that submodule to get the models without prefixing them with `XPalm.`
 import PlantSimEngine
-import PlantSimEngine: @process, add_organ!
+import PlantSimEngine: @process
 import MultiScaleTreeGraph
 import MultiScaleTreeGraph: index, symbol
 import Random: MersenneTwister, AbstractRNG
@@ -12,6 +12,8 @@ import Dates
 import Tables
 import Statistics: mean
 import PlantMeteo
+
+include("distributed_output_utils.jl")
 
 # Import the processes:
 include("light/0-process.jl")
@@ -32,6 +34,7 @@ include("meteo/thermal_time.jl")
 include("meteo/thermal_time_ftsw.jl")
 include("meteo/et0_BP.jl")
 
+include("light/radiation_contracts.jl")
 include("light/beer.jl")
 include("plant/plant_age/palm_age_increment.jl")
 include("plant/plant_age/initiation_age.jl")

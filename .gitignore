@@ -1,8 +1,11 @@
 *.jl.*.cov
+lcov.*
 *.jl.cov
 *.jl.mem
 /Manifest.toml
 /docs/build/
+/docs/src/www/
+/docs/Manifest.toml
 .DS_Store
 test/testFTSW_BP.jl
 test/Manifest.toml

@@ -1,32 +1,40 @@
 @testset "ET0_BP" begin
-    m = ModelList(ET0_BP())
-    out = run!(m, meteo[1, :])
-    @test out[:ET0][1] ≈ 0.855813392356407
+    scene = test_scene(:Scene, ET0_BP(); environment=meteo[1:1, :])
+    run!(scene)
+    @test test_status(scene, :Scene).ET0 ≈ 0.855813392356407
 end
 
 @testset "thermal_time" begin
-    mtg = Palm().mtg
-    m = Dict("Plant" => DailyDegreeDays())
-    vars = Dict{String,Any}("Plant" => (:TEff, :TT_since_init))
-    out = run!(mtg, m, meteo, tracked_outputs=vars, executor=SequentialEx())
-    df = convert_outputs(out, DataFrame)["Plant"]
-    @test df.TEff[1] ≈ 8.996814638030823
-    @test df.TEff[end] ≈ 9.608695832784498
-    @test df.TT_since_init[10] ≈ 89.3153902056305
-    @test df.TT_since_init[end] ≈ 39522.93549866889
+    scene = test_scene(:Plant, DailyDegreeDays(); environment=meteo)
+    sim = run!(
+        scene;
+        steps=nrow(meteo),
+        outputs=[
+            OutputRequest(:Plant, :TEff),
+            OutputRequest(:Plant, :TT_since_init),
+        ],
+    )
+    teff = output_values(sim, :TEff)
+    thermal_time = output_values(sim, :TT_since_init)
+    @test teff[1] ≈ 8.996814638030823
+    @test teff[end] ≈ 9.608695832784498
+    @test thermal_time[10] ≈ 89.3153902056305
+    @test thermal_time[end] ≈ 39522.93549866889
 end
 
 @testset "thermal_time_ftsw" begin
-    mtg = Palm().mtg
-    m = Dict("Plant" => (DegreeDaysFTSW(threshold_ftsw_stress=0.3), Status(ftsw=0.2,)))
-    vars = Dict{String,Any}("Plant" => (:TEff,))
-    out = run!(mtg, m, meteo, tracked_outputs=vars, executor=SequentialEx())
-    df = convert_outputs(out, DataFrame)["Plant"]
-    # m = ModelList(
-    #     DegreeDaysFTSW(),
-    #     status=(threshold_ftsw_stress=0.3, ftsw=fill(ftsw_cst, nrow(meteo)))
-    # )
-    # run!(m, meteo, executor=SequentialEx())
-    @test df.TEff[1] ≈ 5.9978764253538825
-    @test df.TEff[end] ≈ 6.405797221856333
+    scene = test_scene(
+        :Plant,
+        DegreeDaysFTSW(threshold_ftsw_stress=0.3);
+        status=Status(ftsw=0.2),
+        environment=meteo,
+    )
+    sim = run!(
+        scene;
+        steps=nrow(meteo),
+        outputs=OutputRequest(:Plant, :TEff),
+    )
+    teff = output_values(sim, :TEff)
+    @test teff[1] ≈ 5.9978764253538825
+    @test teff[end] ≈ 6.405797221856333
 end

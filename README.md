@@ -16,6 +16,11 @@ XPalm is a process-based model for simulating oil palm (*Elaeis guineensis*) gro
 - Reproductive organ development
 - Yield components
 
+![XPalm diagram](docs/src/assets/xpalm.svg)
+
+*Figure 1. Simplified diagram of the component models used in XPalm. The numbering is associated to the computational flow, from the first models to execute to the last.*
+
+
 XPalm implements a multiscale approach, modeling processes at different organizational levels:
 
 Scene: Environment and canopy-level processes
@@ -56,6 +61,16 @@ Leaf area at the level of the individual leaf over time:
 Fraction of transpirable soil water (FTSW) over time:
 
 ![soil level](docs/src/assets/simulation_results_Soil.png)
+
+### Numerical regression reference
+
+XPalm keeps a compact, versioned reference for this default full-cycle
+simulation. It samples monthly values at Scene, Plant, and Soil scales, records
+every bunch harvest, and checks cumulative bunch and oil yield against the
+released XPalm `v0.6.1` behavior. Ordinary local tests skip this several-minute
+check; one pinned CI job runs it. See
+[`test/references/regression/v0.6.1`](test/references/regression/v0.6.1/README.md)
+for provenance and update instructions.
 
 ## Installation
 
@@ -106,7 +121,7 @@ meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), 
 
 # Run simulation
 df = xpalm(meteo, DataFrame;
-    vars = Dict("Scene" => (:lai,)), # Request LAI as output
+    vars = Dict(:Scene => (:lai,)), # Request LAI as output
 )
 ```
 
@@ -133,9 +148,9 @@ results = xpalm(
     meteo,
     DataFrame,
     vars = Dict(
-        "Scene" => (:lai,),
-        "Plant" => (:leaf_area, :biomass_bunch_harvested),
-        "Soil" => (:ftsw,)
+        :Scene => (:lai,),
+        :Plant => (:leaf_area, :biomass_bunch_harvested),
+        :Soil => (:ftsw,)
     ),
     palm = p,
 )
@@ -177,6 +192,7 @@ You can run `VPalm` simply by loading the submodule. Here is an example to load 
 ```julia
 using XPalm
 using XPalm.VPalm
+using PlantGeom, CairoMakie
 
 # Load example parameters
 file = joinpath(dirname(dirname(pathof(XPalm))), "test", "references", "vpalm-parameter_file.yml")
@@ -184,7 +200,7 @@ parameters = read_parameters(file)
 
 mtg = build_mockup(parameters)
 
-viz(mtg, color = :green)
+plantviz(mtg, color = :green)
 ```
 
 ![palm plant](docs/src/assets/palm_mockup.png)
@@ -198,28 +214,30 @@ To reproduce the image above, you can use the following code snippet. It will cr
 ```julia
 using XPalm
 using XPalm.VPalm
+using PlantGeom, CairoMakie
+
 file = joinpath(dirname(dirname(pathof(XPalm))), "test", "references", "vpalm-parameter_file.yml")
 parameters = read_parameters(file)
 mtg = build_mockup(parameters; merge_scale=:leaflet)
 traverse!(mtg) do node
-    if symbol(node) == "Petiole"
-        petiole_and_rachis_segments = descendants(node, symbol=["PetioleSegment", "RachisSegment"])
+    if symbol(node) == :Petiole
+        petiole_and_rachis_segments = descendants(node, symbol=[:PetioleSegment, :RachisSegment])
         colormap = cgrad([colorant"peachpuff4", colorant"blanchedalmond"], length(petiole_and_rachis_segments), scale=:log2)
         for (i, seg) in enumerate(petiole_and_rachis_segments)
             seg[:color_type] = colormap[i]
         end
-    elseif symbol(node) == "Leaflet"
+    elseif symbol(node) == :Leaflet
         node[:color_type] = :mediumseagreen
-    elseif symbol(node) == "Leaf" # This will color the snags
+    elseif symbol(node) == :Leaf # This will color the snags
         node[:color_type] = :peachpuff4
     end
 end
-f, ax, p = viz(mtg, color=:color_type)
+f, ax, p = plantviz(mtg, color=:color_type)
 save("palm_mockup.png", f, size=(1200, 800), px_per_unit=3, update=false)
 ```
 </details>
 
-Note that the MTG is built with the following scales: `["Plant", "Stem", "Phytomer", "Internode", "Leaf", "Petiole", "PetioleSegment", "Rachis", "RachisSegment", "Leaflet", "LeafletSegment"]`.
+Note that the MTG is built with the following scales: `[:Plant, :Stem, :Phytomer, :Internode, :Leaf, :Petiole, :PetioleSegment, :Rachis, :RachisSegment, :Leaflet, :LeafletSegment]`.
 
 ## Funding
 

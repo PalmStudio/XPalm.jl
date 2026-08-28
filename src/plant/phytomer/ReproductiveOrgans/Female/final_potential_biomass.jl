@@ -34,22 +34,17 @@ at maturity (dimensionless)
 
 ```jl
 using PlantSimEngine
-using MultiScaleTreeGraph
 using XPalm
 using XPalm.Models 
 
-node = Node(NodeMTG("/", "Plant", 1, 1))
-pot_model = FemaleFinalPotentialFruits(8.0 * 365, 0.3, 2000.0, 6.5, 2100.0)
-
-m = ModelList(
-    pot_model,
-    status = (initiation_age = 5000.0, )
+model = FemaleFinalPotentialFruits()
+scene = CompositeModel(
+    model;
+    scale=:Female,
+    status=(initiation_age=5000.0,),
 )
-
-meteo = Atmosphere(T = 20.0, Wind = 1.0, P = 101.3, Rh = 0.65)
-run!(m, meteo, PlantMeteo.Constants(), node)
-
-m[:potential_fruits_number]
+run!(scene)
+only(model_objects(scene; scale=:Female)).status.potential_fruits_number
 ```
 """
 struct FemaleFinalPotentialFruits{T,I} <: AbstractFinal_Potential_BiomassModel
@@ -87,10 +82,12 @@ function FemaleFinalPotentialFruits(;
     )
 end
 
-PlantSimEngine.inputs_(::FemaleFinalPotentialFruits) = (initiation_age=0,)
+PlantSimEngine.inputs_(::FemaleFinalPotentialFruits) = (
+    initiation_age=PlantSimEngine.Required(Real),
+)
 PlantSimEngine.outputs_(::FemaleFinalPotentialFruits) = (potential_fruits_number=-9999, final_potential_fruit_biomass=-Inf, final_potential_biomass_stalk=-Inf, final_potential_biomass_oil_fruit=-Inf, final_potential_biomass_non_oil_fruit=-Inf, final_potential_oil_biomass=-Inf, final_potential_non_oil_biomass=-Inf)
 
-function PlantSimEngine.run!(m::FemaleFinalPotentialFruits, models, st, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::FemaleFinalPotentialFruits, st, environment, constants, context=nothing)
     coeff_dev = age_relative_value(st.initiation_age, m.days_increase_number_fruits, m.days_maximum_number_fruits, m.fraction_first_female, 1.0)
 
     st.potential_fruits_number = floor(Int, coeff_dev * m.potential_fruit_number_at_maturity)

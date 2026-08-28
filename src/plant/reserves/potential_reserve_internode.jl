@@ -4,9 +4,12 @@ end
 
 PotentialReserveInternode(; nsc_max=0.3) = PotentialReserveInternode(nsc_max)
 
-PlantSimEngine.inputs_(::PotentialReserveInternode) = (biomass=-Inf, reserve=0.0)
+PlantSimEngine.inputs_(::PotentialReserveInternode) = (
+    biomass=PlantSimEngine.Required(Real),
+    reserve=PlantSimEngine.Default(0.0),
+)
 PlantSimEngine.outputs_(::PotentialReserveInternode) = (potential_reserve=0.0,)
 
-function PlantSimEngine.run!(m::PotentialReserveInternode, models, st, meteo, constants, extra)
+function PlantSimEngine.run!(m::PotentialReserveInternode, st, environment, constants, context)
     st.potential_reserve = st.biomass * m.nsc_max - st.reserve
 end

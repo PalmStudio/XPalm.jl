@@ -5,7 +5,7 @@ Compute segment lengths and angles from point coordinates.
 
 # Arguments
 
-- `points`: A vector of `Meshes.Points`.
+- `points`: A vector of `GeometryBasics.Point{3}`.
 
 # Returns
 
@@ -14,11 +14,13 @@ Compute segment lengths and angles from point coordinates.
   - `vangle_xy`: Vector of angles between the segment and the XY plane (radians).
   - `vangle_xz`: Vector of angles between the segment and the XZ plane (radians).
 """
-function xyz_to_dist_and_angles(points::AbstractVector{P}) where {P<:Meshes.Point}
+function xyz_to_dist_and_angles(points::AbstractVector{P}) where {P<:GeometryBasics.Point}
     n = length(points)
 
-    zero_point = Meshes.Point(0.0, 0.0, 0.0)
-    dist_p2p1 = fill(Meshes.coords(zero_point).x, n)
+    coord_type = typeof(points[1][1])
+    zero_coord = zero(coord_type)
+    zero_point = GeometryBasics.Point{3,coord_type}(zero_coord, zero_coord, zero_coord)
+    dist_p2p1 = fill(zero_coord, n)
     vangle_xy = zeros(n)
     vangle_xz = zeros(n)
 
@@ -34,7 +36,7 @@ function xyz_to_dist_and_angles(points::AbstractVector{P}) where {P<:Meshes.Poin
         p2p1 = p2 - p1
 
         # Distance:
-        dist_p2p1[iter] = Meshes.norm(p2p1)
+        dist_p2p1[iter] = sqrt(p2p1[1]^2 + p2p1[2]^2 + p2p1[3]^2)
 
         # Calculate angles using atan2 which handles all quadrants and edge cases
         xy_projection = sqrt(p2p1[1]^2 + p2p1[2]^2)
@@ -61,7 +63,7 @@ Transform distances and angles into point coordinates.
 
 # Returns
 
-The points as a vector of `Meshes.Point`.
+The points as a vector of `GeometryBasics.Point{3}`.
 """
 function dist_and_angles_to_xyz(dist_p2p1, vangle_xy, vangle_xz)
     n = length(dist_p2p1)
@@ -73,7 +75,10 @@ function dist_and_angles_to_xyz(dist_p2p1, vangle_xy, vangle_xz)
         error("length of vangle_xz != n")
     end
 
-    points = Vector{Meshes.Point}(undef, n)
+    coord_type = typeof(dist_p2p1[1] * cos(vangle_xy[1]) * cos(vangle_xz[1]))
+    zero_coord = zero(coord_type)
+    zero_point = GeometryBasics.Point{3,coord_type}(zero_coord, zero_coord, zero_coord)
+    points = Vector{typeof(zero_point)}(undef, n)
 
     for iter in 1:n
         # Create vector in spherical-like coordinates
@@ -88,11 +93,10 @@ function dist_and_angles_to_xyz(dist_p2p1, vangle_xy, vangle_xz)
         dx = dist_xy * cos(azimuth)
         dy = dist_xy * sin(azimuth)
 
-        # Create a displacement vector using Meshes
-        displacement = Meshes.Vec(dx, dy, dz)
+        displacement = GeometryBasics.Vec{3,coord_type}(dx, dy, dz)
 
         if iter == 1
-            points[iter] = Meshes.Point(displacement...)
+            points[iter] = zero_point + displacement
         else
             # Add the displacement to the previous point
             points[iter] = points[iter-1] + displacement

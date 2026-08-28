@@ -92,10 +92,17 @@ function FemaleCarbonDemandModel(;
     )
 end
 
-PlantSimEngine.inputs_(::FemaleCarbonDemandModel) = (final_potential_biomass_non_oil_fruit=-Inf, final_potential_biomass_oil_fruit=-Inf, fruits_number=-Inf, TEff=-Inf, state="undetermined", TT_since_init=-Inf)
+PlantSimEngine.inputs_(::FemaleCarbonDemandModel) = (
+    final_potential_biomass_non_oil_fruit=PlantSimEngine.Required(Real),
+    final_potential_biomass_oil_fruit=PlantSimEngine.Required(Real),
+    fruits_number=PlantSimEngine.Required(Real),
+    TEff=PlantSimEngine.Required(Real),
+    state=PlantSimEngine.Required(Symbol),
+    TT_since_init=PlantSimEngine.Required(Real),
+)
 PlantSimEngine.outputs_(::FemaleCarbonDemandModel) = (carbon_demand=0.0, carbon_demand_oil=-Inf, carbon_demand_non_oil=-Inf, carbon_demand_stalk=-Inf)
 
-function PlantSimEngine.run!(m::FemaleCarbonDemandModel, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::FemaleCarbonDemandModel, status, environment, constants, context=nothing)
 
     # We initialize the carbon demand at 0.0 because we add to it with some conditions below
     # If it is harvested or there are no fruits, there is no carbon demand
@@ -104,7 +111,7 @@ function PlantSimEngine.run!(m::FemaleCarbonDemandModel, models, status, meteo, 
     status.carbon_demand_oil = 0.0
     status.carbon_demand = 0.0
 
-    if status.state == "Harvested" || status.state == "Aborted"
+    if status.state == :harvested || status.state == :aborted
         return
     end
 
@@ -116,7 +123,7 @@ function PlantSimEngine.run!(m::FemaleCarbonDemandModel, models, status, meteo, 
             status.carbon_demand += status.carbon_demand_non_oil
         end
 
-        if status.state == "Oleosynthesis"
+        if status.state == :oleosynthesis
             status.carbon_demand_oil = status.fruits_number * status.final_potential_biomass_oil_fruit * m.respiration_cost_oleosynthesis * (status.TEff / m.duration_oleosynthesis)
             status.carbon_demand += status.carbon_demand_oil
         end

@@ -6,6 +6,7 @@ Builds a rachis node in the MTG structure.
 # Arguments
 
 - `unique_mtg_id`: A reference to a unique identifier for the MTG nodes.
+- `parent_node`: The parent node to which the rachis will be attached, e.g. the petiole node `Node(NodeMTG(:/, :Petiole, index, 5))`
 - `index`: The index of the rachis segment.
 - `scale`: The scale of the rachis segment.
 - `leaf_rank`: The rank of the leaf associated with the rachis.
@@ -36,8 +37,8 @@ The `parameters` is a `Dict{String}` containing the following keys:
 - `"height_rachis_tappering"`: The height at which the rachis tapers (m).
 - `"rachis_width_tip"`: The width of the rachis tip (m).
 """
-function rachis(unique_mtg_id, index, scale, leaf_rank, rachis_length, height_cpoint, width_cpoint, zenithal_cpoint_angle, fresh_biomass, parameters; rng)
-    rachis_node = Node(unique_mtg_id[], NodeMTG("<", "Rachis", index, scale), Dict{Symbol,Any}())
+function rachis(unique_mtg_id, parent_node, index, scale, leaf_rank, rachis_length, height_cpoint, width_cpoint, zenithal_cpoint_angle, fresh_biomass, parameters; rng)
+    rachis_node = Node(unique_mtg_id[], parent_node, NodeMTG(:<, :Rachis, index, scale), Dict{Symbol,Any}())
     unique_mtg_id[] += 1
 
     nb_segments = parameters["rachis_nb_segments"]
@@ -59,7 +60,7 @@ function rachis(unique_mtg_id, index, scale, leaf_rank, rachis_length, height_cp
     last_parent = rachis_node
 
     for p in eachindex(points_positions)
-        rachis_segment_node = Node(unique_mtg_id[], last_parent, NodeMTG(p == 1 ? "/" : "<", "RachisSegment", p, 6))
+        rachis_segment_node = Node(unique_mtg_id[], last_parent, NodeMTG(p == 1 ? :/ : :<, :RachisSegment, p, 6))
         unique_mtg_id[] += 1
         rachis_segment_node.width = rachis_width(p / nb_segments, width_cpoint, parameters["rachis_width_tip"])
         rachis_segment_node.height = rachis_height(p / nb_segments, height_cpoint, parameters["height_rachis_tappering"])
@@ -111,7 +112,7 @@ function update_rachis_angles!(rachis_node, leaf_rank, rachis_length, height_cpo
     last_parent = rachis_node
 
     p = Ref(0)
-    traverse!(rachis_node, symbol="RachisSegment") do node
+    traverse!(rachis_node, symbol=:RachisSegment) do node
         p[] += 1
         #NB: we still update the dimensions in case the rachis grew since the last call
         node.width = rachis_width(p[] / nb_segments, width_cpoint, parameters["rachis_width_tip"])

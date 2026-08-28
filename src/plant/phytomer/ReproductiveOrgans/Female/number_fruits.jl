@@ -27,11 +27,15 @@ end
 
 NumberFruits(; TT_flowering=6300.0, duration_fruit_setting=405.0) = NumberFruits(promote(TT_flowering, duration_fruit_setting)...)
 
-PlantSimEngine.inputs_(::NumberFruits) = (carbon_offer_plant=0.0, potential_fruits_number=-9999, carbon_demand_plant=0.0)
+PlantSimEngine.inputs_(::NumberFruits) = (
+    carbon_offer_plant=PlantSimEngine.Default(0.0),
+    potential_fruits_number=PlantSimEngine.Required(Integer),
+    carbon_demand_plant=PlantSimEngine.Default(0.0),
+)
 PlantSimEngine.outputs_(::NumberFruits) = (fruits_number=-9999, carbon_offer_flowering=0.0, carbon_demand_flowering=0.0, nb_fruits_flag=false)
 
 # applied at the female inflorescence level
-function PlantSimEngine.run!(m::NumberFruits, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::NumberFruits, status, environment, constants, context=nothing)
     status.nb_fruits_flag && return # if it has a number of fruits, no need to compute it again
 
     # We only look into the period of abortion :

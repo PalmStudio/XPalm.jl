@@ -22,6 +22,10 @@ DE VRIES, « The Cost of Maintenance Processes in Plant Cells ».
 - `N`: nitrogen content of the organ (gN gDM⁻¹)
 - `Gi`: maintenance cost coefficient of the ionic gradient
 - `Mx`:mineral content of the organ (g gDM⁻¹)
+
+# Environment inputs
+
+- `Tmin`, `Tmax`: daily minimum and maximum air temperatures (°C).
 """
 struct RmQ10FixedN{T} <: AbstractMaintenance_RespirationModel
     Q10::T
@@ -35,13 +39,19 @@ function RmQ10FixedN(Q10, Turn, Prot, N, Gi, Mx, T_ref, P_alive)
     RmQ10FixedN(Q10, Mr, T_ref, P_alive)
 end
 
-PlantSimEngine.inputs_(::RmQ10FixedN) = (biomass=0.0,)
+PlantSimEngine.inputs_(::RmQ10FixedN) = (
+    biomass=PlantSimEngine.Required(Real),
+)
+PlantSimEngine.environment_inputs_(::RmQ10FixedN) = (
+    Tmin=0.0,
+    Tmax=0.0,
+)
 PlantSimEngine.outputs_(::RmQ10FixedN) = (Rm=-Inf,)
 
 # Standard way of computing the Rm of an organ:
-function PlantSimEngine.run!(m::RmQ10FixedN, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::RmQ10FixedN, status, environment, constants, context=nothing)
     status.Rm =
-        status.biomass * m.P_alive * m.Mr * m.Q10^(((meteo.Tmax + meteo.Tmin) / 2.0 - m.T_ref) / 10.0)
+        status.biomass * m.P_alive * m.Mr * m.Q10^(((environment.Tmax + environment.Tmin) / 2.0 - m.T_ref) / 10.0)
 end
 
 """
@@ -59,9 +69,11 @@ Total plant maintenance respiration based on the sum of `Rm`.
 """
 struct PlantRm <: AbstractMaintenance_RespirationModel end
 
-PlantSimEngine.inputs_(::PlantRm) = (Rm_organs=[-Inf],)
+PlantSimEngine.inputs_(::PlantRm) = (
+    Rm_organs=PlantSimEngine.Required(AbstractVector),
+)
 PlantSimEngine.outputs_(::PlantRm) = (Rm=-Inf,)
 
-function PlantSimEngine.run!(::PlantRm, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(::PlantRm, status, environment, constants, context=nothing)
     status.Rm = sum(status.Rm_organs)
 end

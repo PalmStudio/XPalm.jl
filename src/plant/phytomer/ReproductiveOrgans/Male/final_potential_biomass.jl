@@ -21,10 +21,12 @@ struct MaleFinalPotentialBiomass{T} <: AbstractFinal_Potential_BiomassModel
     fraction_biomass_first_male::T
 end
 
-PlantSimEngine.inputs_(::MaleFinalPotentialBiomass) = (initiation_age=0,)
+PlantSimEngine.inputs_(::MaleFinalPotentialBiomass) = (
+    initiation_age=PlantSimEngine.Required(Real),
+)
 PlantSimEngine.outputs_(::MaleFinalPotentialBiomass) = (final_potential_biomass=-Inf,)
 
-function PlantSimEngine.run!(m::MaleFinalPotentialBiomass, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::MaleFinalPotentialBiomass, status, environment, constants, context=nothing)
     # coefficient gives a fraction of maximal biomass at mature stage depending of plant age
     coeff_dev = age_relative_value(
         status.initiation_age,

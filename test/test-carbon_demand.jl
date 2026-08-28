@@ -1,43 +1,50 @@
 @testset "InternodeCarbonDemandModel" begin
     mtg = Palm().mtg
-    m = Dict(
-        "Plant" => (DailyPlantAgeModel(), DailyDegreeDays(),),
-        "Internode" =>
-            (
-                MultiScaleModel(
-                    model=InitiationAgeFromPlantAge(),
-                    mapped_variables=[:plant_age => "Plant",],
-                ),
-                MultiScaleModel(
-                    model=DailyDegreeDaysSinceInit(),
-                    mapped_variables=[:TEff => "Plant",], # Using TEff computed at plant scale
-                ),
-                FinalPotentialInternodeDimensionModel(),
-                PotentialInternodeDimensionModel(),
-                InternodeCarbonDemandModel(300000.0, 1.44),
-            )
+    applications = (
+        ModelSpec(DailyPlantAgeModel(); name=:plant_age, on=One(scale=:Plant)),
+        ModelSpec(DailyDegreeDays(); name=:plant_thermal_time, on=One(scale=:Plant)),
+        ModelSpec(InitiationAgeFromPlantAge(); name=:internode_initiation_age, on=Many(scale=:Internode), inputs=(:plant_age => One(scale=:Plant, var=:plant_age, within=SelfPlant()))),
+        ModelSpec(DailyDegreeDaysSinceInit(); name=:internode_thermal_time, on=Many(scale=:Internode), inputs=(:TEff => One(scale=:Plant, var=:TEff, within=SelfPlant()))),
+        ModelSpec(FinalPotentialInternodeDimensionModel(); name=:internode_final_dimensions, on=Many(scale=:Internode)),
+        ModelSpec(PotentialInternodeDimensionModel(); name=:internode_potential_dimensions, on=Many(scale=:Internode)),
+        ModelSpec(InternodeCarbonDemandModel(300000.0, 1.44); name=:internode_carbon_demand, on=Many(scale=:Internode)),
     )
-    vars = Dict{String,Any}("Internode" => (:carbon_demand, :potential_volume, :final_potential_height, :final_potential_radius, :potential_height, :potential_radius, :TT_since_init))
-    out = run!(mtg, m, meteo, tracked_outputs=vars, executor=SequentialEx())
-    df = convert_outputs(out, DataFrame)["Internode"]
-    total_demand = sum(df.carbon_demand)
-    biomass = sum(df.carbon_demand) / 1.44
+    scene = CompositeModel(
+        mtg;
+        applications=applications,
+        environment=meteo,
+        status=node -> Status(node=node),
+    )
+    sim = run!(
+        scene;
+        steps=nrow(meteo),
+        outputs=[
+            OutputRequest(:Internode, :carbon_demand),
+            OutputRequest(:Internode, :potential_volume),
+        ],
+    )
+    carbon_demand = output_values(sim, :carbon_demand)
+    potential_volume = output_values(sim, :potential_volume)
+    total_demand = sum(carbon_demand)
+    biomass = total_demand / 1.44
     @test total_demand ≈ 3664.353671147133
-    @test biomass ≈ df.potential_volume[end] * 300000.0 ≈ 2544.6900494077313
+    @test biomass ≈ potential_volume[end] * 300000.0 ≈ 2544.6900494077313
 end
 
 
 @testset "LeafCarbonDemandModelPotentialArea" begin
-    mtg = Palm().mtg
-    m = Dict(
-        "Leaf" => (
-            LeafCarbonDemandModelPotentialArea(80.0, 1.44, 0.35),
-            Status(increment_potential_area=1.0, state="undetermined",)
-        )
+    scene = test_scene(
+        :Leaf,
+        LeafCarbonDemandModelPotentialArea(80.0, 1.44, 0.35);
+        status=Status(increment_potential_area=1.0, state=:undetermined),
+        environment=meteo[1:2, :],
     )
-    vars = Dict{String,Any}("Leaf" => (:carbon_demand,))
-    out = run!(mtg, m, meteo[1:2, :], tracked_outputs=vars, executor=SequentialEx())
-    df = convert_outputs(out, DataFrame)["Leaf"]
-    @test df.carbon_demand[1] ≈ 329.14285714285716
-    @test df.carbon_demand[1] ≈ 1.0 * (80.0 * 1.44) / 0.35
+    sim = run!(
+        scene;
+        steps=2,
+        outputs=OutputRequest(:Leaf, :carbon_demand),
+    )
+    carbon_demand = output_values(sim, :carbon_demand)
+    @test carbon_demand[1] ≈ 329.14285714285716
+    @test carbon_demand[1] ≈ 1.0 * (80.0 * 1.44) / 0.35
 end

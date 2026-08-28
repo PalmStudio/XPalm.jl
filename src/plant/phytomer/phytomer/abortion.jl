@@ -36,11 +36,15 @@ function AbortionRate(; TT_flowering=6300.0, duration_abortion=540.0, abortion_r
     AbortionRate(promote(TT_flowering, duration_abortion, abortion_rate_max, abortion_rate_ref)..., MersenneTwister(random_seed))
 end
 
-PlantSimEngine.inputs_(::AbortionRate) = (TT_since_init=-Inf, carbon_offer_plant=-Inf, carbon_demand_plant=-Inf)
-PlantSimEngine.outputs_(::AbortionRate) = (state="undetermined", carbon_demand_abortion=0.0, carbon_offer_abortion=0.0, abortion_calculation_flag=false)
+PlantSimEngine.inputs_(::AbortionRate) = (
+    TT_since_init=PlantSimEngine.Required(Real),
+    carbon_offer_plant=PlantSimEngine.Default(0.0),
+    carbon_demand_plant=PlantSimEngine.Default(0.0),
+)
+PlantSimEngine.outputs_(::AbortionRate) = (state=:undetermined, carbon_demand_abortion=0.0, carbon_offer_abortion=0.0, abortion_calculation_flag=false)
 
-function PlantSimEngine.run!(m::AbortionRate, models, status, meteo, constants, extra=nothing)
-    status.state == "Aborted" && return # if abortion is determined, no need to compute it again
+function PlantSimEngine.run!(m::AbortionRate, status, environment, constants, context)
+    status.state == :aborted && return # if abortion is determined, no need to compute it again
 
     # We only look into the period of abortion :
     if status.TT_since_init > (m.TT_flowering - m.duration_abortion)
@@ -66,9 +70,12 @@ function PlantSimEngine.run!(m::AbortionRate, models, status, meteo, constants, 
 
         #e.g. if threshold_abortion is 0.7 we will have more chance to abort
         if random_abort <= threshold_abortion
-            status.state = "Aborted"
+            status.state = :aborted
             # Give the state to the reproductive organ:
-            status.node[1][2][:plantsimengine_status].state = status.state
+            phytomer = PlantSimEngine.source_node(context)
+            reproductive_organ = phytomer[1][2]
+            PlantSimEngine.model_status(context, reproductive_organ).state =
+                status.state
         end
 
         status.abortion_calculation_flag = true  # Update the flag, so that we do not compute it again

@@ -1,14 +1,15 @@
 """
-    ConstantRUEModel(rue)
+    RUE_FTSW(rue, threshold_ftsw)
 
 Computes the `carbon_assimilation` using a constant radiation use efficiency (`rue`).
 
 # Arguments
 
 - `rue`: radiation use efficiency (gC MJ⁻¹)
+- `threshold_ftsw`: unitless FTSW threshold below which RUE is reduced.
 
 # Inputs
-- `aPPFD`: the absorbed Photosynthetic Photon Flux Density in mol[PAR] m[leaf]⁻² s⁻¹.
+- `aPPFD`: absorbed PAR in mol[photon] plant⁻¹ d⁻¹.
 
 # Outputs
 - `carbon_assimilation`: carbon offer from photosynthesis
@@ -18,10 +19,16 @@ struct RUE_FTSW{T} <: AbstractCarbon_AssimilationModel
     threshold_ftsw::T
 end
 
-PlantSimEngine.inputs_(::RUE_FTSW) = (aPPFD=-Inf, ftsw=-Inf)
+PlantSimEngine.inputs_(::RUE_FTSW) = (
+    aPPFD=PlantSimEngine.Required(Real),
+    ftsw=PlantSimEngine.Default(1.0),
+)
 PlantSimEngine.outputs_(::RUE_FTSW) = (carbon_assimilation=-Inf,)
+PlantSimEngine.variable_contracts_(::RUE_FTSW) = (
+    aPPFD=_PLANT_DAILY_PAR_PHOTONS,
+)
 
-function PlantSimEngine.run!(m::RUE_FTSW, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::RUE_FTSW, status, environment, constants, context=nothing)
     photo_reduc = status.ftsw > m.threshold_ftsw ? 1.0 : status.ftsw / m.threshold_ftsw
     status.carbon_assimilation = status.aPPFD / constants.J_to_umol * m.rue * photo_reduc
     # aPPFD is in mol[PAR] plant⁻¹ d⁻¹, we need MJ[PAR] plant⁻¹ d⁻¹ first, and then use RUE

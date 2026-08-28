@@ -28,7 +28,7 @@
         "leaf": {
             "leaflets_biomass_contribution": 0.35
         },
-        "male": {
+        :Male: {
             "max_biomass": 174.852,
             "fraction_biomass_first_male": 0.3
         }
@@ -58,13 +58,13 @@
             "Mr": 0.003594370860927152,
             "P_alive": 0.9
         },
-        "Male": {
+        :Male: {
             "Q10": 2.1,
             "T_ref": 25.0,
             "Mr": 0.0121,
             "P_alive": 0.5
         },
-        "Female": {
+        :Female: {
             "Q10": 2.1,
             "T_ref": 25.0,
             "Mr": 0.0022,
@@ -88,11 +88,11 @@
         }
     },
     "phenology": {
-        "male": {
+        :Male: {
             "duration_flowering_male": 1800.0,
             "age_mature_male": 2920.0
         },
-        "female": {
+        :Female: {
             "days_maximum_number_fruits": 6500,
             "days_increase_number_fruits": 2379,
             "duration_fruit_setting": 405.0,
@@ -166,10 +166,10 @@
         "reserves": {
             "cost_reserve_mobilization": 1.667
         },
-        "male": {
+        :Male: {
             "respiration_cost": 1.44
         },
-        "female": {
+        :Female: {
             "respiration_cost_oleosynthesis": 3.2,
             "respiration_cost": 1.44
         }

@@ -1,5 +1,5 @@
 ### A Pluto.jl notebook ###
-# v0.20.6
+# v0.20.25
 
 using Markdown
 using InteractiveUtils
@@ -78,9 +78,10 @@ md"""
 params = let
     file = joinpath(dirname(dirname(pathof(XPalm))), "examples/xpalm_parameters.yml")
     update_time_ = PlutoLinks.@use_file_change(file)
-    @use_memo([update_time_]) do
+    params_ = @use_memo([update_time_]) do
         YAML.load_file(file)
     end
+	convert(Dict{String, Any}, params_)
 end
 
 # ╔═╡ 9ec6a0fc-cbe2-4710-a366-6d78173d0379
@@ -114,7 +115,7 @@ function multiscale_variables_display(vars, Child, input_function, default)
     for (key, values) in vars
         variable_names = sort(collect(values), by=x -> string(x) |> lowercase)
         length(variable_names) == 0 && continue
-        Dict("Soil" => (:ftsw,), "Scene" => (:lai,), "Plant" => (:leaf_area, :Rm, :aPPFD, :biomass_bunch_harvested_organs), "Leaf" => (:leaf_area,))
+        Dict(:Soil => (:ftsw,), :Scene => (:lai,), :Plant => (:leaf_area, :Rm, :aPPFD, :biomass_bunch_harvested_organs), :Leaf => (:leaf_area,))
         default_at_scale = [get(default, key, ())...]
 
         push!(var_body,
@@ -145,22 +146,34 @@ end
 
 # ╔═╡ bde1793e-983a-47e4-94a6-fbbe53fe72d6
 @bind variables variables_display(
-    Dict(k => keys(filter(x -> !isa(x, AbstractVector), merge(v...))) for (k, v) in XPalm.PlantSimEngine.variables(XPalm.model_mapping(XPalm.Palm()))),
-    default=Dict("Soil" => (:ftsw,), "Scene" => (:lai,), "Plant" => (:leaf_area, :Rm, :aPPFD, :biomass_bunch_harvested), "Leaf" => (:leaf_area,))
+    let
+        scene = xpalm_scene(XPalm.Palm())
+        compiled = PlantSimEngine.refresh_bindings!(scene)
+        objects = Dict(object.id.value => object for object in PlantSimEngine.model_objects(scene))
+        available = Dict{Symbol,Set{Symbol}}()
+        for writer in PlantSimEngine.Diagnostics.explain_writers(compiled)
+            object = objects[writer.object_id]
+            value = getproperty(object.status, writer.variable)
+            value isa AbstractVector && continue
+            push!(get!(available, object.scale, Set{Symbol}()), writer.variable)
+        end
+        Dict(scale => sort!(collect(names); by=string) for (scale, names) in available)
+    end,
+    default=Dict(:Soil => (:ftsw,), :Scene => (:lai,), :Plant => (:leaf_area, :Rm, :aPPFD, :biomass_bunch_harvested), :Leaf => (:leaf_area,))
 )
 
 # ╔═╡ 9bdd9351-c883-492f-adcc-062537fb9ecc
-variables_dict = filter(x -> length(last(x)) > 0, Dict{String,Any}(zip(string.(keys(variables)), [(i...,) for i in values(variables)])))
+variables_dict = filter(x -> length(last(x)) > 0, Dict{Symbol,Any}(zip(keys(variables), [(i...,) for i in values(variables)])))
 
 # ╔═╡ 8bc0ac37-e34e-469b-9346-0231aa28be63
 df = let
     p = XPalm.Palm(parameters=params)
     if length(variables_dict) > 0
         sim = xpalm(meteo, DataFrame; palm=p, vars=variables_dict)
-		for (scale_string, df) in sim
-    		df[!,:organ] .= scale_string
-		end
-		merged_df = reduce((x,y) -> vcat(x,y; cols=:union), values(sim))
+        for (scale_string, df) in sim
+            df[!, :organ] .= scale_string
+        end
+        merged_df = reduce((x, y) -> vcat(x, y; cols=:union), values(sim))
         dfs_all = leftjoin(merged_df, meteo, on=:timestep)
         sort!(dfs_all, :timestep)
     end
@@ -207,8 +220,8 @@ end
 
 # ╔═╡ 462fc904-a5bc-4fc0-b342-166d2b02376c
 let
-    variables_one_dict = Dict(zip(string.(keys(variables_one)), values(variables_one)))
-    nodes_dict = Dict(zip(string.(keys(nodes)), values(nodes)))
+    variables_one_dict = Dict(zip(keys(variables_one), values(variables_one)))
+    nodes_dict = Dict(zip(keys(nodes), values(nodes)))
     htmlplots = []
     for (scale, df) in dfs
         n_nodes_scale = length(unique(dfs[scale].node))
@@ -240,7 +253,7 @@ end
 # ╟─7fc8085f-fb74-4171-8df1-527ee1edfa73
 # ╟─1fa0b119-26fe-4807-8aea-50cdbd591656
 # ╟─7165746e-cc57-4392-bb6b-705cb7221c24
-# ╠═73f8cf85-cb03-444e-bf9e-c65363e9ffb8
+# ╟─73f8cf85-cb03-444e-bf9e-c65363e9ffb8
 # ╟─9ec6a0fc-cbe2-4710-a366-6d78173d0379
 # ╟─8bc0ac37-e34e-469b-9346-0231aa28be63
 # ╟─bde1793e-983a-47e4-94a6-fbbe53fe72d6

@@ -28,6 +28,17 @@ Note that there is also a method for `FTSW` that takes an organ type as type, *e
 - `KC`: crop coefficient (unitless)
 - `TRESH_EVAP`: fraction of water content in the evaporative layer below which evaporation is reduced (g[H20] g[Soil])
 - `TRESH_FTSW_TRANSPI`: FTSW treshold below which transpiration is reduced (g[H20] g[Soil])
+
+# Environment inputs
+
+- `Precipitations`: daily precipitation.
+- `Ri_PAR_f`: daily incident PAR energy in MJ m[ground]⁻² d⁻¹, used to
+  estimate transpiration.
+
+# Inputs
+
+- `ET0`: daily reference evapotranspiration.
+- `aPPFD`: absorbed daily PAR in mol[photon] m[ground]⁻² d⁻¹.
 """
 struct FTSW{T} <: AbstractFTSWModel where {T} # T: type of the values
     ini_root_depth::T   # root depth at initialization (mm)
@@ -78,9 +89,18 @@ function FTSW(ini_root_depth, H_FC, H_WP_Z1, Z1, H_WP_Z2, Z2, H_0, KC, TRESH_EVA
 end
 
 PlantSimEngine.inputs_(m::FTSW) = (
-    root_depth=m.ini_root_depth,
-    ET0=-Inf, #potential evapotranspiration
-    aPPFD=-Inf, # light intercepted by the crop
+    root_depth=PlantSimEngine.Default(m.ini_root_depth),
+    ET0=PlantSimEngine.Required(Real), #potential evapotranspiration
+    aPPFD=PlantSimEngine.Required(Real), # light intercepted by the crop
+)
+
+PlantSimEngine.environment_inputs_(::FTSW) = (
+    Precipitations=0.0,
+    Ri_PAR_f=0.0,
+)
+
+PlantSimEngine.variable_contracts_(::FTSW) = (
+    aPPFD=_GROUND_DAILY_PAR_PHOTONS,
 )
 
 PlantSimEngine.outputs_(m::FTSW) = (
@@ -104,7 +124,7 @@ PlantSimEngine.outputs_(m::FTSW) = (
     transpiration=-Inf,
 )
 
-PlantSimEngine.dep(::FTSW) = (root_growth=AbstractRoot_GrowthModel,)
+PlantSimEngine.dep(::FTSW) = (root_growth=PlantSimEngine.Call(process=:root_growth),)
 
 """
     KS(fillRate, tresh)
@@ -213,17 +233,17 @@ function soil_init_default(m)
     return status
 end
 
-function PlantSimEngine.run!(m::FTSW, models, st, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::FTSW, st, environment, constants, context=nothing)
 
-    rain = meteo.Precipitations
+    rain = environment.Precipitations
     st.soil_depth = m.soil_depth
 
     # Run the root growth model:
-    PlantSimEngine.run!(models.root_growth, models, st, meteo, constants, extra)
+    PlantSimEngine.run_call!(context, :root_growth; publish=true)
 
     compute_compartment_size(m, st)
 
-    transmitted_light_fraction = (meteo.Ri_PAR_f * constants.J_to_umol - st.aPPFD) / (meteo.Ri_PAR_f * constants.J_to_umol)
+    transmitted_light_fraction = (environment.Ri_PAR_f * constants.J_to_umol - st.aPPFD) / (environment.Ri_PAR_f * constants.J_to_umol)
 
     EvapMax = transmitted_light_fraction * st.ET0 * m.KC
     Transp_Max = (1.0 - transmitted_light_fraction) * st.ET0 * m.KC

@@ -6,7 +6,7 @@ Make a leaf petiole.
 # Arguments 
 
 - `unique_mtg_id`: a next free unique id for the MTG nodes
-- `parent_node`: the parent node on which the petiole will be attached
+- `parent_node`: the parent node on which the petiole will be attached, e.g. the leaf node `Node(NodeMTG(:+, :Leaf, index, 4))`
 - `index`: the MTG index of the petiole
 - `scale`: the MTG scale of the petiole
 - `rachis_length`: the rachis length, used to feed allometries to compute the petiole dimensions
@@ -22,8 +22,8 @@ Make a leaf petiole.
     - "petiole_rachis_ratio_sd": its standard deviation
     - "petiole_nb_segments": the number of segments used to discretize the petiole
 """
-function petiole(unique_mtg_id, index, scale, rachis_length, zenithal_insertion_angle, zenithal_cpoint_angle, parameters; rng=Random.MersenneTwister(1))
-    petiole_node = Node(unique_mtg_id[], NodeMTG("/", "Petiole", index, scale), Dict{Symbol,Any}())
+function petiole(unique_mtg_id, parent_node, index, scale, rachis_length, zenithal_insertion_angle, zenithal_cpoint_angle, parameters; rng=Random.MersenneTwister(1))
+    petiole_node = Node(unique_mtg_id[], parent_node, NodeMTG(:/, :Petiole, index, scale), Dict{Symbol,Any}())
     unique_mtg_id[] += 1
     compute_properties_petiole!(
         petiole_node,
@@ -59,7 +59,7 @@ function petiole_sections!(petiole_node, petiole_nb_segments, unique_mtg_id)
     last_parent = petiole_node
     # segment_insertion_angle = Ref(copy(petiole_node.zenithal_insertion_angle))
     for p in 1:petiole_nb_segments
-        petiole_segment_node = Node(unique_mtg_id[], last_parent, NodeMTG(p == 1 ? "/" : "<", "PetioleSegment", p, 6))
+        petiole_segment_node = Node(unique_mtg_id[], last_parent, NodeMTG(p == 1 ? :/ : :<, :PetioleSegment, p, 6))
         unique_mtg_id[] += 1
         petiole_section_insertion_angle = petiole_node[:zenithal_insertion_angle] + p * petiole_node[:section_insertion_angle]
         compute_properties_petiole_section!(petiole_node, petiole_segment_node, p, petiole_nb_segments, petiole_section_insertion_angle)
@@ -85,8 +85,8 @@ Nothing, the petiole node is updated in-place with its segments angles.
 """
 function update_petiole_angles!(petiole_node)
     segment_id = Ref(1)
-    petiole_nb_segments = descendants(petiole_node, symbol="PetioleSegment") |> length
-    traverse!(petiole_node[1], symbol="PetioleSegment") do segment
+    petiole_nb_segments = descendants(petiole_node, symbol=:PetioleSegment) |> length
+    traverse!(petiole_node[1], symbol=:PetioleSegment) do segment
         petiole_section_insertion_angle = petiole_node[:zenithal_insertion_angle] + segment_id[] * petiole_node[:section_insertion_angle]
         segment_id[] += 1
 

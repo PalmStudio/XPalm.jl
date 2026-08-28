@@ -49,7 +49,8 @@ function inertia_flex_rota(base_width, height, orientation_angle, section_type, 
     center_col = sum(section .* col_matrix) / total_cells
 
     # Create points for cells in the section relative to the center of gravity
-    section_points = Vector{typeof(Meshes.Point(0.0, 0.0, 0.0))}()
+    point_type = GeometryBasics.Point{3,typeof(cell_size)}
+    section_points = Vector{point_type}()
 
     zero_length = zero(eltype(base_width))
     for row in 1:rows, col in 1:cols
@@ -58,20 +59,20 @@ function inertia_flex_rota(base_width, height, orientation_angle, section_type, 
             x = (col - center_col) * cell_size
             y = (row - center_row) * cell_size
             z = zero_length
-            push!(section_points, Meshes.Point(x, y, z))
+            push!(section_points, point_type(x, y, z))
         end
     end
 
-    # Apply rotation using Meshes.Rotate with RotZ
+    # Apply section orientation rotation.
     rotation = RotZ(orientation_angle)
-    rotated_points = Meshes.Rotate(rotation)(section_points)
+    rotated_points = [rotation * GeometryBasics.Vec{3,typeof(cell_size)}(p[1], p[2], p[3]) for p in section_points]
 
     # Calculate inertias using efficient vector operations
     cell_area = cell_size^2
 
     # Extract coordinates from rotated points
-    x_coords = [Meshes.coords(p).x for p in rotated_points]
-    y_coords = [Meshes.coords(p).y for p in rotated_points]
+    x_coords = [p[1] for p in rotated_points]
+    y_coords = [p[2] for p in rotated_points]
 
     # Calculate inertias and cross-section area
     bending_inertia = sum(y_coords .^ 2) * cell_area

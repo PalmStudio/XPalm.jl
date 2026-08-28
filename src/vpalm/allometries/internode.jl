@@ -106,7 +106,7 @@ function internode_length(i, Nbl, sh, R, N, l_0)
 end
 
 """
-    phyllotactic_angle(phyllotactic_angle_mean, phyllotactic_angle_sd; rng=Random.MersenneTwister(1234))
+    phyllotactic_angle(phyllotactic_angle_mean, phyllotactic_angle_sd; rng)
 
 Computes the phyllotactic angle (°) using an average angle and a standard deviation (random draw from a normal distribution).
 
@@ -119,6 +119,6 @@ Computes the phyllotactic angle (°) using an average angle and a standard devia
 
 - `rng`: The random number generator.
 """
-function phyllotactic_angle(phyllotactic_angle_mean, phyllotactic_angle_sd; rng=Random.MersenneTwister(1234))
-    return mean_and_sd(phyllotactic_angle_mean, phyllotactic_angle_sd; rng=rng)
+function phyllotactic_angle(phyllotactic_angle_mean, phyllotactic_angle_sd; rng)
+    return mean_and_sd(phyllotactic_angle_mean, phyllotactic_angle_sd, rng)
 end

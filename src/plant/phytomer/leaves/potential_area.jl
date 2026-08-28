@@ -28,7 +28,10 @@ struct PotentialAreaModel{T} <: AbstractLeaf_Potential_AreaModel
     slope::T
 end
 
-PlantSimEngine.inputs_(::PotentialAreaModel) = (TT_since_init=-Inf, final_potential_area=-Inf,)
+PlantSimEngine.inputs_(::PotentialAreaModel) = (
+    TT_since_init=PlantSimEngine.Required(Real),
+    final_potential_area=PlantSimEngine.Required(Real),
+)
 
 PlantSimEngine.outputs_(::PotentialAreaModel) = (
     potential_area=0.0, # Potential area (during leaf development)
@@ -36,7 +39,7 @@ PlantSimEngine.outputs_(::PotentialAreaModel) = (
     maturity=false,      # Leaf maturity state (true if the leaf is mature)
 )
 
-function PlantSimEngine.run!(m::PotentialAreaModel, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::PotentialAreaModel, status, environment, constants, context=nothing)
     # This is the daily potential area of the leaf (should be computed once only...)
     inflexion_point = max(status.final_potential_area * m.inflexion_index, 27.0)
 

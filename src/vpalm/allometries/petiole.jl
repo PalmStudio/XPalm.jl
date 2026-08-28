@@ -16,7 +16,7 @@ Compute the length of the petiole based on the rachis length and the petiole/rac
 The length of the petiole (m)
 """
 function petiole_length(rachis_length, petiole_rachis_ratio_mean=0.25, petiole_rachis_ratio_sd=0.034; rng=Random.MersenneTwister(1))
-    return mean_and_sd(petiole_rachis_ratio_mean, petiole_rachis_ratio_sd; rng=rng) * rachis_length
+    return mean_and_sd(petiole_rachis_ratio_mean, petiole_rachis_ratio_sd, rng) * rachis_length
 end
 
 """
