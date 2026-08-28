@@ -37,6 +37,11 @@ leafLengthSlope: 0.058350292901005
 rachisLength_SDP: 15.2515779099962
 leaf_length_intercept: 0.0 # intercept of the linear relationship between rachis biomass and length (m)
 leaf_length_slope: 1.31 # slope of the relationship between lenght and biomass (m/kg)
+# Mean young-palm allometry from Perez et al. (2016), Fig. 2A. Plant age is
+# represented by the number of leaves emitted since planting.
+rachis_length_age_intercept: 0.834 # rachis length intercept (m)
+rachis_length_age_slope: 0.03222 # rachis length increase per emitted leaf (m leaf-1)
+rachis_length_age_max: 6.62 # adult plateau (m), Perez (2017), Table IV.2 mean at 450 leaves
 leaflet_lamina_angle: 140 # V-shape of the leaflet, °
 leaflets_nb_max: 171.716496884477 # Maximum number of leaflets on a leaf #! this seems low! See Perez et al. 2016 Fig.3 -> 250
 leaflets_nb_min: 20 # Minimum number of leaflets on a leaf (for very young palms)

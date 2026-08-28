@@ -1,7 +1,7 @@
 """
     add_leaflet_geometry!(
         leaflet_node,
-        internode_width,
+        internode_radius,
         internode_height,
         rachis_position,
         rachis_orientation,
@@ -13,7 +13,7 @@ Create one Java-style extruded leaflet geometry from the stored segment profile.
 
 # Arguments
 - `leaflet_node`: The MTG node of the leaflet
-- `internode_width`: Width of the internode (used for positioning)
+- `internode_radius`: Radius of the internode (used for positioning)
 - `internode_height`: Height of the internode (used for positioning)
 - `rachis_position`: Position of the rachis section where the leaflet is attached
 - `rachis_orientation`: Orientation angles [zenithal, azimuthal, torsion] of the rachis section
@@ -78,7 +78,7 @@ end
 
 function add_leaflet_geometry!(
     leaflet_node,
-    internode_width,
+    internode_radius,
     internode_height,
     rachis_position,
     rachis_orientation,
@@ -107,7 +107,7 @@ function add_leaflet_geometry!(
     mesh_transformation =
         _rotate(RotY(deg2rad(stem_bending))) ∘
         _rotate(RotZ(deg2rad(rachis_rotation))) ∘
-        _translate(internode_width, zero(internode_width), internode_height) ∘
+        _translate(internode_radius, zero(internode_radius), internode_height) ∘
         _translate(rachis_position) ∘
         _rotate(
             RotZYX(

@@ -23,13 +23,14 @@ function add_geometry!(
     snag_width=0.20u"m", # see defaultOrthotropyAttribute in the trunk in the java implementation
     snag_height=0.15u"m",
     snag_length=0.1u"m",
+    nb_leaves_in_sheath=8,
 )
 
     stem_diameter = mtg[1].stem_diameter
     stem_bending = mtg[1].stem_bending
     isnothing(stem_diameter) && (stem_diameter = 0.0u"m")
     isnothing(stem_bending) && (stem_bending = 0.0u"°")
-    internode_width = stem_diameter
+    internode_radius = stem_diameter / 2
     snag_insertion_angle = deg2rad(-35.0u"°") # deg2rad(-20.0 - 35.0)
     internode_height = 0.0u"m"
     snag_rotation = 0.0u"°"
@@ -38,13 +39,17 @@ function add_geometry!(
     traverse!(mtg, symbol=[:Internode, :Leaf, :Petiole, :Rachis, :Leaflet]) do node
         if symbol(node) == :Internode
             snag_rotation += node.XEuler
+            # Internal primordia are represented in the physiological MTG but
+            # do not yet contribute a visible stem segment or leaf geometry.
+            node.rank < 1 - nb_leaves_in_sheath && return nothing
             stem_bending += node.Orthotropy
-            internode_width = node.width > 0.0u"m" ? node.width : 0.01u"m"
+            internode_diameter = node.width > 0.0u"m" ? node.width : 0.01u"m"
+            internode_radius = internode_diameter / 2
             mesh_transformation =
                 _rotate(RotY(deg2rad(stem_bending))) ∘
                 _rotate(RotZ(deg2rad(snag_rotation))) ∘
                 _translate(0.0u"m", 0.0u"m", internode_height) ∘
-                _scale(internode_width, internode_width, node.length)
+                _scale(internode_radius, internode_radius, node.length)
             node.geometry = PlantGeom.Geometry(ref_mesh=refmesh_cylinder, transformation=mesh_transformation)
             internode_height += node.length
         elseif symbol(node) == :Leaf
@@ -53,7 +58,7 @@ function add_geometry!(
                 mesh_transformation =
                     _rotate(RotY(deg2rad(stem_bending))) ∘
                     _rotate(RotZ(deg2rad(snag_rotation))) ∘
-                    _translate(internode_width, 0.0u"m", internode_height) ∘
+                    _translate(internode_radius, 0.0u"m", internode_height) ∘
                     _rotate(RotY(snag_insertion_angle)) ∘
                     _scale(snag_length, snag_width, snag_height)
                 node.geometry = snag_geometry(transformation=mesh_transformation)
@@ -63,9 +68,9 @@ function add_geometry!(
         elseif symbol(node) == :Petiole
             # Initialise the position for the petiole to 0.0
             position_section[] = _point3(0.0, 0.0, 0.0)
-            add_section_geometry!(node, refmesh_cylinder, internode_width, internode_height, snag_rotation, stem_bending, :PetioleSegment, position_section)
+            add_section_geometry!(node, refmesh_cylinder, internode_radius, internode_height, snag_rotation, stem_bending, :PetioleSegment, position_section)
         elseif symbol(node) == :Rachis
-            add_section_geometry!(node, refmesh_cylinder, internode_width, internode_height, snag_rotation, stem_bending, :RachisSegment, position_section)
+            add_section_geometry!(node, refmesh_cylinder, internode_radius, internode_height, snag_rotation, stem_bending, :RachisSegment, position_section)
             # Note: we use the position and angles of the last petiole section to initialize the rachis
         elseif symbol(node) == :Leaflet
             # Get the rachis segment node on which the leaflet is attached
@@ -74,7 +79,7 @@ function add_geometry!(
             # Add leaflet geometry with proper position and orientation relative to rachis
             add_leaflet_geometry!(
                 node,
-                internode_width,
+                internode_radius,
                 internode_height,
                 rachis_node.position_section,                   # Position of attachment point on rachis
                 (; rachis_node.zenithal_angle_global, rachis_node.azimuthal_angle_global, rachis_node.torsion_angle_global),                # Orientation of rachis at attachment point

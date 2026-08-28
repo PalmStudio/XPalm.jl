@@ -4,7 +4,7 @@ PlantSimEngine.@process "geometry" verbose = false
     GeometryModel(;vpalm_parameters, rng=Random.MersenneTwister())
 
 A PlantSimEngine model that builds the 3D geometry for a leaf, including the petiole, rachis, and leaflets.
-This model operates at the phytomer scale and modifies the MTG directly.
+This model operates at the internode scale and modifies the MTG directly.
 
 # Arguments
 
@@ -13,11 +13,11 @@ This model operates at the phytomer scale and modifies the MTG directly.
 
 # Inputs
 
-- `state`: Phenological state of the target Phytomer.
-- `height_internodes`: Height of the Internode below the target Phytomer.
-- `radius_internodes`: Radius of the Internode below the target Phytomer.
-- `biomass_leaves`: Biomass of the Leaf below the target Phytomer.
-- `rank_leaves`: Rank of the Leaf below the target Phytomer.
+- `is_pruned`: Whether the target Leaf has actually been pruned.
+- `height_internodes`: Height of the target Internode.
+- `radius_internodes`: Radius of the target Internode.
+- `biomass_leaves`: Biomass of the Leaf attached to the target Internode.
+- `rank_leaves`: Rank of the Leaf attached to the target Internode.
 
 # Outputs
 
@@ -40,11 +40,11 @@ end
 function PlantSimEngine.inputs_(m::GeometryModel)
     (
         graph_node_count=PlantSimEngine.Default(m.graph_node_count_init),
-        state=PlantSimEngine.Required(Symbol),
-        height_internodes=PlantSimEngine.Required(AbstractVector),
-        radius_internodes=PlantSimEngine.Required(AbstractVector),
-        biomass_leaves=PlantSimEngine.Required(AbstractVector),
-        rank_leaves=PlantSimEngine.Required(AbstractVector),
+        is_pruned=PlantSimEngine.Required(Bool),
+        height_internodes=PlantSimEngine.Required(Real),
+        radius_internodes=PlantSimEngine.Required(Real),
+        biomass_leaves=PlantSimEngine.Required(Real),
+        rank_leaves=PlantSimEngine.Required(Real),
     )
 end
 
@@ -61,7 +61,7 @@ petiole, rachis, and leaflets.
 # Arguments
 
 - `model::GeometryModel`: The leaf geometry model
-- `status`: The status of the model with inputs (state, height, radius, biomass, rank)
+- `status`: The status of the model with pruning, height, radius, biomass, and rank inputs.
 - `environment`: Meteorology structure (not used by this model)
 - `constants`: Physical constants (not used by this model)
 - `context`: PlantSimEngine runtime context used to resolve the source MTG node.
@@ -69,17 +69,16 @@ petiole, rachis, and leaflets.
 # Notes
 
 PlantSimEngine owns runtime status in its object registry. The declared
-Phytomer, Internode, and Leaf inputs carry the scientific values used for
-reconstruction; the source MTG is used only for topology and geometry.
+Internode and Leaf inputs carry the scientific values used for reconstruction;
+the source MTG is used only for topology and geometry.
 """
 function PlantSimEngine.run!(model::GeometryModel, status, environment, constants, context)
-    phytomer = PlantSimEngine.source_node(context)
-    # Get internode and leaf nodes:
-    internode = phytomer[1]
-    leaf = internode[1]
+    internode = PlantSimEngine.source_node(context)
+    leaf = only(node for node in children(internode) if symbol(node) == :Leaf)
 
-    if status.state == :pruned
+    if status.is_pruned
         leaf.is_alive = false # This is used in the reconstruction for putting snags
+        remove_leaf_geometry!(leaf, context)
         return nothing
     end
 
@@ -88,17 +87,16 @@ function PlantSimEngine.run!(model::GeometryModel, status, environment, constant
 
     symbol(leaf) != :Leaf && error("Expected leaf node, got $(symbol(leaf))")
 
-    biomass_leaf_value = only(status.biomass_leaves)
-    biomass_leaf_value <= 0.0 && return nothing # No biomass, no geometry
-    biomass_leaf = uconvert(u"kg", biomass_leaf_value * u"g")
+    biomass_leaf_value = status.biomass_leaves
+    biomass_leaf = uconvert(u"kg", max(0.0, biomass_leaf_value) * u"g")
     # VPalm parameters:
     vpalm_params = model.vpalm_parameters
 
     # Set internode properties
     i = index(internode)
-    internode.width = only(status.radius_internodes) * 2.0u"m"
-    internode.length = only(status.height_internodes) * u"m"
-    internode.rank = only(status.rank_leaves)
+    internode.width = status.radius_internodes * 2.0u"m"
+    internode.length = status.height_internodes * u"m"
+    internode.rank = status.rank_leaves
     internode.Orthotropy = 0.05u"°"
     internode.XEuler = phyllotactic_angle(
         vpalm_params["phyllotactic_angle_mean"],
@@ -107,29 +105,74 @@ function PlantSimEngine.run!(model::GeometryModel, status, environment, constant
     )
 
     # Set leaf properties
-    rank_new = only(status.rank_leaves)
-    update_in_rank = leaf.rank != rank_new #! we update the leaves geometry only if the rank has changed
+    rank_new = status.rank_leaves
+    # The allometric leaf properties are recomputed every step below. The
+    # existing petiole, rachis, and leaflet geometry is resized only when rank
+    # changes, following VPalm's discrete rank-based expansion stages.
+    update_in_rank = leaf.rank != rank_new
+    if !status.is_reconstructed && any(node -> symbol(node) == :Petiole, children(leaf))
+        # The seed leaf is initialized with a VPalm subtree before the
+        # CompositeModel is built. Reuse it instead of creating a duplicate.
+        status.is_reconstructed = true
+    end
     leaf.rank = rank_new
     leaf.is_alive = true
 
-    current_length = rachis_length_from_biomass(
-        biomass_leaf,
-        vpalm_params["leaf_length_intercept"],
-        vpalm_params["leaf_length_slope"]
-    )
+    current_length = final_rachis_length(i, biomass_leaf, vpalm_params)
 
     # Compute leaf properties
     compute_properties_leaf!(leaf, rank_new, current_length, vpalm_params, model.rng)
     isnan(leaf.rachis_length) && error("Rachis length: $(leaf.rachis_length), leaf_rank: $(leaf.rank), final_length: $current_length, biomass: $biomass_leaf")
+
+    # Internal primordia exist in XPalm's MTG but are not yet visible organs.
+    # Delay construction until the leaf enters the sheath; topology then stays
+    # fixed while rank-dependent angles and expansion are updated.
+    is_visible_leaf_rank(rank_new, vpalm_params) || return nothing
+
+    if !haskey(vpalm_params, "rachis_length_age_intercept") && biomass_leaf_value <= 0.0
+        return nothing
+    end
+
+    rachis_fresh_biomass = rachis_fresh_biomass_for_geometry(
+        leaf.rachis_length,
+        biomass_leaf,
+        vpalm_params,
+    )
     if !status.is_reconstructed
         status.graph_node_count += 1
-        build_leaf(unique_mtg_id, i, leaf, biomass_leaf, vpalm_params; rng=model.rng)
+        build_leaf(unique_mtg_id, i, leaf, rachis_fresh_biomass, vpalm_params; rng=model.rng)
     elseif update_in_rank
-        update_leaf!(leaf, biomass_leaf, vpalm_params; rng=model.rng)
+        update_leaf!(leaf, rachis_fresh_biomass, vpalm_params; rng=model.rng)
     end
 
     status.is_reconstructed = true
 
+    return nothing
+end
+
+const LEAF_GEOMETRY_SCALES = (
+    :Petiole,
+    :PetioleSegment,
+    :Rachis,
+    :RachisSegment,
+    :Leaflet,
+)
+
+function remove_leaf_geometry!(leaf, context)
+    model = PlantSimEngine.runtime_model(context)
+    leaf_object = PlantSimEngine.model_object(model, leaf)
+
+    # Remove registered geometry objects first so future applications cannot
+    # keep targeting nodes that are about to disappear from the source MTG.
+    for child_id in copy(leaf_object.children)
+        child = PlantSimEngine.model_object(model, child_id)
+        child.scale in LEAF_GEOMETRY_SCALES || continue
+        PlantSimEngine.remove_object!(model, child_id; recursive=true)
+    end
+
+    # Geometry created dynamically is not currently registered as a model
+    # object. Remove both registered and unregistered descendants from the MTG.
+    delete_nodes!(leaf; filter_fun=node -> node !== leaf)
     return nothing
 end
 

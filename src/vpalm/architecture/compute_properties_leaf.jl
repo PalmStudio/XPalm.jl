@@ -91,6 +91,71 @@ function rachis_length_from_biomass(rachis_biomass, leaf_length_intercept, leaf_
 end
 
 """
+    rachis_length_from_emitted_leaf_number(emitted_leaf_number, intercept, slope)
+
+Compute the final rachis length from the leaf emission sequence. Perez et al.
+(2016, Fig. 2A) use the cumulative number of leaves emitted since planting as
+the ontogenetic variable for young palms.
+"""
+function rachis_length_from_emitted_leaf_number(emitted_leaf_number, intercept, slope)
+    emitted_leaf_number >= 0 || throw(ArgumentError("The emitted leaf number must be non-negative"))
+    return linear(emitted_leaf_number, intercept, slope)
+end
+
+"""
+    final_rachis_length(leaf_index, rachis_biomass, parameters)
+
+Return the final rachis length for a dynamic leaf. An age-dependent allometry
+is preferred when it is parameterized; the historical fresh-rachis-biomass
+allometry remains available for parameter files that do not define it.
+"""
+function final_rachis_length(leaf_index, rachis_biomass, parameters)
+    if haskey(parameters, "rachis_length_age_intercept") &&
+       haskey(parameters, "rachis_length_age_slope")
+        length_from_age = rachis_length_from_emitted_leaf_number(
+            leaf_index,
+            parameters["rachis_length_age_intercept"],
+            parameters["rachis_length_age_slope"],
+        )
+        return haskey(parameters, "rachis_length_age_max") ?
+               min(length_from_age, parameters["rachis_length_age_max"]) :
+               length_from_age
+    end
+
+    return rachis_length_from_biomass(
+        rachis_biomass,
+        parameters["leaf_length_intercept"],
+        parameters["leaf_length_slope"],
+    )
+end
+
+"""
+    rachis_fresh_biomass_for_geometry(rachis_length, fallback_biomass, parameters)
+
+Estimate the fresh rachis biomass needed by VPalm's biomechanical model. When
+the age allometry determines length, invert the historical length/fresh-mass
+relationship so that XPalm's total dry leaf biomass is not passed as fresh
+rachis biomass. Otherwise retain the supplied biomass for compatibility.
+"""
+function rachis_fresh_biomass_for_geometry(rachis_length, fallback_biomass, parameters)
+    uses_age_allometry =
+        haskey(parameters, "rachis_length_age_intercept") &&
+        haskey(parameters, "rachis_length_age_slope")
+    if uses_age_allometry &&
+       haskey(parameters, "leaf_length_intercept") &&
+       haskey(parameters, "leaf_length_slope")
+        biomass = (rachis_length - parameters["leaf_length_intercept"]) /
+                  parameters["leaf_length_slope"]
+        return max(0.0u"kg", uconvert(u"kg", biomass))
+    end
+
+    return fallback_biomass
+end
+
+first_visible_leaf_rank(parameters) = 1 - parameters["nb_leaves_in_sheath"]
+is_visible_leaf_rank(rank, parameters) = rank >= first_visible_leaf_rank(parameters)
+
+"""
     rachis_expansion(leaf_rank, rachis_final_length)
 
     Simple function to compute the rachis expansion (using an expansion factor)

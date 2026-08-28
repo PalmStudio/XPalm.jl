@@ -24,6 +24,9 @@ const _VPALM_LENGTH_PARAMETERS = (
     "rachis_width_tip",
     "leaf_base_height",
     "rachis_length_reference",
+    "rachis_length_age_intercept",
+    "rachis_length_age_slope",
+    "rachis_length_age_max",
     "leaflet_length_at_b_intercept",
     "leaflet_width_at_b_intercept",
 )

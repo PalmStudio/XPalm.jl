@@ -1,5 +1,24 @@
 distance3(p0, p1) = sqrt(sum((p1 .- p0) .^ 2))
 
+@testset "dynamic rachis age allometry" begin
+    parameters = VPalm.default_parameters(type="dynamic")
+
+    @test parameters["rachis_length_age_intercept"] == 0.834u"m"
+    @test parameters["rachis_length_age_slope"] == 0.03222u"m"
+    @test VPalm.final_rachis_length(50, 0.0u"kg", parameters) ≈ 2.445u"m"
+    @test VPalm.final_rachis_length(120, 0.0u"kg", parameters) ≈ 4.7004u"m"
+    @test VPalm.final_rachis_length(250, 0.0u"kg", parameters) == 6.62u"m"
+    @test VPalm.rachis_fresh_biomass_for_geometry(
+        4.0u"m",
+        1.0u"kg",
+        parameters,
+    ) ≈ (4.0 / 1.31)u"kg"
+
+    @test VPalm.first_visible_leaf_rank(parameters) == -7
+    @test VPalm.is_visible_leaf_rank(-7, parameters)
+    @test !VPalm.is_visible_leaf_rank(-8, parameters)
+end
+
 @testset "snag" begin
     x_scale = 10.
     y_scale = 20.
@@ -68,8 +87,8 @@ end
     p1 = t(GeometryBasics.Point{3,Float64}(0.0, 0.0, 1.0))
     @test p0 ≈ GeometryBasics.Point{3,Float64}(0.0, 0.0, 0.0)
     @test distance3(p0, p1) ≈ ustrip(internode.length)
-    @test distance3(p0, t(GeometryBasics.Point{3,Float64}(1.0, 0.0, 0.0))) ≈ ustrip(internode.width)
-    @test distance3(p0, t(GeometryBasics.Point{3,Float64}(0.0, 1.0, 0.0))) ≈ ustrip(internode.width)
+    @test distance3(p0, t(GeometryBasics.Point{3,Float64}(1.0, 0.0, 0.0))) ≈ ustrip(internode.width) / 2
+    @test distance3(p0, t(GeometryBasics.Point{3,Float64}(0.0, 1.0, 0.0))) ≈ ustrip(internode.width) / 2
 
     petiole_id = findfirst(i -> symbol(get_node(mtg, i)) == :Petiole, 1:length(mtg))
     @test petiole_id !== nothing
@@ -117,32 +136,31 @@ end
     )
 
     compiled = PlantSimEngine.Advanced.refresh_bindings!(scene)
-    geometry_state_binding = only(
+    geometry_pruning_binding = only(
         row for row in PlantSimEngine.Diagnostics.explain_bindings(compiled)
-        if row.application_id == :Phytomer__geometry && row.input == :state
+        if row.application_id == :Internode__geometry && row.input == :is_pruned
     )
-    @test geometry_state_binding.source_application_ids == [:Phytomer__state]
-    @test geometry_state_binding.carrier_hint != :temporal_stream
+    @test geometry_pruning_binding.source_application_ids == [:Leaf__leaf_pruning]
+    @test geometry_pruning_binding.carrier_hint != :temporal_stream
     schedule = Dict(
         row.application_id => row.execution_index
         for row in PlantSimEngine.Diagnostics.explain_schedule(compiled)
     )
-    @test schedule[:Phytomer__state] < schedule[:Phytomer__geometry]
+    @test schedule[:Leaf__leaf_pruning] < schedule[:Internode__geometry]
 
     run!(scene; steps=1, outputs=:none)
 
-    phytomer_object = only(model_objects(scene; scale=:Phytomer))
-    phytomer = PlantSimEngine.source_node(scene, phytomer_object)
-    internode = phytomer[1]
+    internode_object = only(model_objects(scene; scale=:Internode))
+    internode = PlantSimEngine.source_node(scene, internode_object)
     leaf = internode[1]
-    @test PlantSimEngine.model_status(scene, phytomer) ===
-          phytomer_object.status
-    @test phytomer_object.status.is_reconstructed
+    @test PlantSimEngine.model_status(scene, internode) ===
+          internode_object.status
+    @test internode_object.status.is_reconstructed
     @test isfinite(ustrip(internode.width))
     @test isfinite(ustrip(internode.length))
     @test isfinite(ustrip(leaf.rachis_length))
     @test !haskey(
-        MultiScaleTreeGraph.node_attributes(phytomer),
+        MultiScaleTreeGraph.node_attributes(internode),
         :plantsimengine_status,
     )
 
@@ -155,16 +173,38 @@ end
         architecture=true,
         environment=meteo[1:1, :],
     )
-    pruned_object = only(model_objects(pruned_scene; scale=:Phytomer))
-    pruned_object.status.state = :pruned
-    pruned_phytomer = PlantSimEngine.source_node(pruned_scene, pruned_object)
-    pruned_leaf = pruned_phytomer[1][1]
-    pruned_leaf.is_alive = true
+    pruned_object = only(model_objects(pruned_scene; scale=:Internode))
+    pruned_leaf_object = only(model_objects(pruned_scene; scale=:Leaf))
+    pruned_internode = PlantSimEngine.source_node(pruned_scene, pruned_object)
+    pruned_leaf = pruned_internode[1]
+    geometry_scales = (:Petiole, :PetioleSegment, :Rachis, :RachisSegment, :Leaflet)
+    registered_before = Dict(
+        scale => length(model_objects(pruned_scene; scale=scale))
+        for scale in geometry_scales
+    )
+    mtg_before = Dict(
+        scale => length(descendants(pruned_leaf; symbol=scale))
+        for scale in geometry_scales
+    )
 
     run!(pruned_scene; steps=1, outputs=:none)
+    @test !isempty(children(pruned_leaf))
+    @test Dict(
+        scale => length(model_objects(pruned_scene; scale=scale))
+        for scale in geometry_scales
+    ) == registered_before
+    @test Dict(
+        scale => length(descendants(pruned_leaf; symbol=scale))
+        for scale in geometry_scales
+    ) == mtg_before
 
-    @test pruned_object.status.state == :pruned
+    pruned_leaf_object.status.is_pruned = true
+    run!(pruned_scene; steps=1, outputs=:none)
+
+    @test pruned_leaf_object.status.is_pruned
     @test !pruned_leaf.is_alive
+    @test isempty(children(pruned_leaf))
+    @test all(isempty(model_objects(pruned_scene; scale=scale)) for scale in geometry_scales)
 end
 
 

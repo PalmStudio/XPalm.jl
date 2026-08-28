@@ -997,7 +997,7 @@ function model_applications(p; architecture=false)
 
     vpalm = load_vpalm!()
     architecture_application = _xpalm_application(
-        :Phytomer,
+        :Internode,
         vpalm.GeometryModel(
             mtg=p.mtg,
             rng=Random.MersenneTwister(parameters["vpalm"]["seed"]),
@@ -1008,29 +1008,28 @@ function model_applications(p; architecture=false)
             within=PlantSimEngine.SceneScope(),
             var=:graph_node_count,
         ),
-        :state => PlantSimEngine.One(
-            within=PlantSimEngine.Self(),
-            application=:Phytomer__state,
-            var=:state,
+        :is_pruned => PlantSimEngine.One(
+            scale=:Leaf,
+            relation=:children,
+            application=:Leaf__leaf_pruning,
+            var=:is_pruned,
         ),
-        :height_internodes => PlantSimEngine.Many(
-            scale=:Internode,
-            within=PlantSimEngine.Subtree(),
+        :height_internodes => PlantSimEngine.One(
+            within=PlantSimEngine.Self(),
             var=:height,
         ),
-        :radius_internodes => PlantSimEngine.Many(
-            scale=:Internode,
-            within=PlantSimEngine.Subtree(),
+        :radius_internodes => PlantSimEngine.One(
+            within=PlantSimEngine.Self(),
             var=:radius,
         ),
-        :biomass_leaves => PlantSimEngine.Many(
+        :biomass_leaves => PlantSimEngine.One(
             scale=:Leaf,
-            within=PlantSimEngine.Subtree(),
+            relation=:children,
             var=:biomass,
         ),
-        :rank_leaves => PlantSimEngine.Many(
+        :rank_leaves => PlantSimEngine.One(
             scale=:Leaf,
-            within=PlantSimEngine.Subtree(),
+            relation=:children,
             var=:rank,
         ),),
     )

@@ -130,7 +130,12 @@ function init_attributes_seed!(plant::MTG, parameters; rng=Random.MersenneTwiste
         )
 
     parameters = parameters["vpalm"]
-    final_length = rachis_length_from_biomass(biomass_first_leaf, parameters["leaf_length_intercept"], parameters["leaf_length_slope"])
+    final_length = final_rachis_length(1, biomass_first_leaf, parameters)
+    rachis_fresh_biomass = rachis_fresh_biomass_for_geometry(
+        rachis_expansion(1, final_length),
+        biomass_first_leaf,
+        parameters,
+    )
 
     stem = plant[2]
     compute_properties_stem!(stem, parameters, final_length; rng=rng)
@@ -149,7 +154,7 @@ function init_attributes_seed!(plant::MTG, parameters; rng=Random.MersenneTwiste
         leaf_node = internode[1]
         leaf_node.is_alive = true
 
-        leaf(unique_mtg_id, i, rank, biomass_first_leaf, final_length, leaf_node, parameters; rng)
+        leaf(unique_mtg_id, i, rank, rachis_fresh_biomass, final_length, leaf_node, parameters; rng)
     end
 
     return plant
