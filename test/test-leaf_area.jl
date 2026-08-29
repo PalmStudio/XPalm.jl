@@ -62,24 +62,25 @@ end
     )
 end
 
-@testset "PotentialReserveLeaf carbon units" begin
+@testset "PotentialReserveLeaf CH2O-equivalent units" begin
     scene = test_scene(
         :Leaf,
         PotentialReserveLeaf(80.0, 200.0, 0.30, 0.48);
         status=Status(leaf_area=2.0, reserve=10.0, state=:opened),
     )
     run!(scene)
-    @test test_status(scene, :Leaf).potential_reserve ≈ 374.0
+    @test test_status(scene, :Leaf).potential_reserve ≈ 790.0
 end
 
-@testset "PotentialReserveInternode carbon units" begin
+@testset "PotentialReserveInternode CH2O-equivalent units" begin
     scene = test_scene(
         :Internode,
         PotentialReserveInternode(nsc_max=0.30, carbon_concentration=0.50);
         status=Status(biomass=1000.0, reserve=20.0),
     )
     run!(scene)
-    @test test_status(scene, :Internode).potential_reserve ≈ 130.0
+    @test test_status(scene, :Internode).potential_reserve ≈ 280.0
+    @test PotentialReserveInternode(0.30, 0.50).nsc_max == 0.30
 end
 
 @testset "Leaf pruning clears biomass compartments" begin

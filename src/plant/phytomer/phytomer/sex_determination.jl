@@ -17,14 +17,18 @@ state of the plant during a given period in thermal time.
 
 # Inputs
 
-- `carbon_offer_plant`: carbon offer at the plant scale (usually after maintenance respiration) (gC/plant).
-- `carbon_demand_plant`: total carbon demand of the plant (gC/plant), used to compute the plant trophic status.
+- `carbon_offer_plant`: daily plant assimilate offer after maintenance
+  respiration (g CH2O-equivalent plant⁻¹ d⁻¹).
+- `carbon_demand_plant`: daily total plant assimilate demand
+  (g CH2O-equivalent plant⁻¹ d⁻¹).
 
 # Outputs
 
 - `sex`: the sex of the phytomer (or bunch) (:undetermined, :Female or :Male).
-- `carbon_demand_sex_determination`: carbon demand of the plant integrated over the period of sex determination (gC/plant)
-- `carbon_offer_sex_determination`: carbon offer of the plant integrated over the period of sex determination (gC/plant)
+- `carbon_demand_sex_determination`: assimilate demand accumulated over the
+  sex-determination period (g CH2O-equivalent plant⁻¹)
+- `carbon_offer_sex_determination`: assimilate offer accumulated over the
+  sex-determination period (g CH2O-equivalent plant⁻¹)
 - `emit_reproductive_organ`: one-timestep pulse requesting emission of the
   determined reproductive organ.
 
@@ -59,6 +63,12 @@ PlantSimEngine.outputs_(::SexDetermination) = (
     carbon_demand_sex_determination=0.0,
     carbon_offer_sex_determination=0.0,
     emit_reproductive_organ=false,
+)
+PlantSimEngine.variable_contracts_(::SexDetermination) = (
+    carbon_offer_plant=_DAILY_CH2O_EQUIVALENT_FLOW,
+    carbon_demand_plant=_DAILY_CH2O_EQUIVALENT_FLOW,
+    carbon_demand_sex_determination=_ACCUMULATED_CH2O_EQUIVALENT,
+    carbon_offer_sex_determination=_ACCUMULATED_CH2O_EQUIVALENT,
 )
 
 function PlantSimEngine.run!(m::SexDetermination, status, environment, constants, context=nothing)

@@ -32,8 +32,9 @@ function default_parameters()
     sum(leaf_biomass_contributions) ≈ 1.0 ||
         error("The leaf dry-mass fractions must sum to 1.0")
 
-    # Average leaf maintenance coefficient (gC gDM⁻¹ d⁻¹), weighted by
-    # the dry-mass fractions above. Component coefficients are from Dufrene (1990).
+    # Average leaf maintenance coefficient
+    # (g CH2O-equivalent gDM⁻¹ d⁻¹), weighted by the dry-mass fractions above.
+    # Component coefficients are from Dufrêne (1990).
     Mr_leaf = 0.0083 * leaflets_biomass_contribution +
               0.0018 * rachis_biomass_contribution +
               0.0022 * petiole_biomass_contribution
@@ -49,7 +50,9 @@ function default_parameters()
         ),
         "radiation" => Dict(
             "k" => 0.5, # light extinction coefficient
-            "RUE" => 4.8, # Radiation use efficiency (gC MJ[PAR]-1)
+            # Gross assimilate production before maintenance and construction
+            # costs (g CH2O-equivalent MJ[PAR]⁻¹).
+            "RUE" => 4.8,
             "threshold_ftsw" => 0.3,
         ),
         "reserves" => Dict(
@@ -65,11 +68,14 @@ function default_parameters()
                 "lma_max" => 200.0, # maximum leaflet dry mass per area (gDM m-2)
             )
         ),
+        # All `Mr` values below are g CH2O-equivalent gDM⁻¹ d⁻¹ at `T_ref`.
         "respiration" => Dict(
             "Internode" => Dict(
-                "Mr" => 0.005, # Dufrene (1990)
+                # Dufrêne (1990), at 25 °C
+                # (g CH2O-equivalent gDM⁻¹ d⁻¹).
+                "Mr" => 0.0005,
                 "Q10" => 1.7,  # Dufrene et al. (2005)
-                "T_ref" => 25.0, # Dufrene et al. (1990), gives Rm_base commpared to all dry mass (not just living biomass)
+                "T_ref" => 25.0,
                 # Keep P_alive as a generic model parameter. The default Mr is
                 # applied per unit modeled organ dry mass, hence 1.0.
                 "P_alive" => 1.0,
@@ -157,28 +163,24 @@ function default_parameters()
         ),
         "carbon_demand" => Dict(
             "leaf" => Dict(
-                # Construction cost (gC-equivalent allocated gDM⁻¹ produced).
-                # The source value is expressed in gCH₂O gDM⁻¹; XPalm uses the
-                # same numerical assimilate currency for carbon flows.
+                # Construction cost
+                # (g CH2O-equivalent allocated gDM⁻¹ produced).
                 # Pallas et al. (2013), doi:10.1093/treephys/tpt015, report
-                # 1.4 gCH₂O gDM⁻¹ for oil-palm vegetative tissues; XPalm keeps
+                # 1.4 g CH2O gDM⁻¹ for oil-palm vegetative tissues; XPalm keeps
                 # its historical 1.44 value.
                 "respiration_cost" => 1.44,
             ),
             "internode" => Dict(
                 "apparent_density" => 300000.0, # gDM m⁻³
-                # Used to express the reserve capacity in gC, not to compute
-                # construction demand (the construction cost is per gDM).
-                "carbon_concentration" => 0.5, # gC gDM⁻¹
-                "respiration_cost" => 1.44, # gC-equivalent gDM⁻¹
+                "respiration_cost" => 1.44, # g CH2O-equivalent gDM⁻¹
             ),
             "Male" => Dict(
-                "respiration_cost" => 1.44, # gC-equivalent gDM⁻¹
+                "respiration_cost" => 1.44, # g CH2O-equivalent gDM⁻¹
             ),
             "Female" => Dict(
-                "respiration_cost" => 1.44, # gC-equivalent gDM⁻¹
+                "respiration_cost" => 1.44, # g CH2O-equivalent gDM⁻¹
                 # Pallas et al. (2013), doi:10.1093/treephys/tpt015.
-                "respiration_cost_oleosynthesis" => 3.2, # gC-equivalent gDM⁻¹ oil
+                "respiration_cost_oleosynthesis" => 3.2, # g CH2O-equivalent gDM⁻¹ oil
             ),
             "reserves" => Dict(
                 "cost_reserve_mobilization" => 1.667
@@ -192,12 +194,6 @@ function default_parameters()
                 "fraction_biomass_first_male" => 0.3,
             ),
             "leaf" => Dict(
-                # Carbon content of oil-palm leaves (gC gDM-1), from Jaffré (1983),
-                # "Evolution de la biomasse épigée et du stock de carbone d'une
-                # culture pérenne : le palmier à huile".
-                # It is used for the leaf reserve capacity; construction costs
-                # already convert structural gDM into the assimilate currency.
-                "carbon_concentration" => 0.48,
                 # Fractions of structural leaf dry biomass. A complete leaf includes
                 # leaflets, rachis and petiole (Siang et al. 2022,
                 # https://doi.org/10.3390/agronomy12020426).

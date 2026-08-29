@@ -26,7 +26,6 @@
     },
     "biomass": {
         "leaf": {
-            "carbon_concentration": 0.48,
             "leaflets_biomass_contribution": 0.3,
             "rachis_biomass_contribution": 0.3,
             "petiole_biomass_contribution": 0.4
@@ -86,7 +85,7 @@
         "Internode": {
             "Q10": 1.7,
             "T_ref": 25.0,
-            "Mr": 0.005,
+            "Mr": 0.0005,
             "P_alive": 1.0
         }
     },
@@ -162,7 +161,6 @@
             "respiration_cost": 1.44
         },
         "internode": {
-            "carbon_concentration": 0.5,
             "apparent_density": 300000.0,
             "respiration_cost": 1.44
         },

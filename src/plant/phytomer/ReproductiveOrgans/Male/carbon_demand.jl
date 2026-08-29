@@ -1,11 +1,12 @@
 """
     MaleCarbonDemandModel(; respiration_cost=1.44, duration_flowering_male=1800.0)
 
-Compute the daily carbon-equivalent construction demand of a male inflorescence.
+Compute the daily CH2O-equivalent construction demand of a male inflorescence.
 
 # Arguments
 
-- `respiration_cost`: construction cost (gC-equivalent allocated gDM⁻¹ produced)
+- `respiration_cost`: construction cost
+  (g CH2O-equivalent allocated gDM⁻¹ produced)
 - `duration_flowering_male`: male-inflorescence growth duration (degree days)
 
 # Inputs
@@ -16,7 +17,7 @@ Compute the daily carbon-equivalent construction demand of a male inflorescence.
 
 # Outputs
 
-- `carbon_demand`: daily carbon-equivalent demand (gC-equivalent d⁻¹)
+- `carbon_demand`: daily assimilate demand (g CH2O-equivalent d⁻¹)
 """
 struct MaleCarbonDemandModel{T} <: AbstractCarbon_DemandModel
     respiration_cost::T
@@ -33,6 +34,10 @@ PlantSimEngine.inputs_(::MaleCarbonDemandModel) = (
     TT_since_init=PlantSimEngine.Required(Real),
 )
 PlantSimEngine.outputs_(::MaleCarbonDemandModel) = (carbon_demand=0.0,)
+PlantSimEngine.variable_contracts_(::MaleCarbonDemandModel) = (
+    final_potential_biomass=_STRUCTURAL_DRY_MASS,
+    carbon_demand=_DAILY_CH2O_EQUIVALENT_FLOW,
+)
 
 function PlantSimEngine.run!(m::MaleCarbonDemandModel, st, environment, constants, context=nothing)
     if st.state == :flowering

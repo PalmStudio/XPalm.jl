@@ -27,6 +27,7 @@ end
     @test parameters["Leaf"]["Mr"] ≈ 0.00391
     @test parameters["Leaf"]["Mr"] ≈
           0.30 * 0.0083 + 0.30 * 0.0018 + 0.40 * 0.0022
+    @test parameters["Internode"]["Mr"] == 0.0005
     for organ in ("Leaf", "Internode", "Male", "Female", "RootSystem")
         @test parameters[organ]["P_alive"] == 1.0
     end

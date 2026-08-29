@@ -28,6 +28,23 @@ PlantSimEngine.outputs_(::BunchHarvest) = (
     is_harvested=false, biomass_bunch_harvested_cum=0.0, biomass_oil_harvested_cum=0.0, litter=0.0, biomass_oil_harvested_potential=0.0,
     biomass_oil_harvested_potential_cum=0.0, fruits_number_harvested=0,
 )
+PlantSimEngine.variable_contracts_(::BunchHarvest) = (
+    biomass=_STRUCTURAL_DRY_MASS,
+    biomass_stalk=_STRUCTURAL_DRY_MASS,
+    biomass_fruits=_STRUCTURAL_DRY_MASS,
+    biomass_oil=_STRUCTURAL_DRY_MASS,
+    biomass_non_oil=_STRUCTURAL_DRY_MASS,
+    final_potential_oil_biomass=_STRUCTURAL_DRY_MASS,
+    biomass_bunch_harvested=_STRUCTURAL_DRY_MASS,
+    biomass_stalk_harvested=_STRUCTURAL_DRY_MASS,
+    biomass_fruit_harvested=_STRUCTURAL_DRY_MASS,
+    biomass_oil_harvested=_STRUCTURAL_DRY_MASS,
+    biomass_bunch_harvested_cum=_STRUCTURAL_DRY_MASS,
+    biomass_oil_harvested_cum=_STRUCTURAL_DRY_MASS,
+    litter=_STRUCTURAL_DRY_MASS,
+    biomass_oil_harvested_potential=_STRUCTURAL_DRY_MASS,
+    biomass_oil_harvested_potential_cum=_STRUCTURAL_DRY_MASS,
+)
 
 # Applied at the Female inflorescence scale:
 function PlantSimEngine.run!(m::BunchHarvest, st, environment, constants, context=nothing)
@@ -83,6 +100,24 @@ PlantSimEngine.inputs_(::PlantBunchHarvest) = (
     biomass_oil_harvested_potential_cum_organs=PlantSimEngine.Required(AbstractVector),
 )
 PlantSimEngine.outputs_(::PlantBunchHarvest) = (biomass_bunch_harvested=0.0, biomass_stalk_harvested=0.0, biomass_fruit_harvested=0.0, n_bunches_harvested=-9999, biomass_bunch_harvested_cum=0.0, n_bunches_harvested_cum=0, biomass_oil_harvested=0.0, biomass_oil_harvested_potential=0.0, biomass_oil_harvested_potential_cum=0.0, biomass_oil_harvested_cum=0.0, yield_gap_oil=0.0,)
+PlantSimEngine.variable_contracts_(::PlantBunchHarvest) = (
+    biomass_bunch_harvested_organs=_STRUCTURAL_DRY_MASS,
+    biomass_stalk_harvested_organs=_STRUCTURAL_DRY_MASS,
+    biomass_fruit_harvested_organs=_STRUCTURAL_DRY_MASS,
+    biomass_bunch_harvested_cum_organs=_STRUCTURAL_DRY_MASS,
+    biomass_oil_harvested_organs=_STRUCTURAL_DRY_MASS,
+    biomass_oil_harvested_cum_organs=_STRUCTURAL_DRY_MASS,
+    biomass_oil_harvested_potential_organs=_STRUCTURAL_DRY_MASS,
+    biomass_oil_harvested_potential_cum_organs=_STRUCTURAL_DRY_MASS,
+    biomass_bunch_harvested=_STRUCTURAL_DRY_MASS,
+    biomass_stalk_harvested=_STRUCTURAL_DRY_MASS,
+    biomass_fruit_harvested=_STRUCTURAL_DRY_MASS,
+    biomass_bunch_harvested_cum=_STRUCTURAL_DRY_MASS,
+    biomass_oil_harvested=_STRUCTURAL_DRY_MASS,
+    biomass_oil_harvested_potential=_STRUCTURAL_DRY_MASS,
+    biomass_oil_harvested_potential_cum=_STRUCTURAL_DRY_MASS,
+    biomass_oil_harvested_cum=_STRUCTURAL_DRY_MASS,
+)
 
 _sum_or_zero(values) = isempty(values) ? 0.0 : sum(values)
 

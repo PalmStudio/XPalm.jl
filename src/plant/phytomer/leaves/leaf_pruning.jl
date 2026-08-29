@@ -42,6 +42,14 @@ PlantSimEngine.outputs_(::RankLeafPruning) = (
     pruning_decision=:undetermined,
     is_pruned=false,
 )
+PlantSimEngine.variable_contracts_(::RankLeafPruning) = (
+    biomass=_STRUCTURAL_DRY_MASS,
+    biomass_leaflets=_STRUCTURAL_DRY_MASS,
+    biomass_rachis=_STRUCTURAL_DRY_MASS,
+    biomass_petiole=_STRUCTURAL_DRY_MASS,
+    reserve=_CH2O_EQUIVALENT_STOCK,
+    litter_leaf=_STRUCTURAL_DRY_MASS,
+)
 
 # Applied at the leaf scale:
 function PlantSimEngine.run!(m::RankLeafPruning, status, environment, constants, context)

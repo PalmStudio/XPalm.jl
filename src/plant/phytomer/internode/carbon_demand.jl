@@ -7,7 +7,8 @@ Compute internode carbon demand from potential dimensions
 # Arguments
 
 - `apparent_density`: stem apparent density of dry matter (gDM m⁻³)
-- `respiration_cost`: construction cost (gC-equivalent allocated gDM⁻¹ produced)
+- `respiration_cost`: construction cost
+  (g CH2O-equivalent allocated gDM⁻¹ produced)
 
 # Inputs
 
@@ -17,7 +18,8 @@ Compute internode carbon demand from potential dimensions
 # Outputs
 
 - `potential_volume`: potential volume of the internode (m³)
-- `carbon_demand`: daily carbon demand of the internode (gC-equivalent)
+- `carbon_demand`: daily assimilate demand of the internode
+  (g CH2O-equivalent)
 
 """
 struct InternodeCarbonDemandModel{T} <: AbstractCarbon_DemandModel
@@ -39,6 +41,9 @@ PlantSimEngine.inputs_(::InternodeCarbonDemandModel) = (
     potential_radius=PlantSimEngine.Required(Real),
 )
 PlantSimEngine.outputs_(::InternodeCarbonDemandModel) = (potential_volume=0.0, carbon_demand=0.0,)
+PlantSimEngine.variable_contracts_(::InternodeCarbonDemandModel) = (
+    carbon_demand=_DAILY_CH2O_EQUIVALENT_FLOW,
+)
 
 function PlantSimEngine.run!(m::InternodeCarbonDemandModel, status, environment, constants, context=nothing)
     new_potential_volume = status.potential_height * π * status.potential_radius^2

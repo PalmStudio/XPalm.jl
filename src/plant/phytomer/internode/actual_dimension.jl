@@ -34,6 +34,9 @@ PlantSimEngine.outputs_(::InternodeDimensionModel) = (
     height=-Inf,
     radius=-Inf,
 )
+PlantSimEngine.variable_contracts_(::InternodeDimensionModel) = (
+    biomass=_STRUCTURAL_DRY_MASS,
+)
 
 # Applied at the phytomer scale:
 function PlantSimEngine.run!(m::InternodeDimensionModel, status, environment, constants, context=nothing)

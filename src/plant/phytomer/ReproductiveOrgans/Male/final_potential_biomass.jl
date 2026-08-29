@@ -25,6 +25,9 @@ PlantSimEngine.inputs_(::MaleFinalPotentialBiomass) = (
     initiation_age=PlantSimEngine.Required(Real),
 )
 PlantSimEngine.outputs_(::MaleFinalPotentialBiomass) = (final_potential_biomass=-Inf,)
+PlantSimEngine.variable_contracts_(::MaleFinalPotentialBiomass) = (
+    final_potential_biomass=_STRUCTURAL_DRY_MASS,
+)
 
 function PlantSimEngine.run!(m::MaleFinalPotentialBiomass, status, environment, constants, context=nothing)
     # coefficient gives a fraction of maximal biomass at mature stage depending of plant age

@@ -11,7 +11,8 @@ See also [`LeafCarbonDemandModelArea`](@ref).
 # Arguments
 
 - `lma_min`: minimum leaflet dry mass per unit leaflet area (gDM m⁻²)
-- `respiration_cost`: construction cost (gC-equivalent allocated gDM⁻¹ produced)
+- `respiration_cost`: construction cost
+  (g CH2O-equivalent allocated gDM⁻¹ produced)
 - `leaflets_biomass_contribution`: contribution of leaflet biomass to total leaf
   biomass, including rachis and petiole
 
@@ -20,7 +21,7 @@ See also [`LeafCarbonDemandModelArea`](@ref).
 - `state`: state of the leaf
 
 # Outputs
-- `carbon_demand`: daily leaf carbon demand (gC-equivalent)
+- `carbon_demand`: daily leaf assimilate demand (g CH2O-equivalent)
 """
 
 struct LeafCarbonDemandModelPotentialArea{T} <: AbstractCarbon_DemandModel
@@ -67,6 +68,9 @@ PlantSimEngine.inputs_(::LeafCarbonDemandModelPotentialArea) = (
     state=PlantSimEngine.Required(Symbol),
 )
 PlantSimEngine.outputs_(::LeafCarbonDemandModelPotentialArea) = (carbon_demand=0.0,)
+PlantSimEngine.variable_contracts_(::LeafCarbonDemandModelPotentialArea) = (
+    carbon_demand=_DAILY_CH2O_EQUIVALENT_FLOW,
+)
 
 function PlantSimEngine.run!(m::LeafCarbonDemandModelPotentialArea, status, environment, constants, context=nothing)
     if status.state == :pruned #! No need for that no? `increment_potential_area` should be 0.0 when the leaf is mature
@@ -95,7 +99,8 @@ See also `LeafCarbonDemandModelPotentialArea`.
 # Arguments
 
 - `lma_min`: minimum leaflet dry mass per unit leaflet area (gDM m⁻²)
-- `respiration_cost`: construction cost (gC-equivalent allocated gDM⁻¹ produced)
+- `respiration_cost`: construction cost
+  (g CH2O-equivalent allocated gDM⁻¹ produced)
 - `leaflets_biomass_contribution`: contribution of leaflet biomass to total leaf
   biomass, including rachis and petiole
 """
@@ -138,6 +143,9 @@ PlantSimEngine.inputs_(::LeafCarbonDemandModelArea) = (
     leaf_area=PlantSimEngine.Required(Real),
 )
 PlantSimEngine.outputs_(::LeafCarbonDemandModelArea) = (carbon_demand=0.0,)
+PlantSimEngine.variable_contracts_(::LeafCarbonDemandModelArea) = (
+    carbon_demand=_DAILY_CH2O_EQUIVALENT_FLOW,
+)
 
 function PlantSimEngine.run!(m::LeafCarbonDemandModelArea, status, environment, constants, context=nothing)
     increment_potential_area = status.potential_area - status.leaf_area

@@ -30,6 +30,7 @@ include("plant/phytomer/ReproductiveOrgans/Male/0-process.jl")
 include("plant/phytomer/ReproductiveOrgans/Female/0-process.jl")
 
 # Import the models:
+include("plant/carbon_contracts.jl")
 include("meteo/thermal_time.jl")
 include("meteo/thermal_time_ftsw.jl")
 include("meteo/et0_BP.jl")

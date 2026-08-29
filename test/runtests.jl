@@ -145,6 +145,10 @@ end
     include(joinpath(dirtest, "test-carbon_offer.jl"))
 end
 
+@testset "Carbon currency contracts" begin
+    include(joinpath(dirtest, "test-carbon-contracts.jl"))
+end
+
 @testset "Dimensions" begin
     include(joinpath(dirtest, "test-dimensions.jl"))
 end

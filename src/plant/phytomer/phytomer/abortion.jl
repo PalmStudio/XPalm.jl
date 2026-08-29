@@ -11,13 +11,17 @@ Determines if the inflorescence will abort based on the trophic state of the pla
 - `duration_abortion`: duration used for computing abortion rate before flowering (degree days).
 
 # Inputs
-- `carbon_offer_after_rm`: carbon offer after maintenance respiration (gC/plant).
-- `carbon_demand_organs`: carbon demand of all organs (gC/plant).
+- `carbon_offer_plant`: daily plant assimilate offer after maintenance
+  respiration (g CH2O-equivalent plant⁻¹ d⁻¹).
+- `carbon_demand_plant`: daily total plant assimilate demand
+  (g CH2O-equivalent plant⁻¹ d⁻¹).
 
 
 # Outputs 
-- `carbon_demand_plant`: total carbon demand of the plant (gC/plant).
-- `carbon_offer_plant`: total carbon offer of the plant (gC/plant).
+- `carbon_demand_abortion`: assimilate demand accumulated over the abortion
+  period (g CH2O-equivalent plant⁻¹).
+- `carbon_offer_abortion`: assimilate offer accumulated over the abortion
+  period (g CH2O-equivalent plant⁻¹).
 - `state`: phytomer state (undetermined,Aborted,...)
 
 # Note
@@ -42,6 +46,12 @@ PlantSimEngine.inputs_(::AbortionRate) = (
     carbon_demand_plant=PlantSimEngine.Default(0.0),
 )
 PlantSimEngine.outputs_(::AbortionRate) = (state=:undetermined, carbon_demand_abortion=0.0, carbon_offer_abortion=0.0, abortion_calculation_flag=false)
+PlantSimEngine.variable_contracts_(::AbortionRate) = (
+    carbon_offer_plant=_DAILY_CH2O_EQUIVALENT_FLOW,
+    carbon_demand_plant=_DAILY_CH2O_EQUIVALENT_FLOW,
+    carbon_demand_abortion=_ACCUMULATED_CH2O_EQUIVALENT,
+    carbon_offer_abortion=_ACCUMULATED_CH2O_EQUIVALENT,
+)
 
 function PlantSimEngine.run!(m::AbortionRate, status, environment, constants, context)
     status.state == :aborted && return # if abortion is determined, no need to compute it again

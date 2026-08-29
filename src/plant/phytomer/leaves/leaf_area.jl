@@ -40,6 +40,9 @@ PlantSimEngine.inputs_(::LeafAreaModel) = (
     biomass=PlantSimEngine.Required(Real),
 )
 PlantSimEngine.outputs_(m::LeafAreaModel) = (leaf_area=m.leaf_area_ini,)
+PlantSimEngine.variable_contracts_(::LeafAreaModel) = (
+    biomass=_STRUCTURAL_DRY_MASS,
+)
 
 # Applied at the phytomer scale:
 function PlantSimEngine.run!(m::LeafAreaModel, status, environment, constants, context=nothing)

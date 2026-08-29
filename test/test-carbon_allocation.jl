@@ -10,6 +10,21 @@ PlantSimEngine.outputs_(::XPalmTestAllocationInputs) = (
     carbon_demand=0.0,
     potential_reserve=0.0,
 )
+PlantSimEngine.variable_contracts_(::XPalmTestAllocationInputs) = (
+    carbon_demand=PlantSimEngine.VariableContract(
+        unit=:g_ch2o_equivalent,
+        basis=:object,
+        temporal=:day,
+        aggregation=:total,
+        extent=:extensive,
+    ),
+    potential_reserve=PlantSimEngine.VariableContract(
+        unit=:g_ch2o_equivalent,
+        basis=:object,
+        aggregation=:state,
+        extent=:extensive,
+    ),
+)
 
 function PlantSimEngine.run!(
     ::XPalmTestAllocationInputs,

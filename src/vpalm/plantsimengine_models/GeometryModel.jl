@@ -52,8 +52,17 @@ function PlantSimEngine.outputs_(::GeometryModel)
     (is_reconstructed=false,)
 end
 
+PlantSimEngine.variable_contracts_(::GeometryModel) = (
+    biomass_leaves=PlantSimEngine.VariableContract(
+        unit=:g_dry_matter,
+        basis=:object,
+        aggregation=:state,
+        extent=:extensive,
+    ),
+)
+
 """
-    run!(model, status, environment, constants, context)
+run!(model, status, environment, constants, context)
 
 Builds the 3D geometry for a leaf by adding internode properties and creating child nodes for
 petiole, rachis, and leaflets.

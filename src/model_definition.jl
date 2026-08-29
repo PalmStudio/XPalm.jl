@@ -611,7 +611,6 @@ function model_applications(p; architecture=false)
             :Internode,
             PotentialReserveInternode(
                 nsc_max=parameters["reserves"]["nsc_max"],
-                carbon_concentration=parameters["carbon_demand"]["internode"]["carbon_concentration"],
             );
             inputs=(PreviousTimeStep(:biomass) => PlantSimEngine.One(
                 within=PlantSimEngine.Self(),
@@ -711,7 +710,6 @@ function model_applications(p; architecture=false)
                 parameters["mass_and_dimensions"]["leaf"]["lma_min"],
                 parameters["mass_and_dimensions"]["leaf"]["lma_max"],
                 parameters["biomass"]["leaf"]["leaflets_biomass_contribution"],
-                parameters["biomass"]["leaf"]["carbon_concentration"],
             );
             inputs=(PreviousTimeStep(:leaf_area) => PlantSimEngine.One(
                 within=PlantSimEngine.Self(),

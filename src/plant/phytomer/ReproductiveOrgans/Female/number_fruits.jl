@@ -11,10 +11,11 @@ Determines the number of fruits on the bunch.
 
 # Inputs 
 
-- `carbon_offer_plant`: carbon offer maintenance respiration (gC/plant).
+- `carbon_offer_plant`: daily plant assimilate offer after maintenance
+  respiration (g CH2O-equivalent plant⁻¹ d⁻¹).
 - `potential_fruits_number`: potential number of fruits (number/bunch).
-- `carbon_demand_plant`: carbon demand of the plant (gC/plant), used to compute the plant trophic status.
-- `carbon_offer_plant`: carbon offer of the plant (gC/plant), used to compute the plant trophic status.
+- `carbon_demand_plant`: daily plant assimilate demand
+  (g CH2O-equivalent plant⁻¹ d⁻¹), used to compute trophic status.
 
 # Outputs
 
@@ -33,6 +34,12 @@ PlantSimEngine.inputs_(::NumberFruits) = (
     carbon_demand_plant=PlantSimEngine.Default(0.0),
 )
 PlantSimEngine.outputs_(::NumberFruits) = (fruits_number=-9999, carbon_offer_flowering=0.0, carbon_demand_flowering=0.0, nb_fruits_flag=false)
+PlantSimEngine.variable_contracts_(::NumberFruits) = (
+    carbon_offer_plant=_DAILY_CH2O_EQUIVALENT_FLOW,
+    carbon_demand_plant=_DAILY_CH2O_EQUIVALENT_FLOW,
+    carbon_offer_flowering=_ACCUMULATED_CH2O_EQUIVALENT,
+    carbon_demand_flowering=_ACCUMULATED_CH2O_EQUIVALENT,
+)
 
 # applied at the female inflorescence level
 function PlantSimEngine.run!(m::NumberFruits, status, environment, constants, context=nothing)

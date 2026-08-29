@@ -14,7 +14,8 @@ DE VRIES, « The Cost of Maintenance Processes in Plant Cells ».
 # Arguments
 
 - `Q10`: Q10 factor (values should usually range between: 1.5 - 2.5, with 2.1 being the most common value)
-- `Mr`: maintenance respiration coefficient (gC gDM⁻¹ d⁻¹)
+- `Mr`: maintenance respiration coefficient
+  (g CH2O-equivalent gDM⁻¹ d⁻¹)
 - `T_ref`: Reference temperature at which Q10 was measured (usually around 25.0°C)
 - `P_alive`: proportion of living cells in the organ
 - `Turn`: maintenance cost coefficient of the turnover of free proteins and membranes
@@ -33,7 +34,7 @@ DE VRIES, « The Cost of Maintenance Processes in Plant Cells ».
 
 # Outputs
 
-- `Rm`: maintenance respiration (gC d⁻¹)
+- `Rm`: maintenance respiration (g CH2O-equivalent d⁻¹)
 """
 struct RmQ10FixedN{T} <: AbstractMaintenance_RespirationModel
     Q10::T
@@ -55,6 +56,10 @@ PlantSimEngine.environment_inputs_(::RmQ10FixedN) = (
     Tmax=0.0,
 )
 PlantSimEngine.outputs_(::RmQ10FixedN) = (Rm=-Inf,)
+PlantSimEngine.variable_contracts_(::RmQ10FixedN) = (
+    biomass=_STRUCTURAL_DRY_MASS,
+    Rm=_DAILY_CH2O_EQUIVALENT_FLOW,
+)
 
 # Standard way of computing the Rm of an organ:
 function PlantSimEngine.run!(m::RmQ10FixedN, status, environment, constants, context=nothing)
@@ -67,13 +72,14 @@ end
 
 Total plant maintenance respiration based on the sum of `Rm`.
 
-# Intputs
+# Inputs
 
-- `Rm_organs`: a vector of maintenance respiration from all organs in the plant in gC d⁻¹
+- `Rm_organs`: maintenance respiration of the plant organs
+  (g CH2O-equivalent d⁻¹ per organ)
 
 # Outputs
 
-- `Rm`: the total plant maintenance respiration in gC d⁻¹
+- `Rm`: total plant maintenance respiration (g CH2O-equivalent d⁻¹)
 """
 struct PlantRm <: AbstractMaintenance_RespirationModel end
 
@@ -81,6 +87,10 @@ PlantSimEngine.inputs_(::PlantRm) = (
     Rm_organs=PlantSimEngine.Required(AbstractVector),
 )
 PlantSimEngine.outputs_(::PlantRm) = (Rm=-Inf,)
+PlantSimEngine.variable_contracts_(::PlantRm) = (
+    Rm_organs=_DAILY_CH2O_EQUIVALENT_FLOW,
+    Rm=_DAILY_CH2O_EQUIVALENT_FLOW,
+)
 
 function PlantSimEngine.run!(::PlantRm, status, environment, constants, context=nothing)
     status.Rm = sum(status.Rm_organs)

@@ -1,9 +1,10 @@
-# XPalm unit contract:
-# - `carbon_*`, `reserve`, and maintenance-respiration flows use the plant
-#   carbon-equivalent currency (gC-equivalent);
+# XPalm unit convention:
+# - `carbon_*`, `reserve`, and maintenance-respiration flows use
+#   carbohydrate-equivalent mass (g CH2O-equivalent);
 # - organ `biomass*` variables use structural dry mass (gDM); reserves remain
-#   separate carbon pools;
-# - construction costs convert gDM growth into gC-equivalent demand and back.
+#   separate carbohydrate-equivalent pools;
+# - construction costs convert gDM growth into g CH2O-equivalent demand and
+#   back.
 @process "carbon_assimilation" verbose = false
 @process "carbon_demand" verbose = false
 @process "carbon_offer" verbose = false

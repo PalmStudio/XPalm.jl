@@ -7,10 +7,12 @@ Compute male biomass  from daily carbon allocation
 
 # Arguments
 
-- `respiration_cost`: construction cost (gC-equivalent allocated gDM⁻¹ produced)
+- `respiration_cost`: construction cost
+  (g CH2O-equivalent allocated gDM⁻¹ produced)
 
 # inputs
-- `carbon_allocation`: carbon allocated to the male inflorescence (gC-equivalent)
+- `carbon_allocation`: assimilate allocated to the male inflorescence
+  (g CH2O-equivalent)
 - `state`: state of the inflorescence 
 
 # outputs
@@ -28,6 +30,11 @@ PlantSimEngine.inputs_(::MaleBiomass) = (
     state=PlantSimEngine.Required(Symbol),
 )
 PlantSimEngine.outputs_(::MaleBiomass) = (biomass=0.0, litter_male=0.0,)
+PlantSimEngine.variable_contracts_(::MaleBiomass) = (
+    carbon_allocation=_DAILY_CH2O_EQUIVALENT_FLOW,
+    biomass=_STRUCTURAL_DRY_MASS,
+    litter_male=_STRUCTURAL_DRY_MASS,
+)
 
 # Applied at the male inflorescence scale:
 function PlantSimEngine.run!(m::MaleBiomass, st, environment, constants, context=nothing)

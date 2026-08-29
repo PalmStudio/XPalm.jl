@@ -24,8 +24,10 @@ Carbon demand of the female inflorescence based on the potential fruit biomass
 
 # Arguments
 
-- `respiration_cost`: construction cost of non-oil tissues (gC-equivalent allocated gDM⁻¹ produced)
-- `respiration_cost_oleosynthesis`: oil construction cost (gC-equivalent allocated gDM⁻¹ produced)
+- `respiration_cost`: construction cost of non-oil tissues
+  (g CH2O-equivalent allocated gDM⁻¹ produced)
+- `respiration_cost_oleosynthesis`: oil construction cost
+  (g CH2O-equivalent allocated gDM⁻¹ produced)
 - `TT_flowering`: thermal time for flowering since phytomer appearance (degree days).
 - `TT_fruiting`: thermal time for fruit setting since phytomer appearance (degree days).
 - `duration_bunch_development`: duration between fruit set and bunch maturity (ready for harvest) (degree days).
@@ -46,10 +48,13 @@ Carbon demand of the female inflorescence based on the potential fruit biomass
 
 # Outputs
 
-- `carbon_demand`: total carbon-equivalent demand (gC-equivalent d⁻¹)
-- `carbon_demand_oil`: carbon-equivalent demand for oil production (gC-equivalent d⁻¹)
-- `carbon_demand_non_oil`: carbon-equivalent demand for non-oil production (gC-equivalent d⁻¹)
-- `carbon_demand_stalk`: carbon-equivalent demand for stalk development (gC-equivalent d⁻¹)
+- `carbon_demand`: total assimilate demand (g CH2O-equivalent d⁻¹)
+- `carbon_demand_oil`: assimilate demand for oil production
+  (g CH2O-equivalent d⁻¹)
+- `carbon_demand_non_oil`: assimilate demand for non-oil production
+  (g CH2O-equivalent d⁻¹)
+- `carbon_demand_stalk`: assimilate demand for stalk development
+  (g CH2O-equivalent d⁻¹)
 """
 struct FemaleCarbonDemandModel{T} <: AbstractCarbon_DemandModel
     respiration_cost::T
@@ -103,6 +108,15 @@ PlantSimEngine.inputs_(::FemaleCarbonDemandModel) = (
     TT_since_init=PlantSimEngine.Required(Real),
 )
 PlantSimEngine.outputs_(::FemaleCarbonDemandModel) = (carbon_demand=0.0, carbon_demand_oil=-Inf, carbon_demand_non_oil=-Inf, carbon_demand_stalk=-Inf)
+PlantSimEngine.variable_contracts_(::FemaleCarbonDemandModel) = (
+    final_potential_biomass_non_oil_fruit=_STRUCTURAL_DRY_MASS,
+    final_potential_biomass_oil_fruit=_STRUCTURAL_DRY_MASS,
+    final_potential_biomass_stalk=_STRUCTURAL_DRY_MASS,
+    carbon_demand=_DAILY_CH2O_EQUIVALENT_FLOW,
+    carbon_demand_oil=_DAILY_CH2O_EQUIVALENT_FLOW,
+    carbon_demand_non_oil=_DAILY_CH2O_EQUIVALENT_FLOW,
+    carbon_demand_stalk=_DAILY_CH2O_EQUIVALENT_FLOW,
+)
 
 function PlantSimEngine.run!(m::FemaleCarbonDemandModel, status, environment, constants, context=nothing)
 

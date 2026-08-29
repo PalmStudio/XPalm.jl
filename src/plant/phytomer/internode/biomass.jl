@@ -10,11 +10,13 @@ Compute internode biomass from daily carbon allocation
 # Arguments
 
 - `initial_biomass`: initial structural dry mass of the internode (gDM)
-- `respiration_cost`: construction cost (gC-equivalent allocated gDM⁻¹ produced)
+- `respiration_cost`: construction cost
+  (g CH2O-equivalent allocated gDM⁻¹ produced)
 
 # Inputs
 
-- `carbon_allocation`: carbon allocated to the internode (gC-equivalent)
+- `carbon_allocation`: assimilate allocated to the internode
+  (g CH2O-equivalent)
 
 # Outputs
 
@@ -31,6 +33,10 @@ PlantSimEngine.inputs_(::InternodeBiomass) = (
     carbon_allocation=PlantSimEngine.Default(0.0),
 )
 PlantSimEngine.outputs_(m::InternodeBiomass) = (biomass=m.initial_biomass,)
+PlantSimEngine.variable_contracts_(::InternodeBiomass) = (
+    carbon_allocation=_DAILY_CH2O_EQUIVALENT_FLOW,
+    biomass=_STRUCTURAL_DRY_MASS,
+)
 
 # Applied at the Internode scale:
 function PlantSimEngine.run!(m::InternodeBiomass, st, environment, constants, context=nothing)

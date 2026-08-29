@@ -26,6 +26,16 @@ PlantSimEngine.outputs_(::OrgansCarbonAllocationModel) = (
     carbon_demand=0.0,
     reserve=0.0,
 )
+PlantSimEngine.variable_contracts_(::OrgansCarbonAllocationModel) = (
+    carbon_offer_after_rm=_DAILY_CH2O_EQUIVALENT_FLOW,
+    carbon_demand_organs=_DAILY_CH2O_EQUIVALENT_FLOW,
+    previous_reserve_organs=_CH2O_EQUIVALENT_STOCK,
+    carbon_allocation=_DAILY_CH2O_EQUIVALENT_FLOW,
+    respiration_reserve_mobilization=_DAILY_CH2O_EQUIVALENT_FLOW,
+    carbon_offer_after_allocation=_DAILY_CH2O_EQUIVALENT_FLOW,
+    carbon_demand=_DAILY_CH2O_EQUIVALENT_FLOW,
+    reserve=_CH2O_EQUIVALENT_STOCK,
+)
 
 @inline function _allocate_organ_carbon!(
     m::OrgansCarbonAllocationModel,

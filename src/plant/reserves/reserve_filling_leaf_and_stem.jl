@@ -10,6 +10,14 @@ PlantSimEngine.outputs_(::OrganReserveFilling) = (
     carbon_allocation_reserve=-Inf,
     carbon_offer_after_storage=-Inf,
 )
+PlantSimEngine.variable_contracts_(::OrganReserveFilling) = (
+    carbon_offer_after_allocation=_DAILY_CH2O_EQUIVALENT_FLOW,
+    potential_reserve_organs=_CH2O_EQUIVALENT_STOCK,
+    reserve_organs=_CH2O_EQUIVALENT_STOCK,
+    reserve=_CH2O_EQUIVALENT_STOCK,
+    carbon_allocation_reserve=_DAILY_CH2O_EQUIVALENT_FLOW,
+    carbon_offer_after_storage=_DAILY_CH2O_EQUIVALENT_FLOW,
+)
 
 @inline function _fill_organ_reserves!(
     potential_reserves,

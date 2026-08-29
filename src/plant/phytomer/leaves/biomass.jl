@@ -5,17 +5,18 @@ LeafBiomass(respiration_cost=1.44)
 Compute structural leaf dry mass from carbon allocation and partition it among
 leaflets, rachis and petiole.
 
-The construction cost converts the carbon-equivalent allocation into dry mass.
+The construction cost converts CH2O-equivalent allocation into dry mass.
 
 # Arguments
-- `respiration_cost`: construction cost (gC-equivalent allocated gDM⁻¹ produced)
+- `respiration_cost`: construction cost
+  (g CH2O-equivalent allocated gDM⁻¹ produced)
 - `initial_biomass`: initial structural dry mass of the leaf (gDM)
 - `leaflets_biomass_contribution`: leaflet fraction of structural leaf dry mass
 - `rachis_biomass_contribution`: rachis fraction of structural leaf dry mass
 - `petiole_biomass_contribution`: petiole fraction of structural leaf dry mass
 
 # inputs
-- `carbon_allocation`: carbon allocated to the leaf (gC-equivalent)
+- `carbon_allocation`: assimilate allocated to the leaf (g CH2O-equivalent)
 
 # outputs
 - `biomass`: structural leaf dry mass (gDM), equal to the sum of all three compartments
@@ -99,6 +100,13 @@ PlantSimEngine.outputs_(m::LeafBiomass) = (
     biomass_leaflets=m.initial_biomass * m.leaflets_biomass_contribution,
     biomass_rachis=m.initial_biomass * m.rachis_biomass_contribution,
     biomass_petiole=m.initial_biomass * m.petiole_biomass_contribution,
+)
+PlantSimEngine.variable_contracts_(::LeafBiomass) = (
+    carbon_allocation=_DAILY_CH2O_EQUIVALENT_FLOW,
+    biomass=_STRUCTURAL_DRY_MASS,
+    biomass_leaflets=_STRUCTURAL_DRY_MASS,
+    biomass_rachis=_STRUCTURAL_DRY_MASS,
+    biomass_petiole=_STRUCTURAL_DRY_MASS,
 )
 
 # Applied at the leaf scale:
