@@ -213,11 +213,13 @@ end
 
 function update_leaf!(leaf, biomass_leaf, parameters; rng)
     petiole = leaf[1]
-    petiole.zenithal_insertion_angle = 90.0u"°" - leaf.zenithal_insertion_angle
-    petiole.zenithal_cpoint_angle = 90.0u"°" - leaf.zenithal_cpoint_angle
-    petiole.section_insertion_angle = (petiole.zenithal_cpoint_angle - petiole.zenithal_insertion_angle) / parameters["petiole_nb_segments"]
-    # Rebuild the petiole sections:
-    VPalm.update_petiole_angles!(petiole)
+    VPalm.update_petiole!(
+        petiole,
+        leaf.rachis_length,
+        leaf.zenithal_insertion_angle,
+        leaf.zenithal_cpoint_angle,
+        parameters,
+    )
     rachis = petiole[2]
 
     VPalm.update_rachis_angles!(rachis, leaf.rank, leaf.rachis_length, petiole.height_cpoint, petiole.width_cpoint, leaf.zenithal_cpoint_angle, biomass_leaf, parameters; rng)

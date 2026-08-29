@@ -34,6 +34,9 @@ function petiole(unique_mtg_id, parent_node, index, scale, rachis_length, zenith
         parameters["petiole_rachis_ratio_sd"], parameters["petiole_nb_segments"];
         rng=rng
     )
+    # Keep the sampled petiole/rachis ratio so subsequent rachis elongation
+    # rescales the petiole without drawing a new random value at every rank.
+    petiole_node.petiole_rachis_ratio = petiole_node.length / rachis_length
 
     petiole_sections!(petiole_node, parameters["petiole_nb_segments"], unique_mtg_id)
 
@@ -71,9 +74,48 @@ end
 
 
 """
+    update_petiole!(petiole_node, rachis_length, zenithal_insertion_angle,
+        zenithal_cpoint_angle, parameters)
+
+Update an existing petiole after rachis elongation. The sampled
+petiole/rachis length ratio and azimuth are preserved, while the petiole
+length, C-point dimensions, section dimensions, and angles are recomputed.
+The existing section topology is not modified.
+"""
+function update_petiole!(
+    petiole_node,
+    rachis_length,
+    zenithal_insertion_angle,
+    zenithal_cpoint_angle,
+    parameters,
+)
+    petiole_node.length = petiole_node.petiole_rachis_ratio * rachis_length
+    dimensions = petiole_dimensions_at_cpoint(
+        rachis_length,
+        parameters["cpoint_width_intercept"],
+        parameters["cpoint_width_slope"],
+        parameters["cpoint_height_width_ratio"],
+    )
+    petiole_node.width_cpoint = dimensions.width_cpoint
+    petiole_node.height_cpoint = dimensions.height_cpoint
+
+    petiole_node.zenithal_insertion_angle = 90.0u"°" - zenithal_insertion_angle
+    petiole_node.zenithal_cpoint_angle = 90.0u"°" - zenithal_cpoint_angle
+    petiole_node.section_length = petiole_node.length / parameters["petiole_nb_segments"]
+    petiole_node.section_insertion_angle =
+        (petiole_node.zenithal_cpoint_angle - petiole_node.zenithal_insertion_angle) /
+        parameters["petiole_nb_segments"]
+
+    update_petiole_angles!(petiole_node)
+    return nothing
+end
+
+
+"""
     update_petiole_angles!(petiole_node)
 
-Update the angles of the petiole segments based on the petiole node properties.
+Update the dimensions and angles of the petiole segments from the petiole node
+properties, without changing the section topology.
 
 # Arguments
 
@@ -81,14 +123,14 @@ Update the angles of the petiole segments based on the petiole node properties.
 
 # Returns
 
-Nothing, the petiole node is updated in-place with its segments angles.
+Nothing, the petiole node is updated in-place with its segment properties.
 """
 function update_petiole_angles!(petiole_node)
-    segment_id = Ref(1)
+    segment_id = Ref(0)
     petiole_nb_segments = descendants(petiole_node, symbol=:PetioleSegment) |> length
     traverse!(petiole_node[1], symbol=:PetioleSegment) do segment
-        petiole_section_insertion_angle = petiole_node[:zenithal_insertion_angle] + segment_id[] * petiole_node[:section_insertion_angle]
         segment_id[] += 1
+        petiole_section_insertion_angle = petiole_node[:zenithal_insertion_angle] + segment_id[] * petiole_node[:section_insertion_angle]
 
         compute_properties_petiole_section!(petiole_node, segment, segment_id[], petiole_nb_segments, petiole_section_insertion_angle)
     end

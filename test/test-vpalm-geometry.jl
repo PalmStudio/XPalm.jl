@@ -19,6 +19,77 @@ distance3(p0, p1) = sqrt(sum((p1 .- p0) .^ 2))
     @test !VPalm.is_visible_leaf_rank(-8, parameters)
 end
 
+@testset "dynamic leaf elongation preserves leaflet topology" begin
+    parameters = VPalm.default_parameters(type="dynamic")
+    plant = Node(NodeMTG(:/, :Plant, 1, 1))
+    leaf = Node(2, plant, NodeMTG(:+, :Leaf, 1, 4), Dict{Symbol,Any}())
+    leaf.rank = -7
+    leaf.rachis_length = 2.8u"m"
+    leaf.zenithal_insertion_angle = 0.0u"°"
+    leaf.zenithal_cpoint_angle = 0.0u"°"
+
+    unique_id = Ref(3)
+    VPalm.build_leaf(
+        unique_id,
+        1,
+        leaf,
+        2.0u"kg",
+        parameters;
+        rng=Random.MersenneTwister(1),
+    )
+
+    petiole = only(descendants(leaf, symbol=:Petiole))
+    leaflets = descendants(leaf, symbol=:Leaflet)
+    original_petiole_ids = node_id.(descendants(petiole, symbol=:PetioleSegment))
+    original_rachis_ids = node_id.(descendants(leaf, symbol=:RachisSegment))
+    original_leaflet_ids = node_id.(leaflets)
+    original_leaflets = Dict(
+        node_id(node) => (
+            parent=node_id(parent(node)),
+            offset=node.offset,
+            relative_position=node.relative_position,
+            segment_lengths=copy(node.leaflet_segment_lengths),
+            segment_widths=copy(node.leaflet_segment_widths),
+        )
+        for node in leaflets
+    )
+
+    leaf.rank = 2
+    leaf.rachis_length = 4.0u"m"
+    leaf.zenithal_insertion_angle = 20.0u"°"
+    leaf.zenithal_cpoint_angle = 30.0u"°"
+    VPalm.update_leaf!(
+        leaf,
+        4.0u"kg",
+        parameters;
+        rng=Random.MersenneTwister(1),
+    )
+
+    updated_leaflets = descendants(leaf, symbol=:Leaflet)
+    expected_cpoint = VPalm.petiole_dimensions_at_cpoint(
+        leaf.rachis_length,
+        parameters["cpoint_width_intercept"],
+        parameters["cpoint_width_slope"],
+        parameters["cpoint_height_width_ratio"],
+    )
+
+    @test node_id.(descendants(petiole, symbol=:PetioleSegment)) == original_petiole_ids
+    @test node_id.(descendants(leaf, symbol=:RachisSegment)) == original_rachis_ids
+    @test node_id.(updated_leaflets) == original_leaflet_ids
+    @test petiole.width_cpoint ≈ expected_cpoint.width_cpoint
+    @test petiole.height_cpoint ≈ expected_cpoint.height_cpoint
+    @test all(
+        (
+            parent=node_id(parent(node)),
+            offset=node.offset,
+            relative_position=node.relative_position,
+            segment_lengths=node.leaflet_segment_lengths,
+            segment_widths=node.leaflet_segment_widths,
+        ) == original_leaflets[node_id(node)]
+        for node in updated_leaflets
+    )
+end
+
 @testset "snag" begin
     x_scale = 10.
     y_scale = 20.
