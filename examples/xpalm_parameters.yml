@@ -20,7 +20,10 @@ phyllochron:
   production_speed_mature: 0.0074
 biomass:
   leaf:
-    leaflets_biomass_contribution: 0.35
+    carbon_concentration: 0.48
+    leaflets_biomass_contribution: 0.3
+    rachis_biomass_contribution: 0.3
+    petiole_biomass_contribution: 0.4
   Male:
     max_biomass: 174.852
     fraction_biomass_first_male: 0.3

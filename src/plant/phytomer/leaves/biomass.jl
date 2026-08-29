@@ -2,32 +2,110 @@
 LeafBiomass(respiration_cost)
 LeafBiomass(respiration_cost=1.44)
 
-Compute leaf biomass from carbon_allocation
+Compute total leaf carbon biomass from carbon allocation and partition it among
+leaflets, rachis and petiole.
+
+The model uses one carbon concentration for the complete leaf, so the dry-mass
+fractions are also the carbon-biomass fractions of the three compartments.
 
 # Arguments
-- `respiration_cost`: respiration cost of the leaf (g.g-1)
-- `initial_biomass`: initial biomass of the leaf (g)
+- `respiration_cost`: growth respiration cost of the leaf (gC allocated gC⁻¹ biomass)
+- `initial_biomass`: initial total biomass of the leaf (gC)
+- `leaflets_biomass_contribution`: leaflet fraction of total leaf biomass
+- `rachis_biomass_contribution`: rachis fraction of total leaf biomass
+- `petiole_biomass_contribution`: petiole fraction of total leaf biomass
 
 # inputs
-- `carbon_allocation`: carbon allocated to the leaf (g)
+- `carbon_allocation`: carbon allocated to the leaf (gC)
 
 # outputs
-- `biomass`: leaf biomass (g)
+- `biomass`: total leaf biomass (gC), equal to the sum of all three compartments
+- `biomass_leaflets`: leaflet biomass (gC)
+- `biomass_rachis`: rachis biomass (gC)
+- `biomass_petiole`: petiole biomass (gC)
 """
 # Used after init:
 struct LeafBiomass{T} <: AbstractBiomassModel
     initial_biomass::T
     respiration_cost::T
+    leaflets_biomass_contribution::T
+    rachis_biomass_contribution::T
+    petiole_biomass_contribution::T
+
+    function LeafBiomass{T}(
+        initial_biomass::T,
+        respiration_cost::T,
+        leaflets_biomass_contribution::T,
+        rachis_biomass_contribution::T,
+        petiole_biomass_contribution::T,
+    ) where {T}
+        contributions = (
+            leaflets_biomass_contribution,
+            rachis_biomass_contribution,
+            petiole_biomass_contribution,
+        )
+        any(x -> x < zero(x), contributions) &&
+            throw(ArgumentError("leaf biomass contributions must be non-negative"))
+        isapprox(sum(contributions), one(sum(contributions)); atol=1.0e-8, rtol=1.0e-8) ||
+            throw(ArgumentError("leaflets, rachis and petiole biomass contributions must sum to 1"))
+        new{T}(
+            initial_biomass,
+            respiration_cost,
+            leaflets_biomass_contribution,
+            rachis_biomass_contribution,
+            petiole_biomass_contribution,
+        )
+    end
 end
 
-LeafBiomass(; initial_biomass=0.0, respiration_cost=1.44) = LeafBiomass(initial_biomass, respiration_cost)
+function LeafBiomass(
+    initial_biomass,
+    respiration_cost,
+    leaflets_biomass_contribution,
+    rachis_biomass_contribution,
+    petiole_biomass_contribution,
+)
+    values = promote(
+        initial_biomass,
+        respiration_cost,
+        leaflets_biomass_contribution,
+        rachis_biomass_contribution,
+        petiole_biomass_contribution,
+    )
+    LeafBiomass{typeof(first(values))}(values...)
+end
+
+LeafBiomass(initial_biomass, respiration_cost) =
+    LeafBiomass(initial_biomass, respiration_cost, 0.30, 0.30, 0.40)
+
+LeafBiomass(;
+    initial_biomass=0.0,
+    respiration_cost=1.44,
+    leaflets_biomass_contribution=0.30,
+    rachis_biomass_contribution=0.30,
+    petiole_biomass_contribution=0.40,
+) = LeafBiomass(
+    initial_biomass,
+    respiration_cost,
+    leaflets_biomass_contribution,
+    rachis_biomass_contribution,
+    petiole_biomass_contribution,
+)
 
 PlantSimEngine.inputs_(::LeafBiomass) = (
     carbon_allocation=PlantSimEngine.Default(0.0),
 )
-PlantSimEngine.outputs_(m::LeafBiomass) = (biomass=m.initial_biomass,)
+PlantSimEngine.outputs_(m::LeafBiomass) = (
+    biomass=m.initial_biomass,
+    biomass_leaflets=m.initial_biomass * m.leaflets_biomass_contribution,
+    biomass_rachis=m.initial_biomass * m.rachis_biomass_contribution,
+    biomass_petiole=m.initial_biomass * m.petiole_biomass_contribution,
+)
 
 # Applied at the leaf scale:
 function PlantSimEngine.run!(m::LeafBiomass, st, environment, constants, context=nothing)
     st.biomass += st.carbon_allocation / m.respiration_cost
+    st.biomass_leaflets = st.biomass * m.leaflets_biomass_contribution
+    st.biomass_rachis = st.biomass * m.rachis_biomass_contribution
+    st.biomass_petiole = st.biomass * m.petiole_biomass_contribution
 end

@@ -51,8 +51,8 @@ function default_parameters()
                 "SRL" => 0.4, # Specific Root Length (m g-1)
             ),
             "leaf" => Dict(
-                "lma_min" => 80.0, # min leaf mass area (g m-2)
-                "lma_max" => 200.0, # max leaf mass area (g m-2)
+                "lma_min" => 80.0, # minimum leaflet dry mass per area (gDM m-2)
+                "lma_max" => 200.0, # maximum leaflet dry mass per area (gDM m-2)
             )
         ),
         "respiration" => Dict(
@@ -166,7 +166,16 @@ function default_parameters()
                 "fraction_biomass_first_male" => 0.3,
             ),
             "leaf" => Dict(
-                "leaflets_biomass_contribution" => 0.35,
+                # Carbon content of oil-palm leaves (gC gDM-1), from Jaffré (1983),
+                # "Evolution de la biomasse épigée et du stock de carbone d'une
+                # culture pérenne : le palmier à huile".
+                "carbon_concentration" => 0.48,
+                # Fractions of total leaf dry biomass. A complete leaf includes
+                # leaflets, rachis and petiole (Siang et al. 2022,
+                # https://doi.org/10.3390/agronomy12020426).
+                "leaflets_biomass_contribution" => 0.30,
+                "rachis_biomass_contribution" => 0.30,
+                "petiole_biomass_contribution" => 0.40,
             ),
         ),
         "reproduction" => Dict(

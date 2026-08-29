@@ -28,11 +28,66 @@ end
 @testset "LeafAreaModel" begin
     scene = test_scene(
         :Leaf,
-        LeafAreaModel(80.0, 0.35, 0.0);
+        LeafAreaModel(80.0, 0.30, 0.0, 0.48);
         status=Status(biomass=2000.0),
     )
     run!(scene)
-    @test test_status(scene, :Leaf).leaf_area ≈ 8.75
+    @test test_status(scene, :Leaf).leaf_area ≈ 15.625
+end
+
+@testset "LeafBiomass compartments" begin
+    scene = test_scene(
+        :Leaf,
+        LeafBiomass(
+            initial_biomass=100.0,
+            respiration_cost=1.44,
+            leaflets_biomass_contribution=0.30,
+            rachis_biomass_contribution=0.30,
+            petiole_biomass_contribution=0.40,
+        );
+        status=Status(carbon_allocation=144.0),
+    )
+    run!(scene)
+    status = test_status(scene, :Leaf)
+    @test status.biomass ≈ 200.0
+    @test status.biomass_leaflets ≈ 60.0
+    @test status.biomass_rachis ≈ 60.0
+    @test status.biomass_petiole ≈ 80.0
+    @test status.biomass ≈
+          status.biomass_leaflets + status.biomass_rachis + status.biomass_petiole
+    @test_throws ArgumentError LeafBiomass(
+        leaflets_biomass_contribution=0.30,
+        rachis_biomass_contribution=0.30,
+        petiole_biomass_contribution=0.30,
+    )
+end
+
+@testset "PotentialReserveLeaf carbon units" begin
+    scene = test_scene(
+        :Leaf,
+        PotentialReserveLeaf(80.0, 200.0, 0.30, 0.48);
+        status=Status(leaf_area=2.0, reserve=10.0, state=:opened),
+    )
+    run!(scene)
+    @test test_status(scene, :Leaf).potential_reserve ≈ 374.0
+end
+
+@testset "Leaf pruning clears biomass compartments" begin
+    parameters = XPalm.default_parameters()
+    parameters["management"]["rank_leaf_pruning"] = 0
+    scene = XPalm.xpalm_scene(
+        Palm(initiation_age=0, parameters=parameters);
+        architecture=false,
+        environment=meteo[1:1, :],
+    )
+    run!(scene; steps=1, outputs=:none)
+    status = only(model_objects(scene; scale=:Leaf)).status
+    @test status.is_pruned
+    @test status.litter_leaf > 0.0
+    @test status.biomass == 0.0
+    @test status.biomass_leaflets == 0.0
+    @test status.biomass_rachis == 0.0
+    @test status.biomass_petiole == 0.0
 end
 
 @testset "LAIModel" begin
@@ -50,7 +105,7 @@ end
     mtg = Palm().mtg
     applications = (
         ModelSpec(LeafBiomass(); name=:leaf_biomass, on=Many(scale=:Leaf)),
-        ModelSpec(LeafAreaModel(80.0, 0.35, 0.0); name=:leaf_area, on=Many(scale=:Leaf)),
+        ModelSpec(LeafAreaModel(80.0, 0.30, 0.0, 0.48); name=:leaf_area, on=Many(scale=:Leaf)),
         ModelSpec(LAIModel(30.0); name=:scene_lai, on=One(scale=:Scene), inputs=(:leaf_areas => Many(scale=:Leaf, var=:leaf_area, within=SceneScope()))),
     )
     scene = CompositeModel(
@@ -69,6 +124,6 @@ end
         ],
     )
     lai = output_values(sim, :lai)
-    @test lai[1] ≈ 0.0010127314814814814
-    @test lai[end] ≈ 4.2129629629632985
+    @test lai[1] ≈ 0.0018084490740740743
+    @test lai[end] ≈ 7.523148148148748
 end

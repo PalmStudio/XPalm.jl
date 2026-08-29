@@ -1,16 +1,18 @@
 """
     RankLeafPruning(rank)
 
-Function to remove leaf biomass and area when the phytomer has an harvested bunch or when the leaf reaches a treshold rank (below rank of harvested bunches) 
+Function to remove leaf biomass and area when the phytomer has a harvested bunch
+or when the leaf reaches a threshold rank (below the rank of harvested bunches).
 
 # Arguments
-- `rank`: leaf rank treshold below whith the leaf is cutted
+- `rank`: leaf-rank threshold below which the leaf is cut
 
 # Inputs
 - `state`: phytomer state
 
 # Outputs 
-- `litter_leaf`: leaf biomass removed from the plantand going to the litter
+- `litter_leaf`: total leaf carbon biomass removed from the plant and transferred
+  to the litter (gC)
 
 """
 struct RankLeafPruning{T} <: AbstractLeaf_PruningModel
@@ -21,12 +23,18 @@ PlantSimEngine.inputs_(::RankLeafPruning) = (
     rank=PlantSimEngine.Required(Real),
     state=PlantSimEngine.Required(Symbol),
     biomass=PlantSimEngine.Required(Real),
+    biomass_leaflets=PlantSimEngine.Required(Real),
+    biomass_rachis=PlantSimEngine.Required(Real),
+    biomass_petiole=PlantSimEngine.Required(Real),
     leaf_area=PlantSimEngine.Required(Real),
     reserve=PlantSimEngine.Required(Real),
     state_phytomers=PlantSimEngine.Required(AbstractVector),
 )
 PlantSimEngine.outputs_(::RankLeafPruning) = (
     biomass=-Inf,
+    biomass_leaflets=-Inf,
+    biomass_rachis=-Inf,
+    biomass_petiole=-Inf,
     leaf_area=-Inf,
     reserve=0.0,
     state=:undetermined,
@@ -48,6 +56,9 @@ function PlantSimEngine.run!(m::RankLeafPruning, status, environment, constants,
         status.leaf_area = 0.0
         status.litter_leaf = status.biomass
         status.biomass = 0.0
+        status.biomass_leaflets = 0.0
+        status.biomass_rachis = 0.0
+        status.biomass_petiole = 0.0
         status.reserve = 0.0
         status.state = :pruned # The leaf may not be pruned yet if it has a male inflorescence.
         status.is_pruned = true

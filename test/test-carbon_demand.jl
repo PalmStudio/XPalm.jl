@@ -35,7 +35,7 @@ end
 @testset "LeafCarbonDemandModelPotentialArea" begin
     scene = test_scene(
         :Leaf,
-        LeafCarbonDemandModelPotentialArea(80.0, 1.44, 0.35);
+        LeafCarbonDemandModelPotentialArea(80.0, 1.44, 0.30, 0.48);
         status=Status(increment_potential_area=1.0, state=:undetermined),
         environment=meteo[1:2, :],
     )
@@ -45,6 +45,6 @@ end
         outputs=OutputRequest(:Leaf, :carbon_demand),
     )
     carbon_demand = output_values(sim, :carbon_demand)
-    @test carbon_demand[1] ≈ 329.14285714285716
-    @test carbon_demand[1] ≈ 1.0 * (80.0 * 1.44) / 0.35
+    @test carbon_demand[1] ≈ 184.32
+    @test carbon_demand[1] ≈ 1.0 * (80.0 * 0.48 * 1.44) / 0.30
 end

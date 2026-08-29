@@ -682,6 +682,7 @@ function model_applications(p; architecture=false)
                 parameters["mass_and_dimensions"]["leaf"]["lma_min"],
                 parameters["biomass"]["leaf"]["leaflets_biomass_contribution"],
                 parameters["dimensions"]["leaf"]["leaf_area_first_leaf"],
+                parameters["biomass"]["leaf"]["carbon_concentration"],
             );
             inputs=(PreviousTimeStep(:biomass) => PlantSimEngine.One(
                 within=PlantSimEngine.Self(),
@@ -695,6 +696,7 @@ function model_applications(p; architecture=false)
                 parameters["mass_and_dimensions"]["leaf"]["lma_min"],
                 parameters["carbon_demand"]["leaf"]["respiration_cost"],
                 parameters["biomass"]["leaf"]["leaflets_biomass_contribution"],
+                parameters["biomass"]["leaf"]["carbon_concentration"],
             );
             inputs=(:state => PlantSimEngine.One(
                 within=PlantSimEngine.Self(),
@@ -708,6 +710,7 @@ function model_applications(p; architecture=false)
                 parameters["mass_and_dimensions"]["leaf"]["lma_min"],
                 parameters["mass_and_dimensions"]["leaf"]["lma_max"],
                 parameters["biomass"]["leaf"]["leaflets_biomass_contribution"],
+                parameters["biomass"]["leaf"]["carbon_concentration"],
             );
             inputs=(PreviousTimeStep(:leaf_area) => PlantSimEngine.One(
                 within=PlantSimEngine.Self(),
@@ -723,10 +726,16 @@ function model_applications(p; architecture=false)
         _xpalm_application(
             :Leaf,
             LeafBiomass(
+                # Leaf area represents leaflets only. Convert their area to
+                # total leaf dry mass, then to total leaf carbon biomass (gC).
                 initial_biomass=parameters["dimensions"]["leaf"]["leaf_area_first_leaf"] *
                                 parameters["mass_and_dimensions"]["leaf"]["lma_min"] /
-                                parameters["biomass"]["leaf"]["leaflets_biomass_contribution"],
+                                parameters["biomass"]["leaf"]["leaflets_biomass_contribution"] *
+                                parameters["biomass"]["leaf"]["carbon_concentration"],
                 respiration_cost=parameters["carbon_demand"]["leaf"]["respiration_cost"],
+                leaflets_biomass_contribution=parameters["biomass"]["leaf"]["leaflets_biomass_contribution"],
+                rachis_biomass_contribution=parameters["biomass"]["leaf"]["rachis_biomass_contribution"],
+                petiole_biomass_contribution=parameters["biomass"]["leaf"]["petiole_biomass_contribution"],
             );
             inputs=(:carbon_allocation => PlantSimEngine.One(
                 within=PlantSimEngine.Self(),
@@ -747,8 +756,13 @@ function model_applications(p; architecture=false)
                 application=:Phytomer__state,
                 var=:state,
             ),),
-            updates=(PlantSimEngine.Updates(:biomass;
-            after=:Leaf__biomass,), PlantSimEngine.Updates(:leaf_area;
+            updates=(PlantSimEngine.Updates(
+                :biomass,
+                :biomass_leaflets,
+                :biomass_rachis,
+                :biomass_petiole;
+                after=:Leaf__biomass,
+            ), PlantSimEngine.Updates(:leaf_area;
             after=:Leaf__leaf_area,), PlantSimEngine.Updates(:state;
             after=:Leaf__state,), PlantSimEngine.Updates(:reserve;
             after=:Plant__reserve_filling,),),
