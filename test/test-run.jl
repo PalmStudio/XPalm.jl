@@ -17,6 +17,30 @@
     @test last(lai_rows).value == df[:Scene].lai[end]
 end
 
+@testset "default organ biomass is structural dry mass" begin
+    parameters = XPalm.default_parameters()
+    palm = XPalm.Palm(initiation_age=0, parameters=parameters)
+    applications = XPalm.model_applications(palm; architecture=false)
+
+    leaf_biomass = only(
+        application for application in applications
+        if PlantSimEngine.application_name(application) == :Leaf__biomass
+    ).model
+    @test leaf_biomass.initial_biomass ≈
+          parameters["dimensions"]["leaf"]["leaf_area_first_leaf"] *
+          parameters["mass_and_dimensions"]["leaf"]["lma_min"] /
+          parameters["biomass"]["leaf"]["leaflets_biomass_contribution"]
+
+    internode_biomass = only(
+        application for application in applications
+        if PlantSimEngine.application_name(application) == :Internode__biomass
+    ).model
+    @test internode_biomass.initial_biomass ≈
+          π * parameters["dimensions"]["internode"]["min_radius"]^2 *
+          parameters["dimensions"]["internode"]["min_height"] *
+          parameters["carbon_demand"]["internode"]["apparent_density"]
+end
+
 @testset "emission requests are one-timestep pulses" begin
     phyllochron = PhyllochronModel(
         age_palm_maturity=1,

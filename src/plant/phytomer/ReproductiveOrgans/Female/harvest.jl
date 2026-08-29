@@ -1,4 +1,11 @@
 
+"""
+    BunchHarvest()
+
+Transfer a harvested bunch, or an aborted female inflorescence, out of the
+standing biomass pools. All `biomass*` and `litter` variables are dry mass
+(gDM); fruit counts are dimensionless.
+"""
 struct BunchHarvest <: AbstractHarvestModel end
 
 PlantSimEngine.inputs_(::BunchHarvest) = (

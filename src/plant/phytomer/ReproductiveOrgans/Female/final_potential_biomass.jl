@@ -16,9 +16,9 @@
 - `fraction_first_female`: size of the first bunches on a young palm relative to the size 
 at maturity (dimensionless)
 - `potential_fruit_number_at_maturity`: potential number of fruits at maturity (number of fruits)
-- `potential_fruit_weight_at_maturity`: potential weight of one fruit at maturity (g)
-- `stalk_max_biomass`: maximum biomass of the stalk (g)
-- `oil_content`: oil content in the fruit (g oil g⁻¹ fruit)
+- `potential_fruit_weight_at_maturity`: potential dry mass of one fruit at maturity (gDM)
+- `stalk_max_biomass`: maximum dry mass of the stalk (gDM)
+- `oil_content`: oil dry-mass fraction of the fruit (gDM oil gDM⁻¹ fruit)
 
 # Inputs
 
@@ -27,8 +27,10 @@ at maturity (dimensionless)
 # Outputs
 
 - `potential_fruits_number`: potential number of fruits (number of fruits)
-- `final_potential_fruit_biomass`: potential biomass of fruits (g)
-- `final_potential_biomass_stalk`: potential biomass of stalk (g)
+- `final_potential_fruit_biomass`: potential dry mass per fruit (gDM)
+- `final_potential_biomass_stalk`: potential stalk dry mass (gDM)
+- `final_potential_biomass_oil_fruit`: potential oil dry mass per fruit (gDM)
+- `final_potential_biomass_non_oil_fruit`: potential non-oil dry mass per fruit (gDM)
 
 # Examples
 

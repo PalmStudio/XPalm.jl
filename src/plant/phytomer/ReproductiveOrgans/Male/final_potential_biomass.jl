@@ -3,7 +3,7 @@
 
 # Arguments
 
-- `male_max_biomass`: maximal biomass of a male (gC)
+- `male_max_biomass`: maximum dry mass of a male inflorescence (gDM)
 - `age_mature_male`: age at which the palm plant reaches a mature state for producing male inflorescences (days)
 - `fraction_biomass_first_male`: fraction of the maximal biomass that first males can reach (dimensionless)
 
@@ -13,7 +13,7 @@
 
 # Outputs
 
-- `final_potential_biomass`: final potential biomass of the male inflorescence (gC)
+- `final_potential_biomass`: final potential dry mass of the male inflorescence (gDM)
 """
 struct MaleFinalPotentialBiomass{T} <: AbstractFinal_Potential_BiomassModel
     male_max_biomass::T

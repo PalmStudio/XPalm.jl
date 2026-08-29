@@ -14,7 +14,7 @@ DE VRIES, « The Cost of Maintenance Processes in Plant Cells ».
 # Arguments
 
 - `Q10`: Q10 factor (values should usually range between: 1.5 - 2.5, with 2.1 being the most common value)
-- `Mr`: maintenance respiration coefficient (gC gDM⁻¹). Should be around 0.06.
+- `Mr`: maintenance respiration coefficient (gC gDM⁻¹ d⁻¹)
 - `T_ref`: Reference temperature at which Q10 was measured (usually around 25.0°C)
 - `P_alive`: proportion of living cells in the organ
 - `Turn`: maintenance cost coefficient of the turnover of free proteins and membranes
@@ -26,6 +26,14 @@ DE VRIES, « The Cost of Maintenance Processes in Plant Cells ».
 # Environment inputs
 
 - `Tmin`, `Tmax`: daily minimum and maximum air temperatures (°C).
+
+# Inputs
+
+- `biomass`: organ structural dry mass (gDM); reserve carbon is a separate pool
+
+# Outputs
+
+- `Rm`: maintenance respiration (gC d⁻¹)
 """
 struct RmQ10FixedN{T} <: AbstractMaintenance_RespirationModel
     Q10::T

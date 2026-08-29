@@ -25,7 +25,7 @@ biomass:
     rachis_biomass_contribution: 0.3
     petiole_biomass_contribution: 0.4
   Male:
-    max_biomass: 174.852
+    max_biomass: 360.0
     fraction_biomass_first_male: 0.3
 radiation:
   k: 0.5
@@ -44,18 +44,18 @@ respiration:
   Leaf:
     Q10: 2.1
     T_ref: 25.0
-    Mr: 0.003594370860927152
-    P_alive: 0.9
+    Mr: 0.00391
+    P_alive: 1.0
   Male:
     Q10: 2.1
     T_ref: 25.0
     Mr: 0.0121
-    P_alive: 0.5
+    P_alive: 1.0
   Female:
     Q10: 2.1
     T_ref: 25.0
     Mr: 0.0022
-    P_alive: 0.5
+    P_alive: 1.0
   RootSystem:
     Q10: 2.1
     Turn: 0.036
@@ -64,12 +64,12 @@ respiration:
     Mx: 0.005
     T_ref: 25.0
     Gi: 0.07
-    P_alive: 0.8
+    P_alive: 1.0
   Internode:
     Q10: 1.7
     T_ref: 25.0
     Mr: 0.005
-    P_alive: 0.21
+    P_alive: 1.0
 phenology:
   Male:
     duration_flowering_male: 1800.0

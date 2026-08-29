@@ -24,8 +24,8 @@ Carbon demand of the female inflorescence based on the potential fruit biomass
 
 # Arguments
 
-- `respiration_cost`: growth respiration cost (g g⁻¹)
-- `respiration_cost_oleosynthesis`: respiration cost during oleosynthesis (g g⁻¹)
+- `respiration_cost`: construction cost of non-oil tissues (gC-equivalent allocated gDM⁻¹ produced)
+- `respiration_cost_oleosynthesis`: oil construction cost (gC-equivalent allocated gDM⁻¹ produced)
 - `TT_flowering`: thermal time for flowering since phytomer appearance (degree days).
 - `TT_fruiting`: thermal time for fruit setting since phytomer appearance (degree days).
 - `duration_bunch_development`: duration between fruit set and bunch maturity (ready for harvest) (degree days).
@@ -37,18 +37,19 @@ Carbon demand of the female inflorescence based on the potential fruit biomass
 
 # Inputs
 
-- `final_potential_biomass_non_oil_fruit`: potential fruit biomass that is not oil (g fruit-1)
-- `final_potential_biomass_oil_fruit`: potential oil biomass in the fruit (g fruit-1)
+- `final_potential_biomass_non_oil_fruit`: potential non-oil fruit dry mass (gDM fruit⁻¹)
+- `final_potential_biomass_oil_fruit`: potential oil dry mass (gDM fruit⁻¹)
+- `final_potential_biomass_stalk`: potential stalk dry mass (gDM)
 - `TEff`: daily effective temperature (°C)
 - `TT_since_init`: thermal time since the first day of the phytomer (degree days)
 - `state`: state of the leaf
 
 # Outputs
 
-- `carbon_demand`: total carbon demand (g[sugar])
-- `carbon_demand_oil`: carbon demand for oil production (g[sugar])
-- `carbon_demand_non_oil`: carbon demand for non-oil production (g[sugar])
-- `carbon_demand_stalk`: carbon demand for stalk development (g[sugar])
+- `carbon_demand`: total carbon-equivalent demand (gC-equivalent d⁻¹)
+- `carbon_demand_oil`: carbon-equivalent demand for oil production (gC-equivalent d⁻¹)
+- `carbon_demand_non_oil`: carbon-equivalent demand for non-oil production (gC-equivalent d⁻¹)
+- `carbon_demand_stalk`: carbon-equivalent demand for stalk development (gC-equivalent d⁻¹)
 """
 struct FemaleCarbonDemandModel{T} <: AbstractCarbon_DemandModel
     respiration_cost::T
@@ -95,6 +96,7 @@ end
 PlantSimEngine.inputs_(::FemaleCarbonDemandModel) = (
     final_potential_biomass_non_oil_fruit=PlantSimEngine.Required(Real),
     final_potential_biomass_oil_fruit=PlantSimEngine.Required(Real),
+    final_potential_biomass_stalk=PlantSimEngine.Required(Real),
     fruits_number=PlantSimEngine.Required(Real),
     TEff=PlantSimEngine.Required(Real),
     state=PlantSimEngine.Required(Symbol),
@@ -119,12 +121,18 @@ function PlantSimEngine.run!(m::FemaleCarbonDemandModel, status, environment, co
     if status.fruits_number > 0
         # As soon as we have fruits:
         if status.TT_since_init >= m.TT_fruiting
-            status.carbon_demand_non_oil = status.fruits_number * status.final_potential_biomass_non_oil_fruit * m.respiration_cost * (status.TEff / m.duration_bunch_development)
+            status.carbon_demand_non_oil = status.fruits_number *
+                                           status.final_potential_biomass_non_oil_fruit *
+                                           m.respiration_cost *
+                                           (status.TEff / m.duration_bunch_development)
             status.carbon_demand += status.carbon_demand_non_oil
         end
 
         if status.state == :oleosynthesis
-            status.carbon_demand_oil = status.fruits_number * status.final_potential_biomass_oil_fruit * m.respiration_cost_oleosynthesis * (status.TEff / m.duration_oleosynthesis)
+            status.carbon_demand_oil = status.fruits_number *
+                                       status.final_potential_biomass_oil_fruit *
+                                       m.respiration_cost_oleosynthesis *
+                                       (status.TEff / m.duration_oleosynthesis)
             status.carbon_demand += status.carbon_demand_oil
         end
     end
@@ -133,7 +141,9 @@ function PlantSimEngine.run!(m::FemaleCarbonDemandModel, status, environment, co
     if status.TT_since_init >= m.TT_flowering + m.duration_dev_stalk
         status.carbon_demand_stalk = 0.0
     else
-        status.carbon_demand_stalk = (status.final_potential_biomass_stalk * (status.TEff / m.duration_dev_stalk)) * m.respiration_cost
+        status.carbon_demand_stalk = status.final_potential_biomass_stalk *
+                                     (status.TEff / m.duration_dev_stalk) *
+                                     m.respiration_cost
         status.carbon_demand += status.carbon_demand_stalk
     end
 end

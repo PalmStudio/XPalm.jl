@@ -1,3 +1,20 @@
+"""
+    PotentialReserveLeaf(lma_min, lma_max, leaflets_biomass_contribution, carbon_concentration)
+
+Compute the remaining leaf reserve capacity in the plant carbon currency.
+
+`lma_max - lma_min` represents the additional dry mass that can be stored per
+unit leaflet area. `carbon_concentration` converts that capacity to gC.
+
+# Inputs
+
+- `leaf_area`: leaflet area (m²)
+- `reserve`: current leaf reserve (gC)
+
+# Outputs
+
+- `potential_reserve`: remaining reserve capacity (gC)
+"""
 struct PotentialReserveLeaf{T} <: AbstractReserve_FillingModel
     lma_min::T
     lma_max::T

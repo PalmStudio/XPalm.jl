@@ -3,24 +3,28 @@
 FemaleBiomass(respiration_cost,respiration_cost_oleosynthesis)
 FemaleBiomass(respiration_cost=1.44,respiration_cost_oleosynthesis=3.2)
 
-Compute female biomass (inflo and bunch) from daily carbon allocation. Allocation to the different components of the bunch (stalk adnd fruit) is proportional to their carbon demand.
+Compute female-inflorescence dry mass from daily carbon allocation. Allocation
+to the different bunch components (stalk and fruit) is proportional to their
+carbon demand.
 
 # Arguments
 
-- `respiration_cost`: respiration cost  (g g-1)
-- `respiration_cost_oleosynthesis`: respiration cost of fruits oil  (g g-1)
+- `respiration_cost`: construction cost of non-oil tissues (gC-equivalent allocated gDM⁻¹ produced)
+- `respiration_cost_oleosynthesis`: oil construction cost (gC-equivalent allocated gDM⁻¹ produced)
 
 # inputs
-- `carbon_allocation`: carbon allocated to female inflo
+- `carbon_allocation`: carbon allocated to the female inflorescence (gC-equivalent)
 - `carbon_demand_stalk`: carbon demand of the stalk
 - `carbon_demand_non_oil`: carbon demand of non oil components of fruits
 - `carbon_demand_oil`: carbon demand of fruits oil
 - `state`: state of the inflorescence 
 
 # outputs
-- `biomass`: total ifnlo/bunch biomass
-- `biomass_stalk`: stalk biomass
-- `biomass_fruits`: fruits biomass
+- `biomass`: total inflorescence/bunch dry mass (gDM)
+- `biomass_stalk`: stalk dry mass (gDM)
+- `biomass_fruits`: fruit dry mass (gDM)
+- `biomass_oil`: oil dry mass (gDM)
+- `biomass_non_oil`: non-oil fruit dry mass (gDM)
 """
 struct FemaleBiomass{T} <: AbstractBiomassModel
     respiration_cost::T
@@ -41,7 +45,7 @@ PlantSimEngine.outputs_(::FemaleBiomass) = (biomass=0.0, biomass_stalk=0.0, biom
 
 # Applied at the Female inflorescence scale:
 function PlantSimEngine.run!(m::FemaleBiomass, st, environment, constants, context=nothing)
-    st.state == :aborted || st.state == :harvested && return # if it is aborted, no need to compute 
+    (st.state == :aborted || st.state == :harvested) && return
 
     st.carbon_allocation == 0.0 && return # no carbon allocation -> no biomass increase
     st.carbon_demand == 0.0 && return # no carbon demand -> no biomass increase

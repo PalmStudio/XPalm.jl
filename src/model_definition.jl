@@ -604,13 +604,15 @@ function model_applications(p; architecture=false)
             :Internode,
             InternodeCarbonDemandModel(
                 apparent_density=parameters["carbon_demand"]["internode"]["apparent_density"],
-                carbon_concentration=parameters["carbon_demand"]["internode"]["carbon_concentration"],
                 respiration_cost=parameters["carbon_demand"]["internode"]["respiration_cost"],
             ),
         ),
         _xpalm_application(
             :Internode,
-            PotentialReserveInternode(parameters["reserves"]["nsc_max"]);
+            PotentialReserveInternode(
+                nsc_max=parameters["reserves"]["nsc_max"],
+                carbon_concentration=parameters["carbon_demand"]["internode"]["carbon_concentration"],
+            );
             inputs=(PreviousTimeStep(:biomass) => PlantSimEngine.One(
                 within=PlantSimEngine.Self(),
                 application=:Internode__biomass,
@@ -624,8 +626,9 @@ function model_applications(p; architecture=false)
         _xpalm_application(
             :Internode,
             InternodeBiomass(
-                initial_biomass=parameters["dimensions"]["internode"]["min_height"] *
-                                parameters["dimensions"]["internode"]["min_radius"] *
+                initial_biomass=π *
+                                parameters["dimensions"]["internode"]["min_radius"]^2 *
+                                parameters["dimensions"]["internode"]["min_height"] *
                                 parameters["carbon_demand"]["internode"]["apparent_density"],
                 respiration_cost=parameters["carbon_demand"]["internode"]["respiration_cost"],
             );
@@ -682,7 +685,6 @@ function model_applications(p; architecture=false)
                 parameters["mass_and_dimensions"]["leaf"]["lma_min"],
                 parameters["biomass"]["leaf"]["leaflets_biomass_contribution"],
                 parameters["dimensions"]["leaf"]["leaf_area_first_leaf"],
-                parameters["biomass"]["leaf"]["carbon_concentration"],
             );
             inputs=(PreviousTimeStep(:biomass) => PlantSimEngine.One(
                 within=PlantSimEngine.Self(),
@@ -696,7 +698,6 @@ function model_applications(p; architecture=false)
                 parameters["mass_and_dimensions"]["leaf"]["lma_min"],
                 parameters["carbon_demand"]["leaf"]["respiration_cost"],
                 parameters["biomass"]["leaf"]["leaflets_biomass_contribution"],
-                parameters["biomass"]["leaf"]["carbon_concentration"],
             );
             inputs=(:state => PlantSimEngine.One(
                 within=PlantSimEngine.Self(),
@@ -726,12 +727,11 @@ function model_applications(p; architecture=false)
         _xpalm_application(
             :Leaf,
             LeafBiomass(
-                # Leaf area represents leaflets only. Convert their area to
-                # total leaf dry mass, then to total leaf carbon biomass (gC).
+                # Leaf area represents leaflets only. Convert their area and
+                # LMA to structural leaf dry mass (leaflets + rachis + petiole).
                 initial_biomass=parameters["dimensions"]["leaf"]["leaf_area_first_leaf"] *
                                 parameters["mass_and_dimensions"]["leaf"]["lma_min"] /
-                                parameters["biomass"]["leaf"]["leaflets_biomass_contribution"] *
-                                parameters["biomass"]["leaf"]["carbon_concentration"],
+                                parameters["biomass"]["leaf"]["leaflets_biomass_contribution"],
                 respiration_cost=parameters["carbon_demand"]["leaf"]["respiration_cost"],
                 leaflets_biomass_contribution=parameters["biomass"]["leaf"]["leaflets_biomass_contribution"],
                 rachis_biomass_contribution=parameters["biomass"]["leaf"]["rachis_biomass_contribution"],

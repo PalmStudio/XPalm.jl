@@ -11,8 +11,8 @@ or when the leaf reaches a threshold rank (below the rank of harvested bunches).
 - `state`: phytomer state
 
 # Outputs 
-- `litter_leaf`: total leaf carbon biomass removed from the plant and transferred
-  to the litter (gC)
+- `litter_leaf`: structural leaf dry mass removed from the plant and transferred
+  to the litter (gDM)
 
 """
 struct RankLeafPruning{T} <: AbstractLeaf_PruningModel

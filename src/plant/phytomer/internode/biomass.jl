@@ -9,16 +9,16 @@ Compute internode biomass from daily carbon allocation
 
 # Arguments
 
-- `initial_biomass`: initial biomass of the internode (g)
-- `respiration_cost`: repisration cost  (g g-1)
+- `initial_biomass`: initial structural dry mass of the internode (gDM)
+- `respiration_cost`: construction cost (gC-equivalent allocated gDM⁻¹ produced)
 
 # Inputs
 
-- `carbon_allocation`:carbon allocated to the internode
+- `carbon_allocation`: carbon allocated to the internode (gC-equivalent)
 
 # Outputs
 
-- `biomass`: internode biomass (g)
+- `biomass`: internode structural dry mass (gDM)
 """
 struct InternodeBiomass{T} <: AbstractBiomassModel
     initial_biomass::T

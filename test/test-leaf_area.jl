@@ -28,11 +28,11 @@ end
 @testset "LeafAreaModel" begin
     scene = test_scene(
         :Leaf,
-        LeafAreaModel(80.0, 0.30, 0.0, 0.48);
+        LeafAreaModel(80.0, 0.30, 0.0);
         status=Status(biomass=2000.0),
     )
     run!(scene)
-    @test test_status(scene, :Leaf).leaf_area ≈ 15.625
+    @test test_status(scene, :Leaf).leaf_area ≈ 7.5
 end
 
 @testset "LeafBiomass compartments" begin
@@ -72,6 +72,16 @@ end
     @test test_status(scene, :Leaf).potential_reserve ≈ 374.0
 end
 
+@testset "PotentialReserveInternode carbon units" begin
+    scene = test_scene(
+        :Internode,
+        PotentialReserveInternode(nsc_max=0.30, carbon_concentration=0.50);
+        status=Status(biomass=1000.0, reserve=20.0),
+    )
+    run!(scene)
+    @test test_status(scene, :Internode).potential_reserve ≈ 130.0
+end
+
 @testset "Leaf pruning clears biomass compartments" begin
     parameters = XPalm.default_parameters()
     parameters["management"]["rank_leaf_pruning"] = 0
@@ -105,7 +115,7 @@ end
     mtg = Palm().mtg
     applications = (
         ModelSpec(LeafBiomass(); name=:leaf_biomass, on=Many(scale=:Leaf)),
-        ModelSpec(LeafAreaModel(80.0, 0.30, 0.0, 0.48); name=:leaf_area, on=Many(scale=:Leaf)),
+        ModelSpec(LeafAreaModel(80.0, 0.30, 0.0); name=:leaf_area, on=Many(scale=:Leaf)),
         ModelSpec(LAIModel(30.0); name=:scene_lai, on=One(scale=:Scene), inputs=(:leaf_areas => Many(scale=:Leaf, var=:leaf_area, within=SceneScope()))),
     )
     scene = CompositeModel(
@@ -124,6 +134,6 @@ end
         ],
     )
     lai = output_values(sim, :lai)
-    @test lai[1] ≈ 0.0018084490740740743
-    @test lai[end] ≈ 7.523148148148748
+    @test lai[1] ≈ 0.0008680555555555555
+    @test lai[end] ≈ 3.611111111111399
 end

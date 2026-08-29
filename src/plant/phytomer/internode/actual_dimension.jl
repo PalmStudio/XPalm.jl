@@ -10,13 +10,13 @@ InternodeDimensionModel(;apparent_density=300000.0)
 Compute internode dimensions (height and radius) from the biomass, with the proportions given by potential dimensions (`potential_height` and `potential_radius`)
 
 # Arguments
-- `apparent_density`: apparent density  (g m-3)
+- `apparent_density`: dry-matter apparent density (gDM m⁻³)
 
 # Inputs
 
 - `potential_height`: potential height of the internode (m)
 - `potential_radius`: potential radius of the internode (m)
-- `biomass`: biomass of the internode (g)
+- `biomass`: structural dry mass of the internode (gDM)
 
 # Outputs
 

@@ -1,3 +1,23 @@
+"""
+    MaleCarbonDemandModel(; respiration_cost=1.44, duration_flowering_male=1800.0)
+
+Compute the daily carbon-equivalent construction demand of a male inflorescence.
+
+# Arguments
+
+- `respiration_cost`: construction cost (gC-equivalent allocated gDM⁻¹ produced)
+- `duration_flowering_male`: male-inflorescence growth duration (degree days)
+
+# Inputs
+
+- `final_potential_biomass`: final potential dry mass (gDM)
+- `TEff`: daily effective temperature (degree days d⁻¹)
+- `state`: phytomer state
+
+# Outputs
+
+- `carbon_demand`: daily carbon-equivalent demand (gC-equivalent d⁻¹)
+"""
 struct MaleCarbonDemandModel{T} <: AbstractCarbon_DemandModel
     respiration_cost::T
     duration_flowering_male::T

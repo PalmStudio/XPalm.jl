@@ -1,3 +1,16 @@
+"""
+    StemBiomass()
+
+Aggregate internode structural dry masses without creating an additional carbon demand.
+
+# Inputs
+
+- `biomass_internodes`: internode structural dry masses (gDM)
+
+# Outputs
+
+- `biomass`: total stem structural dry mass (gDM)
+"""
 struct StemBiomass <: AbstractBiomassModel end
 
 PlantSimEngine.inputs_(::StemBiomass) = (

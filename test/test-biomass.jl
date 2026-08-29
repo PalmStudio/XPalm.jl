@@ -88,5 +88,7 @@ end
     @test status.biomass ≈ 7.552083333333333
     @test status.biomass_stalk ≈ 3.4722222222222223
     @test status.biomass_fruits ≈ 4.079861111111111
+    @test status.biomass_non_oil ≈ 1.7361111111111112
+    @test status.biomass_oil ≈ 2.34375
     @test status.biomass ≈ status.biomass_stalk + status.biomass_fruits
 end

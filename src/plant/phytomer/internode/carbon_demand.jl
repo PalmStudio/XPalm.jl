@@ -1,18 +1,13 @@
 
 """
-InternodeCarbonDemandModel(; apparent_density_dry=300000.0, carbon_concentration=0.5, respiration_cost=1.44)
+InternodeCarbonDemandModel(; apparent_density=300000.0, respiration_cost=1.44)
 
 Compute internode carbon demand from potential dimensions
 
 # Arguments
 
-- `apparent_density`: stem apparent density of dry matter (g[dry mass] m⁻³).
-- `carbon_concentration`: carbon concentration in the stem (g[C] g[dry mass]⁻¹). 
-- `respiration_cost`: repisration cost  (g[sugar].g[carbon mass]-1)
-
-# Notes
-
-The stem apparent density is transformed into a carbon density by multiplying it by the carbon concentration.
+- `apparent_density`: stem apparent density of dry matter (gDM m⁻³)
+- `respiration_cost`: construction cost (gC-equivalent allocated gDM⁻¹ produced)
 
 # Inputs
 
@@ -22,17 +17,21 @@ The stem apparent density is transformed into a carbon density by multiplying it
 # Outputs
 
 - `potential_volume`: potential volume of the internode (m³)
-- `carbon_demand`: daily carbon demand of the internode (g[sugar])
+- `carbon_demand`: daily carbon demand of the internode (gC-equivalent)
 
 """
 struct InternodeCarbonDemandModel{T} <: AbstractCarbon_DemandModel
-    apparent_density::T # In g[C] m-3 here
+    apparent_density::T # gDM m⁻³
     respiration_cost::T
 end
 
-
-function InternodeCarbonDemandModel(; apparent_density=300000.0, carbon_concentration=0.5, respiration_cost=1.44)
-    InternodeCarbonDemandModel(apparent_density * carbon_concentration, respiration_cost)
+function InternodeCarbonDemandModel(;
+    apparent_density=300000.0,
+    respiration_cost=1.44,
+    carbon_concentration=nothing,
+)
+    values = promote(apparent_density, respiration_cost)
+    InternodeCarbonDemandModel{typeof(first(values))}(values...)
 end
 
 PlantSimEngine.inputs_(::InternodeCarbonDemandModel) = (
@@ -45,7 +44,5 @@ function PlantSimEngine.run!(m::InternodeCarbonDemandModel, status, environment,
     new_potential_volume = status.potential_height * π * status.potential_radius^2
     increment_potential = (new_potential_volume - status.potential_volume) * m.apparent_density
     status.carbon_demand = increment_potential * m.respiration_cost
-    # Note: the respiration cost is in g[sugar].g[carbon mass]-1, so we multiply the potential increment in biomass by it 
-    # to get the total carbon demand in g[sugar]
     status.potential_volume = new_potential_volume
 end

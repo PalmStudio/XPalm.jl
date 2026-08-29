@@ -161,6 +161,10 @@ end
     include(joinpath(dirtest, "test-biomass.jl"))
 end
 
+@testset "Maintenance respiration" begin
+    include(joinpath(dirtest, "test-maintenance_respiration.jl"))
+end
+
 @testset "Carbon_demand" begin
     include(joinpath(dirtest, "test-carbon_demand.jl"))
 end

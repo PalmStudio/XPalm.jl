@@ -2,27 +2,26 @@
 LeafBiomass(respiration_cost)
 LeafBiomass(respiration_cost=1.44)
 
-Compute total leaf carbon biomass from carbon allocation and partition it among
+Compute structural leaf dry mass from carbon allocation and partition it among
 leaflets, rachis and petiole.
 
-The model uses one carbon concentration for the complete leaf, so the dry-mass
-fractions are also the carbon-biomass fractions of the three compartments.
+The construction cost converts the carbon-equivalent allocation into dry mass.
 
 # Arguments
-- `respiration_cost`: growth respiration cost of the leaf (gC allocated gC⁻¹ biomass)
-- `initial_biomass`: initial total biomass of the leaf (gC)
-- `leaflets_biomass_contribution`: leaflet fraction of total leaf biomass
-- `rachis_biomass_contribution`: rachis fraction of total leaf biomass
-- `petiole_biomass_contribution`: petiole fraction of total leaf biomass
+- `respiration_cost`: construction cost (gC-equivalent allocated gDM⁻¹ produced)
+- `initial_biomass`: initial structural dry mass of the leaf (gDM)
+- `leaflets_biomass_contribution`: leaflet fraction of structural leaf dry mass
+- `rachis_biomass_contribution`: rachis fraction of structural leaf dry mass
+- `petiole_biomass_contribution`: petiole fraction of structural leaf dry mass
 
 # inputs
-- `carbon_allocation`: carbon allocated to the leaf (gC)
+- `carbon_allocation`: carbon allocated to the leaf (gC-equivalent)
 
 # outputs
-- `biomass`: total leaf biomass (gC), equal to the sum of all three compartments
-- `biomass_leaflets`: leaflet biomass (gC)
-- `biomass_rachis`: rachis biomass (gC)
-- `biomass_petiole`: petiole biomass (gC)
+- `biomass`: structural leaf dry mass (gDM), equal to the sum of all three compartments
+- `biomass_leaflets`: structural leaflet dry mass (gDM)
+- `biomass_rachis`: structural rachis dry mass (gDM)
+- `biomass_petiole`: structural petiole dry mass (gDM)
 """
 # Used after init:
 struct LeafBiomass{T} <: AbstractBiomassModel

@@ -7,15 +7,15 @@ Compute male biomass  from daily carbon allocation
 
 # Arguments
 
-- `respiration_cost`: respiration cost  (g g-1)
+- `respiration_cost`: construction cost (gC-equivalent allocated gDM⁻¹ produced)
 
 # inputs
-- `carbon_allocation`: carbon allocated to female inflo
+- `carbon_allocation`: carbon allocated to the male inflorescence (gC-equivalent)
 - `state`: state of the inflorescence 
 
 # outputs
-- `biomass`: inflo biomass
-- `litter_male`: biomass of senescent inflorescent that goes to the litter 
+- `biomass`: male-inflorescence dry mass (gDM)
+- `litter_male`: senescent male-inflorescence dry mass transferred to litter (gDM)
 """
 struct MaleBiomass{T} <: AbstractBiomassModel
     respiration_cost::T
