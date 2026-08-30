@@ -224,7 +224,7 @@ Only after profiling points to this layer, measure:
   `benchmark/vpalm_geometry_performance.jl` records separate setup, simulation
   and output-materialization costs, exact 21-series parity, topology, sampled
   object/node peaks, dependency revisions/dirty state and the active manifest.
-- [ ] Capture the current short, five-year and 4,160-step results.
+- [x] Capture the current short, multi-date five-year and 4,160-step results.
 - [x] Save a compact deterministic fingerprint for one dynamic leaf: class
   counts, identities, parent relations and local leaflet dimensions/profiles.
 - [x] Confirm exact architecture-off/on observer parity in a fresh three-day
@@ -239,6 +239,16 @@ Only after profiling points to this layer, measure:
 - [x] Define explicit tolerances for the first permanent floating-point mesh
   contracts: local vertices/bounds at 1e-12 m, surface at 1e-12 relative
   tolerance, and oriented merge comparison after 1e-10 m quantization.
+
+CI dependency resolution is now reproducible from the pinned remote
+PlantSimEngine and PlantGeom commits. Julia 1.10 still cannot use `[sources]`
+when Aqua recreates a Project.toml-only environment for its persistent-task
+probe, so only that one Aqua probe is version-gated on 1.10; the other nine
+Aqua checks remain enabled, and the probe remains enabled from Julia 1.11.
+The Ubuntu reference-regression mismatch is inherited from the scientific
+carbon/respiration changes on `3d-architecture`: the former local dependency
+failure had hidden it. This geometry-performance branch must not silently
+rewrite the v0.6.1 scientific reference.
 
 ### Phase 1 — Profile before changing implementation
 
@@ -404,6 +414,30 @@ Third measured biomechanics slice:
   pass. A workspace belongs to one sequential geometry execution; concurrent
   calls on the same model instance require independent workspaces.
 
+Coupled multi-date reconstruction validation after this slice:
+
+- one continued simulation was inspected at 365, 730, 1,095, 1,460 and 1,825
+  days, with numerical summaries and a rendered image at every checkpoint;
+- the scenario starts with one phytomer and reaches 173 phytomers at five years,
+  equivalent to about one new phytomer every 10.6 days. The 109- and
+  142-phytomer checkpoints bracket the requested approximately 120 count;
+- at 1,460 days, mean rachis and petiole lengths are within 2.6% and 4.1% of
+  the standalone static-120 reference, but the crown already reaches z=-1.49 m;
+- at five years, 58 living geometric leaf subtrees contain 14,470 leaflets,
+  close to 53 and 14,640 in the static reference. Mean rachis length is 4.31 m
+  instead of 3.66 m, and the lowest rank-50 leaflet reaches z=-1.61 m;
+- the visual and numerical residual therefore points to mature flexion/angle
+  mechanics and age/count matching, not a drift introduced by the performance
+  refactors or a simple global unit error;
+- all 88 final pruned leaves have zero descendants, and no dynamic petiole,
+  rachis, segment or leaflet is a PlantSimEngine simulation object;
+- opened-leaf mesh area is only 61-67% of XPalm physiological leaf area after
+  year three. It must not replace `leaf_area` without a separate scientific
+  correction. The year-one ratio above one also confirms strong age dependence;
+- after the cold first-year chunk, the successive 365-day chunks take 2.61 to
+  5.16 seconds in the clean pinned-dependency environment. All CSV and PNG
+  artifacts remain outside the repository under `/private/tmp`.
+
 Integrated 4,160-step result at `c582c6a`:
 
 - the first identically ordered run, including lifecycle paths first compiled
@@ -480,6 +514,16 @@ does not call `add_geometry!`; mesh materialization is still confined to the
 standalone `build_mockup` path. Mesh caching therefore cannot improve the
 current `architecture=true` simulation benchmark yet. It is groundwork for the
 future opening/light-interception event and for standalone VPalm.
+
+The first measured local-mesh slice now removes the temporary vector of segment
+named tuples and allocates the four extrusion work arrays at their final size.
+Exact path, normal, width, height, full-mesh and merged-fixture geometry is
+preserved. On the warmed fixture, local extrusion falls from 4,720 B to 3,328 B
+(-29.5%), one complete leaflet from 16,400 B to 15,152 B (-7.6%), and the tiny
+12-leaflet palm from 500,424 B to 470,472 B (-6.0%). The permanent mesh oracle
+passes 14/14 after the change. The gain is real but small at scene scale, so a
+larger cache layer is not justified until a downstream model actually requests
+repeated mesh materialization.
 
 The merge-scale audit also found two contracts to resolve before freezing a
 permanent reference: `:none` and `:leaflet` are currently operationally
@@ -648,6 +692,8 @@ changes with performance changes.
 | 2026-08-30 | Freeze leaflet deployment profiles after rank 2 | the existing unfolding kernel reaches its final state at rank 2, while later transitions still alter petiole and rachis geometry | skip mature leaflet traversal without freezing whole-leaf pose updates |
 | 2026-08-30 | Keep cumulative rachis buffers on the geometry model | mature transitions still allocated about 378 kB, dominated by repeated integration arrays | reuse one sequential workspace while keeping standalone `bend` generic and exact |
 | 2026-08-30 | Compare merged meshes by oriented coordinate triangles | merge order and node topology differ by scale, and leaflet tips intentionally contain degenerate faces | quantize coordinates, allow cyclic face rotations only, and count expected zero-area faces |
+| 2026-08-30 | Keep mesh area observational after multi-date validation | opened mesh area is 61-67% of physiological area after year three and the mature coupled crown extends far below the standalone reference | investigate area allometry and mature flexion separately before any light-feedback coupling |
+| 2026-08-30 | Preallocate local leaflet extrusion arrays without adding a persistent mesh cache | the isolated extrusion allocation falls 29.5%, but the tiny-palm gain is only 6.0% and coupled simulations do not materialize meshes | keep the exact lightweight optimization and defer broader caching until a real repeated consumer exists |
 | 2026-08-30 | Keep the full A/B benchmark in-repository but its generated data outside the tree | the previous driver was an external artifact and could not fully fingerprint the active environment | provide a fixed-seed 21-series runner and retain machine-readable results with each reported run |
 | 2026-08-30 | Report first-run and fully warmed full-scenario timings separately | a 128-day warm-up leaves later lifecycle compilation in the first measured pair | retain the representative first-run comparison and validate steady-state overhead with AB/BA order |
 
@@ -673,7 +719,7 @@ change even when their local areas do not.
 - [ ] All mandatory correctness and determinism gates pass.
 - [ ] Standalone VPalm and coupled XPalm–VPalm reconstructions remain equivalent
   to their approved references.
-- [ ] The five-year approximately 120-leaf palm has been checked numerically and
+- [x] The five-year approximately 120-leaf palm has been checked numerically and
   visually at several dates, not only at the final date.
 - [ ] Full coupled physiology remains identical while architecture is an
   observer.
@@ -682,7 +728,7 @@ change even when their local areas do not.
 - [ ] Any PlantGeom change is independently tested and reviewed in PlantGeom.
 - [ ] GPU work is either rejected with measurements or isolated behind a tested
   CPU fallback.
-- [ ] Temporary benchmark artifacts are removed or archived outside the source
+- [x] Temporary benchmark artifacts are removed or archived outside the source
   tree.
 - [ ] This temporary file is removed or converted into permanent documentation
   before the optimization pull request is merged.
