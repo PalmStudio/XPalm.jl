@@ -34,6 +34,11 @@ blocks of 128 days. Consequently this runner is designed for a paired regression
 comparison, not for publication-quality timing statistics. Lifecycle paths that
 first occur after day 128 can still include their first-use compilation cost.
 
+For a fully warmed comparison, pass `warmup_steps=4160`. Use
+`order=(true, false)` for the BA half of an AB/BA check; write each order to a
+different output directory. The selected warm-up length and measurement order
+are recorded in `environment.csv`.
+
 `sampled_peak_pse_objects` and `sampled_peak_mtg_nodes` are sampled at the end of
 each 128-day block; they are not exact daily maxima. Retain `environment.csv`
 with reported results: it records package revisions and dirty state, active

@@ -394,7 +394,7 @@ function _active_project_fingerprint()
     return (; active_project, manifest_path, manifest_sha256)
 end
 
-function _environment_table(nsteps, warmup_steps, weather)
+function _environment_table(nsteps, warmup_steps, weather, measurement_order)
     packages = (XPalm, PlantSimEngine, MultiScaleTreeGraph, PlantGeom)
     rows = [
         let source_path = dirname(dirname(pathof(package)))
@@ -431,7 +431,8 @@ function _environment_table(nsteps, warmup_steps, weather)
     environment.warmup_steps = fill(warmup_steps, nrow(environment))
     environment.sample_count = fill(1, nrow(environment))
     environment.sample_order = fill(
-        "warm false, warm true, measure false, measure true",
+        "warm false, warm true, measure " *
+        join(string.(measurement_order), ", measure "),
         nrow(environment),
     )
     environment.parameter_source = fill(
@@ -447,39 +448,64 @@ function _environment_table(nsteps, warmup_steps, weather)
 end
 
 """
-    run_vpalm_geometry_benchmark(output_directory; nsteps=40)
+    run_vpalm_geometry_benchmark(
+        output_directory;
+        nsteps=40,
+        warmup_steps=128,
+        order=(false, true),
+    )
 
 Run a warmed, paired XPalm comparison with and without explicit VPalm
 architecture. Results are written outside the repository as four CSV files:
 phase timings/allocations, exact output parity, topology counts and environment
 fingerprints. A daily difference CSV is also written if exact parity fails.
 """
-function run_vpalm_geometry_benchmark(output_directory; nsteps=40)
+function run_vpalm_geometry_benchmark(
+    output_directory;
+    nsteps=40,
+    warmup_steps=VPALM_BENCHMARK_WARMUP_STEPS,
+    order=(false, true),
+)
     nsteps > 0 || throw(ArgumentError("nsteps must be positive"))
+    warmup_steps > 0 || throw(ArgumentError("warmup_steps must be positive"))
+    measurement_order = Tuple(order)
+    length(measurement_order) == 2 &&
+        all(architecture -> architecture isa Bool, measurement_order) &&
+        Set(measurement_order) == Set((false, true)) || throw(
+        ArgumentError("order must contain false and true exactly once"),
+    )
     output_directory = abspath(output_directory)
     mkpath(output_directory)
 
     weather_with_warmup = _benchmark_weather(
-        max(nsteps, VPALM_BENCHMARK_WARMUP_STEPS),
+        max(nsteps, warmup_steps),
     )
     weather = first(weather_with_warmup, nsteps)
     warmup_weather = first(
         weather_with_warmup,
-        min(VPALM_BENCHMARK_WARMUP_STEPS, nrow(weather_with_warmup)),
+        min(warmup_steps, nrow(weather_with_warmup)),
     )
     parameters = _benchmark_parameters()
 
     _warm_benchmark(false, warmup_weather, parameters)
     _warm_benchmark(true, warmup_weather, parameters)
 
-    without_architecture = _run_benchmark_variant(false, weather, parameters)
-    with_architecture = _run_benchmark_variant(true, weather, parameters)
-    results = (without_architecture, with_architecture)
+    results = Tuple(
+        _run_benchmark_variant(architecture, weather, parameters)
+        for architecture in measurement_order
+    )
+    without_architecture = only(result for result in results if !result.architecture)
+    with_architecture = only(result for result in results if result.architecture)
 
     summary = DataFrame(_summary_row.(results))
     parity = _parity_table(without_architecture, with_architecture, weather)
     topology = _topology_table(results)
-    environment = _environment_table(nsteps, nrow(warmup_weather), weather)
+    environment = _environment_table(
+        nsteps,
+        nrow(warmup_weather),
+        weather,
+        measurement_order,
+    )
 
     CSV.write(joinpath(output_directory, "phase_summary.csv"), summary)
     CSV.write(joinpath(output_directory, "output_parity.csv"), parity)

@@ -229,8 +229,9 @@ Only after profiling points to this layer, measure:
   counts, identities, parent relations and local leaflet dimensions/profiles.
 - [x] Confirm exact architecture-off/on observer parity in a fresh three-day
   test for LAI, leaf area and carbon assimilation. The benchmark smoke test also
-  preserves all 21 canonical series exactly. The full 4,160-step rerun remains
-  required.
+  preserves all 21 canonical series exactly. At commit `c582c6a`, the full
+  4,160-step run preserves all 87,360 values exactly; rerun this gate after any
+  later runtime-affecting change.
 - [ ] Record the current standalone VPalm reference reconstruction.
 - [ ] Define explicit tolerances for floating-point geometry comparisons.
 
@@ -363,6 +364,34 @@ Second measured biomechanics slice:
 - public coordinate-conversion helpers retain their results, while private
   in-place kernels reuse distance, angle and point buffers inside `bend`;
 - coordinate, inertia and bend targeted suites pass 17/17, 130/130 and 15/15.
+
+Integrated 4,160-step result at `c582c6a`:
+
+- the first identically ordered run, including lifecycle paths first compiled
+  after the 128-day warm-up, takes 63.52 s without architecture and 61.85 s with
+  architecture. The architecture-on value is 9.2 times faster than the original
+  569.01 s baseline;
+- architecture-on allocations fall from about 2.529 TB to 17.63 GB and GC from
+  296.29 s to 1.08 s, while architecture-off remains near its original 62.14 s
+  first-run baseline;
+- a subsequent fully compiled AB/BA pair gives median 13.14 s and 8.94 GB
+  without architecture, versus 38.57 s and 16.41 GB with architecture: 2.93
+  times the runtime and 1.83 times the allocations;
+- the warmed architecture-on runtime is 14.75 times faster and allocations are
+  99.35% lower than the original architecture-on baseline. GC remains below
+  3.4% of runtime;
+- all 87,360 physiological values remain exactly identical in every pair;
+- final PlantSimEngine object counts are 1,197 in both variants. The explicit
+  MTG has 18,673 final nodes and a 26,015-node peak sampled at 128-day
+  boundaries;
+- the active PlantSimEngine checkout was at `771894cd` with tracked local
+  changes, as captured by `environment.csv`. These timings must therefore be
+  repeated against the eventual committed dependency revision.
+
+The 128-day warm-up does not compile lifecycle paths that first occur later in
+the eleven-year scenario. The durable runner now accepts `warmup_steps=4160`
+and either `(false, true)` or `(true, false)` measurement order so future
+results can distinguish first-run cost from fully warmed steady-state cost.
 
 ### Phase 4 — Reduce topology and traversal costs
 
@@ -530,6 +559,7 @@ changes with performance changes.
 | 2026-08-30 | Reuse coordinate work buffers inside `bend` | the remaining full-fixture allocation was 1.14 MB despite the inertia rewrite | keep the public API and numerical fixture while using private in-place kernels |
 | 2026-08-30 | Freeze leaflet deployment profiles after rank 2 | the existing unfolding kernel reaches its final state at rank 2, while later transitions still alter petiole and rachis geometry | skip mature leaflet traversal without freezing whole-leaf pose updates |
 | 2026-08-30 | Keep the full A/B benchmark in-repository but its generated data outside the tree | the previous driver was an external artifact and could not fully fingerprint the active environment | provide a fixed-seed 21-series runner and retain machine-readable results with each reported run |
+| 2026-08-30 | Report first-run and fully warmed full-scenario timings separately | a 128-day warm-up leaves later lifecycle compilation in the first measured pair | retain the representative first-run comparison and validate steady-state overhead with AB/BA order |
 
 ## Deferred scientific work
 
