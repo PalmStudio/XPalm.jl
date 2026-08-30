@@ -213,10 +213,17 @@ function _benchmark_class_counts(mtg)
 end
 
 function _benchmark_biomass_checkpoint(simulation)
+    scales = unique(field.scale for field in VPALM_BENCHMARK_BIOMASS_FIELDS)
+    objects_by_scale = Dict(
+        scale => sort!(
+            collect(model_objects(simulation.model; scale=scale));
+            by=object -> object.id.value,
+        ) for scale in scales
+    )
     totals = map(VPALM_BENCHMARK_BIOMASS_FIELDS) do field
         sum(
             Float64(getproperty(object.status, field.variable))
-            for object in model_objects(simulation.model; scale=field.scale);
+            for object in objects_by_scale[field.scale];
             init=0.0,
         )
     end

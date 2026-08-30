@@ -27,6 +27,8 @@ comparisons. Results should be written outside the repository.
 `phase_summary.csv` reports the complete independent biomass-validation rerun
 in separate `validation_*` columns. The measured simulation therefore contains
 no checkpoint traversals or validation-driven garbage collection.
+Biomass totals are summed in stable PlantSimEngine object-ID order so exact
+parity is not defeated by harmless object traversal-order roundoff.
 
 Start or connect a Kaimon session using the XPalm `test` project, then evaluate:
 
