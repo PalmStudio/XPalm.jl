@@ -7,6 +7,28 @@ function _mesh_guard_triangle_area(p1, p2, p3)
     return sqrt(cx^2 + cy^2 + cz^2) / 2
 end
 
+function _mesh_guard_area_barycenter(mesh)
+    points = GeometryBasics.coordinates(mesh)
+    total_area = 0.0
+    weighted_centroid = zeros(3)
+
+    for face in GeometryBasics.faces(mesh)
+        p1, p2, p3 = points[face[1]], points[face[2]], points[face[3]]
+        area = _mesh_guard_triangle_area(p1, p2, p3)
+        total_area += area
+        for axis in 1:3
+            weighted_centroid[axis] +=
+                area * (Float64(p1[axis]) + Float64(p2[axis]) + Float64(p3[axis])) / 3
+        end
+    end
+
+    total_area > 0.0 || error("Cannot compute the barycenter of a zero-area mesh")
+    return (
+        area=total_area,
+        barycenter=ntuple(axis -> weighted_centroid[axis] / total_area, 3),
+    )
+end
+
 function _mesh_guard_oriented_cycle(a, b, c)
     return minimum(((a, b, c), (b, c, a), (c, a, b)))
 end
@@ -99,6 +121,52 @@ end
     @test count(<=(1.0e-14), areas) == 2
 end
 
+@testset "leaflet parent-pose transformation contract" begin
+    leaflet = MultiScaleTreeGraph.Node(
+        MultiScaleTreeGraph.NodeMTG(:/, :Leaflet, 1, 1),
+    )
+    leaflet.leaflet_segment_lengths = [0.1]u"m"
+    leaflet.leaflet_segment_widths = [0.04]u"m"
+    leaflet.leaflet_segment_angles_deg = [0.0]u"°"
+    leaflet.azimuthal_angle = 0.0u"°"
+    leaflet.torsion_angle = 0.0u"°"
+    leaflet.lamina_angle = 180.0u"°"
+    leaflet.offset = 0.0u"m"
+
+    VPalm.add_leaflet_geometry!(
+        leaflet,
+        2.0u"m",
+        3.0u"m",
+        GeometryBasics.Point{3,Float64}(4.0, 5.0, 6.0),
+        (
+            zenithal_angle_global=90.0u"°",
+            azimuthal_angle_global=90.0u"°",
+            torsion_angle_global=90.0u"°",
+        ),
+        90.0u"°",
+        90.0u"°",
+    )
+
+    transform = leaflet.geometry.transformation
+    landmarks = (
+        GeometryBasics.Point{3,Float64}(0.0, 0.0, 0.0),
+        GeometryBasics.Point{3,Float64}(1.0, 0.0, 0.0),
+        GeometryBasics.Point{3,Float64}(0.0, 1.0, 0.0),
+        GeometryBasics.Point{3,Float64}(0.0, 0.0, 1.0),
+    )
+    expected = (
+        GeometryBasics.Point{3,Float64}(9.0, 6.0, 5.0),
+        GeometryBasics.Point{3,Float64}(10.0, 6.0, 5.0),
+        GeometryBasics.Point{3,Float64}(9.0, 6.0, 4.0),
+        GeometryBasics.Point{3,Float64}(9.0, 7.0, 5.0),
+    )
+
+    @test all(
+        isapprox(transform(point), reference; atol=1.0e-12)
+        for (point, reference) in zip(landmarks, expected)
+    )
+end
+
 @testset "mockup mesh is conserved across merge scales" begin
     p1 = (0.0, 0.0, 0.0)
     p2 = (1.0, 0.0, 0.0)
@@ -111,6 +179,7 @@ end
     parameters = _mesh_guard_small_mockup_parameters(vpalm_parameters)
     merge_scales = (:none, :leaflet, :leaf, :plant)
     triangles = Dict{Symbol,Vector{NTuple{3,NTuple{3,Float64}}}}()
+    metrics = Dict{Symbol,@NamedTuple{area::Float64,barycenter::NTuple{3,Float64}}}()
 
     for merge_scale in merge_scales
         mtg = VPalm.build_mockup(parameters; merge_scale, rng=nothing)
@@ -121,11 +190,24 @@ end
         )
         triangles[merge_scale] =
             _mesh_guard_oriented_triangles(scene.merged_mesh)
+        metrics[merge_scale] = _mesh_guard_area_barycenter(scene.merged_mesh)
     end
 
     @test !isempty(triangles[:none])
     @test all(
         triangles[merge_scale] == triangles[:none]
+        for merge_scale in merge_scales
+    )
+    @test all(
+        isapprox(metrics[merge_scale].area, metrics[:none].area; rtol=1.0e-12) &&
+        all(
+            isapprox.(
+                metrics[merge_scale].barycenter,
+                metrics[:none].barycenter;
+                atol=1.0e-10,
+                rtol=1.0e-12,
+            ),
+        )
         for merge_scale in merge_scales
     )
 

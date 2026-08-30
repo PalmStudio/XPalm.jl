@@ -498,3 +498,137 @@ end
     @test rand(cached_rng) == rand(legacy_rng)
     @test cached_allocations < legacy_allocations
 end
+
+@testset "integrated VPalm leaf lifecycle is topology-stable" begin
+    parameters = XPalm.default_parameters()
+    parameters["vpalm"]["seed"] = 20260830
+    parameters["vpalm"]["nb_leaves_in_sheath"] = 8
+    parameters["phyllochron"]["production_speed_initial"] = 0.0
+    parameters["phyllochron"]["production_speed_mature"] = 0.0
+
+    # The physiological MTG starts without VPalm children. Geometry is enabled
+    # only on the scene so this test observes the first visible build event.
+    palm = Palm(
+        initiation_age=0,
+        parameters=parameters,
+        architecture=false,
+    )
+    scene = XPalm.xpalm_scene(
+        palm;
+        architecture=true,
+        environment=first(meteo, 1),
+    )
+    PlantSimEngine.Advanced.refresh_bindings!(scene)
+
+    internode_object = only(model_objects(scene; scale=:Internode))
+    leaf_object = only(model_objects(scene; scale=:Leaf))
+    internode = PlantSimEngine.source_node(scene, internode_object)
+    leaf = PlantSimEngine.source_node(scene, leaf_object)
+    leaf_parent = parent(leaf)
+    leaf_id = node_id(leaf)
+    visible_rank = VPalm.first_visible_leaf_rank(parameters["vpalm"])
+    @test visible_rank < 1
+    geometry_scales = (:Petiole, :PetioleSegment, :Rachis, :RachisSegment, :Leaflet)
+
+    # Prevent LeafStateModel from replacing the ranks explicitly exercised by
+    # this lifecycle test.
+    leaf_object.status.state = :opened
+    initial_mtg_count = length(palm.mtg)
+
+    leaf_object.status.rank = visible_rank - 1
+    run!(scene; steps=1, outputs=:none)
+    graph_count_before_build = internode_object.status.graph_node_count
+    @test leaf.rank == visible_rank - 1
+    @test isempty(children(leaf))
+    @test !internode_object.status.is_reconstructed
+    @test !internode_object.status.geometry_removed
+    @test length(palm.mtg) == initial_mtg_count
+
+    leaf_object.status.rank = visible_rank
+    run!(scene; steps=1, outputs=:none)
+    @test internode_object.status.is_reconstructed
+    @test !internode_object.status.geometry_removed
+    @test leaf.is_alive
+    @test !isempty(children(leaf))
+    @test !leaf.leaflets_fully_unfolded
+
+    built_nodes = sort(descendants(leaf); by=node_id)
+    built_ids = Tuple(node_id.(built_nodes))
+    folded = _vpalm_leaflet_unfolding_state(leaf)
+    graph_count_after_build = internode_object.status.graph_node_count
+    @test graph_count_after_build > graph_count_before_build
+    @test count(node -> symbol(node) == :Petiole, built_nodes) == 1
+    @test count(node -> symbol(node) == :Rachis, built_nodes) == 1
+    @test count(node -> symbol(node) == :Leaflet, built_nodes) > 0
+
+    leaf_object.status.rank = 1
+    run!(scene; steps=1, outputs=:none)
+    rank_1 = _vpalm_leaflet_unfolding_state(leaf)
+    @test rank_1 != folded
+    @test !leaf.leaflets_fully_unfolded
+    current_nodes = sort(descendants(leaf); by=node_id)
+    @test Tuple(node_id.(current_nodes)) == built_ids
+    @test all(current_nodes[i] === built_nodes[i] for i in eachindex(built_nodes))
+    @test internode_object.status.graph_node_count == graph_count_after_build
+
+    leaf_object.status.rank = 2
+    run!(scene; steps=1, outputs=:none)
+    rank_2 = _vpalm_leaflet_unfolding_state(leaf)
+    @test rank_2 != rank_1
+    @test leaf.leaflets_fully_unfolded
+    rank_2_profiles = _vpalm_leaflet_profile_references(leaf)
+    rank_2_rachis = _vpalm_rachis_transition_state(leaf)
+    current_nodes = sort(descendants(leaf); by=node_id)
+    @test Tuple(node_id.(current_nodes)) == built_ids
+    @test all(current_nodes[i] === built_nodes[i] for i in eachindex(built_nodes))
+    @test internode_object.status.graph_node_count == graph_count_after_build
+
+    leaf_object.status.rank = 3
+    run!(scene; steps=1, outputs=:none)
+    @test _vpalm_leaflet_unfolding_state(leaf) == rank_2
+    rank_3_profiles = _vpalm_leaflet_profile_references(leaf)
+    @test all(
+        rank_3_profiles[i].boundaries === rank_2_profiles[i].boundaries &&
+        rank_3_profiles[i].lengths === rank_2_profiles[i].lengths &&
+        rank_3_profiles[i].widths === rank_2_profiles[i].widths &&
+        rank_3_profiles[i].angles_deg === rank_2_profiles[i].angles_deg
+        for i in eachindex(rank_2_profiles)
+    )
+    @test _vpalm_rachis_transition_state(leaf) != rank_2_rachis
+    current_nodes = sort(descendants(leaf); by=node_id)
+    @test Tuple(node_id.(current_nodes)) == built_ids
+    @test all(current_nodes[i] === built_nodes[i] for i in eachindex(built_nodes))
+    @test internode_object.status.graph_node_count == graph_count_after_build
+
+    mtg_count_before_pruning = length(palm.mtg)
+    leaf_object.status.is_pruned = true
+    run!(scene; steps=1, outputs=:none)
+    @test internode_object.status.geometry_removed
+    @test internode_object.status.is_reconstructed
+    @test !leaf.is_alive
+    @test node_id(leaf) == leaf_id
+    @test parent(leaf) === leaf_parent
+    @test isempty(children(leaf))
+    @test isempty(descendants(leaf))
+    @test length(palm.mtg) == mtg_count_before_pruning - length(built_nodes)
+    @test internode_object.status.graph_node_count == graph_count_after_build
+    @test all(isempty(model_objects(scene; scale=scale)) for scale in geometry_scales)
+
+    after_first_pruning = (
+        ids=Tuple(sort(node_id.(descendants(palm.mtg)))),
+        mtg_count=length(palm.mtg),
+        graph_count=internode_object.status.graph_node_count,
+        reconstructed=internode_object.status.is_reconstructed,
+        removed=internode_object.status.geometry_removed,
+    )
+    run!(scene; steps=1, outputs=:none)
+    @test (
+        ids=Tuple(sort(node_id.(descendants(palm.mtg)))),
+        mtg_count=length(palm.mtg),
+        graph_count=internode_object.status.graph_node_count,
+        reconstructed=internode_object.status.is_reconstructed,
+        removed=internode_object.status.geometry_removed,
+    ) == after_first_pruning
+    @test get_node(palm.mtg, leaf_id) === leaf
+    @test isempty(children(leaf))
+end
