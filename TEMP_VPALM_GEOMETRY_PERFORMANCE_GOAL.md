@@ -250,6 +250,20 @@ carbon/respiration changes on `3d-architecture`: the former local dependency
 failure had hidden it. This geometry-performance branch must not silently
 rewrite the v0.6.1 scientific reference.
 
+CI classification for pushed head `ace56b5`:
+
+- documentation succeeds;
+- macOS Julia 1, Windows Julia 1 and Windows Julia 1.10 each complete the
+  focused VPalm suite with 533 passing assertions and no numerical failure;
+  only the intentionally stale `palm_mockup.png` reference fails, at about
+  19.665 dB PSNR against the 25 dB threshold;
+- Ubuntu Julia 1.12 reaches the inherited v0.6.1 `architecture=false`
+  scientific-reference mismatch, with 37 passing and 33 failing comparisons
+  and the same numerical values observed before this optimization branch.
+
+The static image remains deliberately unchanged pending visual approval. This
+classification applies to pushed head `ace56b5`, not yet to later local work.
+
 ### Phase 1 — Profile before changing implementation
 
 - [x] Profile daily no-change steps, leaf creation, rank updates and pruning
@@ -319,8 +333,11 @@ Fresh 400-day event profile after the first optimization slices:
   freeze them. Rank-3 and later transitions still update petiole and rachis
   geometry without traversing or rebuilding leaflet profiles.
 - [x] Keep the safe build/update path for genuine rank or topology changes.
-- [x] Test unchanged properties/RNG and repeated pruning transitions. The full
-  visible-to-open-to-rank-3 scenario remains a Phase 0 validation task.
+- [x] Test unchanged properties/RNG, repeated pruning and the complete forced
+  internal-to-visible-to-open-to-rank-3 lifecycle. The integrated 43/43
+  contract preserves node identifiers and object identities, freezes leaflet
+  profile arrays after rank 2, permits rachis evolution at rank 3, removes
+  descendants exactly once at pruning and makes repeated pruning a no-op.
 
 Candidate state must be derived from biological inputs, not only timestamps. A
 cache key may need rank, visibility/opening state, alive/pruned state, rachis
@@ -355,10 +372,10 @@ Leaflet deployment follow-up:
 
 ### Phase 3 — Reduce allocations in VPalm biomechanics
 
-- [ ] Move literal constant arrays out of hot functions.
+- [x] Move literal constant arrays out of hot functions.
 - [x] Replace raster matrices, point clouds and temporary coordinate
   comprehensions in section inertia with scalar raw-moment accumulation.
-- [ ] Let `bend` accept the point representation already produced by VPalm
+- [x] Let `bend` accept the point representation already produced by VPalm
   instead of splitting and rebuilding x/y/z arrays.
 - [x] Hoist the five invariant raster-section moments and torsional interpolation
   outside the 15-iteration `bend` loop while preserving the historical section
@@ -374,10 +391,12 @@ Leaflet deployment follow-up:
 - [x] Keep one sequential-execution workspace on `GeometryModel` for the
   cumulative flexion/torsion buffers used by mature rachis transitions. The
   public standalone `bend` path remains generic and workspace-free.
-- [ ] Reduce repeated unit conversions and dictionary lookups inside loops while
-  preserving the public Unitful API.
-- [ ] Consider a typed, unit-normalized internal kernel with explicit conversion
-  at the boundary.
+- [x] Measure a unit-normalized bypass at the internal `bend` boundary. Reject
+  it because type instability increases the accepted rachis-path allocation
+  from 103,376 bytes to 231,616 bytes.
+- [ ] Reduce repeated dictionary lookups and revisit unit normalization only
+  through a fully typed internal kernel with explicit Unitful conversion at the
+  public boundary.
 - [x] Benchmark allocations, timings and numerical parity for the first inertia
   optimization.
 
@@ -413,6 +432,22 @@ Third measured biomechanics slice:
 - fresh geometry-event, bend/CSV, geometry-contract and rachis/geometry suites
   pass. A workspace belongs to one sequential geometry execution; concurrent
   calls on the same model instance require independent workspaces.
+
+Fourth biomechanics slice, an enabling representation refactor:
+
+- the five immutable rachis-property tables are now module constants;
+- `biomechanical_properties_rachis` passes its existing point vector directly
+  to `_bend_points`, while the public coordinate-based `bend` API remains
+  intact;
+- one warmed rachis-property call falls from 104,128 to 103,376 allocated
+  bytes, with median time moving from 0.252667 to 0.250583 ms;
+- the terminal point is exactly unchanged:
+  `(3.537776996033845 m, 0.06335734252934994 m, 0.5403524596696144 m)`;
+- direct coordinate and point-based public calls are exactly equal for both
+  `all_points=false` and `all_points=true`;
+- the unit-conversion bypass experiment allocated 231,616 bytes and was fully
+  reverted. This slice is retained as enabling cleanup, not claimed as a
+  material runtime improvement.
 
 Coupled multi-date reconstruction validation after this slice:
 
@@ -531,9 +566,31 @@ mass-order corrections and a full 4,160-step warm-up of both variants:
   final implementation remains 14.83 times faster with 99.49% fewer allocated
   bytes.
 
+Fresh final A/B at `02dc9a6`, after the point-input biomechanics refactor and a
+full 4,160-step warm-up of both variants:
+
+- `architecture=false`: 10.858 s and 7.498 GB allocated;
+- `architecture=true`: 34.949 s and 11.358 GB allocated;
+- architecture therefore costs 3.219 times the runtime and 1.515 times the
+  allocations in this paired run;
+- all 87,360 retained physiological values remain exactly equal, with maximum
+  absolute difference zero for all 21 daily series;
+- final and sampled-peak structure remains 1,197 PlantSimEngine objects,
+  18,673 final MTG nodes and 26,015 sampled-peak MTG nodes;
+- against the original 569.015 s / about 2.529 TB architecture baseline, the
+  current implementation is 16.28 times faster with 99.55% fewer allocated
+  bytes and 2.95% of simulation time in GC;
+- machine-readable results are stored outside the repository under
+  `/private/tmp/xpalm-vpalm-geometry-final-02dc9a6`.
+
+As in the earlier paired runs, the active PlantSimEngine checkout is recorded
+as commit `771894cd` with tracked local changes. The exact within-process parity
+and current branch result are valid, but the absolute timing delta must not be
+attributed solely to the small point-input refactor.
+
 ### Phase 4 — Reduce topology and traversal costs
 
-- [ ] Measure repeated `descendants`/`traverse!` lookups during updates.
+- [x] Measure repeated `descendants`/`traverse!` lookups during updates.
 - [ ] Cache safe references or node identifiers for leaf geometry children.
 - [ ] Preallocate or bulk-create predictable petiole, rachis and leaflet nodes
   if MultiScaleTreeGraph supports this without breaking identifiers or links.
@@ -548,6 +605,14 @@ MTG-only. No application targets petiole, rachis, segment or leaflet scales, so
 registered geometry objects receive no scientific model calls. Pruning removes
 both registered seed descendants and unregistered dynamic descendants. At day
 400 the controlled run has 302 registered objects and 7,985 MTG nodes.
+
+A measured prototype shared one rachis-segment traversal between both leaflet
+sides and passed the configured petiole segment count directly into the update
+kernel. Topology, attributes and RNG state remained exactly equal, but the real
+paths retained exactly 958,032 bytes per leaf build, 6,848 bytes per petiole
+update and 376,944 bytes per mature update. Timing differences stayed within
+1–2%. The prototype was reverted: persistent references or a broader topology
+change need stronger profiling evidence before adding lifecycle complexity.
 
 ### Phase 5 — Cache local geometry; update pose separately
 
@@ -567,6 +632,11 @@ remove the main simulation-only baseline cost measured above.
   valid oriented faces, bounds, area and 700 oriented triangles across all four
   merge scales. The two intentional zero-area leaflet-tip faces are counted
   rather than rejected.
+- [x] Add a numerical global leaflet parent-pose contract: four transformed
+  landmarks match their expected world coordinates to 1e-12 m.
+- [x] Verify triangle surface and area-weighted barycenter conservation across
+  `:none`, `:leaflet`, `:leaf` and `:plant`, with 1e-12 relative surface and
+  1e-10 m barycenter tolerances.
 - [ ] Test whether families of identical shapes can share `RefMesh` instances;
   do not assume sharing is valid for leaflets with different dimensions.
 
@@ -586,7 +656,7 @@ Exact path, normal, width, height, full-mesh and merged-fixture geometry is
 preserved. On the warmed fixture, local extrusion falls from 4,720 B to 3,328 B
 (-29.5%), one complete leaflet from 16,400 B to 15,152 B (-7.6%), and the tiny
 12-leaflet palm from 500,424 B to 470,472 B (-6.0%). The permanent mesh oracle
-passes 14/14 after the change. The gain is real but small at scene scale, so a
+passes 16/16 after the change. The gain is real but small at scene scale, so a
 larger cache layer is not justified until a downstream model actually requests
 repeated mesh materialization.
 
@@ -610,7 +680,7 @@ lower-allocation extrusion, cached area/barycenter summaries and avoiding an
 unnecessary full-scene merge. Each needs cross-application tests because a
 PlantGeom optimization affects more than XPalm.
 
-### Phase 7 — GPU go/no-go, deferred
+### Phase 7 — GPU go/no-go: no-go for this phase
 
 Do not start with GPU work. Reconsider it only if CPU profiling after Phases 2–6
 shows that large, repeated vertex operations remain dominant.
@@ -626,6 +696,12 @@ A GPU experiment must demonstrate:
 Likely GPU candidates, if justified, are batched transformations or downstream
 radiation calculations. Botanical topology management and small biomechanical
 systems are expected to remain CPU work unless measurements show otherwise.
+
+Current evidence does not justify GPU work: coupled simulations do not yet
+materialize meshes, large repeated vertex operations are not the measured
+simulation bottleneck, and the accepted CPU extrusion improvement changes the
+tiny-palm allocation by only 6%. Reconsider GPU execution only when a real
+downstream mesh consumer demonstrates dominant repeated vertex work.
 
 ## Validation matrix
 
@@ -657,22 +733,20 @@ Existing tests to preserve and extend include:
 - preservation of leaflet topology and dimensions during rachis elongation;
 - snag geometry and pruning behavior.
 
-Known gaps found during the initial audit:
+Remaining validation gaps after the current guards:
 
 - the canonical deterministic standalone configuration checks 20,994 total
   nodes, but does not yet protect a structured fingerprint of parent/child
   edges, ranks and key attributes;
-- current transformation checks cover internodes, petioles and rachises, while
-  the leaflet geometry test is commented out;
-- there is no automated check of leaflet mesh area, vertex/face counts,
-  non-degenerate triangles, bounding boxes or `prepare_scene` output;
-- merge-scale tests do not yet prove conservation of surface across `:none`,
-  `:leaflet`, `:leaf` and `:plant`;
-- coupled tests cover initial reconstruction and pruning, but not one forced
-  internal-to-visible-to-open-to-rank-3 lifecycle with stable node identities;
-- the 4,160-step release regression currently protects `architecture=false`.
-  A short exact false/true CI test and durable full A/B runner now exist, but a
-  scheduled full test is not yet configured.
+- merge-scale topology/queryability semantics remain unresolved even though
+  oriented triangles, area and barycenter are now conserved;
+- the corrected static image reference still requires deliberate visual
+  approval;
+- the full 4,160-step A/B runner exists, but no scheduled full CI test is
+  configured.
+
+The former integrated-lifecycle, leaflet-global-transform, local mesh-summary
+and merge-scale surface-conservation gaps are now covered by permanent tests.
 
 Standalone reference added during this work:
 
@@ -697,7 +771,7 @@ Permanent lightweight mesh guardrails added during this work:
 - a deterministic one-leaf fixture contains 432 vertices and 700 triangles,
   with exact oriented-triangle conservation across `:none`, `:leaflet`, `:leaf`
   and `:plant` after 1e-10 m coordinate quantization;
-- the focused test passes 14/14 and takes about 0.226 seconds once compiled.
+- the focused test passes 16/16 and takes about 0.226 seconds once compiled.
 
 ## Performance acceptance criteria
 
@@ -764,6 +838,10 @@ changes with performance changes.
 | 2026-08-30 | Store the final leaflet deployment state explicitly | direct immature-to-rank-3 transitions and legacy MTGs otherwise skip the final rank-2 profile | perform one compatibility update, then retain the mature fast path |
 | 2026-08-30 | Apply signed biomechanical angle limits independently of verbosity | `verbose=false` formerly disabled the documented `force=true` guard | warnings remain optional while the scientific guard remains active |
 | 2026-08-30 | Align static rachis masses with configured leaf-rank order | lengths and masses are both specified oldest-to-rank-1 but only masses were popped from the opposite end | restore the intended lower-crown loading and require deterministic rank-order tests |
+| 2026-08-30 | Pass existing GeometryBasics points directly into `bend` | the accepted rachis path drops only from 104,128 to 103,376 bytes with no material timing change and exact output | retain as an enabling representation cleanup, not a headline optimization |
+| 2026-08-30 | Reject the internal unit-conversion bypass | allocations rise to 231,616 bytes because the attempted boundary becomes type-unstable | retain the original Unitful conversions until a fully typed kernel is designed |
+| 2026-08-30 | Reject isolated traversal plumbing | exact topology/RNG parity holds, but allocations remain unchanged on full leaf, petiole and mature update paths | keep the simpler public API and profile broader topology costs before caching references |
+| 2026-08-30 | Close GPU investigation for this phase | coupled XPalm does not materialize meshes and the tiny-palm CPU mesh gain is only 6% | continue CPU topology, traversal and lifecycle work |
 
 ## Deferred scientific work
 
@@ -794,7 +872,7 @@ change even when their local areas do not.
 - [x] Fresh paired benchmarks meet the main performance target or document a
   measured residual bottleneck and justified next step.
 - [ ] Any PlantGeom change is independently tested and reviewed in PlantGeom.
-- [ ] GPU work is either rejected with measurements or isolated behind a tested
+- [x] GPU work is either rejected with measurements or isolated behind a tested
   CPU fallback.
 - [x] Temporary benchmark artifacts are removed or archived outside the source
   tree.
