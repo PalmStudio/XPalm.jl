@@ -11,6 +11,7 @@ using XPalm
 import PlantSimEngine:
     OutputRequest, collect_outputs, continue!, current_step, model_objects, run!
 
+const VPALM_BENCHMARK_MODULE = XPalm.load_vpalm!()
 const VPALM_BENCHMARK_SEED = 20260830
 const VPALM_BENCHMARK_CHUNK = 128
 const VPALM_BENCHMARK_WARMUP_STEPS = 128
