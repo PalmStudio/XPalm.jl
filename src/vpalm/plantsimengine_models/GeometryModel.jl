@@ -280,6 +280,7 @@ end
 
 
 function update_leaf!(leaf, biomass_leaf, parameters; rng)
+    last_rank_unfolding = 2
     petiole = leaf[1]
     VPalm.update_petiole!(
         petiole,
@@ -292,12 +293,18 @@ function update_leaf!(leaf, biomass_leaf, parameters; rng)
 
     VPalm.update_rachis_angles!(rachis, leaf.rank, leaf.rachis_length, petiole.height_cpoint, petiole.width_cpoint, leaf.zenithal_cpoint_angle, biomass_leaf, parameters; rng)
 
+    # Leaflet angles and segment profiles reach their final state at rank 2.
+    # Later rank transitions can still change the petiole and rachis geometry,
+    # but traversing every leaflet would only rebuild identical profiles.
+    leaf.rank > last_rank_unfolding && return nothing
+
     traverse!(rachis, symbol=:Leaflet) do leaflet
         VPalm.update_leaflet_angles!(
             leaflet, leaf.rank;
-            last_rank_unfolding=2,
+            last_rank_unfolding=last_rank_unfolding,
             xm_intercept=parameters["leaflet_xm_intercept"], xm_slope=parameters["leaflet_xm_slope"],
             ym_intercept=parameters["leaflet_ym_intercept"], ym_slope=parameters["leaflet_ym_slope"]
         )
     end
+    return nothing
 end

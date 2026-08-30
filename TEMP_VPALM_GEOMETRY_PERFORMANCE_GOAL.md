@@ -269,9 +269,9 @@ Current code-reading hypotheses to test, not yet accepted conclusions:
   lifecycle event.
 - [x] Avoid revisiting already-pruned descendants and registered geometry
   objects.
-- [ ] Update leaflet deployment profiles only for ranks where deployment inputs
-  actually change, then freeze them; verify the current apparent rank-2 cutoff
-  before encoding it as a contract.
+- [x] Update leaflet deployment profiles through their final rank-2 state, then
+  freeze them. Rank-3 and later transitions still update petiole and rachis
+  geometry without traversing or rebuilding leaflet profiles.
 - [x] Keep the safe build/update path for genuine rank or topology changes.
 - [x] Test unchanged properties/RNG and repeated pruning transitions. The full
   visible-to-open-to-rank-3 scenario remains a Phase 0 validation task.
@@ -294,6 +294,18 @@ First measured event-gating slice:
 The remaining steady-state allocations must be profiled after the integrated
 benchmark; this first slice deliberately preserves daily synchronization of
 internode dimensions and rank.
+
+Leaflet deployment follow-up:
+
+- rank 2 still replaces and finalizes all deployment profiles;
+- rank 3 and rank 4 preserve the exact scalar leaflet state and the identity of
+  all four profile arrays, while petiole and rachis dimensions continue to
+  change;
+- a 154-leaflet warmed update drops from median 2.94 ms and 594,456 bytes at the
+  final unfolding event to 0.541 ms and 377,568 bytes on a mature transition;
+- the skipped leaflet phase consumes no random draws. Rachis biomechanics still
+  advances the supplied random stream by design and remains a separate
+  lifecycle-RNG risk to assess.
 
 ### Phase 3 — Reduce allocations in VPalm biomechanics
 
@@ -504,6 +516,7 @@ changes with performance changes.
 | 2026-08-30 | Make geometry updates event-driven and pruning one-shot | unchanged calls advanced RNG and repeated pruning revisited the subtree | store lifecycle state in PlantSimEngine status and preserve organ-level random traits |
 | 2026-08-30 | Preserve rasterized section mechanics for the first inertia optimization | continuous formulas change the current bend reference materially | accumulate and rotate raw raster moments, then hoist them outside the iteration loop |
 | 2026-08-30 | Reuse coordinate work buffers inside `bend` | the remaining full-fixture allocation was 1.14 MB despite the inertia rewrite | keep the public API and numerical fixture while using private in-place kernels |
+| 2026-08-30 | Freeze leaflet deployment profiles after rank 2 | the existing unfolding kernel reaches its final state at rank 2, while later transitions still alter petiole and rachis geometry | skip mature leaflet traversal without freezing whole-leaf pose updates |
 
 ## Deferred scientific work
 

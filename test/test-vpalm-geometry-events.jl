@@ -158,3 +158,172 @@ end
         geometry_removed=internode_object.status.geometry_removed,
     ) == state_after_first_pruning
 end
+
+function _vpalm_leaflet_unfolding_state(leaf)
+    return Tuple(
+        (
+            id=node_id(leaflet),
+            stiffness=leaflet.stiffness,
+            zenithal_angle=leaflet.zenithal_angle,
+            azimuthal_angle=leaflet.azimuthal_angle,
+            segment_boundaries=copy(leaflet.leaflet_segment_boundaries),
+            segment_lengths=copy(leaflet.leaflet_segment_lengths),
+            segment_widths=copy(leaflet.leaflet_segment_widths),
+            segment_angles_deg=copy(leaflet.leaflet_segment_angles_deg),
+        )
+        for leaflet in sort(descendants(leaf; symbol=:Leaflet); by=node_id)
+    )
+end
+
+function _vpalm_leaflet_profile_references(leaf)
+    return Tuple(
+        (
+            boundaries=leaflet.leaflet_segment_boundaries,
+            lengths=leaflet.leaflet_segment_lengths,
+            widths=leaflet.leaflet_segment_widths,
+            angles_deg=leaflet.leaflet_segment_angles_deg,
+        )
+        for leaflet in sort(descendants(leaf; symbol=:Leaflet); by=node_id)
+    )
+end
+
+function _vpalm_update_petiole_and_rachis!(leaf, biomass_leaf, parameters, rng)
+    petiole = leaf[1]
+    VPalm.update_petiole!(
+        petiole,
+        leaf.rachis_length,
+        leaf.zenithal_insertion_angle,
+        leaf.zenithal_cpoint_angle,
+        parameters,
+    )
+    rachis = petiole[2]
+    VPalm.update_rachis_angles!(
+        rachis,
+        leaf.rank,
+        leaf.rachis_length,
+        petiole.height_cpoint,
+        petiole.width_cpoint,
+        leaf.zenithal_cpoint_angle,
+        biomass_leaf,
+        parameters;
+        rng=rng,
+    )
+    return nothing
+end
+
+@testset "leaflet unfolding stops after the rank-2 update" begin
+    parameters = VPalm.default_parameters(type="dynamic")
+    visible_rank = VPalm.first_visible_leaf_rank(parameters)
+    plant = Node(NodeMTG(:/, :Plant, 1, 1))
+    leaf = Node(2, plant, NodeMTG(:+, :Leaf, 1, 4), Dict{Symbol,Any}())
+    unique_id = Ref(3)
+    rng = Random.MersenneTwister(20260830)
+    biomass_leaf = 2.0u"kg"
+
+    VPalm.leaf(
+        unique_id,
+        1,
+        visible_rank,
+        biomass_leaf,
+        3.0u"m",
+        leaf,
+        parameters;
+        rng=rng,
+    )
+    leaflets = sort(descendants(leaf; symbol=:Leaflet); by=node_id)
+    @test length(leaflets) > 100
+
+    folded_state = _vpalm_leaflet_unfolding_state(leaf)
+    folded_profile_references = _vpalm_leaflet_profile_references(leaf)
+    leaf.rank = 2
+    VPalm.update_leaf!(leaf, biomass_leaf, parameters; rng=rng)
+    rank_2_state = _vpalm_leaflet_unfolding_state(leaf)
+    rank_2_profile_references = _vpalm_leaflet_profile_references(leaf)
+
+    @test rank_2_state != folded_state
+    @test all(
+        rank_2_profile_references[i].boundaries !== folded_profile_references[i].boundaries &&
+        rank_2_profile_references[i].lengths !== folded_profile_references[i].lengths &&
+        rank_2_profile_references[i].widths !== folded_profile_references[i].widths &&
+        rank_2_profile_references[i].angles_deg !== folded_profile_references[i].angles_deg
+        for i in eachindex(rank_2_profile_references)
+    )
+    @test all(
+        leaflet.stiffness == leaflet.stiffness_0 &&
+        leaflet.zenithal_angle == leaflet.v_angle &&
+        leaflet.azimuthal_angle == leaflet.h_angle
+        for leaflet in leaflets
+    )
+    @test all(
+        begin
+            profile = VPalm.leaflet_segment_profile(
+                leaflet,
+                leaflet.length,
+                leaflet.width,
+                leaflet.stiffness,
+                0.5,
+                leaflet.relative_position;
+                xm_intercept=parameters["leaflet_xm_intercept"],
+                xm_slope=parameters["leaflet_xm_slope"],
+                ym_intercept=parameters["leaflet_ym_intercept"],
+                ym_slope=parameters["leaflet_ym_slope"],
+            )
+            leaflet.leaflet_segment_boundaries == profile.boundaries &&
+            leaflet.leaflet_segment_lengths == profile.lengths &&
+            leaflet.leaflet_segment_widths == profile.widths &&
+            leaflet.leaflet_segment_angles_deg == profile.angles_deg
+        end
+        for leaflet in leaflets
+    )
+
+    # From rank 3 onward, only the petiole and rachis continue to change. Use a
+    # rachis-only reference to prove that the skipped leaflet phase adds no RNG
+    # draws while retaining the existing biomechanical RNG contract.
+    reference_leaf = deepcopy(leaf)
+    reference_rng = copy(rng)
+    petiole = leaf[1]
+    rachis_segments = sort(descendants(leaf; symbol=:RachisSegment); by=node_id)
+    petiole_width_before = petiole.width_cpoint
+    rachis_lengths_before = Tuple(segment.length for segment in rachis_segments)
+
+    leaf.rank = 3
+    leaf.rachis_length = 3.3u"m"
+    reference_leaf.rank = leaf.rank
+    reference_leaf.rachis_length = leaf.rachis_length
+    VPalm.update_leaf!(leaf, biomass_leaf, parameters; rng=rng)
+    _vpalm_update_petiole_and_rachis!(reference_leaf, biomass_leaf, parameters, reference_rng)
+
+    @test _vpalm_leaflet_unfolding_state(leaf) == rank_2_state
+    rank_3_profile_references = _vpalm_leaflet_profile_references(leaf)
+    @test all(
+        rank_3_profile_references[i].boundaries === rank_2_profile_references[i].boundaries &&
+        rank_3_profile_references[i].lengths === rank_2_profile_references[i].lengths &&
+        rank_3_profile_references[i].widths === rank_2_profile_references[i].widths &&
+        rank_3_profile_references[i].angles_deg === rank_2_profile_references[i].angles_deg
+        for i in eachindex(rank_3_profile_references)
+    )
+    @test petiole.width_cpoint != petiole_width_before
+    @test Tuple(segment.length for segment in rachis_segments) != rachis_lengths_before
+    @test rand(rng) == rand(reference_rng)
+
+    rank_3_state = _vpalm_leaflet_unfolding_state(leaf)
+    reference_leaf = deepcopy(leaf)
+    reference_rng = copy(rng)
+    leaf.rank = 4
+    leaf.rachis_length = 3.6u"m"
+    reference_leaf.rank = leaf.rank
+    reference_leaf.rachis_length = leaf.rachis_length
+    VPalm.update_leaf!(leaf, biomass_leaf, parameters; rng=rng)
+    _vpalm_update_petiole_and_rachis!(reference_leaf, biomass_leaf, parameters, reference_rng)
+
+    @test _vpalm_leaflet_unfolding_state(leaf) == rank_3_state == rank_2_state
+    rank_4_profile_references = _vpalm_leaflet_profile_references(leaf)
+    @test all(
+        rank_4_profile_references[i].boundaries === rank_3_profile_references[i].boundaries &&
+        rank_4_profile_references[i].lengths === rank_3_profile_references[i].lengths &&
+        rank_4_profile_references[i].widths === rank_3_profile_references[i].widths &&
+        rank_4_profile_references[i].angles_deg === rank_3_profile_references[i].angles_deg
+        for i in eachindex(rank_4_profile_references)
+    )
+    @test rand(rng) == rand(reference_rng)
+end
