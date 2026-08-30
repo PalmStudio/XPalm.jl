@@ -45,7 +45,21 @@ function _vpalm_static_geometry_state_sha256(mtg)
 
     for node in nodes
         class = symbol(node)
-        print(io, node_id(node), ':', class, ':', index(node))
+        parent_node = parent(node)
+        print(
+            io,
+            node_id(node),
+            ':',
+            class,
+            ':',
+            index(node),
+            ':',
+            isnothing(parent_node) ? 0 : node_id(parent_node),
+            ':',
+            link(node),
+            ':',
+            scale(node),
+        )
 
         if class == :Stem
             _vpalm_static_write_digest_values!(
@@ -346,7 +360,7 @@ end
     @test fingerprint.live_leaf_ranks == fingerprint.geometry_leaf_ranks
     @test fingerprint.leaflet_sides == (left=7320, right=7320)
     @test fingerprint.geometry_state_sha256 ==
-          "4be64f6696ed6254a782073f1546f1f1a8afaec628d2e8d6ca63c5752ba3e6d6"
+          "2b5679421c75c194adeb7c50ab55bc4a63839675db1ed6a4031a5b827aa9cdc3"
 
     expected_dimensions = (
         mean_rachis_length=3.659388011413884,
