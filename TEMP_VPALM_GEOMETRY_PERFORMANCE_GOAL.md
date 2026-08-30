@@ -63,6 +63,11 @@ exactly identical. This confirms that, today, explicit architecture does not
 feed back into physiology. The extra nodes are MTG geometry nodes rather than
 additional PlantSimEngine simulation objects.
 
+The timed A/B simulation exercised dynamic topology and property updates, but
+not downstream mesh materialization by `add_geometry!`. Mesh construction must
+therefore be benchmarked as a separate future phase; it does not explain the
+main 569 s simulation baseline.
+
 The current final-state mesh diagnostic also found:
 
 - physiological opened-leaf area: 382.98 m2;
@@ -241,18 +246,26 @@ Current code-reading hypotheses to test, not yet accepted conclusions:
 - rank changes traverse all leaflet descendants to update their angles;
 - the biomechanical path allocates several small vectors and coordinate arrays
   on every call;
-- every leaflet creates a new extruded `RefMesh`, even when its local geometry
-  could be retained between global pose updates.
+- `bend` repeatedly calls an inertia calculation that constructs an
+  approximately 100 by 100 numerical section grid for 15 iterations and five
+  rachis sections;
+- when meshes are materialized later, every leaflet creates a new extruded
+  `RefMesh`, even when its local geometry could be retained between global pose
+  updates.
 
 ### Phase 2 — Make scheduling genuinely event-driven
 
 - [ ] Introduce the smallest explicit geometry state needed to distinguish
   absent, constructed, updated and pruned leaves.
-- [ ] Skip geometry work completely on days when no relevant input changed.
+- [ ] Skip geometry work completely on days when no relevant input changed,
+  before MTG traversal, allometry recomputation or random draws.
 - [ ] Move rank-dependent computations behind rank-change detection.
 - [ ] Compute stable organ properties and random attributes once at the correct
   lifecycle event.
 - [ ] Avoid revisiting already-pruned descendants.
+- [ ] Update leaflet deployment profiles only for ranks where deployment inputs
+  actually change, then freeze them; verify the current apparent rank-2 cutoff
+  before encoding it as a contract.
 - [ ] Keep the safe rebuild path for genuine topology changes.
 - [ ] Test every state transition and repeated no-op transition.
 
@@ -267,6 +280,11 @@ length, insertion angles and other inputs identified by dependency tracing.
   in-place storage where this is measurably useful.
 - [ ] Let `bend` accept the point representation already produced by VPalm
   instead of splitting and rebuilding x/y/z arrays.
+- [ ] Replace gridded section-inertia integration with validated analytical
+  moments for rectangle, triangle, ellipse and circle where formulas match the
+  model; otherwise cache normalized section results.
+- [ ] Validate analytical or cached inertias against both the current result and
+  a finer numerical grid before accepting the speed-up.
 - [ ] Reuse work buffers across calls when ownership and thread safety are clear.
 - [ ] Reduce repeated unit conversions and dictionary lookups inside loops while
   preserving the public Unitful API.
@@ -286,6 +304,9 @@ length, insertion angles and other inputs identified by dependency tracing.
   inconsistent.
 
 ### Phase 5 — Cache local geometry; update pose separately
+
+This phase targets later mesh reconstruction and 3D use; it is not expected to
+remove the main simulation-only baseline cost measured above.
 
 - [ ] Distinguish immutable local leaflet shape from mutable global placement.
 - [ ] Construct each local leaflet mesh only when its dimensions/topology are
@@ -401,7 +422,8 @@ Branch-level milestones:
    faster than the 569 s baseline and reduce allocations by at least one order
    of magnitude.
 3. Stretch target: bring architecture-on runtime within twice the
-   architecture-off runtime without reducing reconstruction detail.
+   architecture-off runtime, allocations within three times the architecture-off
+   value, and GC below 10% of runtime without reducing reconstruction detail.
 
 These ratios must be recalculated from fresh paired runs; the absolute numbers
 above are not portable across machines or dependency revisions.
