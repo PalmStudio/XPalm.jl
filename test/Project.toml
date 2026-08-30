@@ -21,5 +21,6 @@ Unitful = "1986cc42-f94f-5a68-af5c-568840ba703d"
 XPalm = "6b523e1e-d512-416c-8e51-a8fbef0064e7"
 
 [sources]
-PlantSimEngine = {path = "../../PlantSimEngine"}
+PlantGeom = {url = "https://github.com/VEZY/PlantGeom.jl", rev = "9d682ef1aaebe7ecf5aa8407a8305d6f4aad51c1"}
+PlantSimEngine = {url = "https://github.com/VirtualPlantLab/PlantSimEngine.jl", rev = "771894cd1188a81e85aeb4e162ecf7b2ddfa1bbf"}
 XPalm = {path = ".."}
