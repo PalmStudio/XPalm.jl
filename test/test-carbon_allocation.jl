@@ -440,15 +440,13 @@ end
             current_reserves,
             2.0,
         )
-        @test @allocated(
-            XPalm.Models._allocate_organ_carbon!(
-                model,
-                carbon_demands,
-                previous_reserves,
-                carbon_allocations,
-                current_reserves,
-                2.0,
-            )
+        @test xpalm_test_allocation_kernel_allocations(
+            model,
+            carbon_demands,
+            previous_reserves,
+            carbon_allocations,
+            current_reserves,
+            2.0,
         ) == 0
 
         potential_reserves = [2.0, 4.0]
@@ -517,13 +515,11 @@ end
             reserves_after_filling,
             3.0,
         )
-        @test @allocated(
-            XPalm.Models._fill_organ_reserves!(
-                potential_reserves,
-                reserves_before_filling,
-                reserves_after_filling,
-                3.0,
-            )
+        @test xpalm_test_reserve_kernel_allocations(
+            potential_reserves,
+            reserves_before_filling,
+            reserves_after_filling,
+            3.0,
         ) == 0
     end
 
