@@ -124,6 +124,7 @@ function update_rachis_angles!(rachis_node, leaf_rank, rachis_length, height_cpo
         node.x = x[p[]]
         node.y = y[p[]]
         node.z = z[p[]]
+        last_parent = node
     end
 
     # We force the last node to take the angles values of its parent node, because the biomechanical model can give

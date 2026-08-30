@@ -66,6 +66,10 @@ end
     )
 
     updated_leaflets = descendants(leaf, symbol=:Leaflet)
+    updated_rachis_segments =
+        sort(descendants(leaf, symbol=:RachisSegment); by=MultiScaleTreeGraph.index)
+    terminal_rachis_segment = last(updated_rachis_segments)
+    penultimate_rachis_segment = parent(terminal_rachis_segment)
     expected_cpoint = VPalm.petiole_dimensions_at_cpoint(
         leaf.rachis_length,
         parameters["cpoint_width_intercept"],
@@ -76,6 +80,16 @@ end
     @test node_id.(descendants(petiole, symbol=:PetioleSegment)) == original_petiole_ids
     @test node_id.(descendants(leaf, symbol=:RachisSegment)) == original_rachis_ids
     @test node_id.(updated_leaflets) == original_leaflet_ids
+    @test symbol(penultimate_rachis_segment) == :RachisSegment
+    @test (
+        terminal_rachis_segment.zenithal_angle_global,
+        terminal_rachis_segment.azimuthal_angle_global,
+        terminal_rachis_segment.torsion_angle_global,
+    ) == (
+        penultimate_rachis_segment.zenithal_angle_global,
+        penultimate_rachis_segment.azimuthal_angle_global,
+        penultimate_rachis_segment.torsion_angle_global,
+    )
     @test petiole.width_cpoint ≈ expected_cpoint.width_cpoint
     @test petiole.height_cpoint ≈ expected_cpoint.height_cpoint
     @test all(

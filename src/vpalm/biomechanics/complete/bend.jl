@@ -353,9 +353,16 @@ function _bend(workspace, type, width_bend, height_bend, init_torsion, x, y, z, 
         end
 
         # Test of the small displacement hypothesis
-        if verbose && maximum(abs.(vec_angle_flexion)) > angle_max
-            @warn string("Maximum bending angle: ", rad2deg(maximum(abs.(vec_angle_flexion))), "°. Hypothesis of small displacements not verified for bending.")
-            force && (vec_angle_flexion[abs.(vec_angle_flexion).>angle_max] .= angle_max)
+        maximum_flexion = maximum(abs, vec_angle_flexion)
+        if maximum_flexion > angle_max
+            if verbose
+                @warn string("Maximum bending angle: ", rad2deg(maximum_flexion), "°. Hypothesis of small displacements not verified for bending.")
+            end
+            if force
+                for i in eachindex(vec_angle_flexion)
+                    vec_angle_flexion[i] = clamp(vec_angle_flexion[i], -angle_max, angle_max)
+                end
+            end
         end
 
         # Torsion
@@ -408,9 +415,16 @@ function _bend(workspace, type, width_bend, height_bend, init_torsion, x, y, z, 
             cumsum!(vec_angle_torsion, torsion_input)
         end
 
-        if verbose && maximum(abs.(vec_angle_torsion)) > angle_max
-            @warn string("Maximum torsion angle: ", rad2deg(maximum(abs.(vec_angle_torsion))), "°. Hypothesis of small displacements not verified for torsion.")
-            force && (vec_angle_torsion[abs.(vec_angle_torsion).>angle_max] .= angle_max)
+        maximum_torsion = maximum(abs, vec_angle_torsion)
+        if maximum_torsion > angle_max
+            if verbose
+                @warn string("Maximum torsion angle: ", rad2deg(maximum_torsion), "°. Hypothesis of small displacements not verified for torsion.")
+            end
+            if force
+                for i in eachindex(vec_angle_torsion)
+                    vec_angle_torsion[i] = clamp(vec_angle_torsion[i], -angle_max, angle_max)
+                end
+            end
         end
 
         som_cum_vec_agl_tor .+= vec_angle_torsion  # cumulative by weight increment

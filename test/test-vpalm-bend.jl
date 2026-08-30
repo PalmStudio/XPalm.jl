@@ -26,6 +26,33 @@ function _warmed_bend_allocations(df, elastic_modulus, shear_modulus, step, npoi
     return @allocated _run_bend_fixture(df, elastic_modulus, shear_modulus, step, npoints, nsegments)
 end
 
+function _run_forced_angle_limit_fixture(; verbose)
+    npoints_exp = 5
+    initial_torsion = -0.1u"°"
+    return VPalm.bend(
+        fill(5, npoints_exp),
+        fill(0.02u"m", npoints_exp),
+        fill(0.02u"m", npoints_exp),
+        fill(initial_torsion, npoints_exp),
+        collect(range(0.2u"m", 1.0u"m"; length=npoints_exp)),
+        fill(0.0u"m", npoints_exp),
+        fill(0.0u"m", npoints_exp),
+        fill(20.0u"kg", npoints_exp),
+        fill(20.0u"kg", npoints_exp),
+        fill(0.0u"kg", npoints_exp),
+        fill(0.1u"m", npoints_exp),
+        0.01u"MPa",
+        0.01u"MPa",
+        0.05u"m",
+        20,
+        1;
+        all_points=true,
+        angle_max=deg2rad(0.5u"°"),
+        force=true,
+        verbose=verbose,
+    )
+end
+
 ref = CSV.read(joinpath(@__DIR__, "references/6_EW01.22_17_kanan_unbent_bend.csv"), DataFrame)
 @testset "bend works" begin
     # Dummy input data for bend function
@@ -57,6 +84,21 @@ ref = CSV.read(joinpath(@__DIR__, "references/6_EW01.22_17_kanan_unbent_bend.csv
     @test [ref.torsion[2]; ref.torsion[2:end]] * u"°" ≈ out.torsion atol = 1e-2
     # Function-scoped warmup keeps this gate stable across Julia versions.
     @test _warmed_bend_allocations(df, elastic_modulus, shear_modulus, pas, Ncalc, Nboucle) <= 900_000
+end
+
+@testset "forced bend angle limit is signed and independent of verbosity" begin
+    quiet = _run_forced_angle_limit_fixture(verbose=false)
+    loud = _run_forced_angle_limit_fixture(verbose=true)
+    angle_limit = 0.5u"°"
+    angle_tolerance = 1.0e-10u"°"
+    initial_torsion = -0.1u"°"
+    torsion_increment = loud.torsion .- initial_torsion
+
+    @test quiet == loud
+    @test maximum(abs, quiet.angle_xy) <= angle_limit + angle_tolerance
+    @test minimum(quiet.angle_xy) < 0.0u"°"
+    @test maximum(abs, torsion_increment) <= angle_limit + angle_tolerance
+    @test minimum(torsion_increment) < 0.0u"°"
 end
 
 @testset "unbend" begin
