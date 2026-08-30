@@ -23,40 +23,32 @@ Create one Java-style extruded leaflet geometry from the stored segment profile.
 # Returns
 - Nothing (the geometry is added directly to the leaflet node)
 """
-_segment_width(segment) = segment isa NamedTuple ? segment.width : segment["width"]
-_segment_length(segment) = segment isa NamedTuple ? segment.length : segment["length"]
-_segment_angle_deg(segment) = segment isa NamedTuple ? segment.zenithal_angle : segment["zenithal_angle"]
-
-function _leaflet_segments(leaflet_node)
-    [(
-        width=leaflet_node[:leaflet_segment_widths][i],
-        length=leaflet_node[:leaflet_segment_lengths][i],
-        zenithal_angle=leaflet_node[:leaflet_segment_angles_deg][i],
-    ) for i in eachindex(leaflet_node[:leaflet_segment_lengths])]
-end
-
 function _leaflet_local_extrusion(leaflet_node)
     h_angle = deg2rad(leaflet_node["azimuthal_angle"])
     torsion = deg2rad(leaflet_node["torsion_angle"]) + π / 2.0
-    segments = _leaflet_segments(leaflet_node)
+    segment_lengths = leaflet_node[:leaflet_segment_lengths]
+    segment_widths = leaflet_node[:leaflet_segment_widths]
+    segment_angles_deg = leaflet_node[:leaflet_segment_angles_deg]
+    n_segments = length(segment_lengths)
 
-    path = GeometryBasics.Point{3,Float64}[_point3(0.0, 0.0, 0.0)]
-    path_normals = GeometryBasics.Vec{3,Float64}[]
-    widths = Float64[]
-    heights = Float64[]
+    path = Vector{GeometryBasics.Point{3,Float64}}(undef, n_segments + 1)
+    path_normals = Vector{GeometryBasics.Vec{3,Float64}}(undef, n_segments + 1)
+    widths = Vector{Float64}(undef, n_segments + 1)
+    heights = Vector{Float64}(undef, n_segments + 1)
+    path[1] = _point3(0.0, 0.0, 0.0)
     position = path[1]
 
-    for segment in segments
-        segment_angle = deg2rad(_segment_angle_deg(segment))
+    for (slot, i) in enumerate(eachindex(segment_lengths))
+        segment_angle = deg2rad(segment_angles_deg[i])
         rot = RotZYX(h_angle, segment_angle, torsion)
         tangent = rot * _vec3(1.0, 0.0, 0.0)
         cross_blade = rot * _vec3(0.0, 0.0, 1.0)
-        segment_length = _coord(_segment_length(segment))
-        segment_width = _coord(_segment_width(segment))
+        segment_length = _coord(segment_lengths[i])
+        segment_width = _coord(segment_widths[i])
 
-        push!(path_normals, cross_blade)
-        push!(widths, segment_width)
-        push!(heights, segment_width)
+        path_normals[slot] = cross_blade
+        widths[slot] = segment_width
+        heights[slot] = segment_width
 
         step = tangent * segment_length
         position = _point3(
@@ -64,14 +56,14 @@ function _leaflet_local_extrusion(leaflet_node)
             position[2] + step[2],
             position[3] + step[3],
         )
-        push!(path, position)
+        path[slot + 1] = position
     end
 
-    last_segment_angle = deg2rad(_segment_angle_deg(last(segments)))
+    last_segment_angle = deg2rad(segment_angles_deg[lastindex(segment_lengths)])
     last_rot = RotZYX(h_angle, last_segment_angle, torsion)
-    push!(path_normals, last_rot * _vec3(0.0, 0.0, 1.0))
-    push!(widths, 0.0)
-    push!(heights, 0.0)
+    path_normals[end] = last_rot * _vec3(0.0, 0.0, 1.0)
+    widths[end] = 0.0
+    heights[end] = 0.0
 
     return path, widths, heights, path_normals
 end
