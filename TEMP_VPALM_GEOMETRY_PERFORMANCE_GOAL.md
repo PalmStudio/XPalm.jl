@@ -466,6 +466,23 @@ the eleven-year scenario. The durable runner now accepts `warmup_steps=4160`
 and either `(false, true)` or `(true, false)` measurement order so future
 results can distinguish first-run cost from fully warmed steady-state cost.
 
+Fresh final A/B at `83b7350`, after a full 4,160-step warm-up of both variants:
+
+- `architecture=false`: 13.231 s and 8.980 GB allocated;
+- `architecture=true`: 38.540 s and 12.841 GB allocated;
+- the remaining architecture overhead is 2.913 times the runtime and 1.430
+  times the allocations;
+- compared with the original 569.015 s / about 2.529 TB architecture baseline,
+  this is 14.76 times faster with 99.49% fewer allocated bytes;
+- all 87,360 retained physiological values are exactly equal, with maximum
+  absolute difference zero for every series;
+- final and sampled peak counts remain 1,197 PlantSimEngine objects, 18,673
+  final MTG nodes and 26,015 sampled peak MTG nodes in architecture mode.
+
+The machine was concurrently running another PlantSimEngine session, so these
+absolute timings are not publication-quality. The within-process parity and
+ratio remain valid, and the allocation improvement is independent of CPU load.
+
 ### Phase 4 — Reduce topology and traversal costs
 
 - [ ] Measure repeated `descendants`/`traverse!` lookups during updates.
@@ -721,9 +738,9 @@ change even when their local areas do not.
   to their approved references.
 - [x] The five-year approximately 120-leaf palm has been checked numerically and
   visually at several dates, not only at the final date.
-- [ ] Full coupled physiology remains identical while architecture is an
+- [x] Full coupled physiology remains identical while architecture is an
   observer.
-- [ ] Fresh paired benchmarks meet the main performance target or document a
+- [x] Fresh paired benchmarks meet the main performance target or document a
   measured residual bottleneck and justified next step.
 - [ ] Any PlantGeom change is independently tested and reviewed in PlantGeom.
 - [ ] GPU work is either rejected with measurements or isolated behind a tested
