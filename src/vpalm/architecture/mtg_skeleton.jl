@@ -103,7 +103,10 @@ function mtg_skeleton(parameters; rng=Random.MersenneTwister(parameters["seed"])
         end
 
         if leaf_node.is_alive
-            rachis_fresh_biomass = leaf_node.rank <= 0 ? rank_1_leaf_biomass : pop!(rachis_fresh_biomasses)
+            # Both configured series are ordered from the oldest live leaf to
+            # rank 1, matching the order in which this loop creates the leaves.
+            rachis_fresh_biomass =
+                leaf_node.rank <= 0 ? rank_1_leaf_biomass : popfirst!(rachis_fresh_biomasses)
             leaf(unique_mtg_id, i, rank, rachis_fresh_biomass, final_length, leaf_node, parameters; rng=rng)
         else
             compute_properties_leaf!(leaf_node, leaf_node.rank, final_length, parameters, rng)

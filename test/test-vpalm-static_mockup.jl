@@ -44,6 +44,47 @@ end
     @test mtg[1][:stem_bending] == 0.0
 end
 
+@testset "static rachis masses follow leaf-rank order" begin
+    function two_leaf_mockup(rachis_fresh_weights)
+        parameters = deepcopy(vpalm_parameters)
+        parameters["nb_leaves_emitted"] = 2
+        parameters["nb_internodes_before_planting"] = 0
+        parameters["nb_leaves_in_sheath"] = 0
+        parameters["rachis_final_lengths"] = fill(3.0u"m", 2)
+        parameters["rachis_fresh_weight"] = rachis_fresh_weights
+        return VPalm.mtg_skeleton(parameters; rng=nothing)
+    end
+
+    function rachis_state(mtg, rank)
+        leaf = only(filter(node -> node.rank == rank, descendants(mtg; symbol=:Leaf)))
+        return Tuple(
+            (
+                length=segment.length,
+                zenithal_angle=segment.zenithal_angle_global,
+                azimuthal_angle=segment.azimuthal_angle_global,
+                torsion_angle=segment.torsion_angle_global,
+                x=segment.x,
+                y=segment.y,
+                z=segment.z,
+            )
+            for segment in sort(descendants(leaf; symbol=:RachisSegment); by=node_id)
+        )
+    end
+
+    oldest_mass = 3.0u"kg"
+    rank_1_mass = 0.5u"kg"
+    ordered = two_leaf_mockup([oldest_mass, rank_1_mass])
+    all_oldest_mass = two_leaf_mockup(fill(oldest_mass, 2))
+    all_rank_1_mass = two_leaf_mockup(fill(rank_1_mass, 2))
+
+    # The first configured mass belongs to the oldest/highest-rank live leaf;
+    # the last configured mass belongs to rank 1.
+    @test rachis_state(ordered, 2) == rachis_state(all_oldest_mass, 2)
+    @test rachis_state(ordered, 1) == rachis_state(all_rank_1_mass, 1)
+    @test rachis_state(ordered, 2) != rachis_state(all_rank_1_mass, 2)
+    @test rachis_state(ordered, 1) != rachis_state(all_oldest_mass, 1)
+end
+
 @testset "static mockup with geometry" begin
     # Check that the mockup with /without geometry are the same
     mtg = VPalm.mtg_skeleton(vpalm_parameters; rng=nothing)
