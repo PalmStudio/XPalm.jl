@@ -152,6 +152,37 @@ function bend(type, width_bend, height_bend, init_torsion, x, y, z, mass_rachis,
     )
 end
 
+"""
+    bend(
+        type, width_bend, height_bend, init_torsion, points,
+        mass_rachis, mass_leaflets_right, mass_leaflets_left,
+        distance_application, elastic_modulus, shear_modulus, step, npoints, nsegments;
+        kwargs...
+    )
+
+Point-based variant of [`bend`](@ref). It avoids splitting an existing point
+representation into coordinate vectors only to rebuild the same points inside
+the biomechanical kernel.
+"""
+function bend(type, width_bend, height_bend, init_torsion, points::AbstractVector{<:GeometryBasics.Point{3}}, mass_rachis, mass_leaflets_right, mass_leaflets_left,
+    distance_application, elastic_modulus, shear_modulus, step, npoints, nsegments;
+    all_points=false,
+    angle_max=deg2rad(21u"°"),
+    force=true,
+    verbose=true
+)
+    return _bend_points(
+        nothing,
+        type, width_bend, height_bend, init_torsion, points,
+        mass_rachis, mass_leaflets_right, mass_leaflets_left,
+        distance_application, elastic_modulus, shear_modulus, step, npoints, nsegments;
+        all_points=all_points,
+        angle_max=angle_max,
+        force=force,
+        verbose=verbose,
+    )
+end
+
 function _bend(workspace, type, width_bend, height_bend, init_torsion, x, y, z, mass_rachis, mass_leaflets_right, mass_leaflets_left,
     distance_application, elastic_modulus, shear_modulus, step, npoints, nsegments;
     all_points=false,
@@ -162,8 +193,31 @@ function _bend(workspace, type, width_bend, height_bend, init_torsion, x, y, z, 
 
     @assert length(type) == length(width_bend) == length(height_bend) == length(init_torsion) == length(x) == length(y) == length(z) == length(mass_rachis) == length(mass_leaflets_right) == length(mass_leaflets_left) == length(distance_application) "All arguments should have the same length."
 
+    points = [GeometryBasics.Point{3,typeof(x[i])}(x[i], y[i], z[i]) for i in eachindex(x)]
+    return _bend_points(
+        workspace,
+        type, width_bend, height_bend, init_torsion, points,
+        mass_rachis, mass_leaflets_right, mass_leaflets_left,
+        distance_application, elastic_modulus, shear_modulus, step, npoints, nsegments;
+        all_points=all_points,
+        angle_max=angle_max,
+        force=force,
+        verbose=verbose,
+    )
+end
+
+function _bend_points(workspace, type, width_bend, height_bend, init_torsion, points::AbstractVector{<:GeometryBasics.Point{3}}, mass_rachis, mass_leaflets_right, mass_leaflets_left,
+    distance_application, elastic_modulus, shear_modulus, step, npoints, nsegments;
+    all_points=false,
+    angle_max=deg2rad(21u"°"),
+    force=true,
+    verbose=true
+)
+
+    @assert length(type) == length(width_bend) == length(height_bend) == length(init_torsion) == length(points) == length(mass_rachis) == length(mass_leaflets_right) == length(mass_leaflets_left) == length(distance_application) "All arguments should have the same length."
+
     # Number of experimental points
-    npoints_exp = length(x)  # Assuming x, y, z have the same length
+    npoints_exp = length(points)
 
     if length(elastic_modulus) != npoints_exp
         if length(elastic_modulus) == 1
@@ -191,8 +245,6 @@ function _bend(workspace, type, width_bend, height_bend, init_torsion, x, y, z, 
     elastic_modulus = [@check_unit e u"MPa" for e in elastic_modulus]
     shear_modulus = [@check_unit s u"MPa" for s in shear_modulus]
 
-    # use coordinates x,y,z to make points:
-    points = [GeometryBasics.Point{3,typeof(x[i])}(x[i], y[i], z[i]) for i in eachindex(x)]
     gravity = 9.8u"m/s^2"
 
     # Distances and angles of each segment P2P1

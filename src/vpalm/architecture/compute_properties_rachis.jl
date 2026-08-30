@@ -1,3 +1,33 @@
+const _RACHIS_SECTION_TYPES = (1, 2, 3, 4, 5)
+const _RACHIS_REMARKABLE_POINT_POSITIONS = (
+    0.0000001,
+    0.336231351023383,
+    0.672462702046766,
+    0.836231351023383,
+    1.0,
+)
+const _RACHIS_SEGMENT_MIDPOINTS = (
+    0.1681157,
+    0.504347,
+    0.672462702046766,
+    0.754347,
+    0.9181157,
+)
+const _RACHIS_SEGMENT_MASS_DISTRIBUTION = (
+    0.0,
+    0.648524097435024,
+    0.277401814695433,
+    0.0601164171693578,
+    0.0139576707001849,
+)
+const _RACHIS_LEAFLET_MASS_DISTRIBUTION = (
+    0.0,
+    0.0658151279405379,
+    0.201957451540734,
+    0.105263443497354,
+    0.0475385258600695,
+)
+
 """
     biomechanical_properties_rachis(
         rachis_twist_initial_angle, rachis_twist_initial_angle_sdp,
@@ -76,7 +106,7 @@ function biomechanical_properties_rachis(
     angle_max = @check_unit angle_max u"°" verbose
 
     # Frond section types (e.g., rectangle, ellipsoid, etc.)
-    type = [1, 2, 3, 4, 5]
+    type = _RACHIS_SECTION_TYPES
     npoints = length(type)
 
     # Compute initial torsion (using prms and rnd assumed to be defined)
@@ -84,18 +114,18 @@ function biomechanical_properties_rachis(
 
     initial_torsion_vec = fill(initial_torsion_sdp, npoints)
     # Relative position of the remarkable points (C, C-B, B, B-A, A) on the rachis:
-    relative_position_remarkable_points = [0.0000001, 0.336231351023383, 0.672462702046766, 0.836231351023383, 1.0]
+    relative_position_remarkable_points = _RACHIS_REMARKABLE_POINT_POSITIONS
     # Note: we use those positions as remarkable points along the rachis, and each segment (or section) is defined by two consecutive points.
     # Each segment has a particular shape, a mass, and the leaflets on both sides of the rachis have a mass.
 
     # Relative position at the middle of each segment:
-    relative_position_mid_segment = [0.1681157, 0.504347, 0.672462702046766, 0.754347, 0.9181157]
+    relative_position_mid_segment = _RACHIS_SEGMENT_MIDPOINTS
 
     # Distribution of the mass for each segment relative to the total rachis mass:
-    mass_distribution_segment_rachis = [0.0, 0.648524097435024, 0.277401814695433, 0.0601164171693578, 0.0139576707001849]
+    mass_distribution_segment_rachis = _RACHIS_SEGMENT_MASS_DISTRIBUTION
 
     # Distribution of the mass for each leaflet relative to the total rachis mass:
-    mass_distribution_segment_leaflet = [0.0, 0.0658151279405379, 0.201957451540734, 0.105263443497354, 0.0475385258600695]
+    mass_distribution_segment_leaflet = _RACHIS_LEAFLET_MASS_DISTRIBUTION
 
     # Initialization of data computed for each of the 5 remarkable points:
     mass = fill(0.0u"kg", npoints)               # Mass of each segment represented by the points
@@ -140,11 +170,6 @@ function biomechanical_properties_rachis(
         width_bend[i] = height_bend[i] / height_to_width_ratio(relative_position_remarkable_points[i], ratioPointC, ratioPointA, posRatioMax, ratioMax)
     end
 
-    # Un-bent coordinates (take the leaf as a straight line in x and z)
-    x = fill(0.0u"m", 5)
-    y = fill(0.0u"m", 5)
-    z = fill(0.0u"m", 5)
-
     point_type = GeometryBasics.Point{3,typeof(distances[1])}
     points = Vector{point_type}(undef, npoints)
     for n in eachindex(distances)
@@ -156,17 +181,11 @@ function biomechanical_properties_rachis(
 
     step = rachis_length / (nb_sections - 1)
 
-    # extract the points coordinates to give to bend:
-    x = [p[1] for p in points]
-    y = [p[2] for p in points]
-    z = [p[3] for p in points]
-    #! Update bend so we can pass the points directly
-
     # Call the bend function, which returns a vector of arrays:
     # bending -> { PtsX, PtsY, PtsZ, PtsDist, PtsAglXY, PtsAglXZ, PtsAglTor }
-    bending = _bend(
+    bending = _bend_points(
         workspace,
-        type, width_bend, height_bend, initial_torsion_vec, x, y, z, mass, mass_right, mass_left,
+        type, width_bend, height_bend, initial_torsion_vec, points, mass, mass_right, mass_left,
         distance_application, elastic_modulus, shear_modulus, step, npoints_computed, iterations;
         verbose=false, all_points=true, angle_max=angle_max
     )

@@ -11,13 +11,34 @@ shear_modulus = 400.0u"MPa"
 
 atol_length = 1e-3u"m" # mm tolerance
 
-function _run_bend_fixture(df, elastic_modulus, shear_modulus, step, npoints, nsegments)
+function _run_bend_fixture(df, elastic_modulus, shear_modulus, step, npoints, nsegments; all_points=false)
     return VPalm.bend(
         df.type, df.width * u"m", df.height * u"m", df.torsion * u"°",
         df.x * u"m", df.y * u"m", df.z * u"m", df.mass * u"kg",
         df.mass_right * u"kg", df.mass_left * u"kg", df.distance_application * u"m",
         elastic_modulus, shear_modulus, step, npoints, nsegments;
         verbose=false,
+        all_points=all_points,
+    )
+end
+
+function _bend_fixture_points(df)
+    point_type = GeometryBasics.Point{3,typeof(1.0u"m")}
+    return [
+        point_type(row.x * u"m", row.y * u"m", row.z * u"m")
+        for row in eachrow(df)
+    ]
+end
+
+function _run_bend_points_fixture(df, elastic_modulus, shear_modulus, step, npoints, nsegments; all_points=false)
+    points = _bend_fixture_points(df)
+    return VPalm.bend(
+        df.type, df.width * u"m", df.height * u"m", df.torsion * u"°",
+        points, df.mass * u"kg", df.mass_right * u"kg", df.mass_left * u"kg",
+        df.distance_application * u"m", elastic_modulus, shear_modulus,
+        step, npoints, nsegments;
+        verbose=false,
+        all_points=all_points,
     )
 end
 
@@ -60,6 +81,43 @@ ref = CSV.read(joinpath(@__DIR__, "references/6_EW01.22_17_kanan_unbent_bend.csv
     @test length(df.type) == length(df.width) == length(df.height) == length(df.torsion) == length(df.x) == length(df.y) == length(df.z) == length(df.mass) == length(df.mass_right) == length(df.mass_left) == length(df.distance_application)
     # Call the function
     out = _run_bend_fixture(df, elastic_modulus, shear_modulus, pas, Ncalc, Nboucle)
+    out_from_points = _run_bend_points_fixture(
+        df,
+        elastic_modulus,
+        shear_modulus,
+        pas,
+        Ncalc,
+        Nboucle,
+    )
+    @test out_from_points == out
+
+    all_coordinates = _run_bend_fixture(
+        df,
+        elastic_modulus,
+        shear_modulus,
+        pas,
+        Ncalc,
+        Nboucle;
+        all_points=true,
+    )
+    all_from_points = _run_bend_points_fixture(
+        df,
+        elastic_modulus,
+        shear_modulus,
+        pas,
+        Ncalc,
+        Nboucle;
+        all_points=true,
+    )
+    @test all_from_points == all_coordinates
+
+    @test_throws AssertionError VPalm.bend(
+        df.type, df.width * u"m", df.height * u"m", df.torsion * u"°",
+        df.x[1:end-1] * u"m", df.y * u"m", df.z * u"m", df.mass * u"kg",
+        df.mass_right * u"kg", df.mass_left * u"kg", df.distance_application * u"m",
+        elastic_modulus, shear_modulus, pas, Ncalc, Nboucle;
+        verbose=false,
+    )
 
     # Test length of elastic_modulus and shear_modulus
     @test_throws MethodError VPalm.bend(
