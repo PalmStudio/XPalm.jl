@@ -220,13 +220,17 @@ Only after profiling points to this layer, measure:
 
 ### Phase 0 — Freeze reproducible baselines and oracles
 
-- [ ] Add a controlled benchmark runner with fixed parameters and random seed.
+- [x] Add a controlled benchmark runner with fixed parameters and random seed.
+  `benchmark/vpalm_geometry_performance.jl` records separate setup, simulation
+  and output-materialization costs, exact 21-series parity, topology, sampled
+  object/node peaks, dependency revisions/dirty state and the active manifest.
 - [ ] Capture the current short, five-year and 4,160-step results.
 - [x] Save a compact deterministic fingerprint for one dynamic leaf: class
   counts, identities, parent relations and local leaflet dimensions/profiles.
 - [x] Confirm exact architecture-off/on observer parity in a fresh three-day
-  test for LAI, leaf area and carbon assimilation. The full 4,160-step rerun
-  remains required.
+  test for LAI, leaf area and carbon assimilation. The benchmark smoke test also
+  preserves all 21 canonical series exactly. The full 4,160-step rerun remains
+  required.
 - [ ] Record the current standalone VPalm reference reconstruction.
 - [ ] Define explicit tolerances for floating-point geometry comparisons.
 
@@ -255,6 +259,14 @@ Current code-reading hypotheses to test, not yet accepted conclusions:
 - when meshes are materialized later, every leaflet creates a new extruded
   `RefMesh`, even when its local geometry could be retained between global pose
   updates.
+
+The warmed 40-day smoke benchmark currently takes 0.0508 s and allocates
+45.17 MB without architecture, versus 0.0651 s and 51.51 MB with architecture;
+all 840 retained values are exactly identical. This is only a runner validation,
+not an end-to-end performance conclusion. Its environment fingerprint also
+correctly reports that the active sibling PlantSimEngine checkout is dirty, so
+fresh full-run results must retain that dependency state or use a committed,
+pinned revision before being treated as canonical.
 
 ### Phase 2 — Make scheduling genuinely event-driven
 
@@ -517,6 +529,7 @@ changes with performance changes.
 | 2026-08-30 | Preserve rasterized section mechanics for the first inertia optimization | continuous formulas change the current bend reference materially | accumulate and rotate raw raster moments, then hoist them outside the iteration loop |
 | 2026-08-30 | Reuse coordinate work buffers inside `bend` | the remaining full-fixture allocation was 1.14 MB despite the inertia rewrite | keep the public API and numerical fixture while using private in-place kernels |
 | 2026-08-30 | Freeze leaflet deployment profiles after rank 2 | the existing unfolding kernel reaches its final state at rank 2, while later transitions still alter petiole and rachis geometry | skip mature leaflet traversal without freezing whole-leaf pose updates |
+| 2026-08-30 | Keep the full A/B benchmark in-repository but its generated data outside the tree | the previous driver was an external artifact and could not fully fingerprint the active environment | provide a fixed-seed 21-series runner and retain machine-readable results with each reported run |
 
 ## Deferred scientific work
 
