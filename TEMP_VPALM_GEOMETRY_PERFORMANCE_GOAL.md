@@ -256,19 +256,20 @@ carbon/respiration changes on `3d-architecture`: the former local dependency
 failure had hidden it. This geometry-performance branch must not silently
 rewrite the v0.6.1 scientific reference.
 
-CI classification for pushed head `ace56b5`:
+CI classification for pushed head `ee2a20b`:
 
 - documentation succeeds;
-- macOS Julia 1, Windows Julia 1 and Windows Julia 1.10 each complete the
-  focused VPalm suite with 533 passing assertions and no numerical failure;
-  only the intentionally stale `palm_mockup.png` reference fails, at about
-  19.665 dB PSNR against the 25 dB threshold;
+- macOS Julia 1 and Windows Julia 1.10 each complete the expanded VPalm suite
+  with 621 passing assertions and no numerical failure; only the intentionally
+  stale `palm_mockup.png` reference errors, at about 19.65 dB PSNR against the
+  25 dB threshold;
+- Windows Julia 1 remained in progress when this classification was recorded;
 - Ubuntu Julia 1.12 reaches the inherited v0.6.1 `architecture=false`
   scientific-reference mismatch, with 37 passing and 33 failing comparisons
   and the same numerical values observed before this optimization branch.
 
 The static image remains deliberately unchanged pending visual approval. This
-classification applies to pushed head `ace56b5`, not yet to later local work.
+classification applies to the final implementation head `ee2a20b`.
 
 ### Phase 1 — Profile before changing implementation
 
@@ -457,7 +458,20 @@ Fourth biomechanics slice, an enabling representation refactor:
   reverted. This slice is retained as enabling cleanup, not claimed as a
   material runtime improvement.
 
-Coupled multi-date reconstruction validation after this slice:
+Final biomechanics workspace slice at `e5bda89`:
+
+- four additional interpolation and torsion result buffers are retained on the
+  sequential `BendIterationWorkspace` and filled with the existing
+  `linear_interpolation` semantics through `map!`;
+- the warmed canonical mature transition allocates 80,288 bytes instead of
+  124,128 bytes on the preceding workspace path and 376,912 bytes on the
+  workspace-free reference path: 35.3% and 78.7% less, respectively;
+- the complete rachis state and next random draw remain exactly equal to the
+  generic path, including after workspace resizing. The permanent test requires
+  at least a 20% reduction rather than a Julia-version-specific absolute byte
+  count.
+
+Current-head coupled multi-date reconstruction validation at `ee2a20b`:
 
 - one continued simulation was inspected at 365, 730, 1,095, 1,460 and 1,825
   days, with numerical summaries and a rendered image at every checkpoint;
@@ -465,21 +479,24 @@ Coupled multi-date reconstruction validation after this slice:
   equivalent to about one new phytomer every 10.6 days. The 109- and
   142-phytomer checkpoints bracket the requested approximately 120 count;
 - at 1,460 days, mean rachis and petiole lengths are within 2.6% and 4.1% of
-  the standalone static-120 reference, but the crown already reaches z=-1.49 m;
+  the standalone static-120 reference, while the crown reaches z=-1.494 m;
 - at five years, 58 living geometric leaf subtrees contain 14,470 leaflets,
-  close to 53 and 14,640 in the static reference. Mean rachis length is 4.31 m
-  instead of 3.66 m, and the lowest rank-50 leaflet reaches z=-1.61 m;
+  close to 53 and 14,640 in the static reference. Mean rachis length is 4.368 m
+  instead of 3.66 m, and the lowest point reaches z=-1.605 m;
 - the visual and numerical residual therefore points to mature flexion/angle
   mechanics and age/count matching, not a drift introduced by the performance
   refactors or a simple global unit error;
-- all 88 final pruned leaves have zero descendants, and no dynamic petiole,
-  rachis, segment or leaflet is a PlantSimEngine simulation object;
-- opened-leaf mesh area is only 61-67% of XPalm physiological leaf area after
-  year three. It must not replace `leaf_area` without a separate scientific
-  correction. The year-one ratio above one also confirms strong age dependence;
-- after the cold first-year chunk, the successive 365-day chunks take 2.61 to
-  5.16 seconds in the clean pinned-dependency environment. All CSV and PNG
-  artifacts remain outside the repository under `/private/tmp`.
+- the final topology has 173 leaves, including 85 living and 88 dead leaves;
+  58 living leaves carry explicit geometry, while the other living leaves are
+  internal or not yet geometrically instantiated;
+- opened-leaflet mesh area is 76.6%, 78.7% and 80.3% of XPalm physiological
+  leaf area at years three, four and five. It must not replace `leaf_area`
+  without a separate scientific correction. The year-one ratio of 179.0% also
+  confirms strong age dependence;
+- after the cold first-year chunk, the successive 365-day chunks take 2.40 to
+  3.05 seconds in the clean pinned-dependency environment. The five current
+  PNGs and their 55-column numerical summaries remain outside the repository
+  under `/private/tmp/xpalm-vpalm-multidate-ee2a20b` pending visual approval.
 
 Final geometry-correctness follow-up at `e9af898`:
 
@@ -595,6 +612,47 @@ As in the earlier paired runs, the active PlantSimEngine checkout is recorded
 as commit `771894cd` with tracked local changes. The exact within-process parity
 and current branch result are valid, but the absolute timing delta must not be
 attributed solely to the small point-input refactor.
+
+Clean pinned final A/B at `ee2a20b`, using PlantSimEngine `771894cd`, PlantGeom
+`9d682ef`, Julia 1.12.1 and manifest SHA-256
+`ddb56df467345f4cb462cb2b08ba4964df02d37f8c9da4cfc107723369b21802`:
+
+- `architecture=false`: 13.130 s and 8.934 GB allocated;
+- `architecture=true`: 37.991 s and 12.205 GB allocated;
+- architecture therefore costs 2.893 times the runtime and 1.366 times the
+  allocations; GC accounts for 2.20% of architecture simulation time;
+- compared with the original 569.015 s / about 2.529 TB architecture baseline,
+  the clean final implementation is 14.98 times faster with 99.52% fewer
+  allocated bytes;
+- all 87,360 retained physiological values are exactly equal, with maximum
+  absolute difference zero for all 21 daily series;
+- 363 structural-biomass comparisons (11 compartments at 33 lifecycle
+  checkpoints) are also exactly equal. The totals are summed in stable
+  PlantSimEngine object-ID order so traversal-order roundoff cannot masquerade
+  as a biological difference;
+- final and sampled-peak structure remains 1,197 PlantSimEngine objects,
+  18,673 final MTG nodes and 26,015 sampled-peak MTG nodes;
+- the independent biomass-validation reruns take 13.297 s without architecture
+  and 38.106 s with architecture and are excluded from the simulation timing;
+- machine-readable results are stored outside the repository under
+  `/private/tmp/xpalm-vpalm-geometry-clean-ee2a20b`.
+
+Five alternating warmed `architecture=false` pairs compare the exact
+`3d-architecture` base `bb2a0cc` with `ee2a20b` under the same manifest:
+
+- every run has the same 21-series SHA-256, 1,197 PlantSimEngine objects and
+  1,197 MTG nodes;
+- median simulation time is 13.461 s on the base and 13.726 s on the head;
+- the median paired head/base ratio is 1.0198 and the geometric mean is 1.0166,
+  so the point estimates remain within the 2% non-regression target;
+- the median allocation ratio is 1.0000025 (range 0.999999 to 1.000031);
+- with only five pairs, the one-sided bootstrap 95% upper bound is 1.0344, so a
+  strict statistical claim below 2% remains inconclusive. The exact allocation
+  and output results, architecture-specific code paths and balanced pair order
+  support classifying the observed timing spread as measurement noise rather
+  than a demonstrated architecture-off regression;
+- raw samples are stored outside the repository under
+  `/private/tmp/xpalm-archoff-ee2a20b`.
 
 ### Phase 4 — Reduce topology and traversal costs
 
@@ -778,9 +836,10 @@ Standalone reference added during this work:
   the complete botanical topology and scientific attributes;
 - `default_parameters(type="dynamic")` cannot use the standalone skeleton path
   because `mtg_skeleton` requires the absent `rachis_fresh_weight` key;
-- the existing 145-leaf image reference reaches 24.673 dB PSNR in the current
-  rendering environment, just below the default 25 dB threshold. Numeric mesh
-  references are needed to distinguish geometry drift from rendering drift.
+- the existing 145-leaf raster reference is intentionally stale after the
+  corrected mass order and leaflet parent-offset composition (current CI PSNR
+  is about 19.65 dB). It must be replaced only after visual approval; numeric
+  mesh references distinguish this intended pose change from topology drift.
 
 Permanent lightweight mesh guardrails added during this work:
 
@@ -864,6 +923,11 @@ changes with performance changes.
 | 2026-08-30 | Preserve botanical topology at every merge scale | deleting organ nodes made consolidated scenes impossible to query, and `:plant` omitted Internode geometry | merge geometry with `delete=:none`, remove only source geometry attributes, and test exact topology plus ownership |
 | 2026-08-30 | Apply leaflet attachment offsets before the parent pose | the offset was stored on Leaflet nodes but absent from the transformation | translate along the rachis-segment local axis and guard a nonzero offset numerically |
 | 2026-08-30 | Stop topology micro-optimization after the measured prototype | the no-event residual is 0.529 microseconds / 80 bytes and traversal plumbing did not reduce event allocations | defer persistent references and bulk creation rather than add lifecycle risk without a measured gain |
+| 2026-08-31 | Reuse interpolation and torsion result buffers | the canonical mature transition retained 124,128 bytes after the first workspace pass | extend the sequential workspace and retain exact generic-path and RNG parity at 80,288 bytes |
+| 2026-08-31 | Reject a PlantGeom cache-key branch for this phase | one representative five-segment leaflet extrusion improved by only 7.63% time and 10.55% allocations | keep the optimization local to XPalm and defer broader PlantGeom caching until meshes are repeatedly consumed |
+| 2026-08-31 | Validate biomass in an independent simulation | checkpoint traversal inside the timed run could perturb later GC | report validation time separately and compare 11 compartments at every 128-day checkpoint |
+| 2026-08-31 | Sum validation biomass by stable object ID | architecture changed object traversal order and produced harmless 1e-14 to 1e-10 summation differences | preserve an exact zero-tolerance parity contract without confusing accumulation order with biology |
+| 2026-08-31 | Keep the corrected current-head raster pending visual approval | five continued checkpoints show coherent crown emergence and a five-year palm, while the committed raster predates intended pose corrections | show the current images before replacing the reference or removing the temporary plan |
 
 ## Deferred scientific work
 
