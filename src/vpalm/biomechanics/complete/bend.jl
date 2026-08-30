@@ -137,23 +137,26 @@ function bend(type, width_bend, height_bend, init_torsion, x, y, z, mass_rachis,
 
     som_cum_vec_agl_tor = copy(vec_agl_tor)  # geometric rotation and section
 
-    for iter_poids in 1:nsegments
-        # Inertias and surfaces of the experimental points
-        v_ig_flex = fill(0.0u"m^4", npoints_exp)
-        v_ig_tor = fill(0.0u"m^4", npoints_exp)
-        v_sr = fill(0.0u"m^2", npoints_exp)
+    # Section dimensions and raster membership do not change during the
+    # iterative deformation. Compute their unrotated moments once; only the
+    # bending moment changes when the section orientation changes.
+    section_moments = [
+        _section_grid_moments(width_bend[iter], height_bend[iter], type[iter], npoints)
+        for iter in 1:npoints_exp
+    ]
+    v_ig_flex = fill(0.0u"m^4", npoints_exp)
+    v_ig_tor = [moments.ig_tor for moments in section_moments]
+    vec_inertie_tor = linear_interpolation(dist_lineique, [v_ig_tor[1]; v_ig_tor])(vec_dist)
 
+    for iter_poids in 1:nsegments
+        # Bending inertias of the experimental points after section rotation.
         for iter in 1:npoints_exp
             ag_rad = som_cum_vec_agl_tor[i_discret_pts_exp[iter]]  # orientation section (radians)
-            inertia_flex_rot = inertia_flex_rota(width_bend[iter], height_bend[iter], ag_rad, type[iter], npoints)
-            v_ig_flex[iter] = inertia_flex_rot.ig_flex
-            v_ig_tor[iter] = inertia_flex_rot.ig_tor
-            v_sr[iter] = inertia_flex_rot.sr
+            v_ig_flex[iter] = _rotate_section_moments(section_moments[iter], ag_rad).ig_flex
         end
 
         # Linear interpolation of inertias
         vec_inertie_flex = linear_interpolation(dist_lineique, [v_ig_flex[1]; v_ig_flex])(vec_dist) # Should be in m⁴
-        vec_inertie_tor = linear_interpolation(dist_lineique, [v_ig_tor[1]; v_ig_tor])(vec_dist)
 
         # Write angles from the new coordinates
         # Distance and angles of each segment P2P1

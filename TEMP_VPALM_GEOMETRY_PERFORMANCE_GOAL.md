@@ -298,21 +298,36 @@ internode dimensions and rank.
 ### Phase 3 — Reduce allocations in VPalm biomechanics
 
 - [ ] Move literal constant arrays out of hot functions.
-- [ ] Replace temporary coordinate comprehensions with typed, reusable or
-  in-place storage where this is measurably useful.
+- [x] Replace raster matrices, point clouds and temporary coordinate
+  comprehensions in section inertia with scalar raw-moment accumulation.
 - [ ] Let `bend` accept the point representation already produced by VPalm
   instead of splitting and rebuilding x/y/z arrays.
-- [ ] Replace gridded section-inertia integration with validated analytical
-  moments for rectangle, triangle, ellipse and circle where formulas match the
-  model; otherwise cache normalized section results.
-- [ ] Validate analytical or cached inertias against both the current result and
-  a finer numerical grid before accepting the speed-up.
-- [ ] Reuse work buffers across calls when ownership and thread safety are clear.
+- [x] Hoist the five invariant raster-section moments and torsional interpolation
+  outside the 15-iteration `bend` loop while preserving the historical section
+  predicates.
+- [x] Validate the raw-moment kernel against the former raster implementation
+  across all five shapes, two dimension ratios and three angles.
+- [ ] Evaluate continuous analytical section formulas as a separate scientific
+  change. They are not acceptable for this compatibility optimization because
+  they move the bend fixture by up to 1.14 cm and 0.285 degrees.
+- [x] Reuse the bending-inertia buffer across iterations. Other `bend` work
+  arrays remain candidates.
 - [ ] Reduce repeated unit conversions and dictionary lookups inside loops while
   preserving the public Unitful API.
 - [ ] Consider a typed, unit-normalized internal kernel with explicit conversion
   at the boundary.
-- [ ] Benchmark inference, allocations and numerical parity after each change.
+- [x] Benchmark allocations, timings and numerical parity for the first inertia
+  optimization.
+
+First measured biomechanics slice:
+
+- five-section inertia sweep: 15,782,880 bytes to 2,688 bytes and median
+  2.520 ms to 0.149 ms;
+- complete existing `bend` fixture: 168,446,304 bytes to 1,135,888 bytes and
+  about 29.425 ms to median 0.428 ms;
+- 30 shape/dimension/angle parity cases: maximum relative flexion error
+  `5.30e-15`, torsion error `6.92e-16`, and exactly identical area;
+- existing bend CSV reference unchanged and passing.
 
 ### Phase 4 — Reduce topology and traversal costs
 
@@ -476,6 +491,7 @@ changes with performance changes.
 | 2026-08-30 | Validate local shape separately from global pose | leaf topology/dimensions can remain fixed while rachis and leaf angles move | cache local meshes, update transformations |
 | 2026-08-30 | Optimize shared VPalm functions when possible | standalone and coupled paths call the same VPalm module | test both entry points |
 | 2026-08-30 | Make geometry updates event-driven and pruning one-shot | unchanged calls advanced RNG and repeated pruning revisited the subtree | store lifecycle state in PlantSimEngine status and preserve organ-level random traits |
+| 2026-08-30 | Preserve rasterized section mechanics for the first inertia optimization | continuous formulas change the current bend reference materially | accumulate and rotate raw raster moments, then hoist them outside the iteration loop |
 
 ## Deferred scientific work
 

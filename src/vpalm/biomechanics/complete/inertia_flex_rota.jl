@@ -27,59 +27,167 @@ For the section type, possible values are:
   - `sr`: Cross-section surface.
 """
 function inertia_flex_rota(base_width, height, orientation_angle, section_type, grid_size=100)
-    # Calculate cell size for grid discretization
+    moments = _section_grid_moments(base_width, height, section_type, grid_size)
+    return _rotate_section_moments(moments, orientation_angle)
+end
+
+"""
+    _section_grid_moments(base_width, height, section_type, grid_size)
+
+Compute the unrotated second moments and area of a rasterized section without
+materializing its grid or its cell-center points. The membership predicates are
+kept identical to [`create_section`](@ref), so this is a numerical optimization
+of the historical discretization rather than a change to the section model.
+"""
+function _section_grid_moments(base_width, height, section_type, grid_size=100)
     cell_size = min(base_width, height) / grid_size
     rows = round(Int, height / cell_size)
     cols = round(Int, base_width / cell_size)
 
-    # Create the section grid based on the section type
-    section = zeros(rows, cols)
-    section = create_section(section, section_type)
+    total_cells = 0
+    sum_row = 0.0
+    sum_col = 0.0
+    sum_row_squared = 0.0
+    sum_col_squared = 0.0
+    sum_row_col = 0.0
 
-    # Center of gravity calculation
-    total_cells = sum(section)
+    if section_type == 1
+        b13 = [1 1; cols / 2 1] \ [1; rows]
+        b23 = [cols 1; cols / 2 1] \ [1; rows]
 
-    # Calculate center of gravity using matrix operations
-    row_indices = 1:rows
-    col_indices = 1:cols
-    row_matrix = repeat(row_indices, 1, cols)
-    col_matrix = repeat(col_indices', rows, 1)
+        for row in 1:rows, col in 1:cols
+            n13 = col * b13[1] + b13[2]
+            n23 = col * b23[1] + b23[2]
+            if row <= n13 && row <= n23
+                total_cells += 1
+                sum_row += row
+                sum_col += col
+                sum_row_squared += row^2
+                sum_col_squared += col^2
+                sum_row_col += row * col
+            end
+        end
+    elseif section_type == 2
+        for row in 1:rows, col in 1:cols
+            total_cells += 1
+            sum_row += row
+            sum_col += col
+            sum_row_squared += row^2
+            sum_col_squared += col^2
+            sum_row_col += row * col
+        end
+    elseif section_type == 3
+        b13 = [1 1; cols / 2 1] \ [rows; 1]
+        b23 = [cols 1; cols / 2 1] \ [rows; 1]
 
-    center_row = sum(section .* row_matrix) / total_cells
-    center_col = sum(section .* col_matrix) / total_cells
+        for row in 1:rows, col in 1:cols
+            n13 = col * b13[1] + b13[2]
+            n23 = col * b23[1] + b23[2]
+            if row >= n13 && row >= n23
+                total_cells += 1
+                sum_row += row
+                sum_col += col
+                sum_row_squared += row^2
+                sum_col_squared += col^2
+                sum_row_col += row * col
+            end
+        end
+    elseif section_type == 4
+        a = max(rows, cols) / 2
+        b = min(rows, cols) / 2
+        c = sqrt(a^2 - b^2)
 
-    # Create points for cells in the section relative to the center of gravity
-    point_type = GeometryBasics.Point{3,typeof(cell_size)}
-    section_points = Vector{point_type}()
+        if rows >= cols
+            col_center = cols / 2
+            focal_point1 = a - c
+            focal_point2 = 2 * c + (a - c)
 
-    zero_length = zero(eltype(base_width))
-    for row in 1:rows, col in 1:cols
-        if section[row, col] > 0
-            # Calculate position relative to center of mass
-            x = (col - center_col) * cell_size
-            y = (row - center_row) * cell_size
-            z = zero_length
-            push!(section_points, point_type(x, y, z))
+            for row in 1:rows, col in 1:cols
+                dist1 = sqrt((row - focal_point1)^2 + (col - col_center)^2)
+                dist2 = sqrt((row - focal_point2)^2 + (col - col_center)^2)
+                if dist1 + dist2 <= 2a
+                    total_cells += 1
+                    sum_row += row
+                    sum_col += col
+                    sum_row_squared += row^2
+                    sum_col_squared += col^2
+                    sum_row_col += row * col
+                end
+            end
+        else
+            row_center = rows / 2
+            focal_point1 = a - c
+            focal_point2 = 2 * c + (a - c)
+
+            for row in 1:rows, col in 1:cols
+                dist1 = sqrt((row - row_center)^2 + (col - focal_point1)^2)
+                dist2 = sqrt((row - row_center)^2 + (col - focal_point2)^2)
+                if dist1 + dist2 <= 2a
+                    total_cells += 1
+                    sum_row += row
+                    sum_col += col
+                    sum_row_squared += row^2
+                    sum_col_squared += col^2
+                    sum_row_col += row * col
+                end
+            end
+        end
+    elseif section_type == 5
+        radius = min(rows, cols) / 2
+        row_center = rows / 2
+        col_center = cols / 2
+
+        for row in 1:rows, col in 1:cols
+            dist = sqrt((row - row_center)^2 + (col - col_center)^2)
+            if dist <= radius
+                total_cells += 1
+                sum_row += row
+                sum_col += col
+                sum_row_squared += row^2
+                sum_col_squared += col^2
+                sum_row_col += row * col
+            end
         end
     end
 
-    # Apply section orientation rotation.
-    rotation = RotZ(orientation_angle)
-    rotated_points = [rotation * GeometryBasics.Vec{3,typeof(cell_size)}(p[1], p[2], p[3]) for p in section_points]
-
-    # Calculate inertias using efficient vector operations
     cell_area = cell_size^2
+    cell_inertia = cell_size^4
+    if total_cells == 0
+        zero_inertia = zero(cell_inertia)
+        return (
+            ig_x=zero_inertia,
+            ig_y=zero_inertia,
+            ig_xy=zero_inertia,
+            ig_tor=zero_inertia,
+            sr=zero(cell_area),
+        )
+    end
 
-    # Extract coordinates from rotated points
-    x_coords = [p[1] for p in rotated_points]
-    y_coords = [p[2] for p in rotated_points]
+    centered_row_squared = sum_row_squared - sum_row^2 / total_cells
+    centered_col_squared = sum_col_squared - sum_col^2 / total_cells
+    centered_row_col = sum_row_col - sum_row * sum_col / total_cells
 
-    # Calculate inertias and cross-section area
-    bending_inertia = sum(y_coords .^ 2) * cell_area
-    torsion_inertia = sum(x_coords .^ 2 .+ y_coords .^ 2) * cell_area
-    section_area = length(section_points) * cell_area
+    ig_x = centered_row_squared * cell_inertia
+    ig_y = centered_col_squared * cell_inertia
+    ig_xy = centered_row_col * cell_inertia
 
-    return (ig_flex=bending_inertia, ig_tor=torsion_inertia, sr=section_area)
+    return (
+        ig_x=ig_x,
+        ig_y=ig_y,
+        ig_xy=ig_xy,
+        ig_tor=ig_x + ig_y,
+        sr=total_cells * cell_area,
+    )
+end
+
+@inline function _rotate_section_moments(moments, orientation_angle)
+    sine, cosine = sincos(orientation_angle)
+    bending_inertia =
+        moments.ig_x * cosine^2 +
+        moments.ig_y * sine^2 +
+        2 * moments.ig_xy * sine * cosine
+
+    return (ig_flex=bending_inertia, ig_tor=moments.ig_tor, sr=moments.sr)
 end
 
 """
