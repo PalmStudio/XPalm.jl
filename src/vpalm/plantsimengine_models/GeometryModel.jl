@@ -292,7 +292,17 @@ function build_leaf(unique_mtg_id, i, leaf, biomass_leaf, parameters; rng)
         rng=rng
     )
 
+    # Leaflets created at or beyond the final unfolding rank already have their
+    # mature angles, stiffness, and segment profiles. Keep this state on the
+    # leaf so later rank transitions can take the mature fast path safely.
+    leaf.leaflets_fully_unfolded = leaf.rank >= 2
+
 end
+
+
+_leaflets_fully_unfolded(leaf) =
+    hasproperty(leaf, :leaflets_fully_unfolded) &&
+    leaf.leaflets_fully_unfolded === true
 
 
 function update_leaf!(leaf, biomass_leaf, parameters; rng, workspace=nothing)
@@ -321,9 +331,11 @@ function update_leaf!(leaf, biomass_leaf, parameters; rng, workspace=nothing)
     )
 
     # Leaflet angles and segment profiles reach their final state at rank 2.
-    # Later rank transitions can still change the petiole and rachis geometry,
-    # but traversing every leaflet would only rebuild identical profiles.
-    leaf.rank > last_rank_unfolding && return nothing
+    # Use the stored state rather than the current rank for the fast path: an
+    # older MTG without this attribute, or a simulation that jumps directly
+    # from an immature rank to rank 3+, must still receive one final unfolding
+    # update before later transitions can skip the leaflet traversal.
+    _leaflets_fully_unfolded(leaf) && return nothing
 
     traverse!(rachis, symbol=:Leaflet) do leaflet
         VPalm.update_leaflet_angles!(
@@ -333,5 +345,6 @@ function update_leaf!(leaf, biomass_leaf, parameters; rng, workspace=nothing)
             ym_intercept=parameters["leaflet_ym_intercept"], ym_slope=parameters["leaflet_ym_slope"]
         )
     end
+    leaf.leaflets_fully_unfolded = leaf.rank >= last_rank_unfolding
     return nothing
 end

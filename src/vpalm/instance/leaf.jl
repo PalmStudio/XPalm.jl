@@ -11,4 +11,9 @@ function leaf(unique_mtg_id, index, rank, rachis_fresh_biomass, rachis_final_len
 
     # Add the leaflets to the rachis:
     leaflets!(unique_mtg_id, rachis_node, 5, leaf_node.rank, leaf_node.rachis_length, parameters; rng=rng)
+
+    # Keep the deployment state on every VPalm leaf, including standalone
+    # mockups. GeometryModel uses the same attribute to skip later mature
+    # traversals without missing a coarse transition to rank 3 or above.
+    leaf_node.leaflets_fully_unfolded = leaf_node.rank >= 2
 end

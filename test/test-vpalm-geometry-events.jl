@@ -235,12 +235,23 @@ end
 
     folded_state = _vpalm_leaflet_unfolding_state(leaf)
     folded_profile_references = _vpalm_leaflet_profile_references(leaf)
+    skipped_rank_leaf = deepcopy(leaf)
+    skipped_rank_reference = deepcopy(leaf)
+    skipped_rank_rng = copy(rng)
+    skipped_rank_reference_rng = copy(rng)
+    delete!(
+        MultiScaleTreeGraph.node_attributes(skipped_rank_leaf),
+        :leaflets_fully_unfolded,
+    )
+    @test !hasproperty(skipped_rank_leaf, :leaflets_fully_unfolded)
+
     leaf.rank = 2
     VPalm.update_leaf!(leaf, biomass_leaf, parameters; rng=rng)
     rank_2_state = _vpalm_leaflet_unfolding_state(leaf)
     rank_2_profile_references = _vpalm_leaflet_profile_references(leaf)
 
     @test rank_2_state != folded_state
+    @test leaf.leaflets_fully_unfolded
     @test all(
         rank_2_profile_references[i].boundaries !== folded_profile_references[i].boundaries &&
         rank_2_profile_references[i].lengths !== folded_profile_references[i].lengths &&
@@ -275,6 +286,30 @@ end
         end
         for leaflet in leaflets
     )
+
+    # A coarse or restarted simulation may skip the rank-2 transition. Older
+    # MTGs also lack the explicit leaf-level maturity flag. Both cases must get
+    # the same final leaflet state before entering the mature fast path.
+    skipped_rank_leaf.rank = 3
+    skipped_rank_leaf.rachis_length = 3.3u"m"
+    skipped_rank_reference.rank = 2
+    skipped_rank_reference.rachis_length = skipped_rank_leaf.rachis_length
+    VPalm.update_leaf!(
+        skipped_rank_leaf,
+        biomass_leaf,
+        parameters;
+        rng=skipped_rank_rng,
+    )
+    VPalm.update_leaf!(
+        skipped_rank_reference,
+        biomass_leaf,
+        parameters;
+        rng=skipped_rank_reference_rng,
+    )
+    @test skipped_rank_leaf.leaflets_fully_unfolded
+    @test skipped_rank_reference.leaflets_fully_unfolded
+    @test _vpalm_leaflet_unfolding_state(skipped_rank_leaf) ==
+          _vpalm_leaflet_unfolding_state(skipped_rank_reference)
 
     # From rank 3 onward, only the petiole and rachis continue to change. Use a
     # rachis-only reference to prove that the skipped leaflet phase adds no RNG
@@ -366,7 +401,6 @@ end
 
 @testset "rachis biomechanics workspace is exact and reusable" begin
     parameters = VPalm.default_parameters(type="dynamic")
-    visible_rank = VPalm.first_visible_leaf_rank(parameters)
     plant = Node(NodeMTG(:/, :Plant, 1, 1))
     leaf = Node(2, plant, NodeMTG(:+, :Leaf, 1, 4), Dict{Symbol,Any}())
     unique_id = Ref(3)
@@ -376,13 +410,14 @@ end
     VPalm.leaf(
         unique_id,
         1,
-        visible_rank,
+        2,
         biomass_leaf,
         3.0u"m",
         leaf,
         parameters;
         rng=rng,
     )
+    @test leaf.leaflets_fully_unfolded
 
     reference_leaf = deepcopy(leaf)
     reference_rng = copy(rng)
