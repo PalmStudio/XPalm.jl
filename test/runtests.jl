@@ -216,6 +216,7 @@ end
 
     @testset "Geometry" begin
         include(joinpath(dirtest, "test-vpalm-geometry.jl"))
+        include(joinpath(dirtest, "test-vpalm-mesh-merge.jl"))
         include(joinpath(dirtest, "test-vpalm-geometry-events.jl"))
         include(joinpath(dirtest, "test-vpalm-geometry-contracts.jl"))
     end

@@ -236,7 +236,9 @@ Only after profiling points to this layer, measure:
   fixed-seed approximately 120-emitted-leaf palm, per-merge-scale topology,
   canonical mesh hashes, dimensions, bounds, area and build/materialization
   costs. The dynamic standalone parameter path remains a documented gap.
-- [ ] Define explicit tolerances for floating-point geometry comparisons.
+- [x] Define explicit tolerances for the first permanent floating-point mesh
+  contracts: local vertices/bounds at 1e-12 m, surface at 1e-12 relative
+  tolerance, and oriented merge comparison after 1e-10 m quantization.
 
 ### Phase 1 — Profile before changing implementation
 
@@ -461,6 +463,11 @@ remove the main simulation-only baseline cost measured above.
   actually requests a concrete scene mesh.
 - [ ] Verify local mesh area, vertices/faces, bounding box and barycenter before
   and after caching.
+- [x] Add a lightweight permanent mesh oracle before caching: one analytic
+  leaflet plus a deterministic one-leaf mockup preserve finite coordinates,
+  valid oriented faces, bounds, area and 700 oriented triangles across all four
+  merge scales. The two intentional zero-area leaflet-tip faces are counted
+  rather than rejected.
 - [ ] Test whether families of identical shapes can share `RefMesh` instances;
   do not assume sharing is valid for leaflets with different dimensions.
 
@@ -574,6 +581,15 @@ Standalone reference added during this work:
   rendering environment, just below the default 25 dB threshold. Numeric mesh
   references are needed to distinguish geometry drift from rendering drift.
 
+Permanent lightweight mesh guardrails added during this work:
+
+- one analytic local leaflet retains 12 vertices, 12 oriented faces, a
+  0.0115 m2 surface and exactly two intentional zero-area tip faces;
+- a deterministic one-leaf fixture contains 432 vertices and 700 triangles,
+  with exact oriented-triangle conservation across `:none`, `:leaflet`, `:leaf`
+  and `:plant` after 1e-10 m coordinate quantization;
+- the focused test passes 14/14 and takes about 0.226 seconds once compiled.
+
 ## Performance acceptance criteria
 
 Correctness gates are mandatory; speed cannot compensate for reconstruction
@@ -631,6 +647,7 @@ changes with performance changes.
 | 2026-08-30 | Reuse coordinate work buffers inside `bend` | the remaining full-fixture allocation was 1.14 MB despite the inertia rewrite | keep the public API and numerical fixture while using private in-place kernels |
 | 2026-08-30 | Freeze leaflet deployment profiles after rank 2 | the existing unfolding kernel reaches its final state at rank 2, while later transitions still alter petiole and rachis geometry | skip mature leaflet traversal without freezing whole-leaf pose updates |
 | 2026-08-30 | Keep cumulative rachis buffers on the geometry model | mature transitions still allocated about 378 kB, dominated by repeated integration arrays | reuse one sequential workspace while keeping standalone `bend` generic and exact |
+| 2026-08-30 | Compare merged meshes by oriented coordinate triangles | merge order and node topology differ by scale, and leaflet tips intentionally contain degenerate faces | quantize coordinates, allow cyclic face rotations only, and count expected zero-area faces |
 | 2026-08-30 | Keep the full A/B benchmark in-repository but its generated data outside the tree | the previous driver was an external artifact and could not fully fingerprint the active environment | provide a fixed-seed 21-series runner and retain machine-readable results with each reported run |
 | 2026-08-30 | Report first-run and fully warmed full-scenario timings separately | a 128-day warm-up leaves later lifecycle compilation in the first measured pair | retain the representative first-run comparison and validate steady-state overhead with AB/BA order |
 
