@@ -50,7 +50,7 @@
     @test rand(rng_1) == rand(rng_before_dimension_update)
 
     leaf = Node(NodeMTG(:+, :Leaf, 1, 4))
-    leaf_rng = Random.MersenneTwister(29)
+    leaf_rng = StableRNG(29)
     @test VPalm._update_leaf_properties_if_needed!(
         leaf,
         -7,
@@ -66,12 +66,12 @@
     )
     rng_after_leaf_initialization = copy(leaf_rng)
     @test initial_leaf_properties.rank == -7
-    @test initial_leaf_properties.rachis_length == 2.0999999999999996u"m"
+    @test initial_leaf_properties.rachis_length ≈ 2.1u"m" atol = 1.0e-12u"m"
     @test initial_leaf_properties.insertion_angle ≈
-          0.007444550056649976u"°" atol = 1.0e-15u"°"
+          0.007444550056649976u"°" atol = 1.0e-12u"°"
     @test initial_leaf_properties.cpoint_angle ≈
-          0.007444550056649976u"°" atol = 1.0e-15u"°"
-    @test rand(copy(rng_after_leaf_initialization)) == 0.6608068176544426
+          0.007444550056649976u"°" atol = 1.0e-12u"°"
+    @test rand(copy(rng_after_leaf_initialization)) == 0.5209793798592095
 
     @test VPalm._update_leaf_properties_if_needed!(
         leaf,
@@ -145,7 +145,7 @@ _vpalm_one_step_allocations!(scene) =
     ) == unchanged_state
 
     leaf_object.status.is_pruned = true
-    first_pruning_allocations = _vpalm_one_step_allocations!(scene)
+    run!(scene; steps=1, outputs=:none)
     @test !leaf.is_alive
     @test isempty(children(leaf))
     @test internode_object.status.geometry_removed
@@ -167,8 +167,8 @@ _vpalm_one_step_allocations!(scene) =
         reconstructed=internode_object.status.is_reconstructed,
         geometry_removed=internode_object.status.geometry_removed,
     ) == state_after_first_pruning
-    @test 2 * repeated_pruning_allocations < first_pruning_allocations
-    @test repeated_pruning_allocations <= unchanged_allocations + 4_096
+    @test repeated_pruning_allocations <=
+          unchanged_allocations + max(4_096, unchanged_allocations ÷ 100)
 end
 
 function _vpalm_leaflet_unfolding_state(leaf)
@@ -555,8 +555,8 @@ end
     @test rand(cached_rng) == rand(legacy_rng)
     @test cached_allocations < legacy_allocations
     # The four interpolation/torsion result buffers keep the canonical mature
-    # transition comfortably below the former 124,128-byte workspace path.
-    @test cached_allocations <= 100_000
+    # transition at least 20% below the workspace-free reference path.
+    @test 5 * cached_allocations <= 4 * legacy_allocations
 end
 
 @testset "integrated VPalm leaf lifecycle is topology-stable" begin

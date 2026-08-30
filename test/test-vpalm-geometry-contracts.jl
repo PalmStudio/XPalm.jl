@@ -112,8 +112,12 @@ function _vpalm_dynamic_architecture_fingerprint(seed, steps)
             '|',
             isnothing(parent_node) ? 0 : node_id(parent_node),
         )
+        # Configuration and RNG containers encode the requested seed directly.
+        # Excluding them makes the different-seed assertion depend on the
+        # resulting botanical state rather than on its input metadata.
+        ignored_attributes = (:geometry, :parameters, :vpalm_rng)
         attribute_names = sort!(
-            filter(!=(:geometry), collect(keys(node)));
+            filter(name -> name ∉ ignored_attributes, collect(keys(node)));
             by=string,
         )
         for name in attribute_names
@@ -310,7 +314,7 @@ end
     # Event-driven geometry intentionally treats stochastic angles as organ
     # traits: random draws occur at construction or a real rank transition,
     # not on every no-change day. This pairwise full-MTG fingerprint is the
-    # migration contract for that random stream.
+    # determinism contract for the resulting topology and botanical state.
     steps = 180
     first_run = _vpalm_dynamic_architecture_fingerprint(20260830, steps)
     repeated_run = _vpalm_dynamic_architecture_fingerprint(20260830, steps)

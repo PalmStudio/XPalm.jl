@@ -241,16 +241,29 @@ end
 _benchmark_cancelled() =
     isdefined(Main, :KaimonGate) && Main.KaimonGate.is_cancelled()
 
-function _run_benchmark_simulation(scene, palm, nsteps, architecture)
+function _run_benchmark_simulation(
+    scene,
+    palm,
+    nsteps,
+    architecture;
+    collect_biomass=false,
+    outputs=_benchmark_output_requests(),
+)
     first_steps = min(VPALM_BENCHMARK_CHUNK, nsteps)
-    simulation = run!(
+    first_run = @timed run!(
         scene;
         steps=first_steps,
-        outputs=_benchmark_output_requests(),
+        outputs=outputs,
     )
+    simulation = first_run.value
+    run_seconds = first_run.time
+    run_bytes = first_run.bytes
+    run_gc_seconds = first_run.gctime
     sampled_peak_pse_objects = length(model_objects(simulation.model))
     sampled_peak_mtg_nodes = length(palm.mtg)
-    biomass_checkpoints = [_benchmark_biomass_checkpoint(simulation)]
+    biomass_checkpoints = collect_biomass ?
+                          [_benchmark_biomass_checkpoint(simulation)] :
+                          NamedTuple[]
     _benchmark_progress(
         "architecture=$architecture: $(current_step(simulation)) / $nsteps days",
     )
@@ -258,13 +271,22 @@ function _run_benchmark_simulation(scene, palm, nsteps, architecture)
     while current_step(simulation) < nsteps
         _benchmark_cancelled() && error("VPalm geometry benchmark cancelled")
         remaining = nsteps - current_step(simulation)
-        continue!(simulation; steps=min(VPALM_BENCHMARK_CHUNK, remaining))
+        continuation = @timed continue!(
+            simulation;
+            steps=min(VPALM_BENCHMARK_CHUNK, remaining),
+        )
+        run_seconds += continuation.time
+        run_bytes += continuation.bytes
+        run_gc_seconds += continuation.gctime
         sampled_peak_pse_objects = max(
             sampled_peak_pse_objects,
             length(model_objects(simulation.model)),
         )
         sampled_peak_mtg_nodes = max(sampled_peak_mtg_nodes, length(palm.mtg))
-        push!(biomass_checkpoints, _benchmark_biomass_checkpoint(simulation))
+        collect_biomass && push!(
+            biomass_checkpoints,
+            _benchmark_biomass_checkpoint(simulation),
+        )
         _benchmark_progress(
             "architecture=$architecture: $(current_step(simulation)) / $nsteps days",
         )
@@ -275,10 +297,20 @@ function _run_benchmark_simulation(scene, palm, nsteps, architecture)
         sampled_peak_pse_objects,
         sampled_peak_mtg_nodes,
         biomass_checkpoints,
+        run=(
+            time=run_seconds,
+            bytes=run_bytes,
+            gctime=run_gc_seconds,
+        ),
     )
 end
 
-function _run_benchmark_variant(architecture, weather, parameters)
+function _run_benchmark_variant(
+    architecture,
+    weather,
+    parameters;
+    validate_biomass=true,
+)
     GC.gc()
     setup = @timed begin
         palm = XPalm.Palm(
@@ -295,7 +327,7 @@ function _run_benchmark_variant(architecture, weather, parameters)
     end
 
     GC.gc()
-    simulation = @timed _run_benchmark_simulation(
+    simulation = _run_benchmark_simulation(
         setup.value.scene,
         setup.value.palm,
         nrow(weather),
@@ -304,23 +336,50 @@ function _run_benchmark_variant(architecture, weather, parameters)
 
     GC.gc()
     postprocess = @timed _benchmark_output_values(
-        simulation.value.simulation,
+        simulation.simulation,
         nrow(weather),
     )
+
+    validation = if validate_biomass
+        GC.gc()
+        @timed begin
+            validation_palm = XPalm.Palm(
+                initiation_age=0,
+                parameters=deepcopy(parameters),
+                architecture=architecture,
+            )
+            validation_scene = XPalm.xpalm_scene(
+                validation_palm;
+                architecture=architecture,
+                environment=copy(weather),
+            )
+            _run_benchmark_simulation(
+                validation_scene,
+                validation_palm,
+                nrow(weather),
+                architecture;
+                collect_biomass=true,
+                outputs=:none,
+            ).biomass_checkpoints
+        end
+    else
+        (value=NamedTuple[], time=0.0, bytes=0, gctime=0.0)
+    end
 
     return (
         architecture=architecture,
         palm=setup.value.palm,
-        simulation=simulation.value.simulation,
+        simulation=simulation.simulation,
         values=postprocess.value,
         setup=setup,
-        run=simulation,
+        run=simulation.run,
+        validation=validation,
         postprocess=postprocess,
-        pse_objects=length(model_objects(simulation.value.simulation.model)),
+        pse_objects=length(model_objects(simulation.simulation.model)),
         mtg_nodes=length(setup.value.palm.mtg),
-        sampled_peak_pse_objects=simulation.value.sampled_peak_pse_objects,
-        sampled_peak_mtg_nodes=simulation.value.sampled_peak_mtg_nodes,
-        biomass_checkpoints=simulation.value.biomass_checkpoints,
+        sampled_peak_pse_objects=simulation.sampled_peak_pse_objects,
+        sampled_peak_mtg_nodes=simulation.sampled_peak_mtg_nodes,
+        biomass_checkpoints=validation.value,
         class_counts=_benchmark_class_counts(setup.value.palm.mtg),
     )
 end
@@ -332,6 +391,12 @@ function _biomass_parity_table(without_architecture, with_architecture)
     length(left) == length(right) || error(
         "Architecture variants produced different biomass checkpoint counts",
     )
+    for (left_checkpoint, right_checkpoint) in zip(left, right)
+        left_checkpoint.timestep == right_checkpoint.timestep || error(
+            "Architecture variants produced different biomass checkpoint timesteps: " *
+            "$(left_checkpoint.timestep) and $(right_checkpoint.timestep)",
+        )
+    end
 
     return DataFrame([
         begin
@@ -351,7 +416,12 @@ function _biomass_parity_table(without_architecture, with_architecture)
 end
 
 function _warm_benchmark(architecture, weather, parameters)
-    _run_benchmark_variant(architecture, weather, parameters)
+    _run_benchmark_variant(
+        architecture,
+        weather,
+        parameters;
+        validate_biomass=false,
+    )
     return nothing
 end
 
@@ -405,6 +475,9 @@ function _summary_row(result)
         simulation_seconds=result.run.time,
         simulation_bytes=result.run.bytes,
         simulation_gc_seconds=result.run.gctime,
+        validation_seconds=result.validation.time,
+        validation_bytes=result.validation.bytes,
+        validation_gc_seconds=result.validation.gctime,
         postprocess_seconds=result.postprocess.time,
         postprocess_bytes=result.postprocess.bytes,
         postprocess_gc_seconds=result.postprocess.gctime,
@@ -517,9 +590,11 @@ end
     )
 
 Run a warmed, paired XPalm comparison with and without explicit VPalm
-architecture. Results are written outside the repository as four CSV files:
-phase timings/allocations, exact output parity, topology counts and environment
-fingerprints. A daily difference CSV is also written if exact parity fails.
+architecture. Results are written outside the repository as five CSV files:
+phase timings/allocations, exact daily-output parity, biomass parity, topology
+counts and environment fingerprints. Biomass checkpoints come from an
+independent second simulation reported separately from simulation time. A daily
+difference CSV is also written if exact daily-output parity fails.
 """
 function run_vpalm_geometry_benchmark(
     output_directory;
