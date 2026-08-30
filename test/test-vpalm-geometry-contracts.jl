@@ -49,6 +49,92 @@ function _vpalm_leaf_geometry_fingerprint(leaf)
     )
 end
 
+function _vpalm_freeze_dynamic_attribute(value)
+    if value isa AbstractDict
+        names = sort!(collect(keys(value)); by=string)
+        return Tuple(
+            name => _vpalm_freeze_dynamic_attribute(value[name])
+            for name in names
+        )
+    elseif value isa NamedTuple
+        return Tuple(
+            name => _vpalm_freeze_dynamic_attribute(getproperty(value, name))
+            for name in propertynames(value)
+        )
+    elseif value isa AbstractArray || value isa Tuple
+        return Tuple(_vpalm_freeze_dynamic_attribute(item) for item in value)
+    elseif value isa Pair
+        return _vpalm_freeze_dynamic_attribute(first(value)) =>
+               _vpalm_freeze_dynamic_attribute(last(value))
+    end
+    return value
+end
+
+function _vpalm_dynamic_architecture_fingerprint(seed, steps)
+    parameters = XPalm.default_parameters()
+    parameters["vpalm"]["seed"] = seed
+    palm = Palm(
+        initiation_age=0,
+        parameters=parameters,
+        architecture=true,
+    )
+    scene = XPalm.xpalm_scene(
+        palm;
+        architecture=true,
+        environment=first(meteo, steps),
+    )
+    run!(scene; steps=steps, outputs=:none)
+
+    nodes = Any[]
+    traverse!(palm.mtg) do node
+        push!(nodes, node)
+        return nothing
+    end
+    sort!(nodes; by=node_id)
+
+    io = IOBuffer()
+    class_counts = Dict{Symbol,Int}()
+    for node in nodes
+        node_class = symbol(node)
+        class_counts[node_class] = get(class_counts, node_class, 0) + 1
+        parent_node = parent(node)
+        print(
+            io,
+            node_id(node),
+            '|',
+            node_class,
+            '|',
+            index(node),
+            '|',
+            scale(node),
+            '|',
+            MultiScaleTreeGraph.link(node),
+            '|',
+            isnothing(parent_node) ? 0 : node_id(parent_node),
+        )
+        attribute_names = sort!(
+            filter(!=(:geometry), collect(keys(node)));
+            by=string,
+        )
+        for name in attribute_names
+            print(
+                io,
+                '|',
+                name,
+                '=',
+                repr(_vpalm_freeze_dynamic_attribute(node[name])),
+            )
+        end
+        print(io, '\n')
+    end
+
+    return (
+        nodes=length(nodes),
+        classes=Tuple(sort!(collect(class_counts); by=first)),
+        sha256=bytes2hex(SHA.sha256(take!(io))),
+    )
+end
+
 function _vpalm_observer_contract(architecture, parameters, weather, steps)
     palm = Palm(
         initiation_age=0,
@@ -217,4 +303,20 @@ end
     @test length(with_architecture.leaf_area) == steps
     @test length(with_architecture.carbon_assimilation) == steps
     @test with_architecture == without_architecture
+end
+
+
+@testset "dynamic architecture is deterministic for a fixed seed" begin
+    # Event-driven geometry intentionally treats stochastic angles as organ
+    # traits: random draws occur at construction or a real rank transition,
+    # not on every no-change day. This pairwise full-MTG fingerprint is the
+    # migration contract for that random stream.
+    steps = 180
+    first_run = _vpalm_dynamic_architecture_fingerprint(20260830, steps)
+    repeated_run = _vpalm_dynamic_architecture_fingerprint(20260830, steps)
+    different_seed = _vpalm_dynamic_architecture_fingerprint(20260831, steps)
+
+    @test first_run == repeated_run
+    @test first_run.nodes > 1_000
+    @test first_run.sha256 != different_seed.sha256
 end

@@ -144,6 +144,19 @@ const VPALM_BENCHMARK_CLASSES = (
     :RachisSegment,
     :Leaflet,
 )
+const VPALM_BENCHMARK_BIOMASS_FIELDS = (
+    (name=:leaf_biomass, scale=:Leaf, variable=:biomass),
+    (name=:leaflet_biomass, scale=:Leaf, variable=:biomass_leaflets),
+    (name=:rachis_biomass, scale=:Leaf, variable=:biomass_rachis),
+    (name=:petiole_biomass, scale=:Leaf, variable=:biomass_petiole),
+    (name=:internode_biomass, scale=:Internode, variable=:biomass),
+    (name=:male_biomass, scale=:Male, variable=:biomass),
+    (name=:female_biomass, scale=:Female, variable=:biomass),
+    (name=:stalk_biomass, scale=:Female, variable=:biomass_stalk),
+    (name=:fruit_biomass, scale=:Female, variable=:biomass_fruits),
+    (name=:oil_biomass, scale=:Female, variable=:biomass_oil),
+    (name=:non_oil_biomass, scale=:Female, variable=:biomass_non_oil),
+)
 
 function _benchmark_weather(nsteps)
     path = joinpath(dirname(dirname(pathof(XPalm))), "0-data", "meteo.csv")
@@ -198,6 +211,21 @@ function _benchmark_class_counts(mtg)
     return counts
 end
 
+function _benchmark_biomass_checkpoint(simulation)
+    totals = map(VPALM_BENCHMARK_BIOMASS_FIELDS) do field
+        sum(
+            Float64(getproperty(object.status, field.variable))
+            for object in model_objects(simulation.model; scale=field.scale);
+            init=0.0,
+        )
+    end
+    names = Tuple(field.name for field in VPALM_BENCHMARK_BIOMASS_FIELDS)
+    return merge(
+        (timestep=current_step(simulation),),
+        NamedTuple{names}(Tuple(totals)),
+    )
+end
+
 function _benchmark_parameters()
     parameters = XPalm.default_parameters()
     parameters["vpalm"]["seed"] = VPALM_BENCHMARK_SEED
@@ -222,6 +250,7 @@ function _run_benchmark_simulation(scene, palm, nsteps, architecture)
     )
     sampled_peak_pse_objects = length(model_objects(simulation.model))
     sampled_peak_mtg_nodes = length(palm.mtg)
+    biomass_checkpoints = [_benchmark_biomass_checkpoint(simulation)]
     _benchmark_progress(
         "architecture=$architecture: $(current_step(simulation)) / $nsteps days",
     )
@@ -235,12 +264,18 @@ function _run_benchmark_simulation(scene, palm, nsteps, architecture)
             length(model_objects(simulation.model)),
         )
         sampled_peak_mtg_nodes = max(sampled_peak_mtg_nodes, length(palm.mtg))
+        push!(biomass_checkpoints, _benchmark_biomass_checkpoint(simulation))
         _benchmark_progress(
             "architecture=$architecture: $(current_step(simulation)) / $nsteps days",
         )
     end
 
-    return (; simulation, sampled_peak_pse_objects, sampled_peak_mtg_nodes)
+    return (;
+        simulation,
+        sampled_peak_pse_objects,
+        sampled_peak_mtg_nodes,
+        biomass_checkpoints,
+    )
 end
 
 function _run_benchmark_variant(architecture, weather, parameters)
@@ -285,8 +320,34 @@ function _run_benchmark_variant(architecture, weather, parameters)
         mtg_nodes=length(setup.value.palm.mtg),
         sampled_peak_pse_objects=simulation.value.sampled_peak_pse_objects,
         sampled_peak_mtg_nodes=simulation.value.sampled_peak_mtg_nodes,
+        biomass_checkpoints=simulation.value.biomass_checkpoints,
         class_counts=_benchmark_class_counts(setup.value.palm.mtg),
     )
+end
+
+
+function _biomass_parity_table(without_architecture, with_architecture)
+    left = without_architecture.biomass_checkpoints
+    right = with_architecture.biomass_checkpoints
+    length(left) == length(right) || error(
+        "Architecture variants produced different biomass checkpoint counts",
+    )
+
+    return DataFrame([
+        begin
+            left_value = getproperty(left_checkpoint, field.name)
+            right_value = getproperty(right_checkpoint, field.name)
+            (
+                timestep=left_checkpoint.timestep,
+                variable=field.name,
+                without_architecture=left_value,
+                with_architecture=right_value,
+                exact=isequal(left_value, right_value),
+                absolute_difference=abs(right_value - left_value),
+            )
+        end for (left_checkpoint, right_checkpoint) in zip(left, right)
+        for field in VPALM_BENCHMARK_BIOMASS_FIELDS
+    ])
 end
 
 function _warm_benchmark(architecture, weather, parameters)
@@ -499,6 +560,10 @@ function run_vpalm_geometry_benchmark(
 
     summary = DataFrame(_summary_row.(results))
     parity = _parity_table(without_architecture, with_architecture, weather)
+    biomass_parity = _biomass_parity_table(
+        without_architecture,
+        with_architecture,
+    )
     topology = _topology_table(results)
     environment = _environment_table(
         nsteps,
@@ -509,21 +574,31 @@ function run_vpalm_geometry_benchmark(
 
     CSV.write(joinpath(output_directory, "phase_summary.csv"), summary)
     CSV.write(joinpath(output_directory, "output_parity.csv"), parity)
+    CSV.write(joinpath(output_directory, "biomass_parity.csv"), biomass_parity)
     CSV.write(joinpath(output_directory, "topology_counts.csv"), topology)
     CSV.write(joinpath(output_directory, "environment.csv"), environment)
 
-    if !all(parity.exact)
+    output_exact = all(parity.exact)
+    biomass_exact = all(biomass_parity.exact)
+    difference_path = joinpath(output_directory, "daily_difference.csv")
+    if !output_exact
         daily_difference = _daily_difference_table(
             without_architecture,
             with_architecture,
             weather,
         )
-        difference_path = joinpath(output_directory, "daily_difference.csv")
         CSV.write(difference_path, daily_difference)
+    elseif isfile(difference_path)
+        rm(difference_path)
+    end
+
+    if !(output_exact && biomass_exact)
         error(
             "Architecture changed observer outputs; inspect " *
             joinpath(output_directory, "output_parity.csv") *
-            " and $difference_path",
+            ", " *
+            joinpath(output_directory, "biomass_parity.csv") *
+            (output_exact ? "" : ", and $difference_path"),
         )
     end
 
@@ -531,6 +606,7 @@ function run_vpalm_geometry_benchmark(
         output_directory=output_directory,
         summary=summary,
         parity=parity,
+        biomass_parity=biomass_parity,
         topology=topology,
         environment=environment,
     )

@@ -9,7 +9,7 @@ the scientific state stored on organs. A workspace belongs to one sequential
 geometry execution; concurrent calls on the same `GeometryModel` instance must
 use separate workspaces.
 """
-mutable struct BendIterationWorkspace{F,S,M,CF,AF,CT,AT}
+mutable struct BendIterationWorkspace{F,S,M,CF,AF,CT,AT,I}
     v_force::Vector{F}
     shear_input::Vector{S}
     shear_cumulative::Vector{S}
@@ -24,6 +24,10 @@ mutable struct BendIterationWorkspace{F,S,M,CF,AF,CT,AT}
     vec_deriv_agl_tor::Vector{CT}
     torsion_input::Vector{AT}
     vec_angle_torsion::Vector{AT}
+    vec_inertie_flex::Vector{I}
+    vec_force::Vector{F}
+    v_m_tor::Vector{M}
+    vec_m_tor::Vector{M}
 end
 
 function BendIterationWorkspace(npoints_exp::Integer, nlin::Integer)
@@ -37,6 +41,7 @@ function BendIterationWorkspace(npoints_exp::Integer, nlin::Integer)
     flexion_angle = flexion_curvature * step
     torsion_curvature = (1.0u"N*m") / denominator
     torsion_angle = torsion_curvature * step
+    section_inertia = 1.0u"m^4"
 
     return BendIterationWorkspace(
         fill(zero(force_density), npoints_exp),
@@ -53,6 +58,10 @@ function BendIterationWorkspace(npoints_exp::Integer, nlin::Integer)
         fill(zero(torsion_curvature), nlin),
         fill(zero(torsion_angle), nlin),
         fill(zero(torsion_angle), nlin),
+        fill(zero(section_inertia), nlin),
+        fill(zero(force_density), nlin),
+        fill(zero(bending_moment), npoints_exp),
+        fill(zero(bending_moment), nlin),
     )
 end
 
@@ -81,7 +90,17 @@ function _resize_bend_iteration_workspace!(workspace, npoints_exp, nlin)
     resize!(workspace.vec_deriv_agl_tor, nlin)
     resize!(workspace.torsion_input, nlin)
     resize!(workspace.vec_angle_torsion, nlin)
+    resize!(workspace.vec_inertie_flex, nlin)
+    resize!(workspace.vec_force, nlin)
+    resize!(workspace.v_m_tor, npoints_exp)
+    resize!(workspace.vec_m_tor, nlin)
     return workspace
+end
+
+@inline function _linear_interpolation_into!(destination, knots, values, positions)
+    interpolation = linear_interpolation(knots, values)
+    map!(interpolation, destination, positions)
+    return destination
 end
 
 """
@@ -319,7 +338,19 @@ function _bend_points(workspace, type, width_bend, height_bend, init_torsion, po
         end
 
         # Linear interpolation of inertias
-        vec_inertie_flex = linear_interpolation(dist_lineique, [v_ig_flex[1]; v_ig_flex])(vec_dist) # Should be in m⁴
+        if iteration_workspace === nothing
+            vec_inertie_flex = linear_interpolation(
+                dist_lineique,
+                [v_ig_flex[1]; v_ig_flex],
+            )(vec_dist) # Should be in m⁴
+        else
+            vec_inertie_flex = _linear_interpolation_into!(
+                iteration_workspace.vec_inertie_flex,
+                dist_lineique,
+                [v_ig_flex[1]; v_ig_flex],
+                vec_dist,
+            )
+        end
 
         # Write angles from the new coordinates
         # Distance and angles of each segment P2P1
@@ -339,7 +370,19 @@ function _bend_points(workspace, type, width_bend, height_bend, init_torsion, po
             end
         end
 
-        vec_force = linear_interpolation(dist_lineique, [v_force[1]; v_force])(vec_dist)
+        if iteration_workspace === nothing
+            vec_force = linear_interpolation(
+                dist_lineique,
+                [v_force[1]; v_force],
+            )(vec_dist)
+        else
+            vec_force = _linear_interpolation_into!(
+                iteration_workspace.vec_force,
+                dist_lineique,
+                [v_force[1]; v_force],
+                vec_dist,
+            )
+        end
 
         # Shear forces and bending moments
         if iteration_workspace === nothing
@@ -420,7 +463,9 @@ function _bend_points(workspace, type, width_bend, height_bend, init_torsion, po
         # Torsion
         zero_force = 0.0u"N"
         zero_torque = 0.0u"N*m"
-        v_m_tor = fill(zero_torque, npoints_exp) # should be in kg·m²·s⁻² == N·m
+        v_m_tor = iteration_workspace === nothing ?
+                  fill(zero_torque, npoints_exp) :
+                  iteration_workspace.v_m_tor # should be in kg·m²·s⁻² == N·m
 
         for iter in 1:npoints_exp
             # Calculate forces with explicit units
@@ -451,7 +496,19 @@ function _bend_points(workspace, type, width_bend, height_bend, init_torsion, po
             v_m_tor[iter] = md + mg
         end
 
-        vec_m_tor = linear_interpolation(dist_lineique, [v_m_tor[1]; v_m_tor])(vec_dist)
+        if iteration_workspace === nothing
+            vec_m_tor = linear_interpolation(
+                dist_lineique,
+                [v_m_tor[1]; v_m_tor],
+            )(vec_dist)
+        else
+            vec_m_tor = _linear_interpolation_into!(
+                iteration_workspace.vec_m_tor,
+                dist_lineique,
+                [v_m_tor[1]; v_m_tor],
+                vec_dist,
+            )
+        end
 
         if iteration_workspace === nothing
             vec_deriv_agl_tor = vec_m_tor ./ (vec_g .* vec_inertie_tor)

@@ -65,6 +65,13 @@
         cpoint_angle=leaf.zenithal_cpoint_angle,
     )
     rng_after_leaf_initialization = copy(leaf_rng)
+    @test initial_leaf_properties.rank == -7
+    @test initial_leaf_properties.rachis_length == 2.0999999999999996u"m"
+    @test initial_leaf_properties.insertion_angle ≈
+          0.007444550056649976u"°" atol = 1.0e-15u"°"
+    @test initial_leaf_properties.cpoint_angle ≈
+          0.007444550056649976u"°" atol = 1.0e-15u"°"
+    @test rand(copy(rng_after_leaf_initialization)) == 0.6608068176544426
 
     @test VPalm._update_leaf_properties_if_needed!(
         leaf,
@@ -97,6 +104,9 @@
     ) == (false, true)
 end
 
+_vpalm_one_step_allocations!(scene) =
+    @allocated run!(scene; steps=1, outputs=:none)
+
 @testset "repeated pruning is structurally idempotent" begin
     palm = Palm(
         initiation_age=0,
@@ -124,7 +134,7 @@ end
         cpoint_angle=leaf.zenithal_cpoint_angle,
         descendant_ids=sort(node_id.(descendants(leaf))),
     )
-    run!(scene; steps=1, outputs=:none)
+    unchanged_allocations = _vpalm_one_step_allocations!(scene)
     @test (
         rank=internode_object.status.rank_leaves,
         xeuler=internode.XEuler,
@@ -135,7 +145,7 @@ end
     ) == unchanged_state
 
     leaf_object.status.is_pruned = true
-    run!(scene; steps=1, outputs=:none)
+    first_pruning_allocations = _vpalm_one_step_allocations!(scene)
     @test !leaf.is_alive
     @test isempty(children(leaf))
     @test internode_object.status.geometry_removed
@@ -148,7 +158,7 @@ end
     )
 
     leaf_object.status.is_pruned = true
-    run!(scene; steps=1, outputs=:none)
+    repeated_pruning_allocations = _vpalm_one_step_allocations!(scene)
     @test !leaf.is_alive
     @test isempty(children(leaf))
     @test (
@@ -157,6 +167,8 @@ end
         reconstructed=internode_object.status.is_reconstructed,
         geometry_removed=internode_object.status.geometry_removed,
     ) == state_after_first_pruning
+    @test 2 * repeated_pruning_allocations < first_pruning_allocations
+    @test repeated_pruning_allocations <= unchanged_allocations + 4_096
 end
 
 function _vpalm_leaflet_unfolding_state(leaf)
@@ -429,6 +441,51 @@ end
     )
     leaflet_profile_references = _vpalm_leaflet_profile_references(leaf)
 
+    interpolation_knots = [0.0, 0.25, 0.75, 1.0]u"m"
+    interpolation_values = [1.0, 1.5, 0.5, 2.0]u"m^4"
+    interpolation_positions = collect(range(0.0u"m", 1.0u"m", length=19))
+    interpolation_reference =
+        VPalm.linear_interpolation(
+            interpolation_knots,
+            interpolation_values,
+        )(interpolation_positions)
+    interpolation_result = similar(interpolation_reference)
+    @test VPalm._linear_interpolation_into!(
+        interpolation_result,
+        interpolation_knots,
+        interpolation_values,
+        interpolation_positions,
+    ) === interpolation_result
+    @test interpolation_result == interpolation_reference
+
+    resize_references = (
+        iteration_workspace.vec_inertie_flex,
+        iteration_workspace.vec_force,
+        iteration_workspace.v_m_tor,
+        iteration_workspace.vec_m_tor,
+    )
+    VPalm._resize_bend_iteration_workspace!(iteration_workspace, 5, 80)
+    @test (
+        length(iteration_workspace.vec_inertie_flex),
+        length(iteration_workspace.vec_force),
+        length(iteration_workspace.v_m_tor),
+        length(iteration_workspace.vec_m_tor),
+    ) == (80, 80, 5, 80)
+    @test all(
+        getfield(iteration_workspace, field) === resize_references[i]
+        for (i, field) in enumerate((
+            :vec_inertie_flex,
+            :vec_force,
+            :v_m_tor,
+            :vec_m_tor,
+        ))
+    )
+    VPalm._resize_bend_iteration_workspace!(
+        iteration_workspace,
+        5,
+        parameters["rachis_nb_segments"],
+    )
+
     for (rank, rachis_length) in ((3, 3.3u"m"), (4, 3.6u"m"))
         leaf.rank = rank
         leaf.rachis_length = rachis_length
@@ -497,6 +554,9 @@ end
           _vpalm_rachis_transition_state(legacy_leaf)
     @test rand(cached_rng) == rand(legacy_rng)
     @test cached_allocations < legacy_allocations
+    # The four interpolation/torsion result buffers keep the canonical mature
+    # transition comfortably below the former 124,128-byte workspace path.
+    @test cached_allocations <= 100_000
 end
 
 @testset "integrated VPalm leaf lifecycle is topology-stable" begin

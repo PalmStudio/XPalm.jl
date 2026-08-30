@@ -9,14 +9,19 @@ The runner separates:
 - palm/scene construction;
 - simulation;
 - retained-output materialization;
-- PlantSimEngine object and MTG geometry-node counts.
+- PlantSimEngine object and MTG geometry-node counts;
+- structural organ biomass at every 128-day lifecycle checkpoint.
 
-It retains the 21 canonical daily physiological series, writes four CSV files
-to the requested directory, and fails if any output differs exactly between the
-two variants. On failure it also writes `daily_difference.csv`, including the
-two trajectories and their difference, while `output_parity.csv` identifies the
-first divergent timestep and date. Results should be written outside the
-repository.
+It retains the 21 canonical daily physiological series and compares total leaf,
+leaflet, rachis, petiole, internode, male and female biomass (including stalk,
+fruit, oil and non-oil compartments) at every lifecycle checkpoint. It writes
+five CSV files to the requested directory and fails if any daily output or
+biomass total differs exactly between the two variants. On a daily-output
+failure it also writes `daily_difference.csv`, including the two trajectories
+and their difference; a later successful reuse of the same output directory
+removes that stale diagnostic. `output_parity.csv` identifies the first
+divergent timestep and date, while `biomass_parity.csv` records the checkpoint
+comparisons. Results should be written outside the repository.
 
 Start or connect a Kaimon session using the XPalm `test` project, then evaluate:
 
