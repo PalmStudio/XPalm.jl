@@ -21,6 +21,250 @@ function plot_mockup(parameters)
     return f
 end
 
+_vpalm_static_meters(value::Unitful.AbstractQuantity) = ustrip(u"m", value)
+_vpalm_static_meters(value::Real) = Float64(value)
+_vpalm_static_degrees(value::Unitful.AbstractQuantity) = ustrip(u"°", value)
+_vpalm_static_degrees(value::Real) = Float64(value)
+_vpalm_static_quantize(value::Real) = round(Int64, Float64(value) * 1.0e9)
+_vpalm_static_q_m(value) =
+    _vpalm_static_quantize(_vpalm_static_meters(value))
+_vpalm_static_q_deg(value) =
+    _vpalm_static_quantize(_vpalm_static_degrees(value))
+_vpalm_static_q_scalar(value) = _vpalm_static_quantize(value)
+
+function _vpalm_static_write_digest_values!(io, values)
+    for value in values
+        print(io, ':', value)
+    end
+    return nothing
+end
+
+function _vpalm_static_geometry_state_sha256(mtg)
+    io = IOBuffer()
+    nodes = sort!([mtg; descendants(mtg)]; by=node_id)
+
+    for node in nodes
+        class = symbol(node)
+        print(io, node_id(node), ':', class, ':', index(node))
+
+        if class == :Stem
+            _vpalm_static_write_digest_values!(
+                io,
+                (
+                    _vpalm_static_q_m(node.stem_height),
+                    _vpalm_static_q_m(node.stem_diameter),
+                    _vpalm_static_q_deg(node.stem_bending),
+                ),
+            )
+        elseif class == :Internode
+            _vpalm_static_write_digest_values!(
+                io,
+                (
+                    node.rank,
+                    _vpalm_static_q_m(node.length),
+                    _vpalm_static_q_m(node.width),
+                    _vpalm_static_q_deg(node.XEuler),
+                    _vpalm_static_q_deg(node.Orthotropy),
+                ),
+            )
+        elseif class == :Leaf
+            _vpalm_static_write_digest_values!(
+                io,
+                (node.rank, Int(node.is_alive)),
+            )
+            if hasproperty(node, :rachis_length)
+                _vpalm_static_write_digest_values!(
+                    io,
+                    (
+                        _vpalm_static_q_m(node.rachis_length),
+                        _vpalm_static_q_deg(node.zenithal_insertion_angle),
+                        _vpalm_static_q_deg(node.zenithal_cpoint_angle),
+                    ),
+                )
+            end
+        elseif class == :Petiole
+            _vpalm_static_write_digest_values!(
+                io,
+                (
+                    _vpalm_static_q_m(node.length),
+                    _vpalm_static_q_m(node.width_base),
+                    _vpalm_static_q_m(node.height_base),
+                    _vpalm_static_q_m(node.width_cpoint),
+                    _vpalm_static_q_m(node.height_cpoint),
+                    _vpalm_static_q_deg(node.azimuthal_angle),
+                    _vpalm_static_q_deg(node.zenithal_insertion_angle),
+                    _vpalm_static_q_deg(node.zenithal_cpoint_angle),
+                ),
+            )
+        elseif class == :PetioleSegment || class == :RachisSegment
+            _vpalm_static_write_digest_values!(
+                io,
+                (
+                    _vpalm_static_q_m(node.length),
+                    _vpalm_static_q_m(node.width),
+                    _vpalm_static_q_m(node.height),
+                    _vpalm_static_q_deg(node.zenithal_angle_global),
+                    _vpalm_static_q_deg(node.azimuthal_angle_global),
+                    _vpalm_static_q_deg(node.torsion_angle_global),
+                ),
+            )
+            if class == :RachisSegment
+                _vpalm_static_write_digest_values!(
+                    io,
+                    (
+                        _vpalm_static_q_m(node.x),
+                        _vpalm_static_q_m(node.y),
+                        _vpalm_static_q_m(node.z),
+                    ),
+                )
+            end
+        elseif class == :Leaflet
+            _vpalm_static_write_digest_values!(
+                io,
+                (
+                    node.side,
+                    node.plane,
+                    _vpalm_static_q_m(node.offset),
+                    _vpalm_static_q_m(node.length),
+                    _vpalm_static_q_m(node.width),
+                    _vpalm_static_q_scalar(node.relative_position),
+                    _vpalm_static_q_deg(node.zenithal_angle),
+                    _vpalm_static_q_deg(node.azimuthal_angle),
+                    _vpalm_static_q_deg(node.torsion_angle),
+                    _vpalm_static_q_deg(node.lamina_angle),
+                ),
+            )
+            _vpalm_static_write_digest_values!(
+                io,
+                _vpalm_static_q_m.(node.leaflet_segment_lengths),
+            )
+            _vpalm_static_write_digest_values!(
+                io,
+                _vpalm_static_q_m.(node.leaflet_segment_widths),
+            )
+            _vpalm_static_write_digest_values!(
+                io,
+                _vpalm_static_q_deg.(node.leaflet_segment_angles_deg),
+            )
+        end
+        write(io, '\n')
+    end
+
+    # Quantizing at 1e-9 keeps this cross-platform while protecting the full
+    # ordered organ pose and local leaflet profiles without building any mesh.
+    return bytes2hex(sha256(take!(io)))
+end
+
+function _vpalm_static_reference_fingerprint(mtg)
+    classes = (
+        :Plant,
+        :Stem,
+        :Phytomer,
+        :Internode,
+        :Leaf,
+        :Petiole,
+        :PetioleSegment,
+        :Rachis,
+        :RachisSegment,
+        :Leaflet,
+    )
+    class_counts = Dict(class => 0 for class in classes)
+    typed_edges = Dict{Tuple{Symbol,Symbol,Symbol},Int}()
+    nodes = typeof(mtg)[]
+    leaves = typeof(mtg)[]
+    petioles = typeof(mtg)[]
+    leaflets = typeof(mtg)[]
+
+    traverse!(mtg) do node
+        push!(nodes, node)
+        class = symbol(node)
+        class_counts[class] = get(class_counts, class, 0) + 1
+        class == :Leaf && push!(leaves, node)
+        class == :Petiole && push!(petioles, node)
+        class == :Leaflet && push!(leaflets, node)
+
+        parent_node = parent(node)
+        if !isnothing(parent_node)
+            edge = (symbol(parent_node), class, link(node))
+            typed_edges[edge] = get(typed_edges, edge, 0) + 1
+        end
+        return nothing
+    end
+
+    sorted_edges = sort!(
+        collect(typed_edges);
+        by=entry -> (
+            string(first(entry)[1]),
+            string(first(entry)[2]),
+            string(first(entry)[3]),
+        ),
+    )
+    edges = Tuple(
+        begin
+            edge = first(entry)
+            (
+                parent=edge[1],
+                child=edge[2],
+                link=edge[3],
+                count=last(entry),
+            )
+        end for entry in sorted_edges
+    )
+
+    sort!(nodes; by=node_id)
+    sort!(leaves; by=index)
+    geometry_leaves = filter(
+        leaf -> !isempty(descendants(leaf; symbol=:Rachis)),
+        leaves,
+    )
+    live_leaves = filter(leaf -> leaf.is_alive, leaves)
+
+    return (
+        graph=(
+            total_nodes=length(mtg),
+            first_id=node_id(first(nodes)),
+            last_id=node_id(last(nodes)),
+            consecutive_ids=node_id.(nodes) == collect(1:length(nodes)),
+        ),
+        counts=(
+            Plant=class_counts[:Plant],
+            Stem=class_counts[:Stem],
+            Phytomer=class_counts[:Phytomer],
+            Internode=class_counts[:Internode],
+            Leaf=class_counts[:Leaf],
+            Petiole=class_counts[:Petiole],
+            PetioleSegment=class_counts[:PetioleSegment],
+            Rachis=class_counts[:Rachis],
+            RachisSegment=class_counts[:RachisSegment],
+            Leaflet=class_counts[:Leaflet],
+        ),
+        edges,
+        leaf_ranks=Tuple(leaf.rank for leaf in leaves),
+        geometry_leaf_ranks=Tuple(leaf.rank for leaf in geometry_leaves),
+        live_leaf_ranks=Tuple(leaf.rank for leaf in live_leaves),
+        leaflet_sides=(
+            left=count(leaflet -> leaflet.side == -1, leaflets),
+            right=count(leaflet -> leaflet.side == 1, leaflets),
+        ),
+        dimensions_m=(
+            mean_rachis_length=mean(
+                _vpalm_static_meters(leaf.rachis_length)
+                for leaf in geometry_leaves
+            ),
+            mean_petiole_length=mean(
+                _vpalm_static_meters(petiole.length) for petiole in petioles
+            ),
+            mean_leaflet_length=mean(
+                _vpalm_static_meters(leaflet.length) for leaflet in leaflets
+            ),
+            mean_leaflet_width=mean(
+                _vpalm_static_meters(leaflet.width) for leaflet in leaflets
+            ),
+        ),
+        geometry_state_sha256=_vpalm_static_geometry_state_sha256(mtg),
+    )
+end
+
 @testset "static mockup" begin
     # Check that the mockup is the same with and without rachis_final_lengths
     mtg = VPalm.mtg_skeleton(vpalm_parameters; rng=StableRNG(vpalm_parameters["seed"]))
@@ -42,6 +286,82 @@ end
     # Check the length of the mockup: nb leaves emitted * 3 (phytomer + internode + leaf) + 2 (stem + plant)
     @test mtg isa MultiScaleTreeGraph.Node{MultiScaleTreeGraph.NodeMTG,MultiScaleTreeGraph.ColumnarAttrs}
     @test mtg[1][:stem_bending] == 0.0
+end
+
+@testset "deterministic standalone static-120 fingerprint" begin
+    parameters = deepcopy(vpalm_parameters)
+    parameters["nb_leaves_emitted"] = 120
+    mtg = VPalm.mtg_skeleton(
+        parameters;
+        rng=StableRNG(parameters["seed"]),
+    )
+    fingerprint = _vpalm_static_reference_fingerprint(mtg)
+
+    @test fingerprint.graph == (
+        total_nodes=21263,
+        first_id=1,
+        last_id=21263,
+        consecutive_ids=true,
+    )
+    @test fingerprint.counts == (
+        Plant=1,
+        Stem=1,
+        Phytomer=140,
+        Internode=140,
+        Leaf=140,
+        Petiole=53,
+        PetioleSegment=795,
+        Rachis=53,
+        RachisSegment=5300,
+        Leaflet=14640,
+    )
+    @test fingerprint.edges == (
+        (parent=:Internode, child=:Leaf, link=:+, count=140),
+        (parent=:Leaf, child=:Petiole, link=:/, count=53),
+        (parent=:Petiole, child=:PetioleSegment, link=:/, count=53),
+        (parent=:Petiole, child=:Rachis, link=:<, count=53),
+        (
+            parent=:PetioleSegment,
+            child=:PetioleSegment,
+            link=:<,
+            count=742,
+        ),
+        (parent=:Phytomer, child=:Internode, link=:/, count=140),
+        (parent=:Phytomer, child=:Phytomer, link=:<, count=139),
+        (parent=:Plant, child=:Stem, link=:+, count=1),
+        (parent=:Rachis, child=:RachisSegment, link=:/, count=53),
+        (parent=:RachisSegment, child=:Leaflet, link=:+, count=14640),
+        (
+            parent=:RachisSegment,
+            child=:RachisSegment,
+            link=:<,
+            count=5247,
+        ),
+        (parent=:Stem, child=:Phytomer, link=:/, count=1),
+    )
+    @test sum(edge.count for edge in fingerprint.edges) ==
+          fingerprint.graph.total_nodes - 1
+    @test fingerprint.leaf_ranks == Tuple(132:-1:-7)
+    @test fingerprint.geometry_leaf_ranks == Tuple(45:-1:-7)
+    @test fingerprint.live_leaf_ranks == fingerprint.geometry_leaf_ranks
+    @test fingerprint.leaflet_sides == (left=7320, right=7320)
+    @test fingerprint.geometry_state_sha256 ==
+          "4be64f6696ed6254a782073f1546f1f1a8afaec628d2e8d6ca63c5752ba3e6d6"
+
+    expected_dimensions = (
+        mean_rachis_length=3.659388011413884,
+        mean_petiole_length=0.9307271603974704,
+        mean_leaflet_length=0.6122156432448991,
+        mean_leaflet_width=0.03293105471072627,
+    )
+    for name in keys(expected_dimensions)
+        @test getproperty(fingerprint.dimensions_m, name) ≈
+              getproperty(expected_dimensions, name) rtol = 1.0e-10 atol = 1.0e-12
+    end
+
+    # Full-scene mesh materialization is intentionally excluded here: the
+    # lightweight mesh contracts exercise bounds and area without rebuilding
+    # this 465,302-vertex reference in every static topology test.
 end
 
 @testset "static rachis masses follow leaf-rank order" begin

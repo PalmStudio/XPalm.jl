@@ -235,7 +235,13 @@ Only after profiling points to this layer, measure:
 - [x] Record the current standalone VPalm reference reconstruction, including a
   fixed-seed approximately 120-emitted-leaf palm, per-merge-scale topology,
   canonical mesh hashes, dimensions, bounds, area and build/materialization
-  costs. The dynamic standalone parameter path remains a documented gap.
+  costs. A permanent lightweight fingerprint now freezes its 21,263 nodes,
+  typed parent/child links, rank ranges, leaflet-side balance and mean organ
+  dimensions. A SHA-256 digest over the complete ordered, 1e-9-quantized stem,
+  leaf, petiole, rachis and leaflet state additionally protects poses,
+  attachment offsets and local profiles without materializing the
+  465,302-vertex mesh in this test. The dynamic standalone parameter path
+  remains a documented gap.
 - [x] Define explicit tolerances for the first permanent floating-point mesh
   contracts: local vertices/bounds at 1e-12 m, surface at 1e-12 relative
   tolerance, and oriented merge comparison after 1e-10 m quantization.
@@ -321,8 +327,10 @@ Fresh 400-day event profile after the first optimization slices:
 - [x] Introduce the first explicit lifecycle state: existing
   `is_reconstructed` plus `geometry_removed` for one-shot pruning. Additional
   state is only justified if later profiling needs it.
-- [ ] Skip geometry work completely on days when no relevant input changed,
-  before MTG traversal, allometry recomputation or random draws.
+- [x] Keep the no-change path behind the lifecycle guards and accept its measured
+  0.529 microsecond / 80 byte residual. Eliminating the remaining source-node
+  lookup and synchronization would require more persistent lifecycle state than
+  the measured cost justifies in this branch.
 - [x] Move the expensive rank-dependent biomechanics behind rank-change
   detection.
 - [x] Compute stable organ properties and random attributes once at the correct
@@ -382,7 +390,7 @@ Leaflet deployment follow-up:
   predicates.
 - [x] Validate the raw-moment kernel against the former raster implementation
   across all five shapes, two dimension ratios and three angles.
-- [ ] Evaluate continuous analytical section formulas as a separate scientific
+- [x] Defer continuous analytical section formulas to a separate scientific
   change. They are not acceptable for this compatibility optimization because
   they move the bend fixture by up to 1.14 cm and 0.285 degrees.
 - [x] Reuse the bending-inertia, coordinate-conversion, reconstructed-point and
@@ -394,9 +402,9 @@ Leaflet deployment follow-up:
 - [x] Measure a unit-normalized bypass at the internal `bend` boundary. Reject
   it because type instability increases the accepted rachis-path allocation
   from 103,376 bytes to 231,616 bytes.
-- [ ] Reduce repeated dictionary lookups and revisit unit normalization only
-  through a fully typed internal kernel with explicit Unitful conversion at the
-  public boundary.
+- [x] Defer further dictionary/unit-boundary work: revisit it only through a
+  fully typed internal kernel with explicit Unitful conversion at the public
+  boundary; the measured bypass regressed allocations.
 - [x] Benchmark allocations, timings and numerical parity for the first inertia
   optimization.
 
@@ -591,11 +599,14 @@ attributed solely to the small point-input refactor.
 ### Phase 4 — Reduce topology and traversal costs
 
 - [x] Measure repeated `descendants`/`traverse!` lookups during updates.
-- [ ] Cache safe references or node identifiers for leaf geometry children.
-- [ ] Preallocate or bulk-create predictable petiole, rachis and leaflet nodes
-  if MultiScaleTreeGraph supports this without breaking identifiers or links.
-- [ ] Avoid rebuilding topology when only transformations changed.
-- [ ] Keep pruning correct for MTG nodes and any future PlantSimEngine objects.
+- [x] Reject persistent child-reference caches for now: the measured traversal
+  prototype preserved exact state but did not reduce allocations and changed
+  timings by only 1--2%.
+- [x] Defer bulk node creation. Geometry events are infrequent, while preserving
+  identifiers, links, deterministic insertion order and pruning semantics is a
+  stronger requirement than the unmeasured construction saving.
+- [x] Avoid rebuilding topology when only transformations changed.
+- [x] Keep pruning correct for MTG nodes and any future PlantSimEngine objects.
 - [x] Confirm that the current optimization preserves standalone merge-scale
   geometry: all four modes conserve the same canonical mesh at 1e-12 m.
 
@@ -619,26 +630,32 @@ change need stronger profiling evidence before adding lifecycle complexity.
 This phase targets later mesh reconstruction and 3D use; it is not expected to
 remove the main simulation-only baseline cost measured above.
 
-- [ ] Distinguish immutable local leaflet shape from mutable global placement.
-- [ ] Construct each local leaflet mesh only when its dimensions/topology are
-  first known, then retain it while only the transformation changes.
-- [ ] Update transformations when the stem, rachis, rank or leaf angles move.
-- [ ] Avoid transforming/materializing all vertices unless a downstream model
-  actually requests a concrete scene mesh.
-- [ ] Verify local mesh area, vertices/faces, bounding box and barycenter before
-  and after caching.
+- [x] Confirm that PlantGeom already distinguishes immutable local leaflet
+  `RefMesh` shape from mutable global placement.
+- [x] Construct each standalone local leaflet mesh once. The dynamic coupling
+  does not materialize meshes yet, so a longer-lived cache is deferred until a
+  real downstream consumer exists.
+- [x] Defer persistent transformation updates until the coupled path starts
+  materializing meshes; the current MTG state still updates the underlying
+  dimensions and angles at their biological lifecycle events.
+- [x] Keep vertex transformation/materialization lazy until a downstream model
+  requests a concrete scene mesh.
+- [x] Verify local mesh area, vertices/faces, bounding box and barycenter with
+  permanent numerical guards.
 - [x] Add a lightweight permanent mesh oracle before caching: one analytic
   leaflet plus a deterministic one-leaf mockup preserve finite coordinates,
   valid oriented faces, bounds, area and 700 oriented triangles across all four
   merge scales. The two intentional zero-area leaflet-tip faces are counted
   rather than rejected.
-- [x] Add a numerical global leaflet parent-pose contract: four transformed
-  landmarks match their expected world coordinates to 1e-12 m.
+- [x] Add a numerical global leaflet parent-pose contract with a nonzero local
+  attachment offset: four transformed landmarks match their expected world
+  coordinates to 1e-12 m.
 - [x] Verify triangle surface and area-weighted barycenter conservation across
   `:none`, `:leaflet`, `:leaf` and `:plant`, with 1e-12 relative surface and
   1e-10 m barycenter tolerances.
-- [ ] Test whether families of identical shapes can share `RefMesh` instances;
-  do not assume sharing is valid for leaflets with different dimensions.
+- [x] Defer sharing `RefMesh` instances across organs: current leaflets differ
+  in dimensions, coupled simulations do not materialize them, and the measured
+  scene-scale saving from the preceding mesh work is only 6%.
 
 PlantGeom already represents geometry as a shared `RefMesh` plus a per-node
 transformation and materializes lazily. Prefer using that contract fully before
@@ -656,24 +673,28 @@ Exact path, normal, width, height, full-mesh and merged-fixture geometry is
 preserved. On the warmed fixture, local extrusion falls from 4,720 B to 3,328 B
 (-29.5%), one complete leaflet from 16,400 B to 15,152 B (-7.6%), and the tiny
 12-leaflet palm from 500,424 B to 470,472 B (-6.0%). The permanent mesh oracle
-passes 16/16 after the change. The gain is real but small at scene scale, so a
+passes 28/28 after the change. The gain is real but small at scene scale, so a
 larger cache layer is not justified until a downstream model actually requests
 repeated mesh materialization.
 
-The merge-scale audit also found two contracts to resolve before freezing a
-permanent reference: `:none` and `:leaflet` are currently operationally
-identical, while `:plant` leaves every Internode mesh separate because Internode
-is omitted from the final merge. Tests must describe the chosen semantics rather
-than silently canonize the current documentation mismatch.
+The merge-scale contract is now explicit. `:none` and `:leaflet` are
+intentional API aliases because leaflets already own one mesh each. `:leaf`
+consolidates petiole-segment, rachis-segment and leaflet geometry on each Leaf
+while retaining all botanical nodes. `:plant` additionally includes Internode
+geometry and leaves only one Plant geometry. All four modes preserve the exact
+identifiers, links, parent relations and non-geometry attributes, so descendants
+remain queryable. The permanent focused suite checks local shape (10/10), a
+nonzero attachment offset and parent pose (1/1), and merge topology/geometry
+ownership, triangles, area and barycenter (17/17).
 
 ### Phase 6 — Consider PlantGeom changes only with evidence
 
-- [ ] Profile generic transformation, extrusion, merge and scene-preparation
-  operations independently.
-- [ ] If a generic PlantGeom operation is a confirmed bottleneck, create a
-  dedicated PlantGeom branch and benchmark it with PlantGeom's own tests.
-- [ ] Keep XPalm-specific lifecycle and biological state out of PlantGeom.
-- [ ] Pin the tested PlantGeom revision in the XPalm validation report.
+- [x] Profile generic extrusion, merge and scene-preparation independently;
+  transformation/materialization is not on the coupled simulation path.
+- [x] Do not create a PlantGeom branch: no generic PlantGeom bottleneck was
+  confirmed for the active coupled workload.
+- [x] Keep XPalm-specific lifecycle and biological state out of PlantGeom.
+- [x] Pin the tested PlantGeom revision in the XPalm validation report.
 
 Potential generic experiments include in-place or batched vertex transforms,
 lower-allocation extrusion, cached area/barycenter summaries and avoiding an
@@ -735,18 +756,14 @@ Existing tests to preserve and extend include:
 
 Remaining validation gaps after the current guards:
 
-- the canonical deterministic standalone configuration checks 20,994 total
-  nodes, but does not yet protect a structured fingerprint of parent/child
-  edges, ranks and key attributes;
-- merge-scale topology/queryability semantics remain unresolved even though
-  oriented triangles, area and barycenter are now conserved;
 - the corrected static image reference still requires deliberate visual
   approval;
 - the full 4,160-step A/B runner exists, but no scheduled full CI test is
   configured.
 
-The former integrated-lifecycle, leaflet-global-transform, local mesh-summary
-and merge-scale surface-conservation gaps are now covered by permanent tests.
+The former integrated-lifecycle, leaflet-global-transform, local mesh-summary,
+static-120 topology/dimension and merge-scale topology/queryability gaps are now
+covered by permanent tests.
 
 Standalone reference added during this work:
 
@@ -757,7 +774,8 @@ Standalone reference added during this work:
   mesh at 1e-12 m, including bounds and area. Eager `:leaf`/`:plant` merging
   roughly doubles build time and allocations, while reducing later
   `prepare_scene` cost;
-- `:none` and `:leaflet` are currently operationally identical;
+- `:none` and `:leaflet` are intentional aliases, and all merge modes retain
+  the complete botanical topology and scientific attributes;
 - `default_parameters(type="dynamic")` cannot use the standalone skeleton path
   because `mtg_skeleton` requires the absent `rachis_fresh_weight` key;
 - the existing 145-leaf image reference reaches 24.673 dB PSNR in the current
@@ -771,7 +789,8 @@ Permanent lightweight mesh guardrails added during this work:
 - a deterministic one-leaf fixture contains 432 vertices and 700 triangles,
   with exact oriented-triangle conservation across `:none`, `:leaflet`, `:leaf`
   and `:plant` after 1e-10 m coordinate quantization;
-- the focused test passes 16/16 and takes about 0.226 seconds once compiled.
+- the expanded focused suite passes 28/28, including the nonzero leaflet offset,
+  exact MTG topology, geometry ownership, area and barycenter contracts.
 
 ## Performance acceptance criteria
 
@@ -842,6 +861,9 @@ changes with performance changes.
 | 2026-08-30 | Reject the internal unit-conversion bypass | allocations rise to 231,616 bytes because the attempted boundary becomes type-unstable | retain the original Unitful conversions until a fully typed kernel is designed |
 | 2026-08-30 | Reject isolated traversal plumbing | exact topology/RNG parity holds, but allocations remain unchanged on full leaf, petiole and mature update paths | keep the simpler public API and profile broader topology costs before caching references |
 | 2026-08-30 | Close GPU investigation for this phase | coupled XPalm does not materialize meshes and the tiny-palm CPU mesh gain is only 6% | continue CPU topology, traversal and lifecycle work |
+| 2026-08-30 | Preserve botanical topology at every merge scale | deleting organ nodes made consolidated scenes impossible to query, and `:plant` omitted Internode geometry | merge geometry with `delete=:none`, remove only source geometry attributes, and test exact topology plus ownership |
+| 2026-08-30 | Apply leaflet attachment offsets before the parent pose | the offset was stored on Leaflet nodes but absent from the transformation | translate along the rachis-segment local axis and guard a nonzero offset numerically |
+| 2026-08-30 | Stop topology micro-optimization after the measured prototype | the no-event residual is 0.529 microseconds / 80 bytes and traversal plumbing did not reduce event allocations | defer persistent references and bulk creation rather than add lifecycle risk without a measured gain |
 
 ## Deferred scientific work
 
@@ -871,7 +893,9 @@ change even when their local areas do not.
   observer.
 - [x] Fresh paired benchmarks meet the main performance target or document a
   measured residual bottleneck and justified next step.
-- [ ] Any PlantGeom change is independently tested and reviewed in PlantGeom.
+- [x] No PlantGeom change is required: the measured fixes use its existing
+  reference-mesh and merge APIs, with XPalm retaining ownership of botanical
+  lifecycle and topology.
 - [x] GPU work is either rejected with measurements or isolated behind a tested
   CPU fallback.
 - [x] Temporary benchmark artifacts are removed or archived outside the source
