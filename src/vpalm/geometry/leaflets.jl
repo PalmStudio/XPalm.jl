@@ -83,6 +83,9 @@ function add_leaflet_geometry!(
         scale=0.5,
     )
     path, widths, heights, path_normals = _leaflet_local_extrusion(leaflet_node)
+    leaflet_offset = hasproperty(leaflet_node, :offset) ?
+                     leaflet_node.offset :
+                     0.0u"m"
 
     leaflet_refmesh = PlantGeom.extrude_profile_refmesh(
         "Leaflet$(node_id(leaflet_node))",
@@ -107,7 +110,8 @@ function add_leaflet_geometry!(
                 -deg2rad(rachis_orientation.zenithal_angle_global),
                 deg2rad(rachis_orientation.torsion_angle_global),
             )
-        )
+        ) ∘
+        _translate(leaflet_offset, zero(leaflet_offset), zero(leaflet_offset))
 
     leaflet_node.geometry = PlantGeom.Geometry(ref_mesh=leaflet_refmesh, transformation=mesh_transformation)
 

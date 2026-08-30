@@ -29,6 +29,51 @@ function _mesh_guard_area_barycenter(mesh)
     )
 end
 
+function _mesh_guard_topology(mtg)
+    nodes = sort!([mtg; descendants(mtg)]; by=node_id)
+    return Tuple(
+        begin
+            attributes = MultiScaleTreeGraph.node_attributes(node)
+            (
+                id=node_id(node),
+                parent_id=isnothing(parent(node)) ? 0 : node_id(parent(node)),
+                link=MultiScaleTreeGraph.link(node),
+                symbol=symbol(node),
+                index=MultiScaleTreeGraph.index(node),
+                scale=MultiScaleTreeGraph.scale(node),
+                attributes=Dict(
+                    key => deepcopy(attributes[key])
+                    for key in keys(attributes) if key != :geometry
+                ),
+            )
+        end
+        for node in nodes
+    )
+end
+
+function _mesh_guard_geometry_owners(mtg)
+    nodes = [mtg; descendants(mtg)]
+    symbols = (
+        :Plant,
+        :Stem,
+        :Phytomer,
+        :Internode,
+        :Leaf,
+        :Petiole,
+        :PetioleSegment,
+        :Rachis,
+        :RachisSegment,
+        :Leaflet,
+    )
+    return Dict(
+        node_symbol => count(
+            node -> symbol(node) == node_symbol && PlantGeom.has_geometry(node),
+            nodes,
+        )
+        for node_symbol in symbols
+    )
+end
+
 function _mesh_guard_oriented_cycle(a, b, c)
     return minimum(((a, b, c), (b, c, a), (c, a, b)))
 end
@@ -54,7 +99,8 @@ end
 
 function _mesh_guard_small_mockup_parameters(parameters)
     small = deepcopy(parameters)
-    small["nb_leaves_emitted"] = 1
+    # One living leaf plus one dead-leaf snag exercises both geometry paths.
+    small["nb_leaves_emitted"] = 2
     small["nb_internodes_before_planting"] = 0
     small["nb_leaves_in_sheath"] = 0
     small["rachis_fresh_weight"] = [last(parameters["rachis_fresh_weight"])]
@@ -131,7 +177,7 @@ end
     leaflet.azimuthal_angle = 0.0u"°"
     leaflet.torsion_angle = 0.0u"°"
     leaflet.lamina_angle = 180.0u"°"
-    leaflet.offset = 0.0u"m"
+    leaflet.offset = 0.25u"m"
 
     VPalm.add_leaflet_geometry!(
         leaflet,
@@ -155,10 +201,10 @@ end
         GeometryBasics.Point{3,Float64}(0.0, 0.0, 1.0),
     )
     expected = (
-        GeometryBasics.Point{3,Float64}(9.0, 6.0, 5.0),
-        GeometryBasics.Point{3,Float64}(10.0, 6.0, 5.0),
-        GeometryBasics.Point{3,Float64}(9.0, 6.0, 4.0),
-        GeometryBasics.Point{3,Float64}(9.0, 7.0, 5.0),
+        GeometryBasics.Point{3,Float64}(9.25, 6.0, 5.0),
+        GeometryBasics.Point{3,Float64}(10.25, 6.0, 5.0),
+        GeometryBasics.Point{3,Float64}(9.25, 6.0, 4.0),
+        GeometryBasics.Point{3,Float64}(9.25, 7.0, 5.0),
     )
 
     @test all(
@@ -180,14 +226,38 @@ end
     merge_scales = (:none, :leaflet, :leaf, :plant)
     triangles = Dict{Symbol,Vector{NTuple{3,NTuple{3,Float64}}}}()
     metrics = Dict{Symbol,@NamedTuple{area::Float64,barycenter::NTuple{3,Float64}}}()
+    topologies = Dict{Symbol,Any}()
+    geometry_owners = Dict{Symbol,Dict{Symbol,Int}}()
+    leaf_queries = Dict{Symbol,Any}()
+    face_owners = Dict{Symbol,Vector{Int}}()
+    root_ids = Dict{Symbol,Int}()
 
     for merge_scale in merge_scales
         mtg = VPalm.build_mockup(parameters; merge_scale, rng=nothing)
+        topologies[merge_scale] = _mesh_guard_topology(mtg)
+        geometry_owners[merge_scale] = _mesh_guard_geometry_owners(mtg)
+        root_ids[merge_scale] = node_id(mtg)
+        live_leaf = only(
+            node for node in descendants(mtg; symbol=:Leaf)
+            if !isempty(descendants(node; symbol=:Rachis))
+        )
+        leaf_queries[merge_scale] = (
+            petiole=length(descendants(live_leaf; symbol=:Petiole)),
+            petiole_segments=length(
+                descendants(live_leaf; symbol=:PetioleSegment),
+            ),
+            rachis=length(descendants(live_leaf; symbol=:Rachis)),
+            rachis_segments=length(
+                descendants(live_leaf; symbol=:RachisSegment),
+            ),
+            leaflets=length(descendants(live_leaf; symbol=:Leaflet)),
+        )
         scene = PlantGeom.prepare_scene(
             mtg;
             compute_area=false,
             compute_barycenter=false,
         )
+        face_owners[merge_scale] = scene.face2node
         triangles[merge_scale] =
             _mesh_guard_oriented_triangles(scene.merged_mesh)
         metrics[merge_scale] = _mesh_guard_area_barycenter(scene.merged_mesh)
@@ -210,7 +280,28 @@ end
         )
         for merge_scale in merge_scales
     )
+    @test all(
+        topologies[merge_scale] == topologies[:none]
+        for merge_scale in merge_scales
+    )
+    @test geometry_owners[:leaflet] == geometry_owners[:none]
 
-    # This is deliberately a mesh-only contract. In particular, it does not
-    # freeze the current :plant node topology while that consolidation evolves.
+    @test geometry_owners[:leaf][:Plant] == 0
+    @test geometry_owners[:leaf][:Internode] ==
+          geometry_owners[:none][:Internode]
+    @test geometry_owners[:leaf][:Leaf] > 0
+    @test Set(
+        node_symbol for (node_symbol, count) in geometry_owners[:leaf]
+        if count > 0
+    ) == Set((:Internode, :Leaf))
+    @test all(
+        geometry_owners[:leaf][node_symbol] == 0
+        for node_symbol in (:PetioleSegment, :RachisSegment, :Leaflet)
+    )
+
+    @test geometry_owners[:plant][:Plant] == 1
+    @test sum(values(geometry_owners[:plant])) == 1
+    @test all(==(root_ids[:plant]), face_owners[:plant])
+    @test leaf_queries[:leaf] == leaf_queries[:none]
+    @test leaf_queries[:plant] == leaf_queries[:none]
 end
