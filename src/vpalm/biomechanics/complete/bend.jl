@@ -1,4 +1,90 @@
 """
+Reusable buffers for the allocation-heavy cumulative integrations performed by
+the complete rachis biomechanics model. The five remarkable points are fixed by
+the model, while `nlin` follows the configured rachis discretization.
+
+This workspace is kept by `GeometryModel`, not by user-facing MTG nodes. It is
+therefore an execution detail and does not change the reconstructed topology or
+the scientific state stored on organs. A workspace belongs to one sequential
+geometry execution; concurrent calls on the same `GeometryModel` instance must
+use separate workspaces.
+"""
+mutable struct BendIterationWorkspace{F,S,M,CF,AF,CT,AT}
+    v_force::Vector{F}
+    shear_input::Vector{S}
+    shear_cumulative::Vector{S}
+    vec_shear::Vector{S}
+    moment_input::Vector{M}
+    moment_cumulative::Vector{M}
+    vec_moment::Vector{M}
+    fct::Vector{CF}
+    flexion_input::Vector{AF}
+    flexion_cumulative::Vector{AF}
+    vec_angle_flexion::Vector{AF}
+    vec_deriv_agl_tor::Vector{CT}
+    torsion_input::Vector{AT}
+    vec_angle_torsion::Vector{AT}
+end
+
+function BendIterationWorkspace(npoints_exp::Integer, nlin::Integer)
+    step = 1.0u"m"
+    gravity = 1.0u"m/s^2"
+    force_density = (1.0u"kg/m") * gravity
+    shear = force_density * step
+    bending_moment = shear * step
+    denominator = 1.0u"Pa" * 1.0u"m^4"
+    flexion_curvature = bending_moment / denominator
+    flexion_angle = flexion_curvature * step
+    torsion_curvature = (1.0u"N*m") / denominator
+    torsion_angle = torsion_curvature * step
+
+    return BendIterationWorkspace(
+        fill(zero(force_density), npoints_exp),
+        fill(zero(shear), nlin),
+        fill(zero(shear), nlin),
+        fill(zero(shear), nlin),
+        fill(zero(bending_moment), nlin),
+        fill(zero(bending_moment), nlin),
+        fill(zero(bending_moment), nlin),
+        fill(zero(flexion_curvature), nlin),
+        fill(zero(flexion_angle), nlin),
+        fill(zero(flexion_angle), nlin),
+        fill(zero(flexion_angle), nlin),
+        fill(zero(torsion_curvature), nlin),
+        fill(zero(torsion_angle), nlin),
+        fill(zero(torsion_angle), nlin),
+    )
+end
+
+struct RachisBiomechanicsWorkspace{W}
+    bend_iteration::W
+end
+
+function RachisBiomechanicsWorkspace(parameters::AbstractDict{String})
+    npoints_exp = 5
+    nlin = Int(parameters["rachis_nb_segments"])
+    return RachisBiomechanicsWorkspace(BendIterationWorkspace(npoints_exp, nlin))
+end
+
+function _resize_bend_iteration_workspace!(workspace, npoints_exp, nlin)
+    resize!(workspace.v_force, npoints_exp)
+    resize!(workspace.shear_input, nlin)
+    resize!(workspace.shear_cumulative, nlin)
+    resize!(workspace.vec_shear, nlin)
+    resize!(workspace.moment_input, nlin)
+    resize!(workspace.moment_cumulative, nlin)
+    resize!(workspace.vec_moment, nlin)
+    resize!(workspace.fct, nlin)
+    resize!(workspace.flexion_input, nlin)
+    resize!(workspace.flexion_cumulative, nlin)
+    resize!(workspace.vec_angle_flexion, nlin)
+    resize!(workspace.vec_deriv_agl_tor, nlin)
+    resize!(workspace.torsion_input, nlin)
+    resize!(workspace.vec_angle_torsion, nlin)
+    return workspace
+end
+
+"""
     bend(
         type, width_bend, height_bend, init_torsion, x, y, z, mass_rachis, mass_leaflets_right, mass_leaflets_left,
         distance_application, elastic_modulus, shear_modulus, step, npoints, nsegments;
@@ -48,6 +134,25 @@ The bending and torsion are applied to the sections of the rachis defined by 5 s
 
 """
 function bend(type, width_bend, height_bend, init_torsion, x, y, z, mass_rachis, mass_leaflets_right, mass_leaflets_left,
+    distance_application, elastic_modulus, shear_modulus, step, npoints, nsegments;
+    all_points=false,
+    angle_max=deg2rad(21u"°"),
+    force=true,
+    verbose=true
+)
+    return _bend(
+        nothing,
+        type, width_bend, height_bend, init_torsion, x, y, z,
+        mass_rachis, mass_leaflets_right, mass_leaflets_left,
+        distance_application, elastic_modulus, shear_modulus, step, npoints, nsegments;
+        all_points=all_points,
+        angle_max=angle_max,
+        force=force,
+        verbose=verbose,
+    )
+end
+
+function _bend(workspace, type, width_bend, height_bend, init_torsion, x, y, z, mass_rachis, mass_leaflets_right, mass_leaflets_left,
     distance_application, elastic_modulus, shear_modulus, step, npoints, nsegments;
     all_points=false,
     angle_max=deg2rad(21u"°"),
@@ -151,6 +256,8 @@ function bend(type, width_bend, height_bend, init_torsion, x, y, z, mass_rachis,
     zero_point = point_type(zero(step), zero(step), zero(step))
     neo_points = Vector{point_type}(undef, nlin)
     conserved_segment_lengths = [zero(step); fill(step, nlin - 1)]
+    iteration_workspace = workspace === nothing ? nothing :
+                          _resize_bend_iteration_workspace!(workspace.bend_iteration, npoints_exp, nlin)
 
     for iter_poids in 1:nsegments
         # Bending inertias of the experimental points after section rotation.
@@ -171,25 +278,79 @@ function bend(type, width_bend, height_bend, init_torsion, x, y, z, mass_rachis,
         vec_angle_xz[1] = vec_angle_xz[2]
 
         # Flexion: linear bending forces and linear interpolation
-        v_force = v_poids_flexion .* cos.(vec_angle_xy[i_discret_pts_exp]) .* gravity # Should be in N*m, or kg·m²·s⁻²
+        if iteration_workspace === nothing
+            v_force = v_poids_flexion .* cos.(vec_angle_xy[i_discret_pts_exp]) .* gravity
+        else
+            v_force = iteration_workspace.v_force
+            for iter in 1:npoints_exp
+                v_force[iter] = v_poids_flexion[iter] * cos(vec_angle_xy[i_discret_pts_exp[iter]]) * gravity
+            end
+        end
 
         vec_force = linear_interpolation(dist_lineique, [v_force[1]; v_force])(vec_dist)
 
         # Shear forces and bending moments
-        vec_shear = cumsum(vec_force[nlin:-1:1] .* step)
-        vec_shear = vec_shear[nlin:-1:1]
+        if iteration_workspace === nothing
+            vec_shear = cumsum(vec_force[nlin:-1:1] .* step)
+            vec_shear = vec_shear[nlin:-1:1]
 
-        vec_moment = -cumsum(vec_shear[nlin:-1:1] .* step)
-        vec_moment = vec_moment[nlin:-1:1]
+            vec_moment = -cumsum(vec_shear[nlin:-1:1] .* step)
+            vec_moment = vec_moment[nlin:-1:1]
 
-        # Classic calculation of the deflection (distance delta)
-        fct = vec_moment ./ (vec_moe .* vec_inertie_flex)
+            # Classic calculation of the deflection (distance delta)
+            fct = vec_moment ./ (vec_moe .* vec_inertie_flex)
 
-        vec_angle_flexion = cumsum(fct[nlin:-1:1] .* step)
-        vec_angle_flexion = vec_angle_flexion[nlin:-1:1]
+            vec_angle_flexion = cumsum(fct[nlin:-1:1] .* step)
+            vec_angle_flexion = vec_angle_flexion[nlin:-1:1]
+        else
+            shear_input = iteration_workspace.shear_input
+            shear_cumulative = iteration_workspace.shear_cumulative
+            vec_shear = iteration_workspace.vec_shear
+            for iter in 1:nlin
+                shear_input[iter] = vec_force[nlin - iter + 1] * step
+            end
+            cumsum!(shear_cumulative, shear_input)
+            for iter in 1:nlin
+                vec_shear[iter] = shear_cumulative[nlin - iter + 1]
+            end
+
+            moment_input = iteration_workspace.moment_input
+            moment_cumulative = iteration_workspace.moment_cumulative
+            vec_moment = iteration_workspace.vec_moment
+            for iter in 1:nlin
+                moment_input[iter] = vec_shear[nlin - iter + 1] * step
+            end
+            cumsum!(moment_cumulative, moment_input)
+            for iter in 1:nlin
+                vec_moment[iter] = -moment_cumulative[nlin - iter + 1]
+            end
+
+            fct = iteration_workspace.fct
+            for iter in 1:nlin
+                fct[iter] = vec_moment[iter] / (vec_moe[iter] * vec_inertie_flex[iter])
+            end
+
+            flexion_input = iteration_workspace.flexion_input
+            flexion_cumulative = iteration_workspace.flexion_cumulative
+            vec_angle_flexion = iteration_workspace.vec_angle_flexion
+            for iter in 1:nlin
+                flexion_input[iter] = fct[nlin - iter + 1] * step
+            end
+            cumsum!(flexion_cumulative, flexion_input)
+            for iter in 1:nlin
+                vec_angle_flexion[iter] = flexion_cumulative[nlin - iter + 1]
+            end
+        end
 
         # Embedded condition (derivative 1 = 0)
-        vec_angle_flexion = vec_angle_flexion[1] .- vec_angle_flexion
+        if iteration_workspace === nothing
+            vec_angle_flexion = vec_angle_flexion[1] .- vec_angle_flexion
+        else
+            embedded_angle = vec_angle_flexion[1]
+            for iter in 1:nlin
+                vec_angle_flexion[iter] = embedded_angle - vec_angle_flexion[iter]
+            end
+        end
 
         # Test of the small displacement hypothesis
         if verbose && maximum(abs.(vec_angle_flexion)) > angle_max
@@ -233,9 +394,19 @@ function bend(type, width_bend, height_bend, init_torsion, x, y, z, mass_rachis,
 
         vec_m_tor = linear_interpolation(dist_lineique, [v_m_tor[1]; v_m_tor])(vec_dist)
 
-        vec_deriv_agl_tor = vec_m_tor ./ (vec_g .* vec_inertie_tor)
-
-        vec_angle_torsion = cumsum(vec_deriv_agl_tor .* step)  # integration along the stem
+        if iteration_workspace === nothing
+            vec_deriv_agl_tor = vec_m_tor ./ (vec_g .* vec_inertie_tor)
+            vec_angle_torsion = cumsum(vec_deriv_agl_tor .* step)
+        else
+            vec_deriv_agl_tor = iteration_workspace.vec_deriv_agl_tor
+            torsion_input = iteration_workspace.torsion_input
+            vec_angle_torsion = iteration_workspace.vec_angle_torsion
+            for iter in 1:nlin
+                vec_deriv_agl_tor[iter] = vec_m_tor[iter] / (vec_g[iter] * vec_inertie_tor[iter])
+                torsion_input[iter] = vec_deriv_agl_tor[iter] * step
+            end
+            cumsum!(vec_angle_torsion, torsion_input)
+        end
 
         if verbose && maximum(abs.(vec_angle_torsion)) > angle_max
             @warn string("Maximum torsion angle: ", rad2deg(maximum(abs.(vec_angle_torsion))), "°. Hypothesis of small displacements not verified for torsion.")

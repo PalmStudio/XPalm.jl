@@ -61,7 +61,7 @@ function biomechanical_properties_rachis(
     relative_position_bpoint_sd, relative_length_first_leaflet, relative_length_last_leaflet, relative_position_leaflet_max_length,
     rachis_fresh_weight, rank, height_cpoint, zenithal_cpoint_angle, nb_sections,
     height_rachis_tappering, npoints_computed, iterations, angle_max;
-    verbose, rng
+    verbose, rng, workspace=nothing
 )
 
     rachis_twist_initial_angle = @check_unit rachis_twist_initial_angle u"°" verbose
@@ -164,7 +164,8 @@ function biomechanical_properties_rachis(
 
     # Call the bend function, which returns a vector of arrays:
     # bending -> { PtsX, PtsY, PtsZ, PtsDist, PtsAglXY, PtsAglXZ, PtsAglTor }
-    bending = bend(
+    bending = _bend(
+        workspace,
         type, width_bend, height_bend, initial_torsion_vec, x, y, z, mass, mass_right, mass_left,
         distance_application, elastic_modulus, shear_modulus, step, npoints_computed, iterations;
         verbose=false, all_points=true, angle_max=angle_max

@@ -359,6 +359,9 @@ Leaflet deployment follow-up:
 - [x] Reuse the bending-inertia, coordinate-conversion, reconstructed-point and
   conserved-segment-length buffers across iterations. Other `bend` work arrays
   remain candidates.
+- [x] Keep one sequential-execution workspace on `GeometryModel` for the
+  cumulative flexion/torsion buffers used by mature rachis transitions. The
+  public standalone `bend` path remains generic and workspace-free.
 - [ ] Reduce repeated unit conversions and dictionary lookups inside loops while
   preserving the public Unitful API.
 - [ ] Consider a typed, unit-normalized internal kernel with explicit conversion
@@ -385,6 +388,19 @@ Second measured biomechanics slice:
 - public coordinate-conversion helpers retain their results, while private
   in-place kernels reuse distance, angle and point buffers inside `bend`;
 - coordinate, inertia and bend targeted suites pass 17/17, 130/130 and 15/15.
+
+Third measured biomechanics slice:
+
+- a warmed mature rachis transition falls from 377,552 bytes and median
+  318.5 microseconds to 124,128 bytes and 297.4 microseconds by reusing the
+  cumulative force, shear, moment, flexion and torsion buffers;
+- allocations fall by 67.1%, while the complete rachis-segment state is exactly
+  equal to the generic path and the next random draw remains identical;
+- buffer identities are retained across rank-3 and rank-4 transitions, and the
+  already-frozen leaflet profiles keep their array identities;
+- fresh geometry-event, bend/CSV, geometry-contract and rachis/geometry suites
+  pass. A workspace belongs to one sequential geometry execution; concurrent
+  calls on the same model instance require independent workspaces.
 
 Integrated 4,160-step result at `c582c6a`:
 
@@ -451,6 +467,18 @@ remove the main simulation-only baseline cost measured above.
 PlantGeom already represents geometry as a shared `RefMesh` plus a per-node
 transformation and materializes lazily. Prefer using that contract fully before
 adding a new cache layer.
+
+The dynamic XPalm coupling currently creates and updates geometric MTG nodes but
+does not call `add_geometry!`; mesh materialization is still confined to the
+standalone `build_mockup` path. Mesh caching therefore cannot improve the
+current `architecture=true` simulation benchmark yet. It is groundwork for the
+future opening/light-interception event and for standalone VPalm.
+
+The merge-scale audit also found two contracts to resolve before freezing a
+permanent reference: `:none` and `:leaflet` are currently operationally
+identical, while `:plant` leaves every Internode mesh separate because Internode
+is omitted from the final merge. Tests must describe the chosen semantics rather
+than silently canonize the current documentation mismatch.
 
 ### Phase 6 — Consider PlantGeom changes only with evidence
 
@@ -602,6 +630,7 @@ changes with performance changes.
 | 2026-08-30 | Preserve rasterized section mechanics for the first inertia optimization | continuous formulas change the current bend reference materially | accumulate and rotate raw raster moments, then hoist them outside the iteration loop |
 | 2026-08-30 | Reuse coordinate work buffers inside `bend` | the remaining full-fixture allocation was 1.14 MB despite the inertia rewrite | keep the public API and numerical fixture while using private in-place kernels |
 | 2026-08-30 | Freeze leaflet deployment profiles after rank 2 | the existing unfolding kernel reaches its final state at rank 2, while later transitions still alter petiole and rachis geometry | skip mature leaflet traversal without freezing whole-leaf pose updates |
+| 2026-08-30 | Keep cumulative rachis buffers on the geometry model | mature transitions still allocated about 378 kB, dominated by repeated integration arrays | reuse one sequential workspace while keeping standalone `bend` generic and exact |
 | 2026-08-30 | Keep the full A/B benchmark in-repository but its generated data outside the tree | the previous driver was an external artifact and could not fully fingerprint the active environment | provide a fixed-seed 21-series runner and retain machine-readable results with each reported run |
 | 2026-08-30 | Report first-run and fully warmed full-scenario timings separately | a 128-day warm-up leaves later lifecycle compilation in the first measured pair | retain the representative first-run comparison and validate steady-state overhead with AB/BA order |
 

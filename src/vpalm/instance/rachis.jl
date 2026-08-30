@@ -92,7 +92,7 @@ end
 Update the angles and dimensions of the rachis segments based on biomechanical properties. This function is called when the rachis exists already, but needs updating its angles and dimensions 
 following a change in the leaf rank, length, or fresh biomass.
 """
-function update_rachis_angles!(rachis_node, leaf_rank, rachis_length, height_cpoint, width_cpoint, zenithal_cpoint_angle, fresh_biomass, parameters; rng)
+function update_rachis_angles!(rachis_node, leaf_rank, rachis_length, height_cpoint, width_cpoint, zenithal_cpoint_angle, fresh_biomass, parameters; rng, workspace=nothing)
     nb_segments = parameters["rachis_nb_segments"]
     points_length, points_positions, points_bending, points_deviation, points_torsion, x, y, z = biomechanical_properties_rachis(
         parameters["rachis_twist_initial_angle"], parameters["rachis_twist_initial_angle_sdp"],
@@ -106,7 +106,7 @@ function update_rachis_angles!(rachis_node, leaf_rank, rachis_length, height_cpo
         parameters["biomechanical_model"]["nb_sections"],
         parameters["biomechanical_model"]["iterations"],
         deg2rad(parameters["biomechanical_model"]["angle_max"]);
-        verbose=true, rng=rng
+        verbose=true, rng=rng, workspace=workspace
     )
 
     last_parent = rachis_node

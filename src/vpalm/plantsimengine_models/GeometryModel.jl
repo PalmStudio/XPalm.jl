@@ -27,10 +27,20 @@ This model has no outputs as it modifies the MTG directly by adding geometric pr
 
 The model requires access to the VPalm parameters via the parameters dictionary under the "vpalm" key.
 """
-struct GeometryModel{I,T,D<:AbstractDict{String}} <: AbstractGeometryModel
+struct GeometryModel{I,T,D<:AbstractDict{String},W} <: AbstractGeometryModel
     graph_node_count_init::I
     vpalm_parameters::D
     rng::T
+    rachis_workspace::W
+end
+
+function GeometryModel(graph_node_count_init, vpalm_parameters, rng)
+    return GeometryModel(
+        graph_node_count_init,
+        vpalm_parameters,
+        rng,
+        RachisBiomechanicsWorkspace(vpalm_parameters),
+    )
 end
 
 function GeometryModel(; mtg::Node, vpalm_parameters, rng)
@@ -157,7 +167,13 @@ function PlantSimEngine.run!(model::GeometryModel, status, environment, constant
         status.graph_node_count += 1
         build_leaf(unique_mtg_id, i, leaf, rachis_fresh_biomass, vpalm_params; rng=model.rng)
     elseif rank_changed
-        update_leaf!(leaf, rachis_fresh_biomass, vpalm_params; rng=model.rng)
+        update_leaf!(
+            leaf,
+            rachis_fresh_biomass,
+            vpalm_params;
+            rng=model.rng,
+            workspace=model.rachis_workspace,
+        )
     end
 
     status.is_reconstructed = true
@@ -279,7 +295,7 @@ function build_leaf(unique_mtg_id, i, leaf, biomass_leaf, parameters; rng)
 end
 
 
-function update_leaf!(leaf, biomass_leaf, parameters; rng)
+function update_leaf!(leaf, biomass_leaf, parameters; rng, workspace=nothing)
     last_rank_unfolding = 2
     petiole = leaf[1]
     VPalm.update_petiole!(
@@ -291,7 +307,18 @@ function update_leaf!(leaf, biomass_leaf, parameters; rng)
     )
     rachis = petiole[2]
 
-    VPalm.update_rachis_angles!(rachis, leaf.rank, leaf.rachis_length, petiole.height_cpoint, petiole.width_cpoint, leaf.zenithal_cpoint_angle, biomass_leaf, parameters; rng)
+    VPalm.update_rachis_angles!(
+        rachis,
+        leaf.rank,
+        leaf.rachis_length,
+        petiole.height_cpoint,
+        petiole.width_cpoint,
+        leaf.zenithal_cpoint_angle,
+        biomass_leaf,
+        parameters;
+        rng=rng,
+        workspace=workspace,
+    )
 
     # Leaflet angles and segment profiles reach their final state at rank 2.
     # Later rank transitions can still change the petiole and rachis geometry,

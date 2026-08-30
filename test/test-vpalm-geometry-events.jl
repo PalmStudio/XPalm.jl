@@ -327,3 +327,139 @@ end
     )
     @test rand(rng) == rand(reference_rng)
 end
+
+function _vpalm_rachis_transition_state(leaf)
+    return Tuple(
+        (
+            id=node_id(segment),
+            parent_id=node_id(parent(segment)),
+            index=index(segment),
+            width=segment.width,
+            height=segment.height,
+            length=segment.length,
+            zenithal_angle=segment.zenithal_angle_global,
+            azimuthal_angle=segment.azimuthal_angle_global,
+            torsion_angle=segment.torsion_angle_global,
+            x=segment.x,
+            y=segment.y,
+            z=segment.z,
+        )
+        for segment in sort(descendants(leaf; symbol=:RachisSegment); by=node_id)
+    )
+end
+
+function _vpalm_mature_update_allocations!(leaf, biomass, parameters, rng, workspace)
+    leaf.rank = 3
+    leaf.rachis_length = 3.3u"m"
+    VPalm.update_leaf!(leaf, biomass, parameters; rng=rng, workspace=workspace)
+
+    leaf.rank = 4
+    leaf.rachis_length = 3.6u"m"
+    return @allocated VPalm.update_leaf!(
+        leaf,
+        biomass,
+        parameters;
+        rng=rng,
+        workspace=workspace,
+    )
+end
+
+@testset "rachis biomechanics workspace is exact and reusable" begin
+    parameters = VPalm.default_parameters(type="dynamic")
+    visible_rank = VPalm.first_visible_leaf_rank(parameters)
+    plant = Node(NodeMTG(:/, :Plant, 1, 1))
+    leaf = Node(2, plant, NodeMTG(:+, :Leaf, 1, 4), Dict{Symbol,Any}())
+    unique_id = Ref(3)
+    rng = StableRNG(20260830)
+    biomass_leaf = 2.0u"kg"
+
+    VPalm.leaf(
+        unique_id,
+        1,
+        visible_rank,
+        biomass_leaf,
+        3.0u"m",
+        leaf,
+        parameters;
+        rng=rng,
+    )
+
+    reference_leaf = deepcopy(leaf)
+    reference_rng = copy(rng)
+    workspace = VPalm.RachisBiomechanicsWorkspace(parameters)
+    iteration_workspace = workspace.bend_iteration
+    buffer_references = Tuple(
+        getfield(iteration_workspace, field)
+        for field in fieldnames(typeof(iteration_workspace))
+    )
+    leaflet_profile_references = _vpalm_leaflet_profile_references(leaf)
+
+    for (rank, rachis_length) in ((3, 3.3u"m"), (4, 3.6u"m"))
+        leaf.rank = rank
+        leaf.rachis_length = rachis_length
+        reference_leaf.rank = rank
+        reference_leaf.rachis_length = rachis_length
+
+        VPalm.update_leaf!(
+            leaf,
+            biomass_leaf,
+            parameters;
+            rng=rng,
+            workspace=workspace,
+        )
+        VPalm.update_leaf!(
+            reference_leaf,
+            biomass_leaf,
+            parameters;
+            rng=reference_rng,
+        )
+
+        @test _vpalm_rachis_transition_state(leaf) ==
+              _vpalm_rachis_transition_state(reference_leaf)
+        current_buffers = Tuple(
+            getfield(iteration_workspace, field)
+            for field in fieldnames(typeof(iteration_workspace))
+        )
+        @test all(
+            current_buffers[i] === buffer_references[i]
+            for i in eachindex(buffer_references)
+        )
+        @test all(
+            begin
+                current = _vpalm_leaflet_profile_references(leaf)[i]
+                initial = leaflet_profile_references[i]
+                current.boundaries === initial.boundaries &&
+                current.lengths === initial.lengths &&
+                current.widths === initial.widths &&
+                current.angles_deg === initial.angles_deg
+            end
+            for i in eachindex(leaflet_profile_references)
+        )
+    end
+    @test rand(rng) == rand(reference_rng)
+
+    cached_leaf = deepcopy(reference_leaf)
+    legacy_leaf = deepcopy(reference_leaf)
+    cached_rng = StableRNG(44)
+    legacy_rng = StableRNG(44)
+    cached_workspace = VPalm.RachisBiomechanicsWorkspace(parameters)
+    cached_allocations = _vpalm_mature_update_allocations!(
+        cached_leaf,
+        biomass_leaf,
+        parameters,
+        cached_rng,
+        cached_workspace,
+    )
+    legacy_allocations = _vpalm_mature_update_allocations!(
+        legacy_leaf,
+        biomass_leaf,
+        parameters,
+        legacy_rng,
+        nothing,
+    )
+
+    @test _vpalm_rachis_transition_state(cached_leaf) ==
+          _vpalm_rachis_transition_state(legacy_leaf)
+    @test rand(cached_rng) == rand(legacy_rng)
+    @test cached_allocations < legacy_allocations
+end
