@@ -232,18 +232,23 @@ Only after profiling points to this layer, measure:
   preserves all 21 canonical series exactly. At commit `c582c6a`, the full
   4,160-step run preserves all 87,360 values exactly; rerun this gate after any
   later runtime-affecting change.
-- [ ] Record the current standalone VPalm reference reconstruction.
+- [x] Record the current standalone VPalm reference reconstruction, including a
+  fixed-seed approximately 120-emitted-leaf palm, per-merge-scale topology,
+  canonical mesh hashes, dimensions, bounds, area and build/materialization
+  costs. The dynamic standalone parameter path remains a documented gap.
 - [ ] Define explicit tolerances for floating-point geometry comparisons.
 
 ### Phase 1 — Profile before changing implementation
 
-- [ ] Profile daily no-change steps, leaf creation, rank updates and pruning
+- [x] Profile daily no-change steps, leaf creation, rank updates and pruning
   separately.
-- [ ] Attribute allocations to XPalm scheduling, VPalm biomechanics, MTG
-  traversal/construction, local mesh creation and PlantGeom materialization.
-- [ ] Measure whether node creation or per-day recomputation dominates.
-- [ ] Confirm how often each geometry function is called per leaf and per day.
-- [ ] Rank hotspots by cumulative time and allocated bytes.
+- [x] Attribute the simulation-only allocations to XPalm scheduling, VPalm
+  biomechanics and MTG traversal/construction. Standalone materialization was
+  profiled separately; coupled mesh materialization remains a later layer.
+- [x] Measure whether node creation or per-day recomputation dominates.
+- [x] Confirm how often each geometry event occurs in a controlled 400-day run.
+- [x] Rank the current simulation-only hotspots by cumulative time and allocated
+  bytes.
 
 Current code-reading hypotheses to test, not yet accepted conclusions:
 
@@ -268,6 +273,22 @@ not an end-to-end performance conclusion. Its environment fingerprint also
 correctly reports that the active sibling PlantSimEngine checkout is dirty, so
 fresh full-run results must retain that dependency state or use a committed,
 pinned revision before being treated as canonical.
+
+Fresh 400-day event profile after the first optimization slices:
+
+- 8,557 geometry calls comprise 7,900 no-event calls (92.32%), 35 builds, 126
+  early unfolding updates, 31 final rank-2 updates and 465 mature updates;
+- no-event calls cost about 0.529 microseconds and 80 bytes, confirming that the
+  remaining cumulative cost comes from real lifecycle events rather than daily
+  reconstruction;
+- build, early, rank-2 and mature reference events cost respectively 4.31 ms /
+  823 kB, 2.10 ms / 544 kB, 1.44 ms / 517 kB and 0.320 ms / 378 kB;
+- scientific kernels account for 59.8% of instrumented step time, execution-plan
+  compilation 16.5% and binding refresh 14.9%; repeated pruning is effectively
+  allocation-free;
+- rachis biomechanics contributes about 370.7 kB per transition, an estimated
+  230.6 MB or 44.1% of all allocations in the 400-day run. A reusable rachis
+  workspace is therefore the next measured optimization target.
 
 ### Phase 2 — Make scheduling genuinely event-driven
 
@@ -401,8 +422,15 @@ results can distinguish first-run cost from fully warmed steady-state cost.
   if MultiScaleTreeGraph supports this without breaking identifiers or links.
 - [ ] Avoid rebuilding topology when only transformations changed.
 - [ ] Keep pruning correct for MTG nodes and any future PlantSimEngine objects.
-- [ ] Confirm that optimization does not make standalone `merge_scale` behavior
-  inconsistent.
+- [x] Confirm that the current optimization preserves standalone merge-scale
+  geometry: all four modes conserve the same canonical mesh at 1e-12 m.
+
+Current registry audit: initial seed geometry is registered because it exists
+before CompositeModel construction, while dynamically created geometry remains
+MTG-only. No application targets petiole, rachis, segment or leaflet scales, so
+registered geometry objects receive no scientific model calls. Pruning removes
+both registered seed descendants and unregistered dynamic descendants. At day
+400 the controlled run has 302 registered objects and 7,985 MTG nodes.
 
 ### Phase 5 — Cache local geometry; update pose separately
 
@@ -498,9 +526,25 @@ Known gaps found during the initial audit:
   `:leaflet`, `:leaf` and `:plant`;
 - coupled tests cover initial reconstruction and pruning, but not one forced
   internal-to-visible-to-open-to-rank-3 lifecycle with stable node identities;
-- the 4,160-step release regression currently protects `architecture=false`;
-  the exact false/true A/B harness is still an external artifact and should be
-  promoted into a short CI test plus a scheduled full test.
+- the 4,160-step release regression currently protects `architecture=false`.
+  A short exact false/true CI test and durable full A/B runner now exist, but a
+  scheduled full test is not yet configured.
+
+Standalone reference added during this work:
+
+- a fixed-seed 120-emitted-leaf static configuration produces 21,263 nodes,
+  including 14,640 leaflets, and a mesh with 465,302 vertices, 671,076 triangles
+  and 278.110 m2 total triangle area;
+- `:none`, `:leaflet`, `:leaf` and `:plant` conserve the canonical unordered
+  mesh at 1e-12 m, including bounds and area. Eager `:leaf`/`:plant` merging
+  roughly doubles build time and allocations, while reducing later
+  `prepare_scene` cost;
+- `:none` and `:leaflet` are currently operationally identical;
+- `default_parameters(type="dynamic")` cannot use the standalone skeleton path
+  because `mtg_skeleton` requires the absent `rachis_fresh_weight` key;
+- the existing 145-leaf image reference reaches 24.673 dB PSNR in the current
+  rendering environment, just below the default 25 dB threshold. Numeric mesh
+  references are needed to distinguish geometry drift from rendering drift.
 
 ## Performance acceptance criteria
 
