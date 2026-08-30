@@ -438,6 +438,39 @@ Coupled multi-date reconstruction validation after this slice:
   5.16 seconds in the clean pinned-dependency environment. All CSV and PNG
   artifacts remain outside the repository under `/private/tmp`.
 
+Final geometry-correctness follow-up at `e9af898`:
+
+- every leaf now records whether its leaflet profiles have reached the final
+  rank-2 unfolding state. A legacy MTG without the marker, or a direct jump
+  from an immature rank to rank 3 or above, receives exactly one final
+  unfolding update before entering the mature fast path;
+- the biomechanical small-displacement guard is now independent of warning
+  verbosity, preserves the sign while clamping flexion and torsion, and the
+  terminal rachis segment now copies the actual penultimate segment angles;
+- the standalone skeleton now consumes fresh-rachis masses in the same
+  old-to-young order as configured rachis lengths. The former reverse order
+  assigned the lightest rank-1 mass to the oldest leaf and made the lower crown
+  artificially flat;
+- focused event, pruning, unfolding, bend, angle-limit, rachis-terminal and
+  static mass-order tests pass. The short warmed 400-day observer check retains
+  all 8,400 values exactly (`maximum absolute difference = 0`): 0.568 s and
+  234.30 MB without architecture versus 1.043 s and 374.97 MB with it;
+- the corrected static 120-emitted-leaf reference retains exactly 21,263 MTG
+  nodes, 53 geometric leaves, 14,640 leaflets, the former organ dimensions,
+  278.110 m2 total mesh area and 219.606 m2 leaflet mesh area. Only pose changes
+  as intended: the world-space lower bound moves from z=-0.060 m to z=-0.597 m
+  when old leaves receive their correct heavier masses;
+- the corrected 1,825-day coupled palm retains 21,780 MTG nodes, 58 geometric
+  leaves, 14,470 leaflets, 239.252 m2 physiological leaf area, LAI 3.254 and
+  271.376 m2 total mesh area. Its bounds remain close to the previous run,
+  z=[-1.599, 8.002] m, so the guard and terminal-angle fixes do not introduce a
+  gross reconstruction drift;
+- the corrected static and coupled PNG files and machine-readable summaries are
+  stored under `/private/tmp/xpalm-vpalm-corrected-validation-e9af898`. The
+  static image reference must be reviewed and deliberately regenerated because
+  the mass-order correction intentionally changes its pose; it must not be
+  overwritten merely to silence the pre-existing image check.
+
 Integrated 4,160-step result at `c582c6a`:
 
 - the first identically ordered run, including lifecycle paths first compiled
@@ -482,6 +515,21 @@ Fresh final A/B at `83b7350`, after a full 4,160-step warm-up of both variants:
 The machine was concurrently running another PlantSimEngine session, so these
 absolute timings are not publication-quality. The within-process parity and
 ratio remain valid, and the allocation improvement is independent of CPU load.
+
+Fresh final A/B at `e9af898`, after the final unfolding, angle-guard and static
+mass-order corrections and a full 4,160-step warm-up of both variants:
+
+- `architecture=false`: 13.326 s and 8.953 GB allocated;
+- `architecture=true`: 38.364 s and 12.870 GB allocated;
+- architecture therefore costs 2.879 times the runtime and 1.438 times the
+  allocations in this paired run, effectively unchanged from `83b7350`;
+- all 87,360 retained physiological values remain exactly equal, with maximum
+  absolute difference zero for all 21 daily series;
+- final and sampled-peak structure remains 1,197 PlantSimEngine objects,
+  18,673 final MTG nodes and 26,015 sampled-peak MTG nodes;
+- against the original 569.015 s / about 2.529 TB architecture baseline, the
+  final implementation remains 14.83 times faster with 99.49% fewer allocated
+  bytes.
 
 ### Phase 4 — Reduce topology and traversal costs
 
@@ -713,6 +761,9 @@ changes with performance changes.
 | 2026-08-30 | Preallocate local leaflet extrusion arrays without adding a persistent mesh cache | the isolated extrusion allocation falls 29.5%, but the tiny-palm gain is only 6.0% and coupled simulations do not materialize meshes | keep the exact lightweight optimization and defer broader caching until a real repeated consumer exists |
 | 2026-08-30 | Keep the full A/B benchmark in-repository but its generated data outside the tree | the previous driver was an external artifact and could not fully fingerprint the active environment | provide a fixed-seed 21-series runner and retain machine-readable results with each reported run |
 | 2026-08-30 | Report first-run and fully warmed full-scenario timings separately | a 128-day warm-up leaves later lifecycle compilation in the first measured pair | retain the representative first-run comparison and validate steady-state overhead with AB/BA order |
+| 2026-08-30 | Store the final leaflet deployment state explicitly | direct immature-to-rank-3 transitions and legacy MTGs otherwise skip the final rank-2 profile | perform one compatibility update, then retain the mature fast path |
+| 2026-08-30 | Apply signed biomechanical angle limits independently of verbosity | `verbose=false` formerly disabled the documented `force=true` guard | warnings remain optional while the scientific guard remains active |
+| 2026-08-30 | Align static rachis masses with configured leaf-rank order | lengths and masses are both specified oldest-to-rank-1 but only masses were popped from the opposite end | restore the intended lower-crown loading and require deterministic rank-order tests |
 
 ## Deferred scientific work
 
