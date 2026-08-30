@@ -44,6 +44,25 @@ jobs:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
       - uses: julia-actions/cache@v3
+      # Julia 1.10 does not yet interpret Project.toml [sources]. Bootstrap the
+      # same committed development dependencies used by newer Julia versions.
+      - name: Resolve pinned development dependencies on Julia 1.10
+        if: matrix.version == '1.10'
+        shell: julia --project=. --color=yes {0}
+        run: |
+          using Pkg
+          Pkg.add([
+            PackageSpec(
+              name="PlantSimEngine",
+              url="https://github.com/VirtualPlantLab/PlantSimEngine.jl",
+              rev="771894cd1188a81e85aeb4e162ecf7b2ddfa1bbf",
+            ),
+            PackageSpec(
+              name="PlantGeom",
+              url="https://github.com/VEZY/PlantGeom.jl",
+              rev="9d682ef1aaebe7ecf5aa8407a8305d6f4aad51c1",
+            ),
+          ])
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         env:
