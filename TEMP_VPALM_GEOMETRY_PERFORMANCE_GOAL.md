@@ -310,8 +310,9 @@ internode dimensions and rank.
 - [ ] Evaluate continuous analytical section formulas as a separate scientific
   change. They are not acceptable for this compatibility optimization because
   they move the bend fixture by up to 1.14 cm and 0.285 degrees.
-- [x] Reuse the bending-inertia buffer across iterations. Other `bend` work
-  arrays remain candidates.
+- [x] Reuse the bending-inertia, coordinate-conversion, reconstructed-point and
+  conserved-segment-length buffers across iterations. Other `bend` work arrays
+  remain candidates.
 - [ ] Reduce repeated unit conversions and dictionary lookups inside loops while
   preserving the public Unitful API.
 - [ ] Consider a typed, unit-normalized internal kernel with explicit conversion
@@ -328,6 +329,16 @@ First measured biomechanics slice:
 - 30 shape/dimension/angle parity cases: maximum relative flexion error
   `5.30e-15`, torsion error `6.92e-16`, and exactly identical area;
 - existing bend CSV reference unchanged and passing.
+
+Second measured biomechanics slice:
+
+- complete existing `bend` fixture: 1,135,888 bytes to 654,272 bytes, a further
+  42.4% reduction and 99.61% below the original implementation;
+- median runtime over 201 warmed calls: 0.437 ms, effectively unchanged from
+  the first optimized slice;
+- public coordinate-conversion helpers retain their results, while private
+  in-place kernels reuse distance, angle and point buffers inside `bend`;
+- coordinate, inertia and bend targeted suites pass 17/17, 130/130 and 15/15.
 
 ### Phase 4 — Reduce topology and traversal costs
 
@@ -492,6 +503,7 @@ changes with performance changes.
 | 2026-08-30 | Optimize shared VPalm functions when possible | standalone and coupled paths call the same VPalm module | test both entry points |
 | 2026-08-30 | Make geometry updates event-driven and pruning one-shot | unchanged calls advanced RNG and repeated pruning revisited the subtree | store lifecycle state in PlantSimEngine status and preserve organ-level random traits |
 | 2026-08-30 | Preserve rasterized section mechanics for the first inertia optimization | continuous formulas change the current bend reference materially | accumulate and rotate raw raster moments, then hoist them outside the iteration loop |
+| 2026-08-30 | Reuse coordinate work buffers inside `bend` | the remaining full-fixture allocation was 1.14 MB despite the inertia rewrite | keep the public API and numerical fixture while using private in-place kernels |
 
 ## Deferred scientific work
 

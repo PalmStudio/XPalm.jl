@@ -19,10 +19,24 @@ function xyz_to_dist_and_angles(points::AbstractVector{P}) where {P<:GeometryBas
 
     coord_type = typeof(points[1][1])
     zero_coord = zero(coord_type)
-    zero_point = GeometryBasics.Point{3,coord_type}(zero_coord, zero_coord, zero_coord)
     dist_p2p1 = fill(zero_coord, n)
-    vangle_xy = zeros(n)
-    vangle_xz = zeros(n)
+    vangle_xy = fill(0.0u"rad", n)
+    vangle_xz = fill(0.0u"rad", n)
+
+    _xyz_to_dist_and_angles!(dist_p2p1, vangle_xy, vangle_xz, points)
+
+    return (dist_p2p1=dist_p2p1, vangle_xy=vangle_xy, vangle_xz=vangle_xz)
+end
+
+function _xyz_to_dist_and_angles!(dist_p2p1, vangle_xy, vangle_xz, points)
+    n = length(points)
+    length(dist_p2p1) == n || error("length of dist_p2p1 != n")
+    length(vangle_xy) == n || error("length of vangle_xy != n")
+    length(vangle_xz) == n || error("length of vangle_xz != n")
+
+    coord_type = typeof(points[1][1])
+    zero_coord = zero(coord_type)
+    zero_point = GeometryBasics.Point{3,coord_type}(zero_coord, zero_coord, zero_coord)
 
     for iter in 1:n
         p2 = points[iter]
@@ -42,13 +56,13 @@ function xyz_to_dist_and_angles(points::AbstractVector{P}) where {P<:GeometryBas
         xy_projection = sqrt(p2p1[1]^2 + p2p1[2]^2)
 
         # Elevation angle (from XY plane up to vector)
-        vangle_xy[iter] = atan(p2p1[3], xy_projection)
+        vangle_xy[iter] = atan(p2p1[3], xy_projection) * u"rad"
 
         # Azimuth angle (in XY plane, from X-axis)
-        vangle_xz[iter] = atan(p2p1[2], p2p1[1])
+        vangle_xz[iter] = atan(p2p1[2], p2p1[1]) * u"rad"
     end
 
-    return (dist_p2p1=dist_p2p1, vangle_xy=vangle_xy * u"rad", vangle_xz=vangle_xz * u"rad")
+    return nothing
 end
 
 """
@@ -80,6 +94,20 @@ function dist_and_angles_to_xyz(dist_p2p1, vangle_xy, vangle_xz)
     zero_point = GeometryBasics.Point{3,coord_type}(zero_coord, zero_coord, zero_coord)
     points = Vector{typeof(zero_point)}(undef, n)
 
+    _dist_and_angles_to_xyz!(points, dist_p2p1, vangle_xy, vangle_xz)
+
+    return points
+end
+
+function _dist_and_angles_to_xyz!(points, dist_p2p1, vangle_xy, vangle_xz)
+    n = length(dist_p2p1)
+    length(points) == n || error("length of points != n")
+    length(vangle_xy) == n || error("length of vangle_xy != n")
+    length(vangle_xz) == n || error("length of vangle_xz != n")
+    coord_type = typeof(dist_p2p1[1])
+    zero_coord = zero(coord_type)
+    zero_point = GeometryBasics.Point{3,coord_type}(zero_coord, zero_coord, zero_coord)
+
     for iter in 1:n
         # Create vector in spherical-like coordinates
         # (We're using the elevation-azimuth convention here)
@@ -103,5 +131,5 @@ function dist_and_angles_to_xyz(dist_p2p1, vangle_xy, vangle_xz)
         end
     end
 
-    return points
+    return nothing
 end

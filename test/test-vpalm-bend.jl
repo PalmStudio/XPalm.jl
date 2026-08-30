@@ -11,17 +11,28 @@ shear_modulus = 400.0u"MPa"
 
 atol_length = 1e-3u"m" # mm tolerance
 
+function _run_bend_fixture(df, elastic_modulus, shear_modulus, step, npoints, nsegments)
+    return VPalm.bend(
+        df.type, df.width * u"m", df.height * u"m", df.torsion * u"°",
+        df.x * u"m", df.y * u"m", df.z * u"m", df.mass * u"kg",
+        df.mass_right * u"kg", df.mass_left * u"kg", df.distance_application * u"m",
+        elastic_modulus, shear_modulus, step, npoints, nsegments;
+        verbose=false,
+    )
+end
+
+function _warmed_bend_allocations(df, elastic_modulus, shear_modulus, step, npoints, nsegments)
+    _run_bend_fixture(df, elastic_modulus, shear_modulus, step, npoints, nsegments)
+    return @allocated _run_bend_fixture(df, elastic_modulus, shear_modulus, step, npoints, nsegments)
+end
+
 ref = CSV.read(joinpath(@__DIR__, "references/6_EW01.22_17_kanan_unbent_bend.csv"), DataFrame)
 @testset "bend works" begin
     # Dummy input data for bend function
     # Test the input data
     @test length(df.type) == length(df.width) == length(df.height) == length(df.torsion) == length(df.x) == length(df.y) == length(df.z) == length(df.mass) == length(df.mass_right) == length(df.mass_left) == length(df.distance_application)
     # Call the function
-    out = VPalm.bend(
-        df.type, df.width * u"m", df.height * u"m", df.torsion * u"°", df.x * u"m", df.y * u"m", df.z * u"m", df.mass * u"kg", df.mass_right * u"kg", df.mass_left * u"kg",
-        df.distance_application * u"m", elastic_modulus, shear_modulus, pas, Ncalc, Nboucle;
-        verbose=false
-    )
+    out = _run_bend_fixture(df, elastic_modulus, shear_modulus, pas, Ncalc, Nboucle)
 
     # Test length of elastic_modulus and shear_modulus
     @test_throws MethodError VPalm.bend(
@@ -44,6 +55,8 @@ ref = CSV.read(joinpath(@__DIR__, "references/6_EW01.22_17_kanan_unbent_bend.csv
     @test [ref.angle_xy[2]; ref.angle_xy[2:end]] * u"°" ≈ out.angle_xy atol = 1e-2
     @test [ref.angle_xz[2]; ref.angle_xz[2:end]] * u"°" ≈ out.angle_xz atol = 1e-2
     @test [ref.torsion[2]; ref.torsion[2:end]] * u"°" ≈ out.torsion atol = 1e-2
+    # Function-scoped warmup keeps this gate stable across Julia versions.
+    @test _warmed_bend_allocations(df, elastic_modulus, shear_modulus, pas, Ncalc, Nboucle) <= 900_000
 end
 
 @testset "unbend" begin

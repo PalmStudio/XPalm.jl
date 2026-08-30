@@ -147,6 +147,10 @@ function bend(type, width_bend, height_bend, init_torsion, x, y, z, mass_rachis,
     v_ig_flex = fill(0.0u"m^4", npoints_exp)
     v_ig_tor = [moments.ig_tor for moments in section_moments]
     vec_inertie_tor = linear_interpolation(dist_lineique, [v_ig_tor[1]; v_ig_tor])(vec_dist)
+    point_type = GeometryBasics.Point{3,typeof(step)}
+    zero_point = point_type(zero(step), zero(step), zero(step))
+    neo_points = Vector{point_type}(undef, nlin)
+    conserved_segment_lengths = [zero(step); fill(step, nlin - 1)]
 
     for iter_poids in 1:nsegments
         # Bending inertias of the experimental points after section rotation.
@@ -160,7 +164,7 @@ function bend(type, width_bend, height_bend, init_torsion, x, y, z, mass_rachis,
 
         # Write angles from the new coordinates
         # Distance and angles of each segment P2P1
-        vec_dist_p2p1, vec_angle_xy, vec_angle_xz = xyz_to_dist_and_angles(vec_points)
+        _xyz_to_dist_and_angles!(vec_dist_p2p1, vec_angle_xy, vec_angle_xz, vec_points)
 
         vec_dist_p2p1[1] = zero(eltype(vec_dist_p2p1))
         vec_angle_xy[1] = vec_angle_xy[2]
@@ -245,10 +249,6 @@ function bend(type, width_bend, height_bend, init_torsion, x, y, z, mass_rachis,
         end
 
         # New coordinates of the points
-        point_type = GeometryBasics.Point{3,typeof(step)}
-        zero_point = point_type(zero(step), zero(step), zero(step))
-        neo_points = fill(zero_point, nlin)
-
         for iter in 1:nlin
             # Origin P1
             p2 = vec_points[iter]
@@ -283,8 +283,8 @@ function bend(type, width_bend, height_bend, init_torsion, x, y, z, mass_rachis,
         end
 
         # Conservation of distances
-        XYZangles = xyz_to_dist_and_angles(neo_points)
-        vec_points .= dist_and_angles_to_xyz([zero(step); fill(step, nlin - 1)], XYZangles.vangle_xy, XYZangles.vangle_xz) # Assuming this function is defined elsewhere
+        _xyz_to_dist_and_angles!(vec_dist_p2p1, vec_angle_xy, vec_angle_xz, neo_points)
+        _dist_and_angles_to_xyz!(vec_points, conserved_segment_lengths, vec_angle_xy, vec_angle_xz)
 
         # Calculation of the distances of the experimental points
         # Between before and after deformation
