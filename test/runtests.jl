@@ -216,6 +216,8 @@ end
 
     @testset "Geometry" begin
         include(joinpath(dirtest, "test-vpalm-geometry.jl"))
+        include(joinpath(dirtest, "test-vpalm-geometry-events.jl"))
+        include(joinpath(dirtest, "test-vpalm-geometry-contracts.jl"))
     end
 
     @testset "Biomechanical model" begin

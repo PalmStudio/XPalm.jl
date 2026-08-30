@@ -222,8 +222,11 @@ Only after profiling points to this layer, measure:
 
 - [ ] Add a controlled benchmark runner with fixed parameters and random seed.
 - [ ] Capture the current short, five-year and 4,160-step results.
-- [ ] Save numerical topology and geometry summaries, not only images.
-- [ ] Confirm the architecture-off/on physiology comparison in a fresh run.
+- [x] Save a compact deterministic fingerprint for one dynamic leaf: class
+  counts, identities, parent relations and local leaflet dimensions/profiles.
+- [x] Confirm exact architecture-off/on observer parity in a fresh three-day
+  test for LAI, leaf area and carbon assimilation. The full 4,160-step rerun
+  remains required.
 - [ ] Record the current standalone VPalm reference reconstruction.
 - [ ] Define explicit tolerances for floating-point geometry comparisons.
 
@@ -255,23 +258,42 @@ Current code-reading hypotheses to test, not yet accepted conclusions:
 
 ### Phase 2 — Make scheduling genuinely event-driven
 
-- [ ] Introduce the smallest explicit geometry state needed to distinguish
-  absent, constructed, updated and pruned leaves.
+- [x] Introduce the first explicit lifecycle state: existing
+  `is_reconstructed` plus `geometry_removed` for one-shot pruning. Additional
+  state is only justified if later profiling needs it.
 - [ ] Skip geometry work completely on days when no relevant input changed,
   before MTG traversal, allometry recomputation or random draws.
-- [ ] Move rank-dependent computations behind rank-change detection.
-- [ ] Compute stable organ properties and random attributes once at the correct
+- [x] Move the expensive rank-dependent biomechanics behind rank-change
+  detection.
+- [x] Compute stable organ properties and random attributes once at the correct
   lifecycle event.
-- [ ] Avoid revisiting already-pruned descendants.
+- [x] Avoid revisiting already-pruned descendants and registered geometry
+  objects.
 - [ ] Update leaflet deployment profiles only for ranks where deployment inputs
   actually change, then freeze them; verify the current apparent rank-2 cutoff
   before encoding it as a contract.
-- [ ] Keep the safe rebuild path for genuine topology changes.
-- [ ] Test every state transition and repeated no-op transition.
+- [x] Keep the safe build/update path for genuine rank or topology changes.
+- [x] Test unchanged properties/RNG and repeated pruning transitions. The full
+  visible-to-open-to-rank-3 scenario remains a Phase 0 validation task.
 
 Candidate state must be derived from biological inputs, not only timestamps. A
 cache key may need rank, visibility/opening state, alive/pruned state, rachis
 length, insertion angles and other inputs identified by dependency tracing.
+
+First measured event-gating slice:
+
+- internode synchronization over 100,000 warmed calls: 13.91 ms and 4.8 MB
+  before, 7.88 ms and zero allocations after;
+- unchanged leaf path over 100,000 warmed calls: 30.89 ms and 8.0 MB before,
+  29.26 ms and 4.8 MB after;
+- `XEuler` is now sampled once per internode, while the stochastic C-point
+  angle is updated only when rank or expected rachis length changes;
+- pruning records `geometry_removed` on PlantSimEngine status, so both MTG
+  descendants and any registered geometry objects are removed exactly once.
+
+The remaining steady-state allocations must be profiled after the integrated
+benchmark; this first slice deliberately preserves daily synchronization of
+internode dimensions and rank.
 
 ### Phase 3 — Reduce allocations in VPalm biomechanics
 
@@ -453,6 +475,7 @@ changes with performance changes.
 | 2026-08-30 | Keep physiology observational in this branch | all 87,360 A/B values are currently identical | mesh-to-LAI feedback is a separate scientific change |
 | 2026-08-30 | Validate local shape separately from global pose | leaf topology/dimensions can remain fixed while rachis and leaf angles move | cache local meshes, update transformations |
 | 2026-08-30 | Optimize shared VPalm functions when possible | standalone and coupled paths call the same VPalm module | test both entry points |
+| 2026-08-30 | Make geometry updates event-driven and pruning one-shot | unchanged calls advanced RNG and repeated pruning revisited the subtree | store lifecycle state in PlantSimEngine status and preserve organ-level random traits |
 
 ## Deferred scientific work
 

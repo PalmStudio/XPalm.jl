@@ -49,7 +49,7 @@ function PlantSimEngine.inputs_(m::GeometryModel)
 end
 
 function PlantSimEngine.outputs_(::GeometryModel)
-    (is_reconstructed=false,)
+    (is_reconstructed=false, geometry_removed=false)
 end
 
 PlantSimEngine.variable_contracts_(::GeometryModel) = (
@@ -87,7 +87,13 @@ function PlantSimEngine.run!(model::GeometryModel, status, environment, constant
 
     if status.is_pruned
         leaf.is_alive = false # This is used in the reconstruction for putting snags
-        remove_leaf_geometry!(leaf, context)
+        # Pruning is irreversible in XPalm. Record the lifecycle event on the
+        # PlantSimEngine status so both MTG descendants and any registered
+        # geometry objects are removed exactly once.
+        if !status.geometry_removed
+            remove_leaf_geometry!(leaf, context)
+            status.geometry_removed = true
+        end
         return nothing
     end
 
@@ -101,36 +107,31 @@ function PlantSimEngine.run!(model::GeometryModel, status, environment, constant
     # VPalm parameters:
     vpalm_params = model.vpalm_parameters
 
-    # Set internode properties
     i = index(internode)
-    internode.width = status.radius_internodes * 2.0u"m"
-    internode.length = status.height_internodes * u"m"
-    internode.rank = status.rank_leaves
-    internode.Orthotropy = 0.05u"°"
-    internode.XEuler = phyllotactic_angle(
-        vpalm_params["phyllotactic_angle_mean"],
-        vpalm_params["phyllotactic_angle_sd"];
-        rng=model.rng
-    )
+    _update_internode_properties!(internode, status, vpalm_params, model.rng)
 
     # Set leaf properties
     rank_new = status.rank_leaves
-    # The allometric leaf properties are recomputed every step below. The
-    # existing petiole, rachis, and leaflet geometry is resized only when rank
-    # changes, following VPalm's discrete rank-based expansion stages.
-    update_in_rank = leaf.rank != rank_new
     if !status.is_reconstructed && any(node -> symbol(node) == :Petiole, children(leaf))
         # The seed leaf is initialized with a VPalm subtree before the
         # CompositeModel is built. Reuse it instead of creating a duplicate.
         status.is_reconstructed = true
     end
-    leaf.rank = rank_new
     leaf.is_alive = true
 
     current_length = final_rachis_length(i, biomass_leaf, vpalm_params)
 
-    # Compute leaf properties
-    compute_properties_leaf!(leaf, rank_new, current_length, vpalm_params, model.rng)
+    # Leaf properties depend on rank and final rachis length. Recomputing them
+    # on unchanged days needlessly resampled the stochastic C-point angle and
+    # dominated the steady-state geometry path. Child geometry still changes
+    # only at the same discrete rank transitions as before.
+    rank_changed, _ = _update_leaf_properties_if_needed!(
+        leaf,
+        rank_new,
+        current_length,
+        vpalm_params,
+        model.rng,
+    )
     isnan(leaf.rachis_length) && error("Rachis length: $(leaf.rachis_length), leaf_rank: $(leaf.rank), final_length: $current_length, biomass: $biomass_leaf")
 
     # Internal primordia exist in XPalm's MTG but are not yet visible organs.
@@ -142,6 +143,11 @@ function PlantSimEngine.run!(model::GeometryModel, status, environment, constant
         return nothing
     end
 
+    # Building a visible leaf and updating it at a rank transition are the only
+    # events that require the expensive fresh-mass conversion and biomechanical
+    # reconstruction. An ordinary unchanged day stops here.
+    (!status.is_reconstructed || rank_changed) || return nothing
+
     rachis_fresh_biomass = rachis_fresh_biomass_for_geometry(
         leaf.rachis_length,
         biomass_leaf,
@@ -150,13 +156,66 @@ function PlantSimEngine.run!(model::GeometryModel, status, environment, constant
     if !status.is_reconstructed
         status.graph_node_count += 1
         build_leaf(unique_mtg_id, i, leaf, rachis_fresh_biomass, vpalm_params; rng=model.rng)
-    elseif update_in_rank
+    elseif rank_changed
         update_leaf!(leaf, rachis_fresh_biomass, vpalm_params; rng=model.rng)
     end
 
     status.is_reconstructed = true
 
     return nothing
+end
+
+"""
+    _update_internode_properties!(internode, status, parameters, rng)
+
+Synchronize internode dimensions and rank with XPalm status. These cheap,
+deterministic assignments remain allocation-free on the steady-state path. The
+phyllotactic angle is sampled only when the internode receives that property
+for the first time; it is an organ-level trait, not a daily stochastic state.
+
+Return `true` when the phyllotactic angle was initialized.
+"""
+function _update_internode_properties!(internode, status, parameters, rng)
+    internode.width = status.radius_internodes * 2.0u"m"
+    internode.length = status.height_internodes * u"m"
+    internode.rank = status.rank_leaves
+    internode.Orthotropy = 0.05u"°"
+
+    if !hasproperty(internode, :XEuler)
+        internode.XEuler = phyllotactic_angle(
+            parameters["phyllotactic_angle_mean"],
+            parameters["phyllotactic_angle_sd"];
+            rng=rng,
+        )
+        return true
+    end
+
+    return false
+end
+
+"""
+    _update_leaf_properties_if_needed!(leaf, rank, final_length, parameters, rng)
+
+Recompute the leaf-scale allometry only when its rank, expected rachis length,
+or required attributes changed. Return `(rank_changed, properties_changed)`.
+"""
+function _update_leaf_properties_if_needed!(leaf, rank, final_length, parameters, rng)
+    rank_changed = !hasproperty(leaf, :rank) || leaf.rank != rank
+    properties_missing =
+        !hasproperty(leaf, :zenithal_insertion_angle) ||
+        !hasproperty(leaf, :rachis_length) ||
+        !hasproperty(leaf, :zenithal_cpoint_angle)
+    expected_rachis_length = rachis_expansion(rank, final_length)
+    length_changed =
+        !properties_missing && leaf.rachis_length != expected_rachis_length
+    properties_changed = rank_changed || properties_missing || length_changed
+
+    leaf.rank = rank
+    if properties_changed
+        compute_properties_leaf!(leaf, rank, final_length, parameters, rng)
+    end
+
+    return rank_changed, properties_changed
 end
 
 const LEAF_GEOMETRY_SCALES = (
