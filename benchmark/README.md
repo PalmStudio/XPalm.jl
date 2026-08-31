@@ -4,6 +4,13 @@
 geometry-performance work. It compares `architecture=false` and
 `architecture=true` in the same Julia session with a fixed VPalm seed.
 
+Including the runner does not load VPalm. The VPalm module is loaded lazily by
+the first `architecture=true` variant. This matters when the architecture-off
+path is benchmarked against another XPalm revision: in each fresh session,
+warm and measure `_run_benchmark_variant(false, ...)` before running any
+architecture-on variant, so VPalm compilation and method-table state cannot
+confound the comparison.
+
 The runner separates:
 
 - palm/scene construction;

@@ -259,11 +259,10 @@ rewrite the v0.6.1 scientific reference.
 CI classification for pushed head `ee2a20b`:
 
 - documentation succeeds;
-- macOS Julia 1 and Windows Julia 1.10 each complete the expanded VPalm suite
-  with 621 passing assertions and no numerical failure; only the intentionally
-  stale `palm_mockup.png` reference errors, at about 19.65 dB PSNR against the
-  25 dB threshold;
-- Windows Julia 1 remained in progress when this classification was recorded;
+- macOS Julia 1, Windows Julia 1 and Windows Julia 1.10 each complete the
+  expanded VPalm suite with 621 passing assertions and no numerical failure;
+  only the intentionally stale `palm_mockup.png` reference errors, at about
+  19.65 dB PSNR against the 25 dB threshold;
 - Ubuntu Julia 1.12 reaches the inherited v0.6.1 `architecture=false`
   scientific-reference mismatch, with 37 passing and 33 failing comparisons
   and the same numerical values observed before this optimization branch.
@@ -637,20 +636,26 @@ Clean pinned final A/B at `ee2a20b`, using PlantSimEngine `771894cd`, PlantGeom
 - machine-readable results are stored outside the repository under
   `/private/tmp/xpalm-vpalm-geometry-clean-ee2a20b`.
 
-Five alternating warmed `architecture=false` pairs compare the exact
+Ten alternating warmed `architecture=false` pairs compare the exact
 `3d-architecture` base `bb2a0cc` with `ee2a20b` under the same manifest:
 
 - every run has the same 21-series SHA-256, 1,197 PlantSimEngine objects and
   1,197 MTG nodes;
-- median simulation time is 13.461 s on the base and 13.726 s on the head;
-- the median paired head/base ratio is 1.0198 and the geometric mean is 1.0166,
-  so the point estimates remain within the 2% non-regression target;
-- the median allocation ratio is 1.0000025 (range 0.999999 to 1.000031);
-- with only five pairs, the one-sided bootstrap 95% upper bound is 1.0344, so a
-  strict statistical claim below 2% remains inconclusive. The exact allocation
-  and output results, architecture-specific code paths and balanced pair order
-  support classifying the observed timing spread as measurement noise rather
-  than a demonstrated architecture-off regression;
+- median simulation time is 13.473 s on the base and 13.856 s on the head;
+- the median paired head/base ratio is 1.0238 and the geometric mean is 1.0239;
+- the median allocation ratio is 1.0000028 (range 0.999996 to 1.000031);
+- the first five ratios have a geometric mean of 1.0166 and the last five
+  1.0312. This non-stationarity across two long-lived Julia processes prevents
+  a strict timing claim at the 2% boundary;
+- a source-path audit finds no changed production method executed by a normal
+  `architecture=false` run: all production changes are under `src/VPalm.jl`
+  and `src/vpalm/**`, while `Palm` and `model_applications` return before VPalm
+  is loaded when architecture is disabled;
+- the comparison harness nevertheless loaded VPalm unconditionally when it was
+  included, so base and head measured architecture-off after different VPalm
+  module compilation and method-table state. The durable runner now loads
+  VPalm lazily only for `architecture=true`; a fresh-process comparison is the
+  remaining measurement needed for a strict timing conclusion;
 - raw samples are stored outside the repository under
   `/private/tmp/xpalm-archoff-ee2a20b`.
 
@@ -840,6 +845,14 @@ Standalone reference added during this work:
   corrected mass order and leaflet parent-offset composition (current CI PSNR
   is about 19.65 dB). It must be replaced only after visual approval; numeric
   mesh references distinguish this intended pose change from topology drift.
+- the exact current standalone test fixture was regenerated from
+  `plot_mockup(vpalm_parameters)` at 1,200 by 900 pixels. It contains 20,994
+  MTG nodes and has SHA-256
+  `b4a145be28d6401f0f49ac5b71779ee217058df41938d91ec80760ffc236b7aa`;
+  it remains outside the repository at
+  `/private/tmp/xpalm-vpalm-static145-cbbcfcd.png` pending visual approval. The
+  five coupled dynamic checkpoint images are complementary evidence, not a
+  substitute for approving this exact standalone raster.
 
 Permanent lightweight mesh guardrails added during this work:
 
