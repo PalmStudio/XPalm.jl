@@ -636,28 +636,35 @@ Clean pinned final A/B at `ee2a20b`, using PlantSimEngine `771894cd`, PlantGeom
 - machine-readable results are stored outside the repository under
   `/private/tmp/xpalm-vpalm-geometry-clean-ee2a20b`.
 
-Ten alternating warmed `architecture=false` pairs compare the exact
-`3d-architecture` base `bb2a0cc` with `ee2a20b` under the same manifest:
+The first ten alternating `architecture=false` pairs compared
+`3d-architecture@bb2a0cc` with `ee2a20b` in two long-lived processes. Their
+geometric-mean head/base ratio was 1.0239, but the comparison is not used for
+the acceptance gate: the old runner loaded VPalm unconditionally, so different
+VPalm compilation and method-table state confounded the architecture-off path.
+The raw historical samples remain outside the repository under
+`/private/tmp/xpalm-archoff-ee2a20b`.
 
-- every run has the same 21-series SHA-256, 1,197 PlantSimEngine objects and
-  1,197 MTG nodes;
-- median simulation time is 13.473 s on the base and 13.856 s on the head;
-- the median paired head/base ratio is 1.0238 and the geometric mean is 1.0239;
-- the median allocation ratio is 1.0000028 (range 0.999996 to 1.000031);
-- the first five ratios have a geometric mean of 1.0166 and the last five
-  1.0312. This non-stationarity across two long-lived Julia processes prevents
-  a strict timing claim at the 2% boundary;
-- a source-path audit finds no changed production method executed by a normal
-  `architecture=false` run: all production changes are under `src/VPalm.jl`
-  and `src/vpalm/**`, while `Palm` and `model_applications` return before VPalm
-  is loaded when architecture is disabled;
-- the comparison harness nevertheless loaded VPalm unconditionally when it was
-  included, so base and head measured architecture-off after different VPalm
-  module compilation and method-table state. The durable runner now loads
-  VPalm lazily only for `architecture=true`; a fresh-process comparison is the
-  remaining measurement needed for a strict timing conclusion;
-- raw samples are stored outside the repository under
-  `/private/tmp/xpalm-archoff-ee2a20b`.
+The runner now loads VPalm lazily only for `architecture=true`. Six retained
+AB/BA pairs compared base `bb2a0cc` with production head `cbbcfcd` in two fresh
+Kaimon sessions under the same manifest. Each session warmed only
+`architecture=false`, and VPalm remained unloaded throughout:
+
+- every run has output SHA-256
+  `397a9cb18978721be03b0581b4c73b768a8dd3485947175378aa0826d14c488f`,
+  1,197 PlantSimEngine objects and 1,197 MTG nodes;
+- median simulation time is 13.381 s on the base and 13.451 s on the head;
+- paired head/base ratios range from 0.9912 to 1.0127, with median 1.0058 and
+  geometric mean 1.0032;
+- the exact-enumeration paired-bootstrap 95% upper bound for the geometric mean
+  is 1.0090, below the 1.02 non-regression limit;
+- the median allocation ratio is 1.0000053 (range 0.999992 to 1.000025).
+
+A source-path audit agrees with this measurement: all production changes are
+under `src/VPalm.jl` and `src/vpalm/**`, while `Palm` and
+`model_applications` return before VPalm is loaded when architecture is
+disabled. Commit `2caa073` records only the lazy benchmark loader and
+documentation, so its production path is identical to measured head
+`cbbcfcd`.
 
 ### Phase 4 — Reduce topology and traversal costs
 
@@ -875,8 +882,8 @@ For each optimization commit:
 - require no meaningful regression in unrelated benchmark layers;
 - target at least 10% less time or 20% fewer allocations in the measured hot
   slice, unless the commit is an enabling refactor;
-- keep the architecture-off end-to-end time within 2% on repeated same-session
-  measurements.
+- keep the architecture-off end-to-end time within 2% in fresh sessions that
+  measure `architecture=false` before loading VPalm.
 
 Branch-level milestones:
 
