@@ -1,6 +1,12 @@
 
 function plot_mockup(parameters)
-    mtg = VPalm.build_mockup(parameters; merge_scale=:leaflet, rng=nothing)
+    # Keep the visual oracle reproducible without suppressing the biologically
+    # meaningful high/medium/low variation within leaflet groups.
+    mtg = VPalm.build_mockup(
+        parameters;
+        merge_scale=:leaflet,
+        rng=StableRNG(parameters["seed"]),
+    )
     traverse!(mtg) do node
         if symbol(node) == :Petiole
             petiole_and_rachis_segments = descendants(node, symbol=[:PetioleSegment, :RachisSegment])
@@ -14,7 +20,7 @@ function plot_mockup(parameters)
             node[:color_type] = :peachpuff4
         end
     end
-    f = Figure(size=(600, 450)) # The reference is 1800x900 px and the default px_per_unit=2, so we use half the size here
+    f = Figure(size=(600, 450)) # The reference is 1200x900 px with the default px_per_unit=2.
     ax = LScene(f[1, 1])
     plantviz!(ax, mtg, color=:color_type)
 
@@ -280,6 +286,26 @@ function _vpalm_static_reference_fingerprint(mtg)
 end
 
 @testset "static mockup" begin
+    @testset "seeded leaflet grouping keeps all three planes" begin
+        relative_positions = collect(range(0.0, 0.999; length=100))
+        frequencies = VPalm.compute_leaflet_type_frequencies(
+            vpalm_parameters["leaflet_frequency_high"],
+            vpalm_parameters["leaflet_frequency_low"],
+        )
+        grouped = VPalm.group_leaflets(
+            relative_positions,
+            frequencies,
+            StableRNG(vpalm_parameters["seed"]),
+        )
+        group_starts = [
+            i for i in eachindex(grouped.group) if
+            i == firstindex(grouped.group) || grouped.group[i] != grouped.group[i-1]
+        ]
+
+        @test sort(unique(grouped.plane)) == [-1, 0, 1]
+        @test all(grouped.plane[group_starts] .== 1)
+    end
+
     # Check that the mockup is the same with and without rachis_final_lengths
     mtg = VPalm.mtg_skeleton(vpalm_parameters; rng=StableRNG(vpalm_parameters["seed"]))
     mtg2 = VPalm.mtg_skeleton(vpalm_parameters; rng=StableRNG(vpalm_parameters["seed"]))
