@@ -423,9 +423,13 @@ end
 
 
 """
-    leaflets!(unique_mtg_id, rachis_node, scale, leaf_rank, rachis_length, parameters; rng=Random.MersenneTwister())
+    leaflets!(unique_mtg_id, rachis_node, scale, leaf_rank, rachis_length,
+              parameters; rachis_final_length=rachis_length,
+              rng=Random.MersenneTwister())
 
-Create leaflets for a given rachis node, computing their positions, types, and dimensions.
+Create leaflets for a given rachis node, computing their positions, types, and
+dimensions. Positions use the current `rachis_length`; topology and dimensions
+use `rachis_final_length` and are fixed at creation.
 
 # Arguments
 
@@ -433,11 +437,10 @@ Create leaflets for a given rachis node, computing their positions, types, and d
 - `rachis_node`: The parent node of the rachis where leaflets will be attached.
 - `scale`: The scale of the leaflets in the MTG.
 - `leaf_rank`: The rank of the leaf associated with the rachis.
-- `rachis_length`: The total length of the rachis in meters.
-- `height_cpoint`: The height of the central point of the rachis in meters.
-- `width_cpoint`: The width of the central point of the rachis in meters.
-- `zenithal_cpoint_angle`: The zenithal angle of the central point of the rachis in degrees.
+- `rachis_length`: The current length of the rachis in meters, used for placement.
 - `parameters`: A dictionary containing biomechanical parameters for the leaflets.
+- `rachis_final_length`: The final rachis length used by leaflet number, length,
+  and width allometries. It defaults to `rachis_length` for backward compatibility.
 - `rng`: A random number generator for stochastic processes (default is a new MersenneTwister).
 
 # Note
@@ -468,8 +471,20 @@ The `parameters` is a `Dict{String}` containing the following keys:
 - `"relative_position_leaflet_max_width"`: Relative position of the leaflet with maximum width.
 - `"rachis_nb_segments"`: Number of segments in the rachis.
 """
-function leaflets!(unique_mtg_id, rachis_node, scale, leaf_rank, rachis_length, parameters; rng=Random.MersenneTwister())
-    nb_leaflets = compute_number_of_leaflets(rachis_length, parameters["leaflets_nb_max"], parameters["leaflets_nb_min"], parameters["leaflets_nb_slope"], parameters["leaflets_nb_inflexion"], parameters["nbLeaflets_SDP"]; rng=rng)
+function leaflets!(
+    unique_mtg_id,
+    rachis_node,
+    scale,
+    leaf_rank,
+    rachis_length,
+    parameters;
+    rachis_final_length=rachis_length,
+    rng=Random.MersenneTwister(),
+)
+    # The number and dimensions of the leaflets are fixed when the leaf is
+    # created. Use the final rachis length for these allometries, even while the
+    # current rachis is still partly expanded in the spear.
+    nb_leaflets = compute_number_of_leaflets(rachis_final_length, parameters["leaflets_nb_max"], parameters["leaflets_nb_min"], parameters["leaflets_nb_slope"], parameters["leaflets_nb_inflexion"], parameters["nbLeaflets_SDP"]; rng=rng)
 
     leaflets_relative_positions = relative_leaflet_position.(collect(1:nb_leaflets) ./ nb_leaflets, parameters["leaflet_position_shape_coefficient"])
     leaflets_position = leaflets_relative_positions .* rachis_length
@@ -484,9 +499,9 @@ function leaflets!(unique_mtg_id, rachis_node, scale, leaf_rank, rachis_length, 
     # Second pass: Normalize to ensure spreading along the full rachis length (from base to tip):
     normalize_positions!(leaflets_position, rachis_length)
 
-    leaflet_length_at_b = leaflet_length_at_bpoint(rachis_length, parameters["leaflet_length_at_b_intercept"], parameters["leaflet_length_at_b_slope"])
+    leaflet_length_at_b = leaflet_length_at_bpoint(rachis_final_length, parameters["leaflet_length_at_b_intercept"], parameters["leaflet_length_at_b_slope"])
     leaflet_max_length = leaflet_length_max(leaflet_length_at_b, parameters["relative_position_bpoint"], parameters["relative_length_first_leaflet"], parameters["relative_length_last_leaflet"], parameters["relative_position_leaflet_max_length"], parameters["relative_position_bpoint_sd"], rng)
-    leaflet_width_at_b = leaflet_width_at_bpoint(rachis_length, parameters["leaflet_width_at_b_intercept"], parameters["leaflet_width_at_b_slope"])
+    leaflet_width_at_b = leaflet_width_at_bpoint(rachis_final_length, parameters["leaflet_width_at_b_intercept"], parameters["leaflet_width_at_b_slope"])
     leaflet_max_width = leaflet_width_max(leaflet_width_at_b, parameters["relative_position_bpoint"], parameters["relative_width_first_leaflet"], parameters["relative_width_last_leaflet"], parameters["relative_position_leaflet_max_width"], parameters["relative_position_bpoint_sd"], rng)
 
     # Create leaflets for right side (side = 1)
@@ -508,6 +523,26 @@ function leaflets!(unique_mtg_id, rachis_node, scale, leaf_rank, rachis_length, 
         plane=leaflets.plane,
         position=leaflets_position,
     )
+end
+
+"""
+    update_leaflet_offsets!(rachis_node, rachis_length, nb_rachis_sections)
+
+Move existing leaflet insertion offsets as the rachis elongates, without changing
+their parent segment, identity, number, or dimensions. The relative position of
+each leaflet along the complete rachis is kept constant.
+"""
+function update_leaflet_offsets!(rachis_node, rachis_length, nb_rachis_sections)
+    rachis_segment_length = rachis_length / nb_rachis_sections
+
+    traverse!(rachis_node, symbol=:Leaflet) do leaflet
+        rachis_segment = index(parent(leaflet)) - 1
+        leaflet.offset =
+            leaflet.relative_position * rachis_length -
+            rachis_segment * rachis_segment_length
+    end
+
+    return nothing
 end
 
 """

@@ -157,7 +157,17 @@ function init_attributes_seed!(plant::MTG, parameters; rng=Random.MersenneTwiste
         leaf_node = internode[1]
         leaf_node.is_alive = true
 
-        leaf(unique_mtg_id, i, rank, rachis_fresh_biomass, final_length, leaf_node, parameters; rng)
+        leaf(
+            unique_mtg_id,
+            i,
+            rank,
+            rachis_fresh_biomass,
+            final_length,
+            leaf_node,
+            parameters;
+            leaflet_allometry_rachis_length=final_length,
+            rng,
+        )
     end
 
     return plant

@@ -261,6 +261,7 @@ end
     VPalm.update_leaf!(leaf, biomass_leaf, parameters; rng=rng)
     rank_2_state = _vpalm_leaflet_unfolding_state(leaf)
     rank_2_profile_references = _vpalm_leaflet_profile_references(leaf)
+    rank_2_offsets = Tuple(leaflet.offset for leaflet in leaflets)
 
     @test rank_2_state != folded_state
     @test leaf.leaflets_fully_unfolded
@@ -351,6 +352,13 @@ end
     )
     @test petiole.width_cpoint != petiole_width_before
     @test Tuple(segment.length for segment in rachis_segments) != rachis_lengths_before
+    @test Tuple(leaflet.offset for leaflet in leaflets) != rank_2_offsets
+    @test all(begin
+        segment_length = leaf.rachis_length / parameters["rachis_nb_segments"]
+        segment_position = MultiScaleTreeGraph.index(parent(leaflet)) - 1
+        absolute_position = segment_position * segment_length + leaflet.offset
+        absolute_position / leaf.rachis_length ≈ leaflet.relative_position
+    end for leaflet in leaflets)
     @test rand(rng) == rand(reference_rng)
 
     rank_3_state = _vpalm_leaflet_unfolding_state(leaf)
@@ -358,12 +366,14 @@ end
     reference_rng = copy(rng)
     leaf.rank = 4
     leaf.rachis_length = 3.6u"m"
+    rank_3_offsets = Tuple(leaflet.offset for leaflet in leaflets)
     reference_leaf.rank = leaf.rank
     reference_leaf.rachis_length = leaf.rachis_length
     VPalm.update_leaf!(leaf, biomass_leaf, parameters; rng=rng)
     _vpalm_update_petiole_and_rachis!(reference_leaf, biomass_leaf, parameters, reference_rng)
 
     @test _vpalm_leaflet_unfolding_state(leaf) == rank_3_state == rank_2_state
+    @test Tuple(leaflet.offset for leaflet in leaflets) != rank_3_offsets
     rank_4_profile_references = _vpalm_leaflet_profile_references(leaf)
     @test all(
         rank_4_profile_references[i].boundaries === rank_3_profile_references[i].boundaries &&

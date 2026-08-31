@@ -129,7 +129,7 @@ function PlantSimEngine.run!(model::GeometryModel, status, environment, constant
     end
     leaf.is_alive = true
 
-    current_length = final_rachis_length(i, biomass_leaf, vpalm_params)
+    rachis_final_length = final_rachis_length(i, biomass_leaf, vpalm_params)
 
     # Leaf properties depend on rank and final rachis length. Recomputing them
     # on unchanged days needlessly resampled the stochastic C-point angle and
@@ -138,11 +138,11 @@ function PlantSimEngine.run!(model::GeometryModel, status, environment, constant
     rank_changed, _ = _update_leaf_properties_if_needed!(
         leaf,
         rank_new,
-        current_length,
+        rachis_final_length,
         vpalm_params,
         model.rng,
     )
-    isnan(leaf.rachis_length) && error("Rachis length: $(leaf.rachis_length), leaf_rank: $(leaf.rank), final_length: $current_length, biomass: $biomass_leaf")
+    isnan(leaf.rachis_length) && error("Rachis length: $(leaf.rachis_length), leaf_rank: $(leaf.rank), final_length: $rachis_final_length, biomass: $biomass_leaf")
 
     # Internal primordia exist in XPalm's MTG but are not yet visible organs.
     # Delay construction until the leaf enters the sheath; topology then stays
@@ -165,7 +165,15 @@ function PlantSimEngine.run!(model::GeometryModel, status, environment, constant
     )
     if !status.is_reconstructed
         status.graph_node_count += 1
-        build_leaf(unique_mtg_id, i, leaf, rachis_fresh_biomass, vpalm_params; rng=model.rng)
+        build_leaf(
+            unique_mtg_id,
+            i,
+            leaf,
+            rachis_fresh_biomass,
+            vpalm_params;
+            rachis_final_length=rachis_final_length,
+            rng=model.rng,
+        )
     elseif rank_changed
         update_leaf!(
             leaf,
@@ -261,7 +269,15 @@ function remove_leaf_geometry!(leaf, context)
 end
 
 
-function build_leaf(unique_mtg_id, i, leaf, biomass_leaf, parameters; rng)
+function build_leaf(
+    unique_mtg_id,
+    i,
+    leaf,
+    biomass_leaf,
+    parameters;
+    rachis_final_length=leaf.rachis_length,
+    rng,
+)
     # Build the petiole
     petiole_node = petiole(
         unique_mtg_id, leaf, i, 5,
@@ -289,7 +305,8 @@ function build_leaf(unique_mtg_id, i, leaf, biomass_leaf, parameters; rng)
         unique_mtg_id, rachis_node, 5,
         leaf.rank, leaf.rachis_length,
         parameters;
-        rng=rng
+        rachis_final_length=rachis_final_length,
+        rng=rng,
     )
 
     # Leaflets created at or beyond the final unfolding rank already have their
@@ -328,6 +345,12 @@ function update_leaf!(leaf, biomass_leaf, parameters; rng, workspace=nothing)
         parameters;
         rng=rng,
         workspace=workspace,
+    )
+
+    VPalm.update_leaflet_offsets!(
+        rachis,
+        leaf.rachis_length,
+        parameters["rachis_nb_segments"],
     )
 
     # Leaflet angles and segment profiles reach their final state at rank 2.

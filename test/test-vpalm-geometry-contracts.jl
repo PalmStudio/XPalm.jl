@@ -12,15 +12,21 @@ function _vpalm_leaf_geometry_fingerprint(leaf)
             parent_class=symbol(parent(node)),
         ) for node in nodes
     )
-    leaflet_local = Tuple(
+    leaflet_dimensions = Tuple(
         (
             id=node_id(node),
             length=node.length,
             width=node.width,
-            offset=node.offset,
             relative_position=node.relative_position,
             segment_lengths=Tuple(node.leaflet_segment_lengths),
             segment_widths=Tuple(node.leaflet_segment_widths),
+        ) for node in leaflets
+    )
+    leaflet_placement = Tuple(
+        (
+            id=node_id(node),
+            parent_id=node_id(parent(node)),
+            offset=node.offset,
         ) for node in leaflets
     )
 
@@ -45,7 +51,8 @@ function _vpalm_leaf_geometry_fingerprint(leaf)
             leaflets=Tuple(node_id.(leaflets)),
         ),
         parents=bytes2hex(SHA.sha256(repr(parents))),
-        leaflet_local=bytes2hex(SHA.sha256(repr(leaflet_local))),
+        leaflet_dimensions=bytes2hex(SHA.sha256(repr(leaflet_dimensions))),
+        leaflet_placement=bytes2hex(SHA.sha256(repr(leaflet_placement))),
     )
 end
 
@@ -220,13 +227,24 @@ end
         (node.zenithal_angle, node.azimuthal_angle) for node in leaflets_after
     )
 
-    @test after == before
+    @test after.counts == before.counts
+    @test after.root == before.root
+    @test after.identities == before.identities
+    @test after.parents == before.parents
+    @test after.leaflet_dimensions == before.leaflet_dimensions
+    @test after.leaflet_placement != before.leaflet_placement
     @test petiole_after === petiole
     @test rachis_after === rachis
     @test length(leaflets_after) == length(leaflets)
     @test all(
         leaflets_after[i] === leaflets[i] for i in eachindex(leaflets)
     )
+    @test all(begin
+        segment_length = leaf.rachis_length / parameters["rachis_nb_segments"]
+        segment_position = MultiScaleTreeGraph.index(parent(node)) - 1
+        absolute_position = segment_position * segment_length + node.offset
+        absolute_position / leaf.rachis_length ≈ node.relative_position
+    end for node in leaflets_after)
     @test leaflet_angles_after != leaflet_angles_before
 end
 

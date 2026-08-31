@@ -21,10 +21,14 @@ end
 
 @testset "dynamic leaf elongation preserves leaflet topology" begin
     parameters = VPalm.default_parameters(type="dynamic")
+    parameters["nbLeaflets_SDP"] = 0.0
+    parameters["relative_position_bpoint_sd"] = 0.0
+    current_length = 2.8u"m"
+    final_length = 4.0u"m"
     plant = Node(NodeMTG(:/, :Plant, 1, 1))
     leaf = Node(2, plant, NodeMTG(:+, :Leaf, 1, 4), Dict{Symbol,Any}())
     leaf.rank = -7
-    leaf.rachis_length = 2.8u"m"
+    leaf.rachis_length = current_length
     leaf.zenithal_insertion_angle = 0.0u"°"
     leaf.zenithal_cpoint_angle = 0.0u"°"
 
@@ -35,6 +39,7 @@ end
         leaf,
         2.0u"kg",
         parameters;
+        rachis_final_length=final_length,
         rng=Random.MersenneTwister(1),
     )
 
@@ -48,14 +53,76 @@ end
             parent=node_id(parent(node)),
             offset=node.offset,
             relative_position=node.relative_position,
+            length=node.length,
+            width=node.width,
             segment_lengths=copy(node.leaflet_segment_lengths),
             segment_widths=copy(node.leaflet_segment_widths),
         )
         for node in leaflets
     )
 
+    expected_leaflets_per_side = VPalm.compute_number_of_leaflets(
+        final_length,
+        parameters["leaflets_nb_max"],
+        parameters["leaflets_nb_min"],
+        parameters["leaflets_nb_slope"],
+        parameters["leaflets_nb_inflexion"],
+        parameters["nbLeaflets_SDP"];
+        rng=Random.MersenneTwister(2),
+    )
+    leaflet_length_at_b = VPalm.leaflet_length_at_bpoint(
+        final_length,
+        parameters["leaflet_length_at_b_intercept"],
+        parameters["leaflet_length_at_b_slope"],
+    )
+    leaflet_max_length = VPalm.leaflet_length_max(
+        leaflet_length_at_b,
+        parameters["relative_position_bpoint"],
+        parameters["relative_length_first_leaflet"],
+        parameters["relative_length_last_leaflet"],
+        parameters["relative_position_leaflet_max_length"],
+        parameters["relative_position_bpoint_sd"],
+        Random.MersenneTwister(2),
+    )
+    leaflet_width_at_b = VPalm.leaflet_width_at_bpoint(
+        final_length,
+        parameters["leaflet_width_at_b_intercept"],
+        parameters["leaflet_width_at_b_slope"],
+    )
+    leaflet_max_width = VPalm.leaflet_width_max(
+        leaflet_width_at_b,
+        parameters["relative_position_bpoint"],
+        parameters["relative_width_first_leaflet"],
+        parameters["relative_width_last_leaflet"],
+        parameters["relative_position_leaflet_max_width"],
+        parameters["relative_position_bpoint_sd"],
+        Random.MersenneTwister(2),
+    )
+    insertion_position(node, rachis_length) =
+        (MultiScaleTreeGraph.index(parent(node)) - 1) *
+        rachis_length / parameters["rachis_nb_segments"] + node.offset
+
+    @test length(leaflets) == 2 * expected_leaflets_per_side
+    @test all(
+        node.length ≈ leaflet_max_length * VPalm.relative_leaflet_length(
+            node.relative_position,
+            parameters["relative_length_first_leaflet"],
+            parameters["relative_length_last_leaflet"],
+            parameters["relative_position_leaflet_max_length"],
+        ) &&
+        node.width ≈ leaflet_max_width * VPalm.relative_leaflet_width(
+            node.relative_position,
+            parameters["relative_width_first_leaflet"],
+            parameters["relative_width_last_leaflet"],
+            parameters["relative_position_leaflet_max_width"],
+        ) &&
+        insertion_position(node, current_length) ≈
+        node.relative_position * current_length
+        for node in leaflets
+    )
+
     leaf.rank = 2
-    leaf.rachis_length = 4.0u"m"
+    leaf.rachis_length = final_length
     leaf.zenithal_insertion_angle = 20.0u"°"
     leaf.zenithal_cpoint_angle = 30.0u"°"
     VPalm.update_leaf!(
@@ -92,16 +159,92 @@ end
     )
     @test petiole.width_cpoint ≈ expected_cpoint.width_cpoint
     @test petiole.height_cpoint ≈ expected_cpoint.height_cpoint
-    @test all(
-        (
-            parent=node_id(parent(node)),
-            offset=node.offset,
-            relative_position=node.relative_position,
-            segment_lengths=node.leaflet_segment_lengths,
-            segment_widths=node.leaflet_segment_widths,
-        ) == original_leaflets[node_id(node)]
+    @test all(begin
+        original = original_leaflets[node_id(node)]
+        node_id(parent(node)) == original.parent &&
+        node.relative_position == original.relative_position &&
+        node.length == original.length &&
+        node.width == original.width &&
+        node.leaflet_segment_lengths == original.segment_lengths &&
+        node.leaflet_segment_widths == original.segment_widths &&
+        node.offset ≈ original.offset * final_length / current_length &&
+        insertion_position(node, final_length) ≈
+        node.relative_position * final_length
+    end for node in updated_leaflets)
+    @test any(
+        node.offset != original_leaflets[node_id(node)].offset
         for node in updated_leaflets
     )
+end
+
+@testset "standalone leaflet allometry remains current-length by default" begin
+    parameters = VPalm.default_parameters(type="dynamic")
+    parameters["nbLeaflets_SDP"] = 0.0
+    parameters["relative_position_bpoint_sd"] = 0.0
+    final_length = 4.0u"m"
+    current_length = VPalm.rachis_expansion(-7, final_length)
+
+    default_plant = Node(NodeMTG(:/, :Plant, 1, 1))
+    default_leaf = Node(
+        2,
+        default_plant,
+        NodeMTG(:+, :Leaf, 1, 4),
+        Dict{Symbol,Any}(),
+    )
+    VPalm.leaf(
+        Ref(3),
+        1,
+        -7,
+        2.0u"kg",
+        final_length,
+        default_leaf,
+        parameters;
+        rng=Random.MersenneTwister(1),
+    )
+
+    coupled_plant = Node(NodeMTG(:/, :Plant, 1, 1))
+    coupled_leaf = Node(
+        2,
+        coupled_plant,
+        NodeMTG(:+, :Leaf, 1, 4),
+        Dict{Symbol,Any}(),
+    )
+    VPalm.leaf(
+        Ref(3),
+        1,
+        -7,
+        2.0u"kg",
+        final_length,
+        coupled_leaf,
+        parameters;
+        leaflet_allometry_rachis_length=final_length,
+        rng=Random.MersenneTwister(1),
+    )
+
+    expected_current_leaflets = VPalm.compute_number_of_leaflets(
+        current_length,
+        parameters["leaflets_nb_max"],
+        parameters["leaflets_nb_min"],
+        parameters["leaflets_nb_slope"],
+        parameters["leaflets_nb_inflexion"],
+        parameters["nbLeaflets_SDP"];
+        rng=Random.MersenneTwister(2),
+    )
+    expected_final_leaflets = VPalm.compute_number_of_leaflets(
+        final_length,
+        parameters["leaflets_nb_max"],
+        parameters["leaflets_nb_min"],
+        parameters["leaflets_nb_slope"],
+        parameters["leaflets_nb_inflexion"],
+        parameters["nbLeaflets_SDP"];
+        rng=Random.MersenneTwister(2),
+    )
+
+    @test length(descendants(default_leaf; symbol=:Leaflet)) ==
+          2 * expected_current_leaflets
+    @test length(descendants(coupled_leaf; symbol=:Leaflet)) ==
+          2 * expected_final_leaflets
+    @test expected_current_leaflets != expected_final_leaflets
 end
 
 @testset "snag" begin
@@ -209,11 +352,41 @@ end
 end
 
 @testset "dynamic geometry uses registered status inputs" begin
+    parameters = XPalm.default_parameters()
+    parameters["vpalm"]["nbLeaflets_SDP"] = 0.0
+    parameters["vpalm"]["relative_position_bpoint_sd"] = 0.0
     palm = Palm(
         initiation_age=0,
-        parameters=XPalm.default_parameters(),
+        parameters=parameters,
         architecture=true,
     )
+    seed_leaf = only(descendants(palm.mtg; symbol=:Leaf))
+    seed_leaflets = descendants(seed_leaf; symbol=:Leaflet)
+    vpalm_parameters = parameters["vpalm"]
+    seed_final_length = VPalm.final_rachis_length(1, 0.0u"kg", vpalm_parameters)
+    seed_current_length = VPalm.rachis_expansion(1, seed_final_length)
+    expected_final_leaflets = VPalm.compute_number_of_leaflets(
+        seed_final_length,
+        vpalm_parameters["leaflets_nb_max"],
+        vpalm_parameters["leaflets_nb_min"],
+        vpalm_parameters["leaflets_nb_slope"],
+        vpalm_parameters["leaflets_nb_inflexion"],
+        vpalm_parameters["nbLeaflets_SDP"];
+        rng=Random.MersenneTwister(2),
+    )
+    expected_current_leaflets = VPalm.compute_number_of_leaflets(
+        seed_current_length,
+        vpalm_parameters["leaflets_nb_max"],
+        vpalm_parameters["leaflets_nb_min"],
+        vpalm_parameters["leaflets_nb_slope"],
+        vpalm_parameters["leaflets_nb_inflexion"],
+        vpalm_parameters["nbLeaflets_SDP"];
+        rng=Random.MersenneTwister(2),
+    )
+    @test seed_leaf.rachis_length ≈ seed_current_length
+    @test length(seed_leaflets) == 2 * expected_final_leaflets
+    @test expected_final_leaflets != expected_current_leaflets
+
     scene = XPalm.xpalm_scene(
         palm;
         architecture=true,
