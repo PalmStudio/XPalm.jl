@@ -37,11 +37,29 @@ leafLengthSlope: 0.058350292901005
 rachisLength_SDP: 15.2515779099962
 leaf_length_intercept: 0.0 # intercept of the linear relationship between rachis biomass and length (m)
 leaf_length_slope: 1.31 # slope of the relationship between lenght and biomass (m/kg)
+# XPalm simulates structural dry mass. These fractions convert each simulated
+# leaf compartment to fresh mass before it is passed to VPalm. Values are the
+# medians of the component water-content observations in
+# XPalm_calibration/0-data/LeafGrowth_CIGE.csv (three sites); they are kept
+# explicit because the biomechanical parameters were fitted on fresh mass.
+xpalm_coupling:
+  leaflets_dry_matter_fraction: 0.430
+  rachis_dry_matter_fraction: 0.308
+  petiole_dry_matter_fraction: 0.273
+  # Linear dimensions scale approximately with the square root of acquired
+  # structural biomass, so one-sided leaflet area scales with biomass.
+  dimension_growth_exponent: 0.5
 # Mean young-palm allometry from Perez et al. (2016), Fig. 2A. Plant age is
 # represented by the number of leaves emitted since planting.
 rachis_length_age_intercept: 0.834 # rachis length intercept (m)
 rachis_length_age_slope: 0.03222 # rachis length increase per emitted leaf (m leaf-1)
 rachis_length_age_max: 6.62 # adult plateau (m), Perez (2017), Table IV.2 mean at 450 leaves
+# Provisional juvenile correction fitted on the 31 initial-crown rachis
+# measurements of JPCE EKA1/EKA2. It is connected continuously to the Perez
+# linear law, which remains unchanged from leaf 12 onward. The sequence is a
+# visual-emission alignment pending explicit pre-planting crown initialization.
+rachis_length_juvenile_transition_leaf: 12
+rachis_length_juvenile_exponent: 0.575
 leaflet_lamina_angle: 140 # V-shape of the leaflet, °
 leaflets_nb_max: 171.716496884477 # Maximum number of leaflets on a leaf #! this seems low! See Perez et al. 2016 Fig.3 -> 250
 leaflets_nb_min: 20 # Minimum number of leaflets on a leaf (for very young palms)
@@ -54,6 +72,11 @@ relative_position_bpoint: 0.658754588282827
 relative_position_bpoint_sd: 0.034351699174915
 leaflet_length_at_b_intercept: 0.610414306944301 # Intercept of leaflet length at b point (m)  #! check this value
 leaflet_length_at_b_slope: 0.0544112333185808 #! check this value
+# Juvenile power law fitted on 137 paired rachis/maximum-leaflet measurements
+# from JPCE EKA1 and EKA2. It is connected continuously to the historical
+# adult VPalm law, which remains unchanged from this rachis length onward.
+leaflet_length_juvenile_transition: 3.72 # rachis length at adult-law transition (m)
+leaflet_length_juvenile_exponent: 0.646 # dimensionless juvenile power exponent
 leaflet_width_at_b_intercept: 0.0260336092584137 #! check this value
 leaflet_width_at_b_slope: 0.00549863402576809 #! check this value
 relative_length_first_leaflet: 0.180641437601563

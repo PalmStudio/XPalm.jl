@@ -28,6 +28,7 @@ const _VPALM_LENGTH_PARAMETERS = (
     "rachis_length_age_slope",
     "rachis_length_age_max",
     "leaflet_length_at_b_intercept",
+    "leaflet_length_juvenile_transition",
     "leaflet_width_at_b_intercept",
 )
 
@@ -77,6 +78,11 @@ end
 function _normalize_vpalm_parameters!(parameters::AbstractDict; verbose=false)
     for parameter in _VPALM_INTEGER_PARAMETERS
         parameters[parameter] = Int(parameters[parameter])
+    end
+    if haskey(parameters, "rachis_length_juvenile_transition_leaf")
+        parameters["rachis_length_juvenile_transition_leaf"] = Int(
+            parameters["rachis_length_juvenile_transition_leaf"],
+        )
     end
 
     for parameter in _VPALM_LENGTH_PARAMETERS
@@ -161,6 +167,58 @@ function _normalize_vpalm_parameters!(parameters::AbstractDict; verbose=false)
             verbose,
             "angle_max",
         )
+    end
+
+    juvenile_leaflet_keys = (
+        "leaflet_length_juvenile_transition",
+        "leaflet_length_juvenile_exponent",
+    )
+    all(haskey(parameters, key) for key in juvenile_leaflet_keys) ||
+        !any(haskey(parameters, key) for key in juvenile_leaflet_keys) ||
+        throw(
+            ArgumentError(
+                "leaflet_length_juvenile_transition and leaflet_length_juvenile_exponent must be provided together",
+            ),
+        )
+    if all(haskey(parameters, key) for key in juvenile_leaflet_keys)
+        parameters["leaflet_length_juvenile_transition"] > 0.0u"m" ||
+            throw(
+                ArgumentError(
+                    "leaflet_length_juvenile_transition must be positive",
+                ),
+            )
+        parameters["leaflet_length_juvenile_exponent"] > 0.0 ||
+            throw(
+                ArgumentError(
+                    "leaflet_length_juvenile_exponent must be positive",
+                ),
+            )
+    end
+
+    juvenile_rachis_keys = (
+        "rachis_length_juvenile_transition_leaf",
+        "rachis_length_juvenile_exponent",
+    )
+    all(haskey(parameters, key) for key in juvenile_rachis_keys) ||
+        !any(haskey(parameters, key) for key in juvenile_rachis_keys) ||
+        throw(
+            ArgumentError(
+                "rachis_length_juvenile_transition_leaf and rachis_length_juvenile_exponent must be provided together",
+            ),
+        )
+    if all(haskey(parameters, key) for key in juvenile_rachis_keys)
+        parameters["rachis_length_juvenile_transition_leaf"] > 0 ||
+            throw(
+                ArgumentError(
+                    "rachis_length_juvenile_transition_leaf must be positive",
+                ),
+            )
+        parameters["rachis_length_juvenile_exponent"] > 0.0 ||
+            throw(
+                ArgumentError(
+                    "rachis_length_juvenile_exponent must be positive",
+                ),
+            )
     end
 
     p = parameters

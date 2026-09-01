@@ -16,7 +16,10 @@ This model operates at the internode scale and modifies the MTG directly.
 - `is_pruned`: Whether the target Leaf has actually been pruned.
 - `height_internodes`: Height of the target Internode.
 - `radius_internodes`: Radius of the target Internode.
-- `biomass_leaves`: Biomass of the Leaf attached to the target Internode.
+- `final_potential_area_leaves`: Potential one-sided leaflet area at maturity.
+- `biomass_leaflets`: Simulated structural leaflet dry mass (gDM).
+- `biomass_rachis`: Simulated structural rachis dry mass (gDM).
+- `biomass_petiole`: Simulated structural petiole dry mass (gDM).
 - `rank_leaves`: Rank of the Leaf attached to the target Internode.
 
 # Outputs
@@ -27,24 +30,40 @@ This model has no outputs as it modifies the MTG directly by adding geometric pr
 
 The model requires access to the VPalm parameters via the parameters dictionary under the "vpalm" key.
 """
-struct GeometryModel{I,T,D<:AbstractDict{String},W} <: AbstractGeometryModel
+struct GeometryModel{I,T,D<:AbstractDict{String},W,F} <: AbstractGeometryModel
     graph_node_count_init::I
     vpalm_parameters::D
     rng::T
     rachis_workspace::W
+    lma_min::F
+    leaflets_biomass_contribution::F
+    rachis_biomass_contribution::F
 end
 
-function GeometryModel(graph_node_count_init, vpalm_parameters, rng)
+function GeometryModel(
+    graph_node_count_init,
+    vpalm_parameters,
+    rng;
+    lma_min=80.0,
+    leaflets_biomass_contribution=0.30,
+    rachis_biomass_contribution=0.30,
+)
+    mass_parameters = promote(
+        lma_min,
+        leaflets_biomass_contribution,
+        rachis_biomass_contribution,
+    )
     return GeometryModel(
         graph_node_count_init,
         vpalm_parameters,
         rng,
         RachisBiomechanicsWorkspace(vpalm_parameters),
+        mass_parameters...,
     )
 end
 
-function GeometryModel(; mtg::Node, vpalm_parameters, rng)
-    GeometryModel(length(mtg), vpalm_parameters, rng)
+function GeometryModel(; mtg::Node, vpalm_parameters, rng, kwargs...)
+    GeometryModel(length(mtg), vpalm_parameters, rng; kwargs...)
 end
 
 function PlantSimEngine.inputs_(m::GeometryModel)
@@ -53,7 +72,10 @@ function PlantSimEngine.inputs_(m::GeometryModel)
         is_pruned=PlantSimEngine.Required(Bool),
         height_internodes=PlantSimEngine.Required(Real),
         radius_internodes=PlantSimEngine.Required(Real),
-        biomass_leaves=PlantSimEngine.Required(Real),
+        final_potential_area_leaves=PlantSimEngine.Required(Real),
+        biomass_leaflets=PlantSimEngine.Required(Real),
+        biomass_rachis=PlantSimEngine.Required(Real),
+        biomass_petiole=PlantSimEngine.Required(Real),
         rank_leaves=PlantSimEngine.Required(Real),
     )
 end
@@ -63,7 +85,19 @@ function PlantSimEngine.outputs_(::GeometryModel)
 end
 
 PlantSimEngine.variable_contracts_(::GeometryModel) = (
-    biomass_leaves=PlantSimEngine.VariableContract(
+    biomass_leaflets=PlantSimEngine.VariableContract(
+        unit=:g_dry_matter,
+        basis=:object,
+        aggregation=:state,
+        extent=:extensive,
+    ),
+    biomass_rachis=PlantSimEngine.VariableContract(
+        unit=:g_dry_matter,
+        basis=:object,
+        aggregation=:state,
+        extent=:extensive,
+    ),
+    biomass_petiole=PlantSimEngine.VariableContract(
         unit=:g_dry_matter,
         basis=:object,
         aggregation=:state,
@@ -112,10 +146,21 @@ function PlantSimEngine.run!(model::GeometryModel, status, environment, constant
 
     symbol(leaf) != :Leaf && error("Expected leaf node, got $(symbol(leaf))")
 
-    biomass_leaf_value = status.biomass_leaves
-    biomass_leaf = uconvert(u"kg", max(0.0, biomass_leaf_value) * u"g")
     # VPalm parameters:
     vpalm_params = model.vpalm_parameters
+    coupling = vpalm_params["xpalm_coupling"]
+    rachis_fresh_biomass = fresh_biomass_from_dry_mass(
+        status.biomass_rachis,
+        coupling["rachis_dry_matter_fraction"],
+    )
+    leaflet_fresh_biomass = fresh_biomass_from_dry_mass(
+        status.biomass_leaflets,
+        coupling["leaflets_dry_matter_fraction"],
+    )
+    petiole_fresh_biomass = fresh_biomass_from_dry_mass(
+        status.biomass_petiole,
+        coupling["petiole_dry_matter_fraction"],
+    )
 
     i = index(internode)
     _update_internode_properties!(internode, status, vpalm_params, model.rng)
@@ -129,40 +174,52 @@ function PlantSimEngine.run!(model::GeometryModel, status, environment, constant
     end
     leaf.is_alive = true
 
-    rachis_final_length = final_rachis_length(i, biomass_leaf, vpalm_params)
-
-    # Leaf properties depend on rank and final rachis length. Recomputing them
-    # on unchanged days needlessly resampled the stochastic C-point angle and
-    # dominated the steady-state geometry path. Child geometry still changes
-    # only at the same discrete rank transitions as before.
-    rank_changed, _ = _update_leaf_properties_if_needed!(
-        leaf,
-        rank_new,
-        rachis_final_length,
-        vpalm_params,
-        model.rng,
+    rachis_reference_length = final_rachis_length(i, 0.0u"kg", vpalm_params)
+    leaflet_dimension_scale = coupled_leaf_dimension_scale(
+        status.biomass_rachis,
+        status.final_potential_area_leaves,
+        model.lma_min,
+        model.leaflets_biomass_contribution,
+        model.rachis_biomass_contribution,
+        coupling["dimension_growth_exponent"],
     )
-    isnan(leaf.rachis_length) && error("Rachis length: $(leaf.rachis_length), leaf_rank: $(leaf.rank), final_length: $rachis_final_length, biomass: $biomass_leaf")
+    rachis_realized_length = rachis_reference_length * leaflet_dimension_scale
+    coupling_state_missing =
+        !hasproperty(leaf, :coupled_rachis_fresh_biomass) ||
+        !hasproperty(leaf, :coupled_leaflet_fresh_biomass) ||
+        !hasproperty(leaf, :coupled_petiole_fresh_biomass) ||
+        !hasproperty(leaf, :leaflet_dimension_scale)
+    rank_changed = !hasproperty(leaf, :rank) || leaf.rank != rank_new
+    geometry_event =
+        !status.is_reconstructed || rank_changed || coupling_state_missing
+
+    # Sample the current simulated biomass at botanical rank transitions. This
+    # keeps geometry event-driven (roughly one update per leaf emission) while
+    # making each new state depend on XPalm allocation rather than on an
+    # inverted VPalm length allometry.
+    if geometry_event
+        rank_changed, _ = _update_leaf_properties_if_needed!(
+            leaf,
+            rank_new,
+            rachis_realized_length,
+            vpalm_params,
+            model.rng,
+        )
+    end
+    isnan(leaf.rachis_length) && error("Rachis length: $(leaf.rachis_length), leaf_rank: $(leaf.rank), realized_length: $rachis_realized_length, rachis dry mass: $(status.biomass_rachis)")
 
     # Internal primordia exist in XPalm's MTG but are not yet visible organs.
     # Delay construction until the leaf enters the sheath; topology then stays
     # fixed while rank-dependent angles and expansion are updated.
     is_visible_leaf_rank(rank_new, vpalm_params) || return nothing
 
-    if !haskey(vpalm_params, "rachis_length_age_intercept") && biomass_leaf_value <= 0.0
+    status.biomass_rachis > 0.0 || return nothing
+
+    if leaflet_dimension_scale <= 0.0
         return nothing
     end
 
-    # Building a visible leaf and updating it at a rank transition are the only
-    # events that require the expensive fresh-mass conversion and biomechanical
-    # reconstruction. An ordinary unchanged day stops here.
-    (!status.is_reconstructed || rank_changed) || return nothing
-
-    rachis_fresh_biomass = rachis_fresh_biomass_for_geometry(
-        leaf.rachis_length,
-        biomass_leaf,
-        vpalm_params,
-    )
+    geometry_event || return nothing
     if !status.is_reconstructed
         status.graph_node_count += 1
         build_leaf(
@@ -171,19 +228,26 @@ function PlantSimEngine.run!(model::GeometryModel, status, environment, constant
             leaf,
             rachis_fresh_biomass,
             vpalm_params;
-            rachis_final_length=rachis_final_length,
+            rachis_final_length=rachis_reference_length,
+            leaflet_fresh_biomass=leaflet_fresh_biomass,
+            leaflet_dimension_scale=leaflet_dimension_scale,
             rng=model.rng,
         )
-    elseif rank_changed
+    else
         update_leaf!(
             leaf,
             rachis_fresh_biomass,
             vpalm_params;
+            leaflet_fresh_biomass=leaflet_fresh_biomass,
+            leaflet_dimension_scale=leaflet_dimension_scale,
             rng=model.rng,
             workspace=model.rachis_workspace,
         )
     end
 
+    leaf.coupled_rachis_fresh_biomass = rachis_fresh_biomass
+    leaf.coupled_leaflet_fresh_biomass = leaflet_fresh_biomass
+    leaf.coupled_petiole_fresh_biomass = petiole_fresh_biomass
     status.is_reconstructed = true
 
     return nothing
@@ -235,8 +299,10 @@ function _update_leaf_properties_if_needed!(leaf, rank, final_length, parameters
     properties_changed = rank_changed || properties_missing || length_changed
 
     leaf.rank = rank
-    if properties_changed
+    if rank_changed || properties_missing
         compute_properties_leaf!(leaf, rank, final_length, parameters, rng)
+    elseif length_changed
+        leaf.rachis_length = expected_rachis_length
     end
 
     return rank_changed, properties_changed
@@ -276,6 +342,8 @@ function build_leaf(
     biomass_leaf,
     parameters;
     rachis_final_length=leaf.rachis_length,
+    leaflet_fresh_biomass=nothing,
+    leaflet_dimension_scale=nothing,
     rng,
 )
     # Build the petiole
@@ -285,7 +353,7 @@ function build_leaf(
         leaf.zenithal_insertion_angle,
         leaf.zenithal_cpoint_angle,
         parameters;
-        rng=rng
+        rng=rng,
     )
 
     # Build the rachis
@@ -297,7 +365,8 @@ function build_leaf(
         leaf.zenithal_cpoint_angle,
         biomass_leaf,
         parameters;
-        rng=rng
+        rng=rng,
+        leaflet_fresh_biomass=leaflet_fresh_biomass,
     )
 
     # Add the leaflets to the rachis
@@ -308,6 +377,14 @@ function build_leaf(
         rachis_final_length=rachis_final_length,
         rng=rng,
     )
+
+    if !isnothing(leaflet_dimension_scale)
+        update_leaflet_dimensions!(
+            leaf,
+            leaflet_dimension_scale,
+            parameters,
+        )
+    end
 
     # Leaflets created at or beyond the final unfolding rank already have their
     # mature angles, stiffness, and segment profiles. Keep this state on the
@@ -322,7 +399,15 @@ _leaflets_fully_unfolded(leaf) =
     leaf.leaflets_fully_unfolded === true
 
 
-function update_leaf!(leaf, biomass_leaf, parameters; rng, workspace=nothing)
+function update_leaf!(
+    leaf,
+    biomass_leaf,
+    parameters;
+    rng,
+    workspace=nothing,
+    leaflet_fresh_biomass=nothing,
+    leaflet_dimension_scale=nothing,
+)
     last_rank_unfolding = 2
     petiole = leaf[1]
     VPalm.update_petiole!(
@@ -345,6 +430,7 @@ function update_leaf!(leaf, biomass_leaf, parameters; rng, workspace=nothing)
         parameters;
         rng=rng,
         workspace=workspace,
+        leaflet_fresh_biomass=leaflet_fresh_biomass,
     )
 
     VPalm.update_leaflet_offsets!(
@@ -352,6 +438,17 @@ function update_leaf!(leaf, biomass_leaf, parameters; rng, workspace=nothing)
         leaf.rachis_length,
         parameters["rachis_nb_segments"],
     )
+
+    if !isnothing(leaflet_dimension_scale)
+        VPalm.update_leaflet_dimensions!(
+            leaf,
+            leaflet_dimension_scale,
+            parameters,
+            # Immature leaves immediately rebuild the same profile below when
+            # their unfolding angles are updated. Avoid doing that work twice.
+            update_profiles=_leaflets_fully_unfolded(leaf),
+        )
+    end
 
     # Leaflet angles and segment profiles reach their final state at rank 2.
     # Use the stored state rather than the current rank for the fast path: an

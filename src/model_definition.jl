@@ -1014,6 +1014,9 @@ function model_applications(p; architecture=false)
             mtg=p.mtg,
             rng=Random.MersenneTwister(parameters["vpalm"]["seed"]),
             vpalm_parameters=parameters["vpalm"],
+            lma_min=parameters["mass_and_dimensions"]["leaf"]["lma_min"],
+            leaflets_biomass_contribution=parameters["biomass"]["leaf"]["leaflets_biomass_contribution"],
+            rachis_biomass_contribution=parameters["biomass"]["leaf"]["rachis_biomass_contribution"],
         );
         inputs=(:graph_node_count => PlantSimEngine.One(
             scale=:Scene,
@@ -1034,10 +1037,29 @@ function model_applications(p; architecture=false)
             within=PlantSimEngine.Self(),
             var=:radius,
         ),
-        :biomass_leaves => PlantSimEngine.One(
+        :final_potential_area_leaves => PlantSimEngine.One(
             scale=:Leaf,
             relation=:children,
-            var=:biomass,
+            application=:Leaf__leaf_final_potential_area,
+            var=:final_potential_area,
+        ),
+        :biomass_leaflets => PlantSimEngine.One(
+            scale=:Leaf,
+            relation=:children,
+            application=:Leaf__leaf_pruning,
+            var=:biomass_leaflets,
+        ),
+        :biomass_rachis => PlantSimEngine.One(
+            scale=:Leaf,
+            relation=:children,
+            application=:Leaf__leaf_pruning,
+            var=:biomass_rachis,
+        ),
+        :biomass_petiole => PlantSimEngine.One(
+            scale=:Leaf,
+            relation=:children,
+            application=:Leaf__leaf_pruning,
+            var=:biomass_petiole,
         ),
         :rank_leaves => PlantSimEngine.One(
             scale=:Leaf,

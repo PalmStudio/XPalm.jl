@@ -56,6 +56,9 @@ Use of the biomechanical model to compute the properties of the rachis.
 - `relative_length_last_leaflet`: relative length of the last leaflet on the rachis (0 to 1)
 - `relative_position_leaflet_max_length`: relative position of the longest leaflet on the rachis (0.111 to 0.999)
 - `rachis_fresh_weight`: fresh weight of the rachis (kg)
+- `leaflet_fresh_weight`: optional total fresh weight of all leaflets (kg).
+  When omitted, standalone VPalm keeps its historical fixed leaflet-to-rachis
+  load ratio.
 - `rank`: rank of the rachis
 - `height_cpoint`: height of the C point (m)
 - `zenithal_cpoint_angle`: zenithal angle of the C point (°)
@@ -91,7 +94,12 @@ function biomechanical_properties_rachis(
     relative_position_bpoint_sd, relative_length_first_leaflet, relative_length_last_leaflet, relative_position_leaflet_max_length,
     rachis_fresh_weight, rank, height_cpoint, zenithal_cpoint_angle, nb_sections,
     height_rachis_tappering, npoints_computed, iterations, angle_max;
-    verbose, rng, workspace=nothing
+    verbose,
+    rng,
+    workspace=nothing,
+    leaflet_fresh_weight=nothing,
+    leaflet_length_juvenile_transition=nothing,
+    leaflet_length_juvenile_exponent=nothing,
 )
 
     rachis_twist_initial_angle = @check_unit rachis_twist_initial_angle u"°" verbose
@@ -101,6 +109,12 @@ function biomechanical_properties_rachis(
     rachis_length = @check_unit rachis_length u"m" verbose
     leaflet_length_at_b_intercept = @check_unit leaflet_length_at_b_intercept u"m" verbose
     rachis_fresh_weight = @check_unit rachis_fresh_weight u"kg" verbose
+    if !isnothing(leaflet_fresh_weight)
+        leaflet_fresh_weight = @check_unit leaflet_fresh_weight u"kg" verbose
+    end
+    if !isnothing(leaflet_length_juvenile_transition)
+        leaflet_length_juvenile_transition = @check_unit leaflet_length_juvenile_transition u"m" verbose
+    end
     height_cpoint = @check_unit height_cpoint u"m" verbose
     zenithal_cpoint_angle = @check_unit zenithal_cpoint_angle u"°" verbose
     angle_max = @check_unit angle_max u"°" verbose
@@ -136,7 +150,13 @@ function biomechanical_properties_rachis(
     distances = fill(0.0u"m", npoints)           # Distance between the points projected on the X axis
     distance_application = fill(0.0u"m", npoints) # Application distance for forces (if needed)
 
-    leaflet_length_at_b = leaflet_length_at_bpoint(rachis_length, leaflet_length_at_b_intercept, leaflet_length_at_b_slope)
+    leaflet_length_at_b = leaflet_length_at_bpoint(
+        rachis_length,
+        leaflet_length_at_b_intercept,
+        leaflet_length_at_b_slope;
+        juvenile_transition=leaflet_length_juvenile_transition,
+        juvenile_exponent=leaflet_length_juvenile_exponent,
+    )
     leaflet_max_length = leaflet_length_max(leaflet_length_at_b, relative_position_bpoint, relative_length_first_leaflet, relative_length_last_leaflet, relative_position_leaflet_max_length, relative_position_bpoint_sd, rng)
 
     # Parameters to compute rachis width from rachis height:
@@ -148,9 +168,20 @@ function biomechanical_properties_rachis(
     for i in 1:npoints
         distances[i] = rachis_length * relative_position_remarkable_points[i]
         mass[i] = mass_distribution_segment_rachis[i] * rachis_fresh_weight
-        # we consider that the leaflets on both sides of the rachis have the same mass:
-        mass_right[i] = mass_distribution_segment_leaflet[i] * rachis_fresh_weight
-        mass_left[i] = mass_distribution_segment_leaflet[i] * rachis_fresh_weight
+        # We consider that the leaflets on both sides of the rachis have the
+        # same mass. Standalone VPalm keeps its historical load ratio; the
+        # XPalm coupling supplies the simulated total leaflet fresh mass and
+        # the same distribution is then normalized to that explicit total.
+        if isnothing(leaflet_fresh_weight)
+            mass_right[i] = mass_distribution_segment_leaflet[i] * rachis_fresh_weight
+            mass_left[i] = mass_distribution_segment_leaflet[i] * rachis_fresh_weight
+        else
+            side_total = sum(mass_distribution_segment_leaflet)
+            mass_right[i] =
+                mass_distribution_segment_leaflet[i] * leaflet_fresh_weight /
+                (2.0 * side_total)
+            mass_left[i] = mass_right[i]
+        end
 
         # leaflet length at the middle of the segment (in m):
         length_leaflets_segment = leaflet_max_length * relative_leaflet_length(

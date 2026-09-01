@@ -170,6 +170,37 @@ end
                   "Cannot convert initial_stem_height from kg to m"
         end
     end
+
+    for normalize_parameters! in normalizers
+        valid = minimal_parameters()
+        valid["leaflet_length_juvenile_transition"] = 250.0u"cm"
+        valid["leaflet_length_juvenile_exponent"] = 0.6
+        valid["rachis_length_juvenile_transition_leaf"] = 12.0
+        valid["rachis_length_juvenile_exponent"] = 0.5
+        normalize_parameters!(valid)
+        @test valid["leaflet_length_juvenile_transition"] == 2.5u"m"
+        @test valid["rachis_length_juvenile_transition_leaf"] === 12
+
+        missing_leaflet_exponent = minimal_parameters()
+        missing_leaflet_exponent["leaflet_length_juvenile_transition"] =
+            2.5u"m"
+        @test_throws ArgumentError normalize_parameters!(missing_leaflet_exponent)
+
+        missing_rachis_exponent = minimal_parameters()
+        missing_rachis_exponent["rachis_length_juvenile_transition_leaf"] = 12
+        @test_throws ArgumentError normalize_parameters!(missing_rachis_exponent)
+
+        invalid_leaflet_transition = minimal_parameters()
+        invalid_leaflet_transition["leaflet_length_juvenile_transition"] =
+            0.0u"m"
+        invalid_leaflet_transition["leaflet_length_juvenile_exponent"] = 0.6
+        @test_throws ArgumentError normalize_parameters!(invalid_leaflet_transition)
+
+        invalid_rachis_exponent = minimal_parameters()
+        invalid_rachis_exponent["rachis_length_juvenile_transition_leaf"] = 12
+        invalid_rachis_exponent["rachis_length_juvenile_exponent"] = 0.0
+        @test_throws ArgumentError normalize_parameters!(invalid_rachis_exponent)
+    end
 end
 
 @testset "XPalm and VPalm parameter readers share canonical values" begin

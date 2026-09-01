@@ -1,10 +1,47 @@
 distance3(p0, p1) = sqrt(sum((p1 .- p0) .^ 2))
 
+@testset "XPalm dry biomass to VPalm growth contract" begin
+    parameters = VPalm.default_parameters(type="dynamic")
+    coupling = parameters["xpalm_coupling"]
+
+    @test VPalm.fresh_biomass_from_dry_mass(
+        308.0,
+        coupling["rachis_dry_matter_fraction"],
+    ) == 1.0u"kg"
+    @test VPalm.fresh_biomass_from_dry_mass(-1.0, 0.5) == 0.0u"kg"
+    @test_throws ArgumentError VPalm.fresh_biomass_from_dry_mass(1.0, 0.0)
+
+    @test VPalm.coupled_leaf_dimension_scale(
+        40.0,
+        1.0,
+        80.0,
+        0.30,
+        0.30,
+        coupling["dimension_growth_exponent"],
+    ) ≈ sqrt(0.5)
+    @test VPalm.coupled_leaf_dimension_scale(
+        160.0,
+        1.0,
+        80.0,
+        0.30,
+        0.30,
+        coupling["dimension_growth_exponent"],
+    ) == 1.0
+end
+
 @testset "dynamic rachis age allometry" begin
     parameters = VPalm.default_parameters(type="dynamic")
 
     @test parameters["rachis_length_age_intercept"] == 0.834u"m"
     @test parameters["rachis_length_age_slope"] == 0.03222u"m"
+    @test parameters["rachis_length_juvenile_transition_leaf"] == 12
+    @test parameters["rachis_length_juvenile_exponent"] == 0.575
+    @test VPalm.final_rachis_length(1, 0.0u"kg", parameters) ≈
+          0.29245u"m" atol = 0.0001u"m"
+    @test VPalm.final_rachis_length(11, 0.0u"kg", parameters) ≈
+          1.16107u"m" atol = 0.0001u"m"
+    @test VPalm.final_rachis_length(12, 0.0u"kg", parameters) ≈
+          1.22064u"m"
     @test VPalm.final_rachis_length(50, 0.0u"kg", parameters) ≈ 2.445u"m"
     @test VPalm.final_rachis_length(120, 0.0u"kg", parameters) ≈ 4.7004u"m"
     @test VPalm.final_rachis_length(250, 0.0u"kg", parameters) == 6.62u"m"
@@ -17,6 +54,59 @@ distance3(p0, p1) = sqrt(sum((p1 .- p0) .^ 2))
     @test VPalm.first_visible_leaf_rank(parameters) == -7
     @test VPalm.is_visible_leaf_rank(-7, parameters)
     @test !VPalm.is_visible_leaf_rank(-8, parameters)
+end
+
+@testset "JPCE juvenile leaflet length allometry" begin
+    parameters = VPalm.default_parameters(type="dynamic")
+    transition = parameters["leaflet_length_juvenile_transition"]
+    exponent = parameters["leaflet_length_juvenile_exponent"]
+    adult_length(rachis_length) =
+        parameters["leaflet_length_at_b_intercept"] +
+        parameters["leaflet_length_at_b_slope"] * rachis_length
+    maximum_length(rachis_length) = VPalm.leaflet_length_max(
+        VPalm.leaflet_length_at_bpoint(rachis_length, parameters),
+        parameters["relative_position_bpoint"],
+        parameters["relative_length_first_leaflet"],
+        parameters["relative_length_last_leaflet"],
+        parameters["relative_position_leaflet_max_length"],
+    )
+    maximum_width(rachis_length) = VPalm.leaflet_width_max(
+        VPalm.leaflet_width_at_bpoint(
+            rachis_length,
+            parameters["leaflet_width_at_b_intercept"],
+            parameters["leaflet_width_at_b_slope"],
+        ),
+        parameters["relative_position_bpoint"],
+        parameters["relative_width_first_leaflet"],
+        parameters["relative_width_last_leaflet"],
+        parameters["relative_position_leaflet_max_width"],
+    )
+
+    @test transition == 3.72u"m"
+    @test exponent == 0.646
+    @test VPalm.leaflet_length_at_bpoint(transition, parameters) ≈
+          adult_length(transition)
+    @test VPalm.leaflet_length_at_bpoint(4.0u"m", parameters) ≈
+          adult_length(4.0u"m")
+    # Representative JPCE EKA1/EKA2 fixtures spanning the juvenile fit and
+    # one adult point. The width allometry is deliberately left unchanged.
+    @test maximum_length(0.60u"m") ≈ 0.260207960u"m" rtol = 1.0e-8
+    @test maximum_length(0.85u"m") ≈ 0.325866335u"m" rtol = 1.0e-8
+    @test maximum_length(1.39u"m") ≈ 0.447736429u"m" rtol = 1.0e-8
+    @test maximum_length(1.85u"m") ≈ 0.538552204u"m" rtol = 1.0e-8
+    @test maximum_length(2.77u"m") ≈ 0.698999398u"m" rtol = 1.0e-8
+    @test maximum_length(4.05u"m") ≈ 0.864360615u"m" rtol = 1.0e-8
+    @test maximum_width(0.60u"m") ≈
+          0.031038385824742117u"m" rtol = 1.0e-12
+
+    static_parameters = VPalm.default_parameters(type="static")
+    @test !haskey(static_parameters, "leaflet_length_juvenile_transition")
+    @test VPalm.leaflet_length_at_bpoint(1.0u"m", static_parameters) ==
+          VPalm.leaflet_length_at_bpoint(
+              1.0u"m",
+              static_parameters["leaflet_length_at_b_intercept"],
+              static_parameters["leaflet_length_at_b_slope"],
+          )
 end
 
 @testset "dynamic leaf elongation preserves leaflet topology" begin
@@ -70,11 +160,8 @@ end
         parameters["nbLeaflets_SDP"];
         rng=Random.MersenneTwister(2),
     )
-    leaflet_length_at_b = VPalm.leaflet_length_at_bpoint(
-        final_length,
-        parameters["leaflet_length_at_b_intercept"],
-        parameters["leaflet_length_at_b_slope"],
-    )
+    leaflet_length_at_b =
+        VPalm.leaflet_length_at_bpoint(final_length, parameters)
     leaflet_max_length = VPalm.leaflet_length_max(
         leaflet_length_at_b,
         parameters["relative_position_bpoint"],
@@ -175,6 +262,89 @@ end
         node.offset != original_leaflets[node_id(node)].offset
         for node in updated_leaflets
     )
+end
+
+@testset "coupled leaflet dimensions grow once and freeze at opening" begin
+    parameters = VPalm.default_parameters(type="dynamic")
+    parameters["nbLeaflets_SDP"] = 0.0
+    parameters["relative_position_bpoint_sd"] = 0.0
+    reference_length = 4.0u"m"
+    plant = Node(NodeMTG(:/, :Plant, 1, 1))
+    leaf = Node(2, plant, NodeMTG(:+, :Leaf, 1, 4), Dict{Symbol,Any}())
+    leaf.rank = -7
+    leaf.rachis_length = 2.0u"m"
+    leaf.zenithal_insertion_angle = 0.0u"°"
+    leaf.zenithal_cpoint_angle = 0.0u"°"
+
+    unique_id = Ref(3)
+    VPalm.build_leaf(
+        unique_id,
+        1,
+        leaf,
+        2.0u"kg",
+        parameters;
+        rachis_final_length=reference_length,
+        leaflet_fresh_biomass=1.5u"kg",
+        leaflet_dimension_scale=0.5,
+        rng=Random.MersenneTwister(11),
+    )
+    leaflets = sort(descendants(leaf; symbol=:Leaflet); by=node_id)
+    identities = Tuple(node_id.(leaflets))
+    parents = Tuple(node_id(parent(node)) for node in leaflets)
+    references = Tuple(
+        (length=node.reference_length, width=node.reference_width)
+        for node in leaflets
+    )
+    @test !leaf.leaflet_dimensions_frozen
+    @test leaf.leaflet_dimension_scale == 0.5
+    @test all(
+        leaflets[i].length == references[i].length * 0.5 &&
+        leaflets[i].width == references[i].width * 0.5
+        for i in eachindex(leaflets)
+    )
+
+    leaf.rank = 0
+    VPalm.update_leaf!(
+        leaf,
+        2.5u"kg",
+        parameters;
+        leaflet_fresh_biomass=2.0u"kg",
+        leaflet_dimension_scale=0.8,
+        rng=Random.MersenneTwister(12),
+    )
+    @test !leaf.leaflet_dimensions_frozen
+    @test all(
+        leaflets[i].length == references[i].length * 0.8 &&
+        leaflets[i].width == references[i].width * 0.8
+        for i in eachindex(leaflets)
+    )
+
+    leaf.rank = 1
+    VPalm.update_leaf!(
+        leaf,
+        3.0u"kg",
+        parameters;
+        leaflet_fresh_biomass=2.5u"kg",
+        leaflet_dimension_scale=0.9,
+        rng=Random.MersenneTwister(13),
+    )
+    opened_dimensions = Tuple((node.length, node.width) for node in leaflets)
+    @test leaf.leaflet_dimensions_frozen
+    @test leaf.leaflet_dimension_scale == 0.9
+
+    leaf.rank = 2
+    VPalm.update_leaf!(
+        leaf,
+        4.0u"kg",
+        parameters;
+        leaflet_fresh_biomass=3.0u"kg",
+        leaflet_dimension_scale=1.0,
+        rng=Random.MersenneTwister(14),
+    )
+    @test Tuple((node.length, node.width) for node in leaflets) ==
+          opened_dimensions
+    @test Tuple(node_id.(leaflets)) == identities
+    @test Tuple(node_id(parent(node)) for node in leaflets) == parents
 end
 
 @testset "standalone leaflet allometry remains current-length by default" begin
@@ -385,7 +555,37 @@ end
     )
     @test seed_leaf.rachis_length ≈ seed_current_length
     @test length(seed_leaflets) == 2 * expected_final_leaflets
-    @test expected_final_leaflets != expected_current_leaflets
+    # Both lengths now legitimately reach the juvenile minimum leaflet count.
+    # Verify the stronger contract directly: stored reference dimensions use
+    # the final, not the currently expanded, rachis length.
+    @test expected_final_leaflets == expected_current_leaflets
+    reference_leaflet = first(seed_leaflets)
+    final_max_length = VPalm.leaflet_length_max(
+        VPalm.leaflet_length_at_bpoint(seed_final_length, vpalm_parameters),
+        vpalm_parameters["relative_position_bpoint"],
+        vpalm_parameters["relative_length_first_leaflet"],
+        vpalm_parameters["relative_length_last_leaflet"],
+        vpalm_parameters["relative_position_leaflet_max_length"],
+    )
+    current_max_length = VPalm.leaflet_length_max(
+        VPalm.leaflet_length_at_bpoint(seed_current_length, vpalm_parameters),
+        vpalm_parameters["relative_position_bpoint"],
+        vpalm_parameters["relative_length_first_leaflet"],
+        vpalm_parameters["relative_length_last_leaflet"],
+        vpalm_parameters["relative_position_leaflet_max_length"],
+    )
+    relative_reference_length = VPalm.relative_leaflet_length(
+        reference_leaflet.relative_position,
+        vpalm_parameters["relative_length_first_leaflet"],
+        vpalm_parameters["relative_length_last_leaflet"],
+        vpalm_parameters["relative_position_leaflet_max_length"],
+    )
+    @test reference_leaflet.reference_length ≈
+          final_max_length * relative_reference_length
+    @test !isapprox(
+        reference_leaflet.reference_length,
+        current_max_length * relative_reference_length,
+    )
 
     scene = XPalm.xpalm_scene(
         palm;
@@ -417,6 +617,23 @@ end
     @test isfinite(ustrip(internode.width))
     @test isfinite(ustrip(internode.length))
     @test isfinite(ustrip(leaf.rachis_length))
+    leaf_object = only(model_objects(scene; scale=:Leaf))
+    coupling = vpalm_parameters["xpalm_coupling"]
+    @test leaf.coupled_leaflet_fresh_biomass ==
+          VPalm.fresh_biomass_from_dry_mass(
+              leaf_object.status.biomass_leaflets,
+              coupling["leaflets_dry_matter_fraction"],
+          )
+    @test leaf.coupled_rachis_fresh_biomass ==
+          VPalm.fresh_biomass_from_dry_mass(
+              leaf_object.status.biomass_rachis,
+              coupling["rachis_dry_matter_fraction"],
+          )
+    @test leaf.coupled_petiole_fresh_biomass ==
+          VPalm.fresh_biomass_from_dry_mass(
+              leaf_object.status.biomass_petiole,
+              coupling["petiole_dry_matter_fraction"],
+          )
     @test !haskey(
         MultiScaleTreeGraph.node_attributes(internode),
         :plantsimengine_status,
