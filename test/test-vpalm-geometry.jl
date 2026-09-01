@@ -56,6 +56,303 @@ end
     @test !VPalm.is_visible_leaf_rank(-8, parameters)
 end
 
+@testset "provisional juvenile petiole-base dimensions" begin
+    parameters = VPalm.default_parameters(type="dynamic")
+    juvenile = VPalm.leaf_base_dimensions(1, parameters)
+    at_juvenile_limit = VPalm.leaf_base_dimensions(60, parameters)
+    transition_middle = VPalm.leaf_base_dimensions(85, parameters)
+    adult = VPalm.leaf_base_dimensions(110, parameters)
+
+    @test juvenile == (width_base=0.01u"m", height_base=0.001u"m")
+    @test at_juvenile_limit == juvenile
+    @test transition_middle.width_base ≈ sqrt(0.01 * 0.3) * u"m"
+    @test transition_middle.height_base ≈ sqrt(0.001 * 0.1) * u"m"
+    @test adult == (width_base=0.3u"m", height_base=0.1u"m")
+
+    emitted_leaf_numbers = 1:120
+    dimensions =
+        VPalm.leaf_base_dimensions.(emitted_leaf_numbers, Ref(parameters))
+    @test issorted(getproperty.(dimensions, :width_base))
+    @test issorted(getproperty.(dimensions, :height_base))
+
+    static_parameters = VPalm.default_parameters(type="static")
+    @test VPalm.leaf_base_dimensions(1, static_parameters) ==
+          (
+              width_base=static_parameters["leaf_base_width"],
+              height_base=static_parameters["leaf_base_height"],
+          )
+    @test_throws ArgumentError VPalm.leaf_base_dimensions(-1, parameters)
+
+    plant = Node(NodeMTG(:/, :Plant, 1, 1))
+    unique_id = Ref(2)
+    petiole = VPalm.petiole(
+        unique_id,
+        plant,
+        1,
+        5,
+        0.60u"m",
+        10.0u"°",
+        20.0u"°",
+        parameters;
+        rng=Random.MersenneTwister(1),
+    )
+    segments = descendants(petiole, symbol=:PetioleSegment)
+    expected_cpoint = VPalm.petiole_dimensions_at_cpoint(0.60u"m", parameters)
+    @test petiole.width_base == juvenile.width_base
+    @test petiole.height_base == juvenile.height_base
+    @test petiole.width_cpoint == expected_cpoint.width_cpoint
+    @test petiole.height_cpoint == expected_cpoint.height_cpoint
+    @test first(segments).width == juvenile.width_base
+    @test first(segments).height == juvenile.height_base
+    @test last(segments).width ≈ expected_cpoint.width_cpoint
+    @test last(segments).height ≈ expected_cpoint.height_cpoint
+
+    # Exercise the real update path through the juvenile-to-adult bridge. The
+    # leaf-base dimensions stay attached to the immutable emission index while
+    # the C-point dimensions follow the elongating rachis.
+    for rachis_length in (2.0u"m", 3.0u"m")
+        VPalm.update_petiole!(
+            petiole,
+            rachis_length,
+            10.0u"°",
+            20.0u"°",
+            parameters,
+        )
+        expected_cpoint =
+            VPalm.petiole_dimensions_at_cpoint(rachis_length, parameters)
+        @test petiole.width_base == juvenile.width_base
+        @test petiole.height_base == juvenile.height_base
+        @test petiole.width_cpoint ≈ expected_cpoint.width_cpoint
+        @test petiole.height_cpoint ≈ expected_cpoint.height_cpoint
+        @test last(segments).width ≈ expected_cpoint.width_cpoint
+        @test last(segments).height ≈ expected_cpoint.height_cpoint
+    end
+
+    legacy_dynamic = deepcopy(parameters)
+    for key in (
+        VPalm._LEAF_BASE_JUVENILE_DIMENSION_KEYS...,
+        VPalm._CPOINT_JUVENILE_DIMENSION_KEYS...,
+    )
+        delete!(legacy_dynamic, key)
+    end
+    legacy_petiole = VPalm.petiole(
+        Ref(1000),
+        plant,
+        1,
+        5,
+        0.60u"m",
+        10.0u"°",
+        20.0u"°",
+        legacy_dynamic;
+        rng=Random.MersenneTwister(1),
+    )
+    historical_cpoint = VPalm.petiole_dimensions_at_cpoint(
+        0.60u"m",
+        legacy_dynamic["cpoint_width_intercept"],
+        legacy_dynamic["cpoint_width_slope"],
+        legacy_dynamic["cpoint_height_width_ratio"],
+    )
+    @test legacy_petiole.width_base == legacy_dynamic["leaf_base_width"]
+    @test legacy_petiole.height_base == legacy_dynamic["leaf_base_height"]
+    @test legacy_petiole.width_cpoint == historical_cpoint.width_cpoint
+    @test legacy_petiole.height_cpoint == historical_cpoint.height_cpoint
+end
+
+@testset "JPCE juvenile rachis section allometry" begin
+    parameters = VPalm.default_parameters(type="dynamic")
+    juvenile_max =
+        parameters["cpoint_dimensions_juvenile_max_rachis_length"]
+    adult_min = parameters["cpoint_dimensions_adult_min_rachis_length"]
+
+    @test juvenile_max == 1.71u"m"
+    @test adult_min == 2.45u"m"
+    @test parameters["rachis_width_tip"] == 0.003u"m"
+
+    width_cpoint = 8.0u"mm"
+    height_cpoint = 5.0u"mm"
+    ratio_point_c = 0.5220
+    ratio_point_a = 1.0053
+    position_ratio_max = 0.6636
+    ratio_max = 1.5789
+    @test VPalm._biomechanical_rachis_width(
+        0.0,
+        height_cpoint,
+        parameters["height_rachis_tappering"],
+        width_cpoint,
+        ratio_point_c,
+        ratio_point_a,
+        position_ratio_max,
+        ratio_max,
+    ) ≈ width_cpoint
+    historical_position = 0.5
+    @test VPalm._biomechanical_rachis_width(
+        historical_position,
+        height_cpoint,
+        parameters["height_rachis_tappering"],
+        nothing,
+        ratio_point_c,
+        ratio_point_a,
+        position_ratio_max,
+        ratio_max,
+    ) ≈ VPalm.rachis_height(
+        historical_position,
+        height_cpoint,
+        parameters["height_rachis_tappering"],
+    ) / VPalm.height_to_width_ratio(
+        historical_position,
+        ratio_point_c,
+        ratio_point_a,
+        position_ratio_max,
+        ratio_max,
+    )
+    @test VPalm._biomechanical_cpoint_width(
+        0.60u"m",
+        height_cpoint,
+        width_cpoint,
+        parameters,
+    ) == width_cpoint
+    @test isnothing(
+        VPalm._biomechanical_cpoint_width(
+            adult_min,
+            height_cpoint,
+            width_cpoint,
+            parameters,
+        ),
+    )
+
+    juvenile_dimensions =
+        VPalm.petiole_dimensions_at_cpoint(0.60u"m", parameters)
+    @test juvenile_dimensions.width_cpoint ≈
+          parameters["cpoint_width_juvenile_coefficient"] *
+          0.60^parameters["cpoint_width_juvenile_exponent"]
+    @test juvenile_dimensions.height_cpoint ≈
+          parameters["cpoint_height_juvenile_coefficient"] *
+          0.60^parameters["cpoint_height_juvenile_exponent"]
+
+    adult_dimensions(rachis_length) = VPalm.petiole_dimensions_at_cpoint(
+        rachis_length,
+        parameters["cpoint_width_intercept"],
+        parameters["cpoint_width_slope"],
+        parameters["cpoint_height_width_ratio"],
+    )
+    transition_end =
+        VPalm.petiole_dimensions_at_cpoint(adult_min, parameters)
+    expected_transition_end = adult_dimensions(adult_min)
+    @test transition_end.width_cpoint ≈
+          expected_transition_end.width_cpoint
+    @test transition_end.height_cpoint ≈
+          expected_transition_end.height_cpoint
+    @test VPalm.petiole_dimensions_at_cpoint(3.0u"m", parameters) ==
+          adult_dimensions(3.0u"m")
+
+    # The smoothstep bridge is continuous in both value and slope at the two
+    # evidence boundaries.
+    step = 1.0e-5u"m"
+    for (boundary, field) in Iterators.product(
+        (juvenile_max, adult_min),
+        (:width_cpoint, :height_cpoint),
+    )
+        at_boundary = getproperty(
+            VPalm.petiole_dimensions_at_cpoint(boundary, parameters),
+            field,
+        )
+        left_slope = (
+            at_boundary -
+            getproperty(
+                VPalm.petiole_dimensions_at_cpoint(boundary - step, parameters),
+                field,
+            )
+        ) / step
+        right_slope = (
+            getproperty(
+                VPalm.petiole_dimensions_at_cpoint(boundary + step, parameters),
+                field,
+            ) - at_boundary
+        ) / step
+        @test left_slope ≈ right_slope rtol = 5.0e-4
+    end
+
+    # Direct EKA1 fixtures from `data palm chamber.xlsx`, Feuil1, H/M/N,
+    # rows 7:20. The section is assumed to be C from the measurement context;
+    # its exact position was not explicitly recorded in the workbook.
+    rachis_lengths = [
+        0.600,
+        0.610,
+        0.685,
+        0.865,
+        0.925,
+        0.960,
+        0.990,
+        1.110,
+        1.180,
+        1.235,
+        1.280,
+        1.580,
+        1.315,
+        1.710,
+    ]u"m"
+    observed_widths =
+        [12.4, 12.0, 13.0, 15.0, 16.0, 16.5, 19.5, 18.5, 19.0, 19.5, 21.3, 21.5, 18.0, 18.7]u"mm"
+    observed_heights =
+        [7.0, 8.5, 8.0, 10.0, 10.5, 11.0, 11.0, 12.5, 15.0, 12.8, 12.0, 13.0, 11.5, 11.0]u"mm"
+    predicted =
+        VPalm.petiole_dimensions_at_cpoint.(rachis_lengths, Ref(parameters))
+    predicted_widths = getproperty.(predicted, :width_cpoint)
+    predicted_heights = getproperty.(predicted, :height_cpoint)
+    width_rmse = sqrt(
+        sum(ustrip.(u"mm", predicted_widths .- observed_widths) .^ 2) /
+        length(rachis_lengths),
+    )
+    height_rmse = sqrt(
+        sum(ustrip.(u"mm", predicted_heights .- observed_heights) .^ 2) /
+        length(rachis_lengths),
+    )
+    @test width_rmse ≈ 1.4941207771900948
+    @test height_rmse ≈ 1.3798232197491125
+    historical_predictions = adult_dimensions.(rachis_lengths)
+    historical_width_rmse = sqrt(
+        sum(
+            ustrip.(
+                u"mm",
+                getproperty.(historical_predictions, :width_cpoint) .-
+                observed_widths,
+            ) .^ 2,
+        ) / length(rachis_lengths),
+    )
+    historical_height_rmse = sqrt(
+        sum(
+            ustrip.(
+                u"mm",
+                getproperty.(historical_predictions, :height_cpoint) .-
+                observed_heights,
+            ) .^ 2,
+        ) / length(rachis_lengths),
+    )
+    @test width_rmse < historical_width_rmse
+    @test height_rmse < historical_height_rmse
+
+    static_parameters = VPalm.default_parameters(type="static")
+    @test !haskey(
+        static_parameters,
+        "cpoint_width_juvenile_coefficient",
+    )
+    @test VPalm.petiole_dimensions_at_cpoint(0.60u"m", static_parameters) ==
+          VPalm.petiole_dimensions_at_cpoint(
+              0.60u"m",
+              static_parameters["cpoint_width_intercept"],
+              static_parameters["cpoint_width_slope"],
+              static_parameters["cpoint_height_width_ratio"],
+          )
+    @test isnothing(
+        VPalm._biomechanical_cpoint_width(
+            0.60u"m",
+            height_cpoint,
+            width_cpoint,
+            static_parameters,
+        ),
+    )
+end
+
 @testset "JPCE juvenile leaflet length allometry" begin
     parameters = VPalm.default_parameters(type="dynamic")
     transition = parameters["leaflet_length_juvenile_transition"]

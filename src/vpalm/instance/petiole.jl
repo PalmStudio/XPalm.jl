@@ -25,14 +25,16 @@ Make a leaf petiole.
 function petiole(unique_mtg_id, parent_node, index, scale, rachis_length, zenithal_insertion_angle, zenithal_cpoint_angle, parameters; rng=Random.MersenneTwister(1))
     petiole_node = Node(unique_mtg_id[], parent_node, NodeMTG(:/, :Petiole, index, scale), Dict{Symbol,Any}())
     unique_mtg_id[] += 1
+    base_dimensions = leaf_base_dimensions(index, parameters)
     compute_properties_petiole!(
         petiole_node,
         zenithal_insertion_angle, rachis_length, zenithal_cpoint_angle,
-        parameters["leaf_base_width"], parameters["leaf_base_height"], parameters["cpoint_width_intercept"],
+        base_dimensions.width_base, base_dimensions.height_base, parameters["cpoint_width_intercept"],
         parameters["cpoint_width_slope"], parameters["cpoint_height_width_ratio"],
         parameters["petiole_rachis_ratio_mean"],
         parameters["petiole_rachis_ratio_sd"], parameters["petiole_nb_segments"];
-        rng=rng
+        rng=rng,
+        cpoint_parameters=parameters,
     )
     # Keep the sampled petiole/rachis ratio so subsequent rachis elongation
     # rescales the petiole without drawing a new random value at every rank.
@@ -90,12 +92,7 @@ function update_petiole!(
     parameters,
 )
     petiole_node.length = petiole_node.petiole_rachis_ratio * rachis_length
-    dimensions = petiole_dimensions_at_cpoint(
-        rachis_length,
-        parameters["cpoint_width_intercept"],
-        parameters["cpoint_width_slope"],
-        parameters["cpoint_height_width_ratio"],
-    )
+    dimensions = petiole_dimensions_at_cpoint(rachis_length, parameters)
     petiole_node.width_cpoint = dimensions.width_cpoint
     petiole_node.height_cpoint = dimensions.height_cpoint
 

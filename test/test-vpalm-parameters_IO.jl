@@ -177,9 +177,28 @@ end
         valid["leaflet_length_juvenile_exponent"] = 0.6
         valid["rachis_length_juvenile_transition_leaf"] = 12.0
         valid["rachis_length_juvenile_exponent"] = 0.5
+        valid["cpoint_width_juvenile_coefficient"] = 16.703u"mm"
+        valid["cpoint_width_juvenile_exponent"] = 0.5381
+        valid["cpoint_height_juvenile_coefficient"] = 10.648u"mm"
+        valid["cpoint_height_juvenile_exponent"] = 0.5125
+        valid["cpoint_dimensions_juvenile_max_rachis_length"] = 171.0u"cm"
+        valid["cpoint_dimensions_adult_min_rachis_length"] = 245.0u"cm"
+        valid["leaf_base_width_juvenile"] = 1.0u"cm"
+        valid["leaf_base_height_juvenile"] = 1.0u"mm"
+        valid["leaf_base_dimensions_juvenile_max_emitted_leaf"] = 60.0
+        valid["leaf_base_dimensions_adult_min_emitted_leaf"] = 110.0
         normalize_parameters!(valid)
         @test valid["leaflet_length_juvenile_transition"] == 2.5u"m"
         @test valid["rachis_length_juvenile_transition_leaf"] === 12
+        @test valid["cpoint_width_juvenile_coefficient"] == 0.016703u"m"
+        @test valid["cpoint_height_juvenile_coefficient"] == 0.010648u"m"
+        @test valid["cpoint_dimensions_juvenile_max_rachis_length"] ==
+              1.71u"m"
+        @test valid["cpoint_dimensions_adult_min_rachis_length"] == 2.45u"m"
+        @test valid["leaf_base_width_juvenile"] == 0.01u"m"
+        @test valid["leaf_base_height_juvenile"] == 0.001u"m"
+        @test valid["leaf_base_dimensions_juvenile_max_emitted_leaf"] === 60
+        @test valid["leaf_base_dimensions_adult_min_emitted_leaf"] === 110
 
         missing_leaflet_exponent = minimal_parameters()
         missing_leaflet_exponent["leaflet_length_juvenile_transition"] =
@@ -200,6 +219,40 @@ end
         invalid_rachis_exponent["rachis_length_juvenile_transition_leaf"] = 12
         invalid_rachis_exponent["rachis_length_juvenile_exponent"] = 0.0
         @test_throws ArgumentError normalize_parameters!(invalid_rachis_exponent)
+
+        incomplete_cpoint = minimal_parameters()
+        incomplete_cpoint["cpoint_width_juvenile_coefficient"] = 0.016703u"m"
+        @test_throws ArgumentError normalize_parameters!(incomplete_cpoint)
+
+        invalid_cpoint = minimal_parameters()
+        invalid_cpoint["cpoint_width_juvenile_coefficient"] = 0.016703u"m"
+        invalid_cpoint["cpoint_width_juvenile_exponent"] = 0.5381
+        invalid_cpoint["cpoint_height_juvenile_coefficient"] = 0.010648u"m"
+        invalid_cpoint["cpoint_height_juvenile_exponent"] = 0.5125
+        invalid_cpoint["cpoint_dimensions_juvenile_max_rachis_length"] =
+            2.45u"m"
+        invalid_cpoint["cpoint_dimensions_adult_min_rachis_length"] =
+            1.71u"m"
+        @test_throws ArgumentError normalize_parameters!(invalid_cpoint)
+
+        dimensioned_cpoint_exponent = deepcopy(valid)
+        dimensioned_cpoint_exponent["cpoint_width_juvenile_exponent"] =
+            0.5381u"m"
+        @test_throws ArgumentError normalize_parameters!(
+            dimensioned_cpoint_exponent,
+        )
+
+        incomplete_leaf_base = minimal_parameters()
+        incomplete_leaf_base["leaf_base_width_juvenile"] = 0.01u"m"
+        @test_throws ArgumentError normalize_parameters!(incomplete_leaf_base)
+
+        invalid_leaf_base = minimal_parameters()
+        invalid_leaf_base["leaf_base_width_juvenile"] = 0.01u"m"
+        invalid_leaf_base["leaf_base_height_juvenile"] = 0.001u"m"
+        invalid_leaf_base["leaf_base_dimensions_juvenile_max_emitted_leaf"] =
+            110
+        invalid_leaf_base["leaf_base_dimensions_adult_min_emitted_leaf"] = 60
+        @test_throws ArgumentError normalize_parameters!(invalid_leaf_base)
     end
 end
 
@@ -227,15 +280,15 @@ end
 @testset "write_parameters" begin
     vpalm_parameters_w = mktemp() do f, io
         VPalm.write_parameters(f, vpalm_parameters)
-        vpalm_parameters_w = VPalm.read_parameters(f)
-        return vpalm_parameters_w
+        return VPalm.read_parameters(f)
     end
 
-    for (k, v) in vpalm_parameters
-        isame = vpalm_parameters[k] == vpalm_parameters_w[k]
-        if !isame
-            println("params[$k] = $(vpalm_parameters[k]) != params2[$k] = $(vpalm_parameters_w[k])")
+    for (key, value) in vpalm_parameters
+        if value != vpalm_parameters_w[key]
+            println(
+                "params[$key] = $(vpalm_parameters[key]) != params2[$key] = $(vpalm_parameters_w[key])",
+            )
         end
-        @test vpalm_parameters[k] == vpalm_parameters_w[k]
+        @test vpalm_parameters[key] == vpalm_parameters_w[key]
     end
 end

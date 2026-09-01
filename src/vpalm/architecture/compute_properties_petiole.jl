@@ -6,7 +6,7 @@
         cpoint_width_slope, cpoint_height_width_ratio,
         petiole_rachis_ratio_mean,
         petiole_rachis_ratio_sd, nb_sections;
-        rng=Random.MersenneTwister(1)
+        rng=Random.MersenneTwister(1), cpoint_parameters=nothing
     )
 
 Compute the dimensional properties of a petiole.
@@ -26,6 +26,8 @@ Compute the dimensional properties of a petiole.
 - `petiole_rachis_ratio_sd`: the standard deviation of the ratio of the petiole to rachis length
 - `nb_sections`: the number of sections discretizing the petiole
 - `rng=Random.MersenneTwister(1)`: the random number generator
+- `cpoint_parameters=nothing`: optional complete parameter dictionary used to
+  enable the juvenile C-point section allometry
 
 # Returns
 The petiole node updated with properties.
@@ -51,16 +53,27 @@ function compute_properties_petiole!(
     cpoint_width_slope, cpoint_height_width_ratio,
     petiole_rachis_ratio_mean,
     petiole_rachis_ratio_sd, nb_sections;
-    rng=Random.MersenneTwister(1)
+    rng=Random.MersenneTwister(1),
+    cpoint_parameters=nothing,
 )
-    #! Petiole base dimensions should be allometries relative to leaf length, because tiny leaves don't have big bases:
+    # The caller resolves any ontogenetic base allometry before entering this
+    # explicit, reusable geometry kernel.
     petiole_node.width_base = width_base
     petiole_node.height_base = height_base
 
     petiole_node.length = petiole_length(rachis_length, petiole_rachis_ratio_mean, petiole_rachis_ratio_sd; rng=rng)
     petiole_node.azimuthal_angle = petiole_azimuthal_angle(; rng=rng)
 
-    (width_cpoint, height_cpoint) = petiole_dimensions_at_cpoint(rachis_length, cpoint_width_intercept, cpoint_width_slope, cpoint_height_width_ratio)
+    (width_cpoint, height_cpoint) = if isnothing(cpoint_parameters)
+        petiole_dimensions_at_cpoint(
+            rachis_length,
+            cpoint_width_intercept,
+            cpoint_width_slope,
+            cpoint_height_width_ratio,
+        )
+    else
+        petiole_dimensions_at_cpoint(rachis_length, cpoint_parameters)
+    end
     petiole_node.width_cpoint = width_cpoint
     petiole_node.height_cpoint = height_cpoint
 

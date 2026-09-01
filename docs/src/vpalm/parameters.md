@@ -17,6 +17,11 @@ parameters = VPalm.read_parameters(file)
 
 Here is a list of all necessary parameters to run `VPalm = XPalm.load_vpalm!()`:
 
+The optional juvenile parameters below are enabled by default only in the
+dynamic XPalm–VPalm coupling file. They are intentionally absent from the
+linked standalone static template, which therefore retains the historical
+allometries.
+
 | Parameter | Value | Description |
 |-----------|--------|-------------|
 | `seed` | 0 | Seed for random number generation |
@@ -93,11 +98,21 @@ Here is a list of all necessary parameters to run `VPalm = XPalm.load_vpalm!()`:
 | `leaflet_frequency_high` | [array] | Frequency of high position leaflets along 10 rachis sub-sections |
 | `leaflet_frequency_low` | [array] | Frequency of low position leaflets along 10 rachis sub-sections |
 | `nbInflorescences` | 0 | Number of inflorescences |
-| `leaf_base_width` | 0.3 | Width of leaf base (m) |
+| `leaf_base_width` | 0.3 | Adult width of leaf base (m) |
+| `leaf_base_width_juvenile` | 0.01 | Optional juvenile width of leaf base (m) |
+| `leaf_base_height_juvenile` | 0.001 | Optional juvenile height of leaf base (m) |
+| `leaf_base_dimensions_juvenile_max_emitted_leaf` | 60 | Last emitted leaf at the juvenile base dimensions |
+| `leaf_base_dimensions_adult_min_emitted_leaf` | 110 | First emitted leaf at the adult base dimensions |
 | `cpoint_width_intercept` | 0.01 | Rachis width at c-point intercept for linear interpolation (m) |
 | `cpoint_width_slope` | 0.012 | Rachis width at c-point slope for linear interpolation |
-| `rachis_width_tip` | 0.03 | Width at tip of rachis (m) |
-| `leaf_base_height` | 0.1 | Height of leaf base (m) |
+| `cpoint_width_juvenile_coefficient` | 0.0167 | Optional juvenile width at a 1 m rachis (m) |
+| `cpoint_width_juvenile_exponent` | 0.5381 | Optional juvenile width power exponent |
+| `cpoint_height_juvenile_coefficient` | 0.0106 | Optional juvenile height at a 1 m rachis (m) |
+| `cpoint_height_juvenile_exponent` | 0.5125 | Optional juvenile height power exponent |
+| `cpoint_dimensions_juvenile_max_rachis_length` | 1.71 | End of the juvenile section allometry (m) |
+| `cpoint_dimensions_adult_min_rachis_length` | 2.45 | Start of the adult section allometry (m) |
+| `rachis_width_tip` | 0.003 | Width at tip of rachis (m) |
+| `leaf_base_height` | 0.1 | Adult height of leaf base (m) |
 | `cpoint_height_width_ratio` | 0.57 | Height to width ratio at c-point |
 | `height_rachis_tappering` | -0.93 | Tapering factor for rachis height |
 | `leaflet_radial_high_a0_sup` | 26.30 | Upper bound of leaflet angle at position 0 for high position leaflets |
@@ -110,6 +125,24 @@ Here is a list of all necessary parameters to run `VPalm = XPalm.load_vpalm!()`:
 | `leaflet_radial_low_amax_inf` | -34.33 | Lower bound of maximum angle for low position leaflets |
 | `elastic_modulus` | 2221.67 | Elastic modulus for biomechanical calculations |
 | `shear_modulus` | 68.20 | Shear modulus for biomechanical calculations |
+
+!!! note "Juvenile rachis sections"
+    The six `cpoint_*_juvenile_*` and `cpoint_dimensions_*` parameters are an
+    optional, indivisible set. Their power laws were fitted to 14 EKA1 rachises
+    measured between 0.60 and 1.71 m. The measurement position was not written
+    explicitly in the JPCE workbook and is assumed to be the C point from its
+    context. A smooth transition from 1.71 to 2.45 m reconnects the juvenile
+    fits to the historical adult VPalm allometry. If the six parameters are
+    omitted, VPalm uses the historical allometry at every rachis length.
+
+!!! warning "Provisional juvenile petiole base"
+    The four optional `leaf_base_*_juvenile` and
+    `leaf_base_dimensions_*_emitted_leaf` parameters reuse the 1 cm × 1 mm
+    setting from the JPCE EKA1 reconstruction script. JPCE did not measure
+    these dimensions, so they are a visual ontogenetic hypothesis rather than
+    a calibrated allometry. VPalm interpolates them logarithmically to the
+    adult dimensions between emitted leaves 60 and 110. Omit the complete set
+    to retain the historical fixed adult base dimensions.
 
 ### Biomechanical Model Parameters
 

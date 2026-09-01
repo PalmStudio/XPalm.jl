@@ -126,11 +126,35 @@ leaflet_frequency_low: # Frequency of leaflets of type "-1" (Low) along 10 sub-s
     0.036231884057971,
   ]
 nbInflorescences: 0
-leaf_base_width: 0.3 # Width of the leaf base (m)
+leaf_base_width: 0.3 # Adult width of the leaf base (m)
+leaf_base_height: 0.1 # Adult height of the leaf base (m)
+# Provisional ontogenetic geometry for the petiole base. The 1 cm × 1 mm
+# juvenile endpoint is reused from the JPCE EKA1 reconstruction script, where
+# it was chosen as a visual setting rather than measured. A log-smoothstep
+# transition preserves positive dimensions and reaches the historical adult
+# 30 cm × 10 cm geometry by emitted leaf 110. The immutable emitted-leaf number
+# is used instead of the current botanical rank.
+leaf_base_width_juvenile: 0.01 # Juvenile leaf-base width (m)
+leaf_base_height_juvenile: 0.001 # Juvenile leaf-base height (m)
+leaf_base_dimensions_juvenile_max_emitted_leaf: 60
+leaf_base_dimensions_adult_min_emitted_leaf: 110
 cpoint_width_intercept: 0.00978257818097089 # Rachis width at the c-point intercept for linear interpolation (m)
 cpoint_width_slope: 0.0119703143572554 # Rachis width at the c-point slope for linear interpolation
-rachis_width_tip: 0.03 # Width at the tip of the rachis (m)
-leaf_base_height: 0.1 # Height of the leaf base (m)
+# Juvenile section power laws fitted to the 14 JPCE EKA1 rachises for which
+# length, width and thickness were measured together (the section is assumed
+# to be the C point from the measurement context; its position was not written
+# explicitly in the workbook). The observed juvenile range ends at 1.71 m.
+# Between 1.71 and the first SMSE adult rachis at 2.45 m, a smooth transition
+# reconnects to the historical adult VPalm C-point allometry.
+cpoint_width_juvenile_coefficient: 0.016703016868963633 # Width at R = 1 m (m)
+cpoint_width_juvenile_exponent: 0.5380602349548408
+cpoint_height_juvenile_coefficient: 0.010647944528255593 # Height at R = 1 m (m)
+cpoint_height_juvenile_exponent: 0.5125167752290531
+cpoint_dimensions_juvenile_max_rachis_length: 1.71 # Last measured juvenile rachis (m)
+cpoint_dimensions_adult_min_rachis_length: 2.45 # First measured adult rachis (m)
+# SMSE terminal-section measurements are 3 mm wide. The former 0.03 m value
+# was a factor-ten unit error and made short rachises widen towards their tip.
+rachis_width_tip: 0.003 # Width at the tip of the rachis (m)
 cpoint_height_width_ratio: 0.567956652697377 # Height to width ratio at the C point
 height_rachis_tappering: -0.934263209088339 # tappering factor for the rachis height
 leaflet_radial_high_a0_sup: 26.2985456005134 # Upper bound of leaflet angle at position 0 for high position leaflets.

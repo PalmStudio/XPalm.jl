@@ -27,6 +27,62 @@ const _RACHIS_LEAFLET_MASS_DISTRIBUTION = (
     0.105263443497354,
     0.0475385258600695,
 )
+const _RACHIS_HEIGHT_TO_WIDTH_RATIO_C = 0.5220
+
+function _biomechanical_cpoint_width(
+    rachis_length,
+    height_cpoint,
+    width_cpoint,
+    parameters,
+)
+    juvenile_max_key =
+        "cpoint_dimensions_juvenile_max_rachis_length"
+    adult_min_key = "cpoint_dimensions_adult_min_rachis_length"
+    haskey(parameters, juvenile_max_key) || return nothing
+    haskey(parameters, adult_min_key) || return nothing
+
+    juvenile_max = parameters[juvenile_max_key]
+    adult_min = parameters[adult_min_key]
+    rachis_length <= juvenile_max && return width_cpoint
+    rachis_length >= adult_min && return nothing
+
+    transition = (rachis_length - juvenile_max) / (adult_min - juvenile_max)
+    smoothstep = transition^2 * (3.0 - 2.0 * transition)
+    historical_width = height_cpoint / _RACHIS_HEIGHT_TO_WIDTH_RATIO_C
+    return (1.0 - smoothstep) * width_cpoint +
+           smoothstep * historical_width
+end
+
+function _biomechanical_rachis_width(
+    relative_position,
+    height_cpoint,
+    height_rachis_tappering,
+    width_cpoint,
+    ratio_point_c,
+    ratio_point_a,
+    position_ratio_max,
+    ratio_max,
+)
+    height = rachis_height(
+        relative_position,
+        height_cpoint,
+        height_rachis_tappering,
+    )
+    local_ratio = height_to_width_ratio(
+        relative_position,
+        ratio_point_c,
+        ratio_point_a,
+        position_ratio_max,
+        ratio_max,
+    )
+    isnothing(width_cpoint) && return height / local_ratio
+
+    # Use the analytical, dimensionless height profile instead of dividing by
+    # height_cpoint. This is equivalent for positive dimensions and remains
+    # well-defined for a zero-width/zero-height boundary case.
+    height_profile = 1.0 + height_rachis_tappering * relative_position^3
+    return width_cpoint * height_profile * ratio_point_c / local_ratio
+end
 
 """
     biomechanical_properties_rachis(
@@ -37,7 +93,7 @@ const _RACHIS_LEAFLET_MASS_DISTRIBUTION = (
         rachis_fresh_weight, rank, height_cpoint, zenithal_cpoint_angle, nb_sections,
         height_rachis_tappering,
         points, iterations, angle_max;
-        verbose, rng
+        verbose, rng, width_cpoint
     )
 
 Use of the biomechanical model to compute the properties of the rachis.
@@ -61,6 +117,9 @@ Use of the biomechanical model to compute the properties of the rachis.
   load ratio.
 - `rank`: rank of the rachis
 - `height_cpoint`: height of the C point (m)
+- `width_cpoint`: optional measured or allometric width of the C point (m).
+  When supplied, the biomechanical width profile is normalized to this value;
+  when omitted, the historical height-derived width profile is retained.
 - `zenithal_cpoint_angle`: zenithal angle of the C point (°)
 - `nb_sections`: number of sections to compute the bending
 - `height_rachis_tappering`: tappering factor for the rachis height
@@ -98,6 +157,7 @@ function biomechanical_properties_rachis(
     rng,
     workspace=nothing,
     leaflet_fresh_weight=nothing,
+    width_cpoint=nothing,
     leaflet_length_juvenile_transition=nothing,
     leaflet_length_juvenile_exponent=nothing,
 )
@@ -111,6 +171,9 @@ function biomechanical_properties_rachis(
     rachis_fresh_weight = @check_unit rachis_fresh_weight u"kg" verbose
     if !isnothing(leaflet_fresh_weight)
         leaflet_fresh_weight = @check_unit leaflet_fresh_weight u"kg" verbose
+    end
+    if !isnothing(width_cpoint)
+        width_cpoint = @check_unit width_cpoint u"m" verbose
     end
     if !isnothing(leaflet_length_juvenile_transition)
         leaflet_length_juvenile_transition = @check_unit leaflet_length_juvenile_transition u"m" verbose
@@ -160,7 +223,7 @@ function biomechanical_properties_rachis(
     leaflet_max_length = leaflet_length_max(leaflet_length_at_b, relative_position_bpoint, relative_length_first_leaflet, relative_length_last_leaflet, relative_position_leaflet_max_length, relative_position_bpoint_sd, rng)
 
     # Parameters to compute rachis width from rachis height:
-    ratioPointC = 0.5220
+    ratioPointC = _RACHIS_HEIGHT_TO_WIDTH_RATIO_C
     ratioPointA = 1.0053
     posRatioMax = 0.6636
     ratioMax = 1.5789
@@ -197,8 +260,28 @@ function biomechanical_properties_rachis(
             initial_torsion_vec[i] = 0.0u"°"
         end
 
-        height_bend[i] = rachis_height(relative_position_remarkable_points[i], height_cpoint, height_rachis_tappering)
-        width_bend[i] = height_bend[i] / height_to_width_ratio(relative_position_remarkable_points[i], ratioPointC, ratioPointA, posRatioMax, ratioMax)
+        relative_position = relative_position_remarkable_points[i]
+        height_bend[i] = rachis_height(
+            relative_position,
+            height_cpoint,
+            height_rachis_tappering,
+        )
+        # The first remarkable point is at 1e-7 rather than zero so the
+        # bending solver never receives the origin. The normalized width
+        # profile nevertheless starts at the exact observed C-point width.
+        width_relative_position =
+            !isnothing(width_cpoint) && i == firstindex(width_bend) ?
+            zero(relative_position) : relative_position
+        width_bend[i] = _biomechanical_rachis_width(
+            width_relative_position,
+            height_cpoint,
+            height_rachis_tappering,
+            width_cpoint,
+            ratioPointC,
+            ratioPointA,
+            posRatioMax,
+            ratioMax,
+        )
     end
 
     point_type = GeometryBasics.Point{3,typeof(distances[1])}

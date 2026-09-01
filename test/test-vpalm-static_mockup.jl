@@ -308,7 +308,7 @@ end
 
     # Check that the mockup is the same with and without rachis_final_lengths
     mtg = VPalm.mtg_skeleton(vpalm_parameters; rng=StableRNG(vpalm_parameters["seed"]))
-    mtg2 = VPalm.mtg_skeleton(vpalm_parameters; rng=StableRNG(vpalm_parameters["seed"]))
+    mtg2 = VPalm.mtg_skeleton(vpalm_parameters2; rng=StableRNG(vpalm_parameters2["seed"]))
     @test mtg == mtg2
 
     # Check the number of nodes in the mockup
@@ -385,8 +385,16 @@ end
     @test fingerprint.geometry_leaf_ranks == Tuple(45:-1:-7)
     @test fingerprint.live_leaf_ranks == fingerprint.geometry_leaf_ranks
     @test fingerprint.leaflet_sides == (left=7320, right=7320)
+    # The terminal rachis width is now the measured SMSE value (3 mm rather
+    # than the former 30 mm unit error); all other static contracts below stay
+    # unchanged.
     @test fingerprint.geometry_state_sha256 ==
-          "2b5679421c75c194adeb7c50ab55bc4a63839675db1ed6a4031a5b827aa9cdc3"
+          "3b0acdedf8fdcd6e9132f14eb147c4d69bef933068407a750bb7885058db8642"
+    rachises = descendants(mtg, symbol=:Rachis)
+    @test all(rachises) do rachis
+        last(descendants(rachis, symbol=:RachisSegment)).width ==
+            parameters["rachis_width_tip"]
+    end
 
     expected_dimensions = (
         mean_rachis_length=3.659388011413884,

@@ -57,6 +57,12 @@ function rachis(unique_mtg_id, parent_node, index, scale, leaf_rank, rachis_leng
         verbose=true,
         rng=rng,
         leaflet_fresh_weight=leaflet_fresh_biomass,
+        width_cpoint=_biomechanical_cpoint_width(
+            rachis_length,
+            height_cpoint,
+            width_cpoint,
+            parameters,
+        ),
         leaflet_length_juvenile_transition=get(
             parameters,
             "leaflet_length_juvenile_transition",
@@ -122,6 +128,12 @@ function update_rachis_angles!(rachis_node, leaf_rank, rachis_length, height_cpo
         rng=rng,
         workspace=workspace,
         leaflet_fresh_weight=leaflet_fresh_biomass,
+        width_cpoint=_biomechanical_cpoint_width(
+            rachis_length,
+            height_cpoint,
+            width_cpoint,
+            parameters,
+        ),
         leaflet_length_juvenile_transition=get(
             parameters,
             "leaflet_length_juvenile_transition",

@@ -20,9 +20,15 @@ const _VPALM_LENGTH_PARAMETERS = (
     "stem_diameter_snag",
     "internode_final_length",
     "leaf_base_width",
+    "leaf_base_width_juvenile",
     "cpoint_width_intercept",
+    "cpoint_width_juvenile_coefficient",
+    "cpoint_height_juvenile_coefficient",
+    "cpoint_dimensions_juvenile_max_rachis_length",
+    "cpoint_dimensions_adult_min_rachis_length",
     "rachis_width_tip",
     "leaf_base_height",
+    "leaf_base_height_juvenile",
     "rachis_length_reference",
     "rachis_length_age_intercept",
     "rachis_length_age_slope",
@@ -79,10 +85,14 @@ function _normalize_vpalm_parameters!(parameters::AbstractDict; verbose=false)
     for parameter in _VPALM_INTEGER_PARAMETERS
         parameters[parameter] = Int(parameters[parameter])
     end
-    if haskey(parameters, "rachis_length_juvenile_transition_leaf")
-        parameters["rachis_length_juvenile_transition_leaf"] = Int(
-            parameters["rachis_length_juvenile_transition_leaf"],
-        )
+    for parameter in (
+        "rachis_length_juvenile_transition_leaf",
+        "leaf_base_dimensions_juvenile_max_emitted_leaf",
+        "leaf_base_dimensions_adult_min_emitted_leaf",
+    )
+        if haskey(parameters, parameter)
+            parameters[parameter] = Int(parameters[parameter])
+        end
     end
 
     for parameter in _VPALM_LENGTH_PARAMETERS
@@ -217,6 +227,70 @@ function _normalize_vpalm_parameters!(parameters::AbstractDict; verbose=false)
             throw(
                 ArgumentError(
                     "rachis_length_juvenile_exponent must be positive",
+                ),
+            )
+    end
+
+    juvenile_cpoint_dimension_keys = (
+        "cpoint_width_juvenile_coefficient",
+        "cpoint_width_juvenile_exponent",
+        "cpoint_height_juvenile_coefficient",
+        "cpoint_height_juvenile_exponent",
+        "cpoint_dimensions_juvenile_max_rachis_length",
+        "cpoint_dimensions_adult_min_rachis_length",
+    )
+    all(haskey(parameters, key) for key in juvenile_cpoint_dimension_keys) ||
+        !any(haskey(parameters, key) for key in juvenile_cpoint_dimension_keys) ||
+        throw(
+            ArgumentError(
+                "all juvenile C-point dimension parameters must be provided together",
+            ),
+        )
+    if all(haskey(parameters, key) for key in juvenile_cpoint_dimension_keys)
+        for key in (
+            "cpoint_width_juvenile_exponent",
+            "cpoint_height_juvenile_exponent",
+        )
+            unit(parameters[key]) == NoUnits || throw(
+                ArgumentError("$(key) must be dimensionless"),
+            )
+        end
+        for key in juvenile_cpoint_dimension_keys
+            parameters[key] > zero(parameters[key]) ||
+                throw(ArgumentError("$(key) must be positive"))
+        end
+        parameters["cpoint_dimensions_juvenile_max_rachis_length"] <
+        parameters["cpoint_dimensions_adult_min_rachis_length"] ||
+            throw(
+                ArgumentError(
+                    "cpoint_dimensions_juvenile_max_rachis_length must be smaller than cpoint_dimensions_adult_min_rachis_length",
+                ),
+            )
+    end
+
+    juvenile_leaf_base_keys = (
+        "leaf_base_width_juvenile",
+        "leaf_base_height_juvenile",
+        "leaf_base_dimensions_juvenile_max_emitted_leaf",
+        "leaf_base_dimensions_adult_min_emitted_leaf",
+    )
+    all(haskey(parameters, key) for key in juvenile_leaf_base_keys) ||
+        !any(haskey(parameters, key) for key in juvenile_leaf_base_keys) ||
+        throw(
+            ArgumentError(
+                "all juvenile leaf-base dimension parameters must be provided together",
+            ),
+        )
+    if all(haskey(parameters, key) for key in juvenile_leaf_base_keys)
+        for key in juvenile_leaf_base_keys
+            parameters[key] > zero(parameters[key]) ||
+                throw(ArgumentError("$(key) must be positive"))
+        end
+        parameters["leaf_base_dimensions_juvenile_max_emitted_leaf"] <
+        parameters["leaf_base_dimensions_adult_min_emitted_leaf"] ||
+            throw(
+                ArgumentError(
+                    "leaf_base_dimensions_juvenile_max_emitted_leaf must be smaller than leaf_base_dimensions_adult_min_emitted_leaf",
                 ),
             )
     end
