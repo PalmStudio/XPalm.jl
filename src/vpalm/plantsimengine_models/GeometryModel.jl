@@ -17,9 +17,13 @@ This model operates at the internode scale and modifies the MTG directly.
 - `height_internodes`: Height of the target Internode.
 - `radius_internodes`: Radius of the target Internode.
 - `final_potential_area_leaves`: Potential one-sided leaflet area at maturity.
-- `biomass_leaflets`: Simulated structural leaflet dry mass (gDM).
 - `biomass_rachis`: Simulated structural rachis dry mass (gDM).
-- `biomass_petiole`: Simulated structural petiole dry mass (gDM).
+- `fresh_biomass_leaflets`: Simulated leaflet fresh mass (kgFM), including
+  the leaf's allocated share of non-structural reserves.
+- `fresh_biomass_rachis`: Simulated rachis fresh mass (kgFM), including the
+  leaf's allocated share of non-structural reserves.
+- `fresh_biomass_petiole`: Simulated petiole fresh mass (kgFM), including the
+  leaf's allocated share of non-structural reserves.
 - `rank_leaves`: Rank of the Leaf attached to the target Internode.
 
 # Outputs
@@ -73,9 +77,10 @@ function PlantSimEngine.inputs_(m::GeometryModel)
         height_internodes=PlantSimEngine.Required(Real),
         radius_internodes=PlantSimEngine.Required(Real),
         final_potential_area_leaves=PlantSimEngine.Required(Real),
-        biomass_leaflets=PlantSimEngine.Required(Real),
         biomass_rachis=PlantSimEngine.Required(Real),
-        biomass_petiole=PlantSimEngine.Required(Real),
+        fresh_biomass_leaflets=PlantSimEngine.Required(Real),
+        fresh_biomass_rachis=PlantSimEngine.Required(Real),
+        fresh_biomass_petiole=PlantSimEngine.Required(Real),
         rank_leaves=PlantSimEngine.Required(Real),
     )
 end
@@ -85,24 +90,10 @@ function PlantSimEngine.outputs_(::GeometryModel)
 end
 
 PlantSimEngine.variable_contracts_(::GeometryModel) = (
-    biomass_leaflets=PlantSimEngine.VariableContract(
-        unit=:g_dry_matter,
-        basis=:object,
-        aggregation=:state,
-        extent=:extensive,
-    ),
-    biomass_rachis=PlantSimEngine.VariableContract(
-        unit=:g_dry_matter,
-        basis=:object,
-        aggregation=:state,
-        extent=:extensive,
-    ),
-    biomass_petiole=PlantSimEngine.VariableContract(
-        unit=:g_dry_matter,
-        basis=:object,
-        aggregation=:state,
-        extent=:extensive,
-    ),
+    biomass_rachis=_VPALM_STRUCTURAL_DRY_MASS,
+    fresh_biomass_leaflets=_VPALM_FRESH_MASS,
+    fresh_biomass_rachis=_VPALM_FRESH_MASS,
+    fresh_biomass_petiole=_VPALM_FRESH_MASS,
 )
 
 """
@@ -149,18 +140,9 @@ function PlantSimEngine.run!(model::GeometryModel, status, environment, constant
     # VPalm parameters:
     vpalm_params = model.vpalm_parameters
     coupling = vpalm_params["xpalm_coupling"]
-    rachis_fresh_biomass = fresh_biomass_from_dry_mass(
-        status.biomass_rachis,
-        coupling["rachis_dry_matter_fraction"],
-    )
-    leaflet_fresh_biomass = fresh_biomass_from_dry_mass(
-        status.biomass_leaflets,
-        coupling["leaflets_dry_matter_fraction"],
-    )
-    petiole_fresh_biomass = fresh_biomass_from_dry_mass(
-        status.biomass_petiole,
-        coupling["petiole_dry_matter_fraction"],
-    )
+    rachis_fresh_biomass = status.fresh_biomass_rachis * u"kg"
+    leaflet_fresh_biomass = status.fresh_biomass_leaflets * u"kg"
+    petiole_fresh_biomass = status.fresh_biomass_petiole * u"kg"
 
     i = index(internode)
     _update_internode_properties!(internode, status, vpalm_params, model.rng)

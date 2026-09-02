@@ -46,6 +46,12 @@ end
         aggregation=:state,
         extent=:extensive,
     )
+    fresh_mass = PlantSimEngine.VariableContract(
+        unit=:kg_fresh_matter,
+        basis=:object,
+        aggregation=:state,
+        extent=:extensive,
+    )
 
     @test PlantSimEngine.variable_contracts(
         ConstantRUEModel(4.8),
@@ -70,6 +76,21 @@ end
     )
     @test respiration_contracts.biomass == structural_dry_mass
     @test respiration_contracts.Rm == daily_ch2o
+
+    fresh_biomass_contracts = PlantSimEngine.variable_contracts(
+        VPalm.LeafFreshBiomass(
+            leaflets_dry_matter_fraction=0.430,
+            rachis_dry_matter_fraction=0.308,
+            petiole_dry_matter_fraction=0.273,
+        ),
+    )
+    @test fresh_biomass_contracts.biomass_leaflets == structural_dry_mass
+    @test fresh_biomass_contracts.biomass_rachis == structural_dry_mass
+    @test fresh_biomass_contracts.biomass_petiole == structural_dry_mass
+    @test fresh_biomass_contracts.reserve == ch2o_stock
+    @test fresh_biomass_contracts.fresh_biomass_leaflets == fresh_mass
+    @test fresh_biomass_contracts.fresh_biomass_rachis == fresh_mass
+    @test fresh_biomass_contracts.fresh_biomass_petiole == fresh_mass
 
     incompatible = CompositeModel(
         Object(

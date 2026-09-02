@@ -37,15 +37,20 @@ leafLengthSlope: 0.058350292901005
 rachisLength_SDP: 15.2515779099962
 leaf_length_intercept: 0.0 # intercept of the linear relationship between rachis biomass and length (m)
 leaf_length_slope: 1.31 # slope of the relationship between lenght and biomass (m/kg)
-# XPalm simulates structural dry mass. These fractions convert each simulated
-# leaf compartment to fresh mass before it is passed to VPalm. Values are the
-# medians of the component water-content observations in
+# XPalm simulates structural dry mass and a separate non-structural
+# carbohydrate reserve. These fractions convert the resulting organ dry mass
+# to fresh mass before it is passed to VPalm. Values are the medians of the
+# component water-content observations in
 # XPalm_calibration/0-data/LeafGrowth_CIGE.csv (three sites); they are kept
 # explicit because the biomechanical parameters were fitted on fresh mass.
 xpalm_coupling:
   leaflets_dry_matter_fraction: 0.430
   rachis_dry_matter_fraction: 0.308
   petiole_dry_matter_fraction: 0.273
+  # gDM-equivalent per g CH2O-equivalent. A value of one makes explicit the
+  # equivalence already used when reserve capacity is derived from the
+  # difference between maximum and minimum LMA; this is not an efficiency.
+  reserve_to_dry_mass: 1.0
   # Linear dimensions scale approximately with the square root of acquired
   # structural biomass, so one-sided leaflet area scales with biomass.
   dimension_growth_exponent: 0.5

@@ -71,6 +71,7 @@ include("vpalm/instance/leaf.jl")
 include("vpalm/build_mockup.jl")
 
 # PlantSimEngine models:
+include("vpalm/plantsimengine_models/LeafFreshBiomass.jl")
 include("vpalm/plantsimengine_models/GeometryModel.jl")
 
 

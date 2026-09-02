@@ -270,6 +270,8 @@ end
           VPalm.default_parameters(; type="static")
     @test XPalm._default_vpalm_parameters(; type="dynamic") ==
           VPalm.default_parameters(; type="dynamic")
+    @test VPalm.default_parameters(type="dynamic")["xpalm_coupling"]["reserve_to_dry_mass"] ==
+          1.0
 end
 
 @testset "read_parameters with missing rachis_final_lengths" begin
@@ -291,4 +293,5 @@ end
         end
         @test vpalm_parameters[key] == vpalm_parameters_w[key]
     end
+
 end

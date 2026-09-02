@@ -206,6 +206,10 @@ end
 Convert an XPalm structural dry mass in grams to the fresh mass expected by
 VPalm's biomechanical model. The dry-matter fraction is organ-specific and must
 be expressed on a fresh-mass basis (`dry / fresh`).
+
+This helper remains available for standalone VPalm calculations. The dynamic
+XPalm coupling uses `LeafFreshBiomass` so simulated non-structural reserves are
+also included in the gravitational mass.
 """
 function fresh_biomass_from_dry_mass(dry_mass_g, dry_matter_fraction)
     0.0 < dry_matter_fraction <= 1.0 || throw(

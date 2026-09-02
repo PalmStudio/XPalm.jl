@@ -1008,6 +1008,38 @@ function model_applications(p; architecture=false)
     architecture || return applications
 
     vpalm = load_vpalm!()
+    coupling = parameters["vpalm"]["xpalm_coupling"]
+    fresh_biomass_application = _xpalm_application(
+        :Leaf,
+        vpalm.LeafFreshBiomass(
+            leaflets_dry_matter_fraction=coupling["leaflets_dry_matter_fraction"],
+            rachis_dry_matter_fraction=coupling["rachis_dry_matter_fraction"],
+            petiole_dry_matter_fraction=coupling["petiole_dry_matter_fraction"],
+            reserve_to_dry_mass=get(coupling, "reserve_to_dry_mass", 1.0),
+        );
+        inputs=(
+            :biomass_leaflets => PlantSimEngine.One(
+                within=PlantSimEngine.Self(),
+                application=:Leaf__leaf_pruning,
+                var=:biomass_leaflets,
+            ),
+            :biomass_rachis => PlantSimEngine.One(
+                within=PlantSimEngine.Self(),
+                application=:Leaf__leaf_pruning,
+                var=:biomass_rachis,
+            ),
+            :biomass_petiole => PlantSimEngine.One(
+                within=PlantSimEngine.Self(),
+                application=:Leaf__leaf_pruning,
+                var=:biomass_petiole,
+            ),
+            :reserve => PlantSimEngine.One(
+                within=PlantSimEngine.Self(),
+                application=:Leaf__leaf_pruning,
+                var=:reserve,
+            ),
+        ),
+    )
     architecture_application = _xpalm_application(
         :Internode,
         vpalm.GeometryModel(
@@ -1043,11 +1075,11 @@ function model_applications(p; architecture=false)
             application=:Leaf__leaf_final_potential_area,
             var=:final_potential_area,
         ),
-        :biomass_leaflets => PlantSimEngine.One(
+        :fresh_biomass_leaflets => PlantSimEngine.One(
             scale=:Leaf,
             relation=:children,
-            application=:Leaf__leaf_pruning,
-            var=:biomass_leaflets,
+            application=:Leaf__fresh_biomass,
+            var=:fresh_biomass_leaflets,
         ),
         :biomass_rachis => PlantSimEngine.One(
             scale=:Leaf,
@@ -1055,11 +1087,17 @@ function model_applications(p; architecture=false)
             application=:Leaf__leaf_pruning,
             var=:biomass_rachis,
         ),
-        :biomass_petiole => PlantSimEngine.One(
+        :fresh_biomass_rachis => PlantSimEngine.One(
             scale=:Leaf,
             relation=:children,
-            application=:Leaf__leaf_pruning,
-            var=:biomass_petiole,
+            application=:Leaf__fresh_biomass,
+            var=:fresh_biomass_rachis,
+        ),
+        :fresh_biomass_petiole => PlantSimEngine.One(
+            scale=:Leaf,
+            relation=:children,
+            application=:Leaf__fresh_biomass,
+            var=:fresh_biomass_petiole,
         ),
         :rank_leaves => PlantSimEngine.One(
             scale=:Leaf,
@@ -1068,5 +1106,5 @@ function model_applications(p; architecture=false)
         ),),
     )
 
-    return (applications..., architecture_application)
+    return (applications..., fresh_biomass_application, architecture_application)
 end

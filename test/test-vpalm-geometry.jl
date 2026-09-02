@@ -11,6 +11,74 @@ distance3(p0, p1) = sqrt(sum((p1 .- p0) .^ 2))
     @test VPalm.fresh_biomass_from_dry_mass(-1.0, 0.5) == 0.0u"kg"
     @test_throws ArgumentError VPalm.fresh_biomass_from_dry_mass(1.0, 0.0)
 
+    model = VPalm.LeafFreshBiomass(
+        leaflets_dry_matter_fraction=0.50,
+        rachis_dry_matter_fraction=0.25,
+        petiole_dry_matter_fraction=0.50,
+        reserve_to_dry_mass=1.0,
+    )
+    scene = test_scene(
+        :Leaf,
+        model;
+        status=Status(
+            biomass_leaflets=300.0,
+            biomass_rachis=300.0,
+            biomass_petiole=400.0,
+            reserve=100.0,
+        ),
+    )
+    run!(scene)
+    status = test_status(scene, :Leaf)
+    @test status.fresh_biomass_leaflets ≈ 0.66
+    @test status.fresh_biomass_rachis ≈ 1.32
+    @test status.fresh_biomass_petiole ≈ 0.88
+    @test 1000.0 * (
+        0.50 * status.fresh_biomass_leaflets +
+        0.25 * status.fresh_biomass_rachis +
+        0.50 * status.fresh_biomass_petiole
+    ) ≈ 1100.0
+
+    # Outputs are current states, not accumulated flows.
+    status.reserve = 0.0
+    run!(scene)
+    @test status.fresh_biomass_leaflets ≈ 0.60
+    @test status.fresh_biomass_rachis ≈ 1.20
+    @test status.fresh_biomass_petiole ≈ 0.80
+    @test status.fresh_biomass_rachis * u"kg" ≈
+          VPalm.fresh_biomass_from_dry_mass(300.0, 0.25)
+
+    empty_scene = test_scene(
+        :Leaf,
+        model;
+        status=Status(
+            biomass_leaflets=0.0,
+            biomass_rachis=0.0,
+            biomass_petiole=0.0,
+            reserve=100.0,
+        ),
+    )
+    run!(empty_scene)
+    empty_status = test_status(empty_scene, :Leaf)
+    @test empty_status.fresh_biomass_leaflets == 0.0
+    @test empty_status.fresh_biomass_rachis == 0.0
+    @test empty_status.fresh_biomass_petiole == 0.0
+
+    @test_throws ArgumentError VPalm.LeafFreshBiomass(
+        leaflets_dry_matter_fraction=0.0,
+        rachis_dry_matter_fraction=0.25,
+        petiole_dry_matter_fraction=0.50,
+    )
+    @test_throws ArgumentError VPalm.LeafFreshBiomass(
+        leaflets_dry_matter_fraction=0.50,
+        rachis_dry_matter_fraction=0.25,
+        petiole_dry_matter_fraction=0.50,
+        reserve_to_dry_mass=-1.0,
+    )
+    integer_parameter_model = VPalm.LeafFreshBiomass(1, 1, 1, 1)
+    @test integer_parameter_model isa VPalm.LeafFreshBiomass{Float64}
+    @test PlantSimEngine.outputs_(integer_parameter_model).fresh_biomass_rachis ===
+          0.0
+
     @test VPalm.coupled_leaf_dimension_scale(
         40.0,
         1.0,
@@ -891,17 +959,47 @@ end
     )
 
     compiled = PlantSimEngine.Advanced.refresh_bindings!(scene)
+    bindings = PlantSimEngine.Diagnostics.explain_bindings(compiled)
     geometry_pruning_binding = only(
-        row for row in PlantSimEngine.Diagnostics.explain_bindings(compiled)
+        row for row in bindings
         if row.application_id == :Internode__geometry && row.input == :is_pruned
     )
     @test geometry_pruning_binding.source_application_ids == [:Leaf__leaf_pruning]
     @test geometry_pruning_binding.carrier_hint != :temporal_stream
+    for input in (:biomass_leaflets, :biomass_rachis, :biomass_petiole, :reserve)
+        binding = only(
+            row for row in bindings
+            if row.application_id == :Leaf__fresh_biomass && row.input == input
+        )
+        @test binding.source_application_ids == [:Leaf__leaf_pruning]
+        @test binding.carrier_hint != :temporal_stream
+    end
+    for input in (
+        :fresh_biomass_leaflets,
+        :fresh_biomass_rachis,
+        :fresh_biomass_petiole,
+    )
+        binding = only(
+            row for row in bindings
+            if row.application_id == :Internode__geometry && row.input == input
+        )
+        @test binding.source_application_ids == [:Leaf__fresh_biomass]
+        @test binding.carrier_hint != :temporal_stream
+    end
+    geometry_rachis_dry_mass_binding = only(
+        row for row in bindings
+        if row.application_id == :Internode__geometry &&
+           row.input == :biomass_rachis
+    )
+    @test geometry_rachis_dry_mass_binding.source_application_ids ==
+          [:Leaf__leaf_pruning]
     schedule = Dict(
         row.application_id => row.execution_index
         for row in PlantSimEngine.Diagnostics.explain_schedule(compiled)
     )
-    @test schedule[:Leaf__leaf_pruning] < schedule[:Internode__geometry]
+    @test schedule[:Leaf__leaf_pruning] <
+          schedule[:Leaf__fresh_biomass] <
+          schedule[:Internode__geometry]
 
     run!(scene; steps=1, outputs=:none)
 
@@ -915,22 +1013,12 @@ end
     @test isfinite(ustrip(internode.length))
     @test isfinite(ustrip(leaf.rachis_length))
     leaf_object = only(model_objects(scene; scale=:Leaf))
-    coupling = vpalm_parameters["xpalm_coupling"]
-    @test leaf.coupled_leaflet_fresh_biomass ==
-          VPalm.fresh_biomass_from_dry_mass(
-              leaf_object.status.biomass_leaflets,
-              coupling["leaflets_dry_matter_fraction"],
-          )
-    @test leaf.coupled_rachis_fresh_biomass ==
-          VPalm.fresh_biomass_from_dry_mass(
-              leaf_object.status.biomass_rachis,
-              coupling["rachis_dry_matter_fraction"],
-          )
-    @test leaf.coupled_petiole_fresh_biomass ==
-          VPalm.fresh_biomass_from_dry_mass(
-              leaf_object.status.biomass_petiole,
-              coupling["petiole_dry_matter_fraction"],
-          )
+    @test leaf.coupled_leaflet_fresh_biomass ≈
+          leaf_object.status.fresh_biomass_leaflets * u"kg"
+    @test leaf.coupled_rachis_fresh_biomass ≈
+          leaf_object.status.fresh_biomass_rachis * u"kg"
+    @test leaf.coupled_petiole_fresh_biomass ≈
+          leaf_object.status.fresh_biomass_petiole * u"kg"
     @test !haskey(
         MultiScaleTreeGraph.node_attributes(internode),
         :plantsimengine_status,

@@ -21,6 +21,8 @@ end
     parameters = XPalm.default_parameters()
     palm = XPalm.Palm(initiation_age=0, parameters=parameters)
     applications = XPalm.model_applications(palm; architecture=false)
+    @test :Leaf__fresh_biomass ∉
+          PlantSimEngine.application_name.(applications)
 
     leaf_biomass = only(
         application for application in applications
