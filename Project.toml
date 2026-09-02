@@ -26,7 +26,7 @@ Pluto = "c3e4b0f8-55cb-11ea-2926-15256bba5781"
 
 [sources]
 PlantGeom = {rev = "9d682ef1aaebe7ecf5aa8407a8305d6f4aad51c1", url = "https://github.com/VEZY/PlantGeom.jl"}
-PlantSimEngine = {rev = "82786fb", url = "https://github.com/VirtualPlantLab/PlantSimEngine.jl"}
+PlantSimEngine = {rev = "82786fba91fad644d8068d75afc64d88282400c4", url = "https://github.com/VirtualPlantLab/PlantSimEngine.jl"}
 
 [extensions]
 XPalmPluto = "Pluto"

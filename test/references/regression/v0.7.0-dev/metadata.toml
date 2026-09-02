@@ -1,0 +1,29 @@
+[environment]
+julia_version = "1.12.1"
+plantsimengine_commit = "82786fba91fad644d8068d75afc64d88282400c4"
+plantsimengine_version = "0.15.0"
+project_file = "test/Project.toml"
+project_sha256 = "7dd2cbae109cccd357daa4a61797f4dc497ee8e5981943d7bed9d954affefa23"
+
+[fixture]
+checkpoint_policy = "first day, every calendar-month first day, and final day"
+elapsed_seconds = 4.62546575
+generated_at = "2026-09-02T16:32:11.999"
+
+[inputs]
+end_date = "2023-05-26"
+meteo_file = "0-data/meteo.csv"
+meteo_sha256 = "3406fa2cc253c40d84610aacebe7e537fe9d2205882e1dc040c58cf169c7c653"
+nsteps = 4160
+start_date = "2012-01-05"
+
+[source]
+baseline_id = "v0.7.0-dev"
+parameter_source = "XPalm.default_parameters()"
+release_state = "unreleased"
+xpalm_commit = "d4ded8891d03f85bb5691b89572a4e003ac6eb7a"
+xpalm_version = "0.6.1"
+
+[stochastic_configuration]
+abortion_seed = 1
+sex_determination_seed = 1

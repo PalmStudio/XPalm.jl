@@ -2,11 +2,14 @@ using CSV
 using DataFrames
 using Dates
 using PlantSimEngine
+import Pkg
 using SHA
 using TOML
 using XPalm
 
 include(joinpath(@__DIR__, "..", "test", "reference_regression_helpers.jl"))
+
+const NEXT_RELEASE_REFERENCE_BASELINE = "v0.7.0-dev"
 
 function git_revision(path)
     try
@@ -18,7 +21,14 @@ end
 
 sha256_file(path) = bytes2hex(SHA.sha256(read(path)))
 
-function write_reference_regression(output_dir)
+function dependency_git_revision(package_module)
+    package = get(Pkg.dependencies(), Base.PkgId(package_module).uuid, nothing)
+    isnothing(package) && return "unknown"
+    isnothing(package.git_revision) && return "unknown"
+    return string(package.git_revision)
+end
+
+function write_reference_regression(output_dir; release_state=nothing)
     expected_files = (
         "trajectory_checkpoints.csv",
         "harvest_events.csv",
@@ -35,9 +45,16 @@ function write_reference_regression(output_dir)
     )
 
     mkpath(output_dir)
+    baseline_id = basename(output_dir)
+    resolved_release_state = isnothing(release_state) ?
+        (endswith(baseline_id, "-dev") ? "unreleased" : "released") :
+        release_state
+    resolved_release_state in ("released", "unreleased") || error(
+        "release_state must be either \"released\" or \"unreleased\".",
+    )
     package_root = dirname(dirname(pathof(XPalm)))
     meteo_path = joinpath(package_root, "0-data", "meteo.csv")
-    manifest_path = joinpath(dirname(Base.active_project()), "Manifest.toml")
+    project_path = Base.active_project()
     scenario = run_reference_regression_scenario(; meteo_path=meteo_path)
 
     CSV.write(
@@ -53,15 +70,20 @@ function write_reference_regression(output_dir)
     parameters = XPalm.default_parameters()
     metadata = Dict(
         "source" => Dict(
-            "xpalm_tag" => "v$(Base.pkgversion(XPalm))",
+            "baseline_id" => baseline_id,
+            "release_state" => resolved_release_state,
+            "xpalm_version" => string(Base.pkgversion(XPalm)),
             "xpalm_commit" => git_revision(package_root),
             "parameter_source" => "XPalm.default_parameters()",
         ),
         "environment" => Dict(
             "julia_version" => string(VERSION),
             "plantsimengine_version" => string(Base.pkgversion(PlantSimEngine)),
-            "manifest_sha256" => isfile(manifest_path) ?
-                sha256_file(manifest_path) : "missing",
+            "plantsimengine_commit" =>
+                dependency_git_revision(PlantSimEngine),
+            "project_file" => relpath(project_path, package_root),
+            "project_sha256" => isfile(project_path) ?
+                sha256_file(project_path) : "missing",
         ),
         "inputs" => Dict(
             "meteo_file" => "0-data/meteo.csv",
@@ -91,10 +113,22 @@ function write_reference_regression(output_dir)
     return scenario
 end
 
-output_dir = isempty(ARGS) ?
-    joinpath(@__DIR__, "..", "test", "references", "regression", "v0.6.1") :
-    only(ARGS)
-
-scenario = write_reference_regression(normpath(output_dir))
-@info "XPalm reference regression fixture written" output_dir elapsed_seconds =
-    scenario.elapsed
+if abspath(PROGRAM_FILE) == @__FILE__
+    output_dir = isempty(ARGS) ?
+        joinpath(
+            @__DIR__,
+            "..",
+            "test",
+            "references",
+            "regression",
+            NEXT_RELEASE_REFERENCE_BASELINE,
+        ) :
+        only(ARGS)
+    release_state = get(ENV, "XPALM_REFERENCE_RELEASE_STATE", nothing)
+    scenario = write_reference_regression(
+        normpath(output_dir);
+        release_state=release_state,
+    )
+    @info "XPalm reference regression fixture written" output_dir elapsed_seconds =
+        scenario.elapsed
+end

@@ -67,10 +67,11 @@ Fraction of transpirable soil water (FTSW) over time:
 XPalm keeps a compact, versioned reference for this default full-cycle
 simulation. It samples monthly values at Scene, Plant, and Soil scales, records
 every bunch harvest, and checks cumulative bunch and oil yield against the
-released XPalm `v0.6.1` behavior. Ordinary local tests skip this several-minute
-check; one pinned CI job runs it. See
-[`test/references/regression/v0.6.1`](test/references/regression/v0.6.1/README.md)
-for provenance and update instructions.
+accepted behavior for the current development version. Ordinary local tests
+skip this several-minute check; one pinned CI job runs it. See the
+[`test/references/regression`](test/references/regression/README.md) index for
+the active baseline, historical references, provenance, and update
+instructions.
 
 ## Installation
 

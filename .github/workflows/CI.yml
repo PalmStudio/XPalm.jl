@@ -55,7 +55,7 @@ jobs:
             PackageSpec(
               name="PlantSimEngine",
               url="https://github.com/VirtualPlantLab/PlantSimEngine.jl",
-              rev="771894cd1188a81e85aeb4e162ecf7b2ddfa1bbf",
+              rev="82786fba91fad644d8068d75afc64d88282400c4",
             ),
             PackageSpec(
               name="PlantGeom",

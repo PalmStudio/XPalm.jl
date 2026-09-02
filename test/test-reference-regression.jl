@@ -1,5 +1,10 @@
-const REFERENCE_REGRESSION_DIR =
-    joinpath(dirtest, "references", "regression", "v0.6.1")
+const REFERENCE_REGRESSION_BASELINE = "v0.7.0-dev"
+const REFERENCE_REGRESSION_DIR = joinpath(
+    dirtest,
+    "references",
+    "regression",
+    REFERENCE_REGRESSION_BASELINE,
+)
 
 function reference_column_mismatches(current, reference; rtol=1.0e-8, atol=1.0e-8)
     length(current) == length(reference) || return collect(
@@ -41,14 +46,20 @@ function test_reference_float_columns(
     end
 end
 
-@testset "XPalm v0.6.1 full-cycle numerical regression" begin
+@testset "XPalm v0.7.0-dev full-cycle numerical regression" begin
     metadata = TOML.parsefile(joinpath(REFERENCE_REGRESSION_DIR, "metadata.toml"))
     meteo_path = joinpath(dirname(dirname(pathof(XPalm))), "0-data", "meteo.csv")
     current_meteo_sha256 = bytes2hex(SHA.sha256(read(meteo_path)))
 
-    @test metadata["source"]["xpalm_tag"] == "v0.6.1"
+    @test metadata["source"]["baseline_id"] == REFERENCE_REGRESSION_BASELINE
+    @test metadata["source"]["release_state"] == "unreleased"
+    @test metadata["source"]["xpalm_version"] == "0.6.1"
+    @test metadata["source"]["xpalm_commit"] ==
+          "d4ded8891d03f85bb5691b89572a4e003ac6eb7a"
     @test metadata["environment"]["julia_version"] == "1.12.1"
-    @test metadata["environment"]["plantsimengine_version"] == "0.14.1"
+    @test metadata["environment"]["plantsimengine_version"] == "0.15.0"
+    @test metadata["environment"]["plantsimengine_commit"] ==
+          "82786fba91fad644d8068d75afc64d88282400c4"
     @test metadata["inputs"]["meteo_sha256"] == current_meteo_sha256
     @test metadata["inputs"]["nsteps"] == 4160
 
