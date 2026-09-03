@@ -3,7 +3,7 @@
     DailyDegreeDays(TOpt1, TOpt2, TBase, TLim)
     DailyDegreeDays(TOpt1=25, TOpt2=30, TBase=15, TLim=40)
 
-Compute thermal time from daily meteo data
+Compute thermal time from daily environment data
 
 # Arguments
 
@@ -12,6 +12,9 @@ Compute thermal time from daily meteo data
 - `TBase`: Tbase temperature for thermal time calculation (degree Celsius)
 - `TLim`: limit temperature for thermal time calculation (degree Celsius)
 
+# Environment inputs
+
+- `Tmin`, `Tmax`: daily minimum and maximum air temperatures (degree Celsius).
 
 # Outputs
 - `TEff`: daily efficient temperature for plant growth (degree C days) 
@@ -25,6 +28,11 @@ struct DailyDegreeDays{T} <: AbstractThermal_TimeModel
 end
 
 PlantSimEngine.inputs_(::DailyDegreeDays) = NamedTuple()
+
+PlantSimEngine.environment_inputs_(::DailyDegreeDays) = (
+    Tmin=0.0,
+    Tmax=0.0,
+)
 
 PlantSimEngine.outputs_(::DailyDegreeDays) = (
     TEff=-Inf,
@@ -40,10 +48,10 @@ function DailyDegreeDays(;
     DailyDegreeDays(promote(TOpt1, TOpt2, TBase, TLim)...)
 end
 
-function PlantSimEngine.run!(m::DailyDegreeDays, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::DailyDegreeDays, status, environment, constants, context=nothing)
 
-    Tmin = meteo.Tmin
-    Tmax = meteo.Tmax
+    Tmin = environment.Tmin
+    Tmax = environment.Tmax
 
     if (Tmin >= Tmax)
         if (Tmin > m.TOpt1)
@@ -106,9 +114,11 @@ Compute thermal time since organ initiation using `:TEff`.
 """
 struct DailyDegreeDaysSinceInit <: AbstractThermal_TimeModel end
 
-PlantSimEngine.inputs_(::DailyDegreeDaysSinceInit) = (TEff=-Inf,)
+PlantSimEngine.inputs_(::DailyDegreeDaysSinceInit) = (
+    TEff=PlantSimEngine.Required(Real),
+)
 PlantSimEngine.outputs_(::DailyDegreeDaysSinceInit) = (TT_since_init=0.0,)
 
-function PlantSimEngine.run!(m::DailyDegreeDaysSinceInit, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::DailyDegreeDaysSinceInit, status, environment, constants, context=nothing)
     status.TT_since_init += status.TEff
 end

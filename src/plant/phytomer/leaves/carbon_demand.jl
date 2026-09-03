@@ -1,6 +1,6 @@
 """
     LeafCarbonDemandModelPotentialArea(lma_min, respiration_cost, leaflets_biomass_contribution)
-    LeafCarbonDemandModelPotentialArea(lma_min= 80.0, respiration_cost=1.44, leaflets_biomass_contribution=0.35)
+    LeafCarbonDemandModelPotentialArea(lma_min=80.0, respiration_cost=1.44, leaflets_biomass_contribution=0.30)
 Carbon demand of the leaf based on the potential leaf area increment of the day.
 
 This model assumes that leaf demand, and hence leaf growth, can be reduced by stresses 
@@ -10,16 +10,18 @@ See also [`LeafCarbonDemandModelArea`](@ref).
 
 # Arguments
 
-- `lma_min`: minimum leaf mass area (g m⁻²)
-- `respiration_cost`: growth respiration cost (g g⁻¹)
-- `leaflets_biomass_contribution`: contribution of the leaflet biomass to the total leaf biomass (including rachis)
+- `lma_min`: minimum leaflet dry mass per unit leaflet area (gDM m⁻²)
+- `respiration_cost`: construction cost
+  (g CH2O-equivalent allocated gDM⁻¹ produced)
+- `leaflets_biomass_contribution`: contribution of leaflet biomass to total leaf
+  biomass, including rachis and petiole
 
 # Inputs
 - `potential_area`: potential leaf area (m2) 
 - `state`: state of the leaf
 
 # Outputs
-- `carbon_demand`: daily leaf carbon demand (gC)
+- `carbon_demand`: daily leaf assimilate demand (g CH2O-equivalent)
 """
 
 struct LeafCarbonDemandModelPotentialArea{T} <: AbstractCarbon_DemandModel
@@ -28,15 +30,56 @@ struct LeafCarbonDemandModelPotentialArea{T} <: AbstractCarbon_DemandModel
     leaflets_biomass_contribution::T
 end
 
-PlantSimEngine.inputs_(::LeafCarbonDemandModelPotentialArea) = (increment_potential_area=-Inf, state="undetermined")
-PlantSimEngine.outputs_(::LeafCarbonDemandModelPotentialArea) = (carbon_demand=0.0,)
+function LeafCarbonDemandModelPotentialArea(
+    lma_min,
+    respiration_cost,
+    leaflets_biomass_contribution,
+)
+    values = promote(lma_min, respiration_cost, leaflets_biomass_contribution)
+    LeafCarbonDemandModelPotentialArea{typeof(first(values))}(values...)
+end
 
-function PlantSimEngine.run!(m::LeafCarbonDemandModelPotentialArea, models, status, meteo, constants, extra=nothing)
-    if status.state == "Pruned" #! No need for that no? `increment_potential_area` should be 0.0 when the leaf is mature
-        status.carbon_demand = zero(eltype(status.carbon_demand))
+# Compatibility with the short-lived API that accepted carbon concentration.
+# Construction cost is already expressed per gDM, so this value is not used.
+LeafCarbonDemandModelPotentialArea(
+    lma_min,
+    respiration_cost,
+    leaflets_biomass_contribution,
+    carbon_concentration,
+) = LeafCarbonDemandModelPotentialArea(
+    lma_min,
+    respiration_cost,
+    leaflets_biomass_contribution,
+)
+
+LeafCarbonDemandModelPotentialArea(;
+    lma_min=80.0,
+    respiration_cost=1.44,
+    leaflets_biomass_contribution=0.30,
+    carbon_concentration=nothing,
+) = LeafCarbonDemandModelPotentialArea(
+    lma_min,
+    respiration_cost,
+    leaflets_biomass_contribution,
+)
+
+PlantSimEngine.inputs_(::LeafCarbonDemandModelPotentialArea) = (
+    increment_potential_area=PlantSimEngine.Required(Real),
+    state=PlantSimEngine.Required(Symbol),
+)
+PlantSimEngine.outputs_(::LeafCarbonDemandModelPotentialArea) = (carbon_demand=0.0,)
+PlantSimEngine.variable_contracts_(::LeafCarbonDemandModelPotentialArea) = (
+    carbon_demand=_DAILY_CH2O_EQUIVALENT_FLOW,
+)
+
+function PlantSimEngine.run!(m::LeafCarbonDemandModelPotentialArea, status, environment, constants, context=nothing)
+    if status.state == :pruned #! No need for that no? `increment_potential_area` should be 0.0 when the leaf is mature
+        status.carbon_demand = zero(status.carbon_demand)
         return nothing
     else
-        status.carbon_demand = status.increment_potential_area * (m.lma_min * m.respiration_cost) / m.leaflets_biomass_contribution
+        status.carbon_demand = status.increment_potential_area *
+                               (m.lma_min * m.respiration_cost) /
+                               m.leaflets_biomass_contribution
     end
 
     return nothing
@@ -55,9 +98,11 @@ See also `LeafCarbonDemandModelPotentialArea`.
 
 # Arguments
 
-- `lma_min`: minimum leaf mass area (g m⁻²)
-- `respiration_cost`: growth respiration cost (g g⁻¹)
-- `leaflets_biomass_contribution`: contribution of the leaflet biomass to the total leaf biomass (including rachis)
+- `lma_min`: minimum leaflet dry mass per unit leaflet area (gDM m⁻²)
+- `respiration_cost`: construction cost
+  (g CH2O-equivalent allocated gDM⁻¹ produced)
+- `leaflets_biomass_contribution`: contribution of leaflet biomass to total leaf
+  biomass, including rachis and petiole
 """
 struct LeafCarbonDemandModelArea{T} <: AbstractCarbon_DemandModel
     lma_min::T
@@ -65,10 +110,46 @@ struct LeafCarbonDemandModelArea{T} <: AbstractCarbon_DemandModel
     leaflets_biomass_contribution::T
 end
 
-PlantSimEngine.inputs_(::LeafCarbonDemandModelArea) = (potential_area=0.0, leaf_area=-Inf)
-PlantSimEngine.outputs_(::LeafCarbonDemandModelArea) = (carbon_demand=0.0,)
+function LeafCarbonDemandModelArea(lma_min, respiration_cost, leaflets_biomass_contribution)
+    values = promote(lma_min, respiration_cost, leaflets_biomass_contribution)
+    LeafCarbonDemandModelArea{typeof(first(values))}(values...)
+end
 
-function PlantSimEngine.run!(m::LeafCarbonDemandModelArea, models, status, meteo, constants, extra=nothing)
+# Compatibility with the short-lived API that accepted carbon concentration.
+LeafCarbonDemandModelArea(
+    lma_min,
+    respiration_cost,
+    leaflets_biomass_contribution,
+    carbon_concentration,
+) = LeafCarbonDemandModelArea(
+    lma_min,
+    respiration_cost,
+    leaflets_biomass_contribution,
+)
+
+LeafCarbonDemandModelArea(;
+    lma_min=80.0,
+    respiration_cost=1.44,
+    leaflets_biomass_contribution=0.30,
+    carbon_concentration=nothing,
+) = LeafCarbonDemandModelArea(
+    lma_min,
+    respiration_cost,
+    leaflets_biomass_contribution,
+)
+
+PlantSimEngine.inputs_(::LeafCarbonDemandModelArea) = (
+    potential_area=PlantSimEngine.Required(Real),
+    leaf_area=PlantSimEngine.Required(Real),
+)
+PlantSimEngine.outputs_(::LeafCarbonDemandModelArea) = (carbon_demand=0.0,)
+PlantSimEngine.variable_contracts_(::LeafCarbonDemandModelArea) = (
+    carbon_demand=_DAILY_CH2O_EQUIVALENT_FLOW,
+)
+
+function PlantSimEngine.run!(m::LeafCarbonDemandModelArea, status, environment, constants, context=nothing)
     increment_potential_area = status.potential_area - status.leaf_area
-    status.carbon_demand = increment_potential_area * (m.lma_min * m.respiration_cost) / m.leaflets_biomass_contribution
+    status.carbon_demand = increment_potential_area *
+                           (m.lma_min * m.respiration_cost) /
+                           m.leaflets_biomass_contribution
 end

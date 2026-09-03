@@ -9,7 +9,7 @@ while preserving its insertion angle (inclination angle of the first segment).
 - `inclination`: Vector of inclination angles (in degrees), only the first value is used
 
 # Returns
-- A vector of Meshes.Point objects representing the unbent positions
+- A vector of `GeometryBasics.Point{3}` objects representing the unbent positions
 
 # Details
 This function creates a straight line with the same cumulative length as the input
@@ -22,7 +22,7 @@ Mainly used to compute the input coordinates for `bend()` from experimental poin
 # Example
 
 ```jl
-using VPalm, Unitful, Meshes
+using VPalm, Unitful, GeometryBasics
 distances = [0.001, 1.340, 1.340, 0.770, 0.770]u"m";
 inclinations = [48.8, 48.8, 48.8, 48.8, 48.8];  # degrees
 points = VPalm.unbend(distances, inclinations)
@@ -41,11 +41,15 @@ function unbend(distance, inclination)
     agl_y = -deg2rad(inclination[1])
     agl_z = 0.0
 
-    vec_points = Vector{typeof(Meshes.Point(0.0, 0.0, 0.0))}(undef, length(distance))
+    point_type = GeometryBasics.Point{3,typeof(x_distance[1])}
+    zero_length = zero(x_distance[1])
+    vec_points = Vector{point_type}(undef, length(distance))
 
     # Compute coordinates of points (unbent state)
+    rotation = RotYZ(agl_y, agl_z)
     for i in 1:length(distance)
-        vec_points[i] = Meshes.Rotate(RotYZ(agl_y, agl_z))(Meshes.Point(x_distance[i], 0.0u"m", 0.0u"m"))
+        rotated = rotation * GeometryBasics.Vec{3,typeof(x_distance[i])}(x_distance[i], zero_length, zero_length)
+        vec_points[i] = point_type(rotated[1], rotated[2], rotated[3])
     end
 
     return vec_points

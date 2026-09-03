@@ -62,6 +62,17 @@ Fraction of transpirable soil water (FTSW) over time:
 
 ![soil level](docs/src/assets/simulation_results_Soil.png)
 
+### Numerical regression reference
+
+XPalm keeps a compact, versioned reference for this default full-cycle
+simulation. It samples monthly values at Scene, Plant, and Soil scales, records
+every bunch harvest, and checks cumulative bunch and oil yield against the
+accepted behavior for the current development version. Ordinary local tests
+skip this several-minute check; one pinned CI job runs it. See the
+[`test/references/regression`](test/references/regression/README.md) index for
+the active baseline, historical references, provenance, and update
+instructions.
+
 ## Installation
 
 Install XPalm using Julia's package manager, typing `]` in the Julia REPL (*i.e.* the console) to enter the Pkg REPL mode and then typing:
@@ -111,7 +122,7 @@ meteo = CSV.read(joinpath(dirname(dirname(pathof(XPalm))), "0-data/meteo.csv"), 
 
 # Run simulation
 df = xpalm(meteo, DataFrame;
-    vars = Dict("Scene" => (:lai,)), # Request LAI as output
+    vars = Dict(:Scene => (:lai,)), # Request LAI as output
 )
 ```
 
@@ -138,9 +149,9 @@ results = xpalm(
     meteo,
     DataFrame,
     vars = Dict(
-        "Scene" => (:lai,),
-        "Plant" => (:leaf_area, :biomass_bunch_harvested),
-        "Soil" => (:ftsw,)
+        :Scene => (:lai,),
+        :Plant => (:leaf_area, :biomass_bunch_harvested),
+        :Soil => (:ftsw,)
     ),
     palm = p,
 )
@@ -210,15 +221,15 @@ file = joinpath(dirname(dirname(pathof(XPalm))), "test", "references", "vpalm-pa
 parameters = read_parameters(file)
 mtg = build_mockup(parameters; merge_scale=:leaflet)
 traverse!(mtg) do node
-    if symbol(node) == "Petiole"
-        petiole_and_rachis_segments = descendants(node, symbol=["PetioleSegment", "RachisSegment"])
+    if symbol(node) == :Petiole
+        petiole_and_rachis_segments = descendants(node, symbol=[:PetioleSegment, :RachisSegment])
         colormap = cgrad([colorant"peachpuff4", colorant"blanchedalmond"], length(petiole_and_rachis_segments), scale=:log2)
         for (i, seg) in enumerate(petiole_and_rachis_segments)
             seg[:color_type] = colormap[i]
         end
-    elseif symbol(node) == "Leaflet"
+    elseif symbol(node) == :Leaflet
         node[:color_type] = :mediumseagreen
-    elseif symbol(node) == "Leaf" # This will color the snags
+    elseif symbol(node) == :Leaf # This will color the snags
         node[:color_type] = :peachpuff4
     end
 end
@@ -227,7 +238,7 @@ save("palm_mockup.png", f, size=(1200, 800), px_per_unit=3, update=false)
 ```
 </details>
 
-Note that the MTG is built with the following scales: `["Plant", "Stem", "Phytomer", "Internode", "Leaf", "Petiole", "PetioleSegment", "Rachis", "RachisSegment", "Leaflet", "LeafletSegment"]`.
+Note that the MTG is built with the following scales: `[:Plant, :Stem, :Phytomer, :Internode, :Leaf, :Petiole, :PetioleSegment, :Rachis, :RachisSegment, :Leaflet, :LeafletSegment]`.
 
 ## Funding
 

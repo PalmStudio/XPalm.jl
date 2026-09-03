@@ -11,13 +11,17 @@ Determines if the inflorescence will abort based on the trophic state of the pla
 - `duration_abortion`: duration used for computing abortion rate before flowering (degree days).
 
 # Inputs
-- `carbon_offer_after_rm`: carbon offer after maintenance respiration (gC/plant).
-- `carbon_demand_organs`: carbon demand of all organs (gC/plant).
+- `carbon_offer_plant`: daily plant assimilate offer after maintenance
+  respiration (g CH2O-equivalent plant⁻¹ d⁻¹).
+- `carbon_demand_plant`: daily total plant assimilate demand
+  (g CH2O-equivalent plant⁻¹ d⁻¹).
 
 
 # Outputs 
-- `carbon_demand_plant`: total carbon demand of the plant (gC/plant).
-- `carbon_offer_plant`: total carbon offer of the plant (gC/plant).
+- `carbon_demand_abortion`: assimilate demand accumulated over the abortion
+  period (g CH2O-equivalent plant⁻¹).
+- `carbon_offer_abortion`: assimilate offer accumulated over the abortion
+  period (g CH2O-equivalent plant⁻¹).
 - `state`: phytomer state (undetermined,Aborted,...)
 
 # Note
@@ -36,11 +40,21 @@ function AbortionRate(; TT_flowering=6300.0, duration_abortion=540.0, abortion_r
     AbortionRate(promote(TT_flowering, duration_abortion, abortion_rate_max, abortion_rate_ref)..., MersenneTwister(random_seed))
 end
 
-PlantSimEngine.inputs_(::AbortionRate) = (TT_since_init=-Inf, carbon_offer_plant=-Inf, carbon_demand_plant=-Inf)
-PlantSimEngine.outputs_(::AbortionRate) = (state="undetermined", carbon_demand_abortion=0.0, carbon_offer_abortion=0.0, abortion_calculation_flag=false)
+PlantSimEngine.inputs_(::AbortionRate) = (
+    TT_since_init=PlantSimEngine.Required(Real),
+    carbon_offer_plant=PlantSimEngine.Default(0.0),
+    carbon_demand_plant=PlantSimEngine.Default(0.0),
+)
+PlantSimEngine.outputs_(::AbortionRate) = (state=:undetermined, carbon_demand_abortion=0.0, carbon_offer_abortion=0.0, abortion_calculation_flag=false)
+PlantSimEngine.variable_contracts_(::AbortionRate) = (
+    carbon_offer_plant=_DAILY_CH2O_EQUIVALENT_FLOW,
+    carbon_demand_plant=_DAILY_CH2O_EQUIVALENT_FLOW,
+    carbon_demand_abortion=_ACCUMULATED_CH2O_EQUIVALENT,
+    carbon_offer_abortion=_ACCUMULATED_CH2O_EQUIVALENT,
+)
 
-function PlantSimEngine.run!(m::AbortionRate, models, status, meteo, constants, extra=nothing)
-    status.state == "Aborted" && return # if abortion is determined, no need to compute it again
+function PlantSimEngine.run!(m::AbortionRate, status, environment, constants, context)
+    status.state == :aborted && return # if abortion is determined, no need to compute it again
 
     # We only look into the period of abortion :
     if status.TT_since_init > (m.TT_flowering - m.duration_abortion)
@@ -66,9 +80,12 @@ function PlantSimEngine.run!(m::AbortionRate, models, status, meteo, constants, 
 
         #e.g. if threshold_abortion is 0.7 we will have more chance to abort
         if random_abort <= threshold_abortion
-            status.state = "Aborted"
+            status.state = :aborted
             # Give the state to the reproductive organ:
-            status.node[1][2][:plantsimengine_status].state = status.state
+            phytomer = PlantSimEngine.source_node(context)
+            reproductive_organ = phytomer[1][2]
+            PlantSimEngine.model_status(context, reproductive_organ).state =
+                status.state
         end
 
         status.abortion_calculation_flag = true  # Update the flag, so that we do not compute it again

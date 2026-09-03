@@ -6,6 +6,7 @@ Builds a rachis node in the MTG structure.
 # Arguments
 
 - `unique_mtg_id`: A reference to a unique identifier for the MTG nodes.
+- `parent_node`: The parent node to which the rachis will be attached, e.g. the petiole node `Node(NodeMTG(:/, :Petiole, index, 5))`
 - `index`: The index of the rachis segment.
 - `scale`: The scale of the rachis segment.
 - `leaf_rank`: The rank of the leaf associated with the rachis.
@@ -36,8 +37,8 @@ The `parameters` is a `Dict{String}` containing the following keys:
 - `"height_rachis_tappering"`: The height at which the rachis tapers (m).
 - `"rachis_width_tip"`: The width of the rachis tip (m).
 """
-function rachis(unique_mtg_id, index, scale, leaf_rank, rachis_length, height_cpoint, width_cpoint, zenithal_cpoint_angle, fresh_biomass, parameters; rng)
-    rachis_node = Node(unique_mtg_id[], NodeMTG("<", "Rachis", index, scale), Dict{Symbol,Any}())
+function rachis(unique_mtg_id, parent_node, index, scale, leaf_rank, rachis_length, height_cpoint, width_cpoint, zenithal_cpoint_angle, fresh_biomass, parameters; rng, leaflet_fresh_biomass=nothing)
+    rachis_node = Node(unique_mtg_id[], parent_node, NodeMTG(:<, :Rachis, index, scale), Dict{Symbol,Any}())
     unique_mtg_id[] += 1
 
     nb_segments = parameters["rachis_nb_segments"]
@@ -53,13 +54,31 @@ function rachis(unique_mtg_id, index, scale, leaf_rank, rachis_length, height_cp
         parameters["biomechanical_model"]["nb_sections"],
         parameters["biomechanical_model"]["iterations"],
         deg2rad(parameters["biomechanical_model"]["angle_max"]);
-        verbose=true, rng=rng
+        verbose=true,
+        rng=rng,
+        leaflet_fresh_weight=leaflet_fresh_biomass,
+        width_cpoint=_biomechanical_cpoint_width(
+            rachis_length,
+            height_cpoint,
+            width_cpoint,
+            parameters,
+        ),
+        leaflet_length_juvenile_transition=get(
+            parameters,
+            "leaflet_length_juvenile_transition",
+            nothing,
+        ),
+        leaflet_length_juvenile_exponent=get(
+            parameters,
+            "leaflet_length_juvenile_exponent",
+            nothing,
+        ),
     )
 
     last_parent = rachis_node
 
     for p in eachindex(points_positions)
-        rachis_segment_node = Node(unique_mtg_id[], last_parent, NodeMTG(p == 1 ? "/" : "<", "RachisSegment", p, 6))
+        rachis_segment_node = Node(unique_mtg_id[], last_parent, NodeMTG(p == 1 ? :/ : :<, :RachisSegment, p, 6))
         unique_mtg_id[] += 1
         rachis_segment_node.width = rachis_width(p / nb_segments, width_cpoint, parameters["rachis_width_tip"])
         rachis_segment_node.height = rachis_height(p / nb_segments, height_cpoint, parameters["height_rachis_tappering"])
@@ -91,7 +110,7 @@ end
 Update the angles and dimensions of the rachis segments based on biomechanical properties. This function is called when the rachis exists already, but needs updating its angles and dimensions 
 following a change in the leaf rank, length, or fresh biomass.
 """
-function update_rachis_angles!(rachis_node, leaf_rank, rachis_length, height_cpoint, width_cpoint, zenithal_cpoint_angle, fresh_biomass, parameters; rng)
+function update_rachis_angles!(rachis_node, leaf_rank, rachis_length, height_cpoint, width_cpoint, zenithal_cpoint_angle, fresh_biomass, parameters; rng, workspace=nothing, leaflet_fresh_biomass=nothing)
     nb_segments = parameters["rachis_nb_segments"]
     points_length, points_positions, points_bending, points_deviation, points_torsion, x, y, z = biomechanical_properties_rachis(
         parameters["rachis_twist_initial_angle"], parameters["rachis_twist_initial_angle_sdp"],
@@ -105,13 +124,32 @@ function update_rachis_angles!(rachis_node, leaf_rank, rachis_length, height_cpo
         parameters["biomechanical_model"]["nb_sections"],
         parameters["biomechanical_model"]["iterations"],
         deg2rad(parameters["biomechanical_model"]["angle_max"]);
-        verbose=true, rng=rng
+        verbose=true,
+        rng=rng,
+        workspace=workspace,
+        leaflet_fresh_weight=leaflet_fresh_biomass,
+        width_cpoint=_biomechanical_cpoint_width(
+            rachis_length,
+            height_cpoint,
+            width_cpoint,
+            parameters,
+        ),
+        leaflet_length_juvenile_transition=get(
+            parameters,
+            "leaflet_length_juvenile_transition",
+            nothing,
+        ),
+        leaflet_length_juvenile_exponent=get(
+            parameters,
+            "leaflet_length_juvenile_exponent",
+            nothing,
+        ),
     )
 
     last_parent = rachis_node
 
     p = Ref(0)
-    traverse!(rachis_node, symbol="RachisSegment") do node
+    traverse!(rachis_node, symbol=:RachisSegment) do node
         p[] += 1
         #NB: we still update the dimensions in case the rachis grew since the last call
         node.width = rachis_width(p[] / nb_segments, width_cpoint, parameters["rachis_width_tip"])
@@ -123,6 +161,7 @@ function update_rachis_angles!(rachis_node, leaf_rank, rachis_length, height_cpo
         node.x = x[p[]]
         node.y = y[p[]]
         node.z = z[p[]]
+        last_parent = node
     end
 
     # We force the last node to take the angles values of its parent node, because the biomechanical model can give

@@ -65,10 +65,10 @@ function FTSW_CPP(;
 end
 
 PlantSimEngine.inputs_(::FTSW_CPP) = (
-    ET0=-Inf,      # Potential evapotranspiration
-    rain=-Inf,     # Rainfall
-    tree_ei=-Inf,  # Tree interception efficiency
-    root_depth=-Inf # Root depth
+    ET0=PlantSimEngine.Required(Real),      # Potential evapotranspiration
+    rain=PlantSimEngine.Required(Real),     # Rainfall
+    tree_ei=PlantSimEngine.Required(Real),  # Tree interception efficiency
+    root_depth=PlantSimEngine.Required(Real), # Root depth
 )
 
 PlantSimEngine.outputs_(m::FTSW_CPP) = (
@@ -203,9 +203,9 @@ function initialize!(m::FTSW_CPP, st)
     compute_fractions!(st)
 end
 
-function PlantSimEngine.run!(m::FTSW_CPP, st, inputs)
-    compute_evapotranspiration!(st, inputs)
-    compute_rainfall!(st, inputs)
+function PlantSimEngine.run!(m::FTSW_CPP, st, environment, constants, context)
+    compute_evapotranspiration!(st, st)
+    compute_rainfall!(st, st)
     update_water_balance!(st)
     compute_root_quantities!(st)
     compute_fractions!(st)

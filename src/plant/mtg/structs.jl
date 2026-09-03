@@ -1,19 +1,15 @@
 """
     Palm(;
-        nsteps=1,
         initiation_age=0,
-        parameters=default_parameters(),
-        model_list=model_mapping(parameters, nsteps)
+        parameters=default_parameters()
     )
 
 Create a new scene with one Palm plant.
 
 # Arguments
 
-- `nsteps`: number of time steps to run the simulation for (default: 1, should match the number of rows in the meteo data)
 - `initiation_age`: date of the first phytomer initiation (default: 0)
 - `parameters`: a dictionary of parameters (default: `default_parameters()`)
-- `model_list`: a dictionary of models (default: `model_mapping(parameters, nsteps)`)
 """
 mutable struct Palm{T}
     mtg::Node
@@ -23,14 +19,25 @@ end
 
 function default_parameters()
 
-    # Computation of the average maintenance respiration coefficient for a leaf, based on Dufrene (1990):
-    tot_prop = 7.5 + 13.6 + 9.1
-    rachis_proportion = 9.1 / tot_prop
-    petiole = 13.6 / tot_prop
-    leaflets = 7.5 / tot_prop
+    # Dry-mass fractions of a complete leaf (leaflets + rachis + petiole).
+    # Siang et al. (2022), https://doi.org/10.3390/agronomy12020426.
+    leaflets_biomass_contribution = 0.30
+    rachis_biomass_contribution = 0.30
+    petiole_biomass_contribution = 0.40
+    leaf_biomass_contributions = (
+        leaflets_biomass_contribution,
+        rachis_biomass_contribution,
+        petiole_biomass_contribution,
+    )
+    sum(leaf_biomass_contributions) ≈ 1.0 ||
+        error("The leaf dry-mass fractions must sum to 1.0")
 
-    rachis_proportion + petiole + leaflets ≈ 1.0 || error("The sum of the proportions should be equal to 1.0")
-    Mr_leaf = 0.0018 * rachis_proportion + 0.0022 * petiole + 0.0083 * leaflets
+    # Average leaf maintenance coefficient
+    # (g CH2O-equivalent gDM⁻¹ d⁻¹), weighted by the dry-mass fractions above.
+    # Component coefficients are from Dufrêne (1990).
+    Mr_leaf = 0.0083 * leaflets_biomass_contribution +
+              0.0018 * rachis_biomass_contribution +
+              0.0022 * petiole_biomass_contribution
 
     p = OrderedDict{String,Any}(
         "plot" => Dict(
@@ -43,7 +50,9 @@ function default_parameters()
         ),
         "radiation" => Dict(
             "k" => 0.5, # light extinction coefficient
-            "RUE" => 4.8, # Radiation use efficiency (gC MJ[PAR]-1)
+            # Gross assimilate production before maintenance and construction
+            # costs (g CH2O-equivalent MJ[PAR]⁻¹).
+            "RUE" => 4.8,
             "threshold_ftsw" => 0.3,
         ),
         "reserves" => Dict(
@@ -55,36 +64,44 @@ function default_parameters()
                 "SRL" => 0.4, # Specific Root Length (m g-1)
             ),
             "leaf" => Dict(
-                "lma_min" => 80.0, # min leaf mass area (g m-2)
-                "lma_max" => 200.0, # max leaf mass area (g m-2)
+                "lma_min" => 80.0, # minimum leaflet dry mass per area (gDM m-2)
+                "lma_max" => 200.0, # maximum leaflet dry mass per area (gDM m-2)
             )
         ),
+        # All `Mr` values below are g CH2O-equivalent gDM⁻¹ d⁻¹ at `T_ref`.
         "respiration" => Dict(
             "Internode" => Dict(
-                "Mr" => 0.005, # Dufrene (1990)
+                # Dufrêne (1990), at 25 °C
+                # (g CH2O-equivalent gDM⁻¹ d⁻¹).
+                "Mr" => 0.0005,
                 "Q10" => 1.7,  # Dufrene et al. (2005)
-                "T_ref" => 25.0, # Dufrene et al. (1990), gives Rm_base commpared to all dry mass (not just living biomass)
-                "P_alive" => 0.21, # Dufrene et al. (2005)
+                "T_ref" => 25.0,
+                # Keep P_alive as a generic model parameter. The default Mr is
+                # applied per unit modeled organ dry mass, hence 1.0.
+                "P_alive" => 1.0,
             ),
             "Leaf" => Dict(
                 "Mr" => Mr_leaf, # Or 0.0022 for the rachis, she also gives the proportion of each so we could compute something in-between
                 "Q10" => 2.1,
                 "T_ref" => 25.0,
-                "P_alive" => 0.90,
+                "P_alive" => 1.0,
             ),
             "Female" => Dict(
                 "Mr" => 0.0022, # Kraalingen et al. 1989, AFM (and 1985 too)
                 "Q10" => 2.1,
                 "T_ref" => 25.0,
-                "P_alive" => 0.50,
+                "P_alive" => 1.0,
             ),
             "Male" => Dict( ## to check 
                 "Mr" => 0.0121, # Kraalingen et al. 1989, AFM
                 "Q10" => 2.1,
                 "T_ref" => 25.0,
-                "P_alive" => 0.50,
+                "P_alive" => 1.0,
             ),
             "RootSystem" => Dict(
+                # These parameters are retained for the generic respiration
+                # model, but XPalm does not yet attach biomass, carbon-demand,
+                # allocation, or maintenance-respiration models to RootSystem.
                 # Dufrene et al. (1990), Oleagineux:
                 "Q10" => 2.1,
                 "Turn" => 0.036,
@@ -93,7 +110,7 @@ function default_parameters()
                 "Gi" => 0.07,
                 "Mx" => 0.005,
                 "T_ref" => 25.0,
-                "P_alive" => 0.80,
+                "P_alive" => 1.0,
             ),
         ),
         # "nitrogen_content" => Dict(
@@ -146,31 +163,43 @@ function default_parameters()
         ),
         "carbon_demand" => Dict(
             "leaf" => Dict(
+                # Construction cost
+                # (g CH2O-equivalent allocated gDM⁻¹ produced).
+                # Pallas et al. (2013), doi:10.1093/treephys/tpt015, report
+                # 1.4 g CH2O gDM⁻¹ for oil-palm vegetative tissues; XPalm keeps
+                # its historical 1.44 value.
                 "respiration_cost" => 1.44,
             ),
             "internode" => Dict(
-                "apparent_density" => 300000.0, # g m-3
-                "carbon_concentration" => 0.5, # g g-1
-                "respiration_cost" => 1.44, # g g-1
+                "apparent_density" => 300000.0, # gDM m⁻³
+                "respiration_cost" => 1.44, # g CH2O-equivalent gDM⁻¹
             ),
-            "male" => Dict(
-                "respiration_cost" => 1.44, # g g-1
+            "Male" => Dict(
+                "respiration_cost" => 1.44, # g CH2O-equivalent gDM⁻¹
             ),
-            "female" => Dict(
-                "respiration_cost" => 1.44, # g g-1
-                "respiration_cost_oleosynthesis" => 3.2, # g g-1
+            "Female" => Dict(
+                "respiration_cost" => 1.44, # g CH2O-equivalent gDM⁻¹
+                # Pallas et al. (2013), doi:10.1093/treephys/tpt015.
+                "respiration_cost_oleosynthesis" => 3.2, # g CH2O-equivalent gDM⁻¹ oil
             ),
             "reserves" => Dict(
                 "cost_reserve_mobilization" => 1.667
             )
         ),
         "biomass" => Dict(
-            "male" => Dict(
-                "max_biomass" => 174.852, # in carbon, so 1200g in dry mass -> 1200 x 0.4857 gC g-1 dry mass x 0.3 dry mass content (0.7 water content)
+            "Male" => Dict(
+                # Maximum male-inflorescence dry mass: 1200 g fresh mass with
+                # a dry-matter fraction of 0.30.
+                "max_biomass" => 360.0, # gDM
                 "fraction_biomass_first_male" => 0.3,
             ),
             "leaf" => Dict(
-                "leaflets_biomass_contribution" => 0.35,
+                # Fractions of structural leaf dry biomass. A complete leaf includes
+                # leaflets, rachis and petiole (Siang et al. 2022,
+                # https://doi.org/10.3390/agronomy12020426).
+                "leaflets_biomass_contribution" => leaflets_biomass_contribution,
+                "rachis_biomass_contribution" => rachis_biomass_contribution,
+                "petiole_biomass_contribution" => petiole_biomass_contribution,
             ),
         ),
         "reproduction" => Dict(
@@ -198,10 +227,10 @@ function default_parameters()
                 "duration_sex_determination" => 1350.0,
                 "duration_abortion" => 540.0,
             ),
-            "male" => Dict(
+            "Male" => Dict(
                 "duration_flowering_male" => 1800.0,
                 "age_mature_male" => 8.0 * 365,),
-            "female" => Dict(
+            "Female" => Dict(
                 "days_increase_number_fruits" => 2379, # in days
                 "days_maximum_number_fruits" => 6500,
                 "duration_fruit_setting" => 405.0,
@@ -221,7 +250,7 @@ function default_parameters()
         )
     )
 
-    push!(p, "vpalm" => VPalm.default_parameters(; type="dynamic"))
+    push!(p, "vpalm" => _default_vpalm_parameters(; type="dynamic"))
 
     return p
 end
@@ -243,19 +272,19 @@ Create a new scene with one Palm plant. The scene contains a soil, a plant, a ro
 """
 function Palm(; initiation_age=0, parameters=default_parameters(), architecture=false)
     # Parameters should be a Dict{AbstractString,Any}:
-    if !(typeof(parameters) <: Dict{AbstractString})
-        @info "`parameters` should be a Dict{AbstractString,Any}, converting using: `Dict{AbstractString,Any}(string(k) => v for (k, v) in parameters)`"
-        parameters = Dict{AbstractString,Any}(string(k) => v for (k, v) in parameters)
-    end
 
-    scene = Node(1, NodeMTG("/", "Scene", 1, 0), Dict{Symbol,Any}(),)
+    @assert parameters isa AbstractDict "`parameters` should be a subtype of `AbstractDict` (e.g. a `Dict`), but is of type $(typeof(parameters))."
+    @assert keytype(parameters) <: AbstractString "`parameters` should have `String` keys. You can convert using: `Dict{String,Any}(string(k) => v for (k, v) in parameters)`"
+
+    scene = Node(1, NodeMTG(:/, :Scene, 1, 0), Dict{Symbol,Any}(),)
+    vpalm = architecture ? load_vpalm!() : nothing
     architecture && (scene.vpalm_rng = Random.MersenneTwister(parameters["vpalm"]["seed"]))
-    soil = Node(scene, NodeMTG("+", "Soil", 1, 1),)
+    soil = Node(scene, NodeMTG(:+, :Soil, 1, 1),)
 
-    plant = Node(scene, NodeMTG("+", "Plant", 1, 1), Dict{Symbol,Any}(:parameters => parameters,),)
+    plant = Node(scene, NodeMTG(:+, :Plant, 1, 1), Dict{Symbol,Any}(:parameters => parameters,),)
 
     roots = Node(
-        plant, NodeMTG("+", "RootSystem", 1, 2),
+        plant, NodeMTG(:+, :RootSystem, 1, 2),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age,
             # :depth => parameters["RL0"], # total exploration depth m
@@ -263,34 +292,34 @@ function Palm(; initiation_age=0, parameters=default_parameters(), architecture=
     )
 
     stem = Node(
-        plant, NodeMTG("+", "Stem", 1, 2),
+        plant, NodeMTG(:+, :Stem, 1, 2),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
         ),
     )
 
     phyto = Node(
-        stem, NodeMTG("/", "Phytomer", 1, 3),
+        stem, NodeMTG(:/, :Phytomer, 1, 3),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
         ),
     )
 
     internode = Node(
-        phyto, NodeMTG("/", "Internode", 1, 4),
+        phyto, NodeMTG(:/, :Internode, 1, 4),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
         ),
     )
 
     leaf = Node(
-        internode, NodeMTG("+", "Leaf", 1, 4),
+        internode, NodeMTG(:+, :Leaf, 1, 4),
         Dict{Symbol,Any}(
             :initiation_age => initiation_age, # date of initiation / creation
         ),
     )
 
-    architecture && VPalm.init_attributes_seed!(plant, parameters; rng=scene.vpalm_rng)
+    architecture && vpalm.init_attributes_seed!(plant, parameters; rng=scene.vpalm_rng)
 
     return Palm(scene, initiation_age, parameters)
 end

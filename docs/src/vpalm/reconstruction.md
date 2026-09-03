@@ -6,14 +6,15 @@ You can run `VPalm` simply by loading the submodule. Here is an example to load 
 
 ```julia
 using XPalm
-using XPalm.VPalm
 using PlantGeom, CairoMakie
+
+VPalm = XPalm.load_vpalm!()
 
 # Load example parameters
 file = joinpath(dirname(dirname(pathof(XPalm))), "test", "references", "vpalm-parameter_file.yml")
-parameters = read_parameters(file)
+parameters = VPalm.read_parameters(file)
 
-mtg = build_mockup(parameters)
+mtg = VPalm.build_mockup(parameters)
 
 plantviz(mtg, color = :green)
 ```
@@ -25,22 +26,23 @@ plantviz(mtg, color = :green)
 
     ```julia
     using XPalm
-    using XPalm.VPalm
     using PlantGeom, CairoMakie
 
+    VPalm = XPalm.load_vpalm!()
+
     file = joinpath(dirname(dirname(pathof(XPalm))), "test", "references", "vpalm-parameter_file.yml")
-    parameters = read_parameters(file)
-    mtg = build_mockup(parameters; merge_scale=:leaflet)
-    traverse!(mtg) do node
-        if symbol(node) == "Petiole"
-            petiole_and_rachis_segments = descendants(node, symbol=["PetioleSegment", "RachisSegment"])
+    parameters = VPalm.read_parameters(file)
+    mtg = VPalm.build_mockup(parameters; merge_scale=:leaflet)
+    VPalm.traverse!(mtg) do node
+        if VPalm.symbol(node) == :Petiole
+            petiole_and_rachis_segments = VPalm.descendants(node, symbol=[:PetioleSegment, :RachisSegment])
             colormap = cgrad([colorant"peachpuff4", colorant"blanchedalmond"], length(petiole_and_rachis_segments), scale=:log2)
             for (i, seg) in enumerate(petiole_and_rachis_segments)
                 seg[:color_type] = colormap[i]
             end
-        elseif symbol(node) == "Leaflet"
+        elseif VPalm.symbol(node) == :Leaflet
             node[:color_type] = :mediumseagreen
-        elseif symbol(node) == "Leaf" # This will color the snags
+        elseif VPalm.symbol(node) == :Leaf # This will color the snags
             node[:color_type] = :peachpuff4
         end
     end
@@ -49,4 +51,4 @@ plantviz(mtg, color = :green)
     ```
 
 !!! note
-    Note that the MTG is built with the following scales: `["Plant", "Stem", "Phytomer", "Internode", "Leaf", "Petiole", "PetioleSegment", "Rachis", "RachisSegment", "Leaflet", "LeafletSegment"]`.
+    Note that the MTG is built with the following scales: `[:Plant, :Stem, :Phytomer, :Internode, :Leaf, :Petiole, :PetioleSegment, :Rachis, :RachisSegment, :Leaflet, :LeafletSegment]`.

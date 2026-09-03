@@ -1,4 +1,109 @@
 """
+Reusable buffers for the allocation-heavy cumulative integrations performed by
+the complete rachis biomechanics model. The five remarkable points are fixed by
+the model, while `nlin` follows the configured rachis discretization.
+
+This workspace is kept by `GeometryModel`, not by user-facing MTG nodes. It is
+therefore an execution detail and does not change the reconstructed topology or
+the scientific state stored on organs. A workspace belongs to one sequential
+geometry execution; concurrent calls on the same `GeometryModel` instance must
+use separate workspaces.
+"""
+mutable struct BendIterationWorkspace{F,S,M,CF,AF,CT,AT,I}
+    v_force::Vector{F}
+    shear_input::Vector{S}
+    shear_cumulative::Vector{S}
+    vec_shear::Vector{S}
+    moment_input::Vector{M}
+    moment_cumulative::Vector{M}
+    vec_moment::Vector{M}
+    fct::Vector{CF}
+    flexion_input::Vector{AF}
+    flexion_cumulative::Vector{AF}
+    vec_angle_flexion::Vector{AF}
+    vec_deriv_agl_tor::Vector{CT}
+    torsion_input::Vector{AT}
+    vec_angle_torsion::Vector{AT}
+    vec_inertie_flex::Vector{I}
+    vec_force::Vector{F}
+    v_m_tor::Vector{M}
+    vec_m_tor::Vector{M}
+end
+
+function BendIterationWorkspace(npoints_exp::Integer, nlin::Integer)
+    step = 1.0u"m"
+    gravity = 1.0u"m/s^2"
+    force_density = (1.0u"kg/m") * gravity
+    shear = force_density * step
+    bending_moment = shear * step
+    denominator = 1.0u"Pa" * 1.0u"m^4"
+    flexion_curvature = bending_moment / denominator
+    flexion_angle = flexion_curvature * step
+    torsion_curvature = (1.0u"N*m") / denominator
+    torsion_angle = torsion_curvature * step
+    section_inertia = 1.0u"m^4"
+
+    return BendIterationWorkspace(
+        fill(zero(force_density), npoints_exp),
+        fill(zero(shear), nlin),
+        fill(zero(shear), nlin),
+        fill(zero(shear), nlin),
+        fill(zero(bending_moment), nlin),
+        fill(zero(bending_moment), nlin),
+        fill(zero(bending_moment), nlin),
+        fill(zero(flexion_curvature), nlin),
+        fill(zero(flexion_angle), nlin),
+        fill(zero(flexion_angle), nlin),
+        fill(zero(flexion_angle), nlin),
+        fill(zero(torsion_curvature), nlin),
+        fill(zero(torsion_angle), nlin),
+        fill(zero(torsion_angle), nlin),
+        fill(zero(section_inertia), nlin),
+        fill(zero(force_density), nlin),
+        fill(zero(bending_moment), npoints_exp),
+        fill(zero(bending_moment), nlin),
+    )
+end
+
+struct RachisBiomechanicsWorkspace{W}
+    bend_iteration::W
+end
+
+function RachisBiomechanicsWorkspace(parameters::AbstractDict{String})
+    npoints_exp = 5
+    nlin = Int(parameters["rachis_nb_segments"])
+    return RachisBiomechanicsWorkspace(BendIterationWorkspace(npoints_exp, nlin))
+end
+
+function _resize_bend_iteration_workspace!(workspace, npoints_exp, nlin)
+    resize!(workspace.v_force, npoints_exp)
+    resize!(workspace.shear_input, nlin)
+    resize!(workspace.shear_cumulative, nlin)
+    resize!(workspace.vec_shear, nlin)
+    resize!(workspace.moment_input, nlin)
+    resize!(workspace.moment_cumulative, nlin)
+    resize!(workspace.vec_moment, nlin)
+    resize!(workspace.fct, nlin)
+    resize!(workspace.flexion_input, nlin)
+    resize!(workspace.flexion_cumulative, nlin)
+    resize!(workspace.vec_angle_flexion, nlin)
+    resize!(workspace.vec_deriv_agl_tor, nlin)
+    resize!(workspace.torsion_input, nlin)
+    resize!(workspace.vec_angle_torsion, nlin)
+    resize!(workspace.vec_inertie_flex, nlin)
+    resize!(workspace.vec_force, nlin)
+    resize!(workspace.v_m_tor, npoints_exp)
+    resize!(workspace.vec_m_tor, nlin)
+    return workspace
+end
+
+@inline function _linear_interpolation_into!(destination, knots, values, positions)
+    interpolation = linear_interpolation(knots, values)
+    map!(interpolation, destination, positions)
+    return destination
+end
+
+"""
     bend(
         type, width_bend, height_bend, init_torsion, x, y, z, mass_rachis, mass_leaflets_right, mass_leaflets_left,
         distance_application, elastic_modulus, shear_modulus, step, npoints, nsegments;
@@ -54,11 +159,84 @@ function bend(type, width_bend, height_bend, init_torsion, x, y, z, mass_rachis,
     force=true,
     verbose=true
 )
+    return _bend(
+        nothing,
+        type, width_bend, height_bend, init_torsion, x, y, z,
+        mass_rachis, mass_leaflets_right, mass_leaflets_left,
+        distance_application, elastic_modulus, shear_modulus, step, npoints, nsegments;
+        all_points=all_points,
+        angle_max=angle_max,
+        force=force,
+        verbose=verbose,
+    )
+end
+
+"""
+    bend(
+        type, width_bend, height_bend, init_torsion, points,
+        mass_rachis, mass_leaflets_right, mass_leaflets_left,
+        distance_application, elastic_modulus, shear_modulus, step, npoints, nsegments;
+        kwargs...
+    )
+
+Point-based variant of [`bend`](@ref). It avoids splitting an existing point
+representation into coordinate vectors only to rebuild the same points inside
+the biomechanical kernel.
+"""
+function bend(type, width_bend, height_bend, init_torsion, points::AbstractVector{<:GeometryBasics.Point{3}}, mass_rachis, mass_leaflets_right, mass_leaflets_left,
+    distance_application, elastic_modulus, shear_modulus, step, npoints, nsegments;
+    all_points=false,
+    angle_max=deg2rad(21u"°"),
+    force=true,
+    verbose=true
+)
+    return _bend_points(
+        nothing,
+        type, width_bend, height_bend, init_torsion, points,
+        mass_rachis, mass_leaflets_right, mass_leaflets_left,
+        distance_application, elastic_modulus, shear_modulus, step, npoints, nsegments;
+        all_points=all_points,
+        angle_max=angle_max,
+        force=force,
+        verbose=verbose,
+    )
+end
+
+function _bend(workspace, type, width_bend, height_bend, init_torsion, x, y, z, mass_rachis, mass_leaflets_right, mass_leaflets_left,
+    distance_application, elastic_modulus, shear_modulus, step, npoints, nsegments;
+    all_points=false,
+    angle_max=deg2rad(21u"°"),
+    force=true,
+    verbose=true
+)
 
     @assert length(type) == length(width_bend) == length(height_bend) == length(init_torsion) == length(x) == length(y) == length(z) == length(mass_rachis) == length(mass_leaflets_right) == length(mass_leaflets_left) == length(distance_application) "All arguments should have the same length."
 
+    points = [GeometryBasics.Point{3,typeof(x[i])}(x[i], y[i], z[i]) for i in eachindex(x)]
+    return _bend_points(
+        workspace,
+        type, width_bend, height_bend, init_torsion, points,
+        mass_rachis, mass_leaflets_right, mass_leaflets_left,
+        distance_application, elastic_modulus, shear_modulus, step, npoints, nsegments;
+        all_points=all_points,
+        angle_max=angle_max,
+        force=force,
+        verbose=verbose,
+    )
+end
+
+function _bend_points(workspace, type, width_bend, height_bend, init_torsion, points::AbstractVector{<:GeometryBasics.Point{3}}, mass_rachis, mass_leaflets_right, mass_leaflets_left,
+    distance_application, elastic_modulus, shear_modulus, step, npoints, nsegments;
+    all_points=false,
+    angle_max=deg2rad(21u"°"),
+    force=true,
+    verbose=true
+)
+
+    @assert length(type) == length(width_bend) == length(height_bend) == length(init_torsion) == length(points) == length(mass_rachis) == length(mass_leaflets_right) == length(mass_leaflets_left) == length(distance_application) "All arguments should have the same length."
+
     # Number of experimental points
-    npoints_exp = length(x)  # Assuming x, y, z have the same length
+    npoints_exp = length(points)
 
     if length(elastic_modulus) != npoints_exp
         if length(elastic_modulus) == 1
@@ -86,8 +264,6 @@ function bend(type, width_bend, height_bend, init_torsion, x, y, z, mass_rachis,
     elastic_modulus = [@check_unit e u"MPa" for e in elastic_modulus]
     shear_modulus = [@check_unit s u"MPa" for s in shear_modulus]
 
-    # use coordinates x,y,z to make points:
-    points = [Meshes.Point(x[i], y[i], z[i]) for i in eachindex(x)]
     gravity = 9.8u"m/s^2"
 
     # Distances and angles of each segment P2P1
@@ -137,63 +313,159 @@ function bend(type, width_bend, height_bend, init_torsion, x, y, z, mass_rachis,
 
     som_cum_vec_agl_tor = copy(vec_agl_tor)  # geometric rotation and section
 
-    for iter_poids in 1:nsegments
-        # Inertias and surfaces of the experimental points
-        v_ig_flex = fill(0.0u"m^4", npoints_exp)
-        v_ig_tor = fill(0.0u"m^4", npoints_exp)
-        v_sr = fill(0.0u"m^2", npoints_exp)
+    # Section dimensions and raster membership do not change during the
+    # iterative deformation. Compute their unrotated moments once; only the
+    # bending moment changes when the section orientation changes.
+    section_moments = [
+        _section_grid_moments(width_bend[iter], height_bend[iter], type[iter], npoints)
+        for iter in 1:npoints_exp
+    ]
+    v_ig_flex = fill(0.0u"m^4", npoints_exp)
+    v_ig_tor = [moments.ig_tor for moments in section_moments]
+    vec_inertie_tor = linear_interpolation(dist_lineique, [v_ig_tor[1]; v_ig_tor])(vec_dist)
+    point_type = GeometryBasics.Point{3,typeof(step)}
+    zero_point = point_type(zero(step), zero(step), zero(step))
+    neo_points = Vector{point_type}(undef, nlin)
+    conserved_segment_lengths = [zero(step); fill(step, nlin - 1)]
+    iteration_workspace = workspace === nothing ? nothing :
+                          _resize_bend_iteration_workspace!(workspace.bend_iteration, npoints_exp, nlin)
 
+    for iter_poids in 1:nsegments
+        # Bending inertias of the experimental points after section rotation.
         for iter in 1:npoints_exp
             ag_rad = som_cum_vec_agl_tor[i_discret_pts_exp[iter]]  # orientation section (radians)
-            inertia_flex_rot = inertia_flex_rota(width_bend[iter], height_bend[iter], ag_rad, type[iter], npoints)
-            v_ig_flex[iter] = inertia_flex_rot.ig_flex
-            v_ig_tor[iter] = inertia_flex_rot.ig_tor
-            v_sr[iter] = inertia_flex_rot.sr
+            v_ig_flex[iter] = _rotate_section_moments(section_moments[iter], ag_rad).ig_flex
         end
 
         # Linear interpolation of inertias
-        vec_inertie_flex = linear_interpolation(dist_lineique, [v_ig_flex[1]; v_ig_flex])(vec_dist) # Should be in m⁴
-        vec_inertie_tor = linear_interpolation(dist_lineique, [v_ig_tor[1]; v_ig_tor])(vec_dist)
+        if iteration_workspace === nothing
+            vec_inertie_flex = linear_interpolation(
+                dist_lineique,
+                [v_ig_flex[1]; v_ig_flex],
+            )(vec_dist) # Should be in m⁴
+        else
+            vec_inertie_flex = _linear_interpolation_into!(
+                iteration_workspace.vec_inertie_flex,
+                dist_lineique,
+                [v_ig_flex[1]; v_ig_flex],
+                vec_dist,
+            )
+        end
 
         # Write angles from the new coordinates
         # Distance and angles of each segment P2P1
-        vec_dist_p2p1, vec_angle_xy, vec_angle_xz = xyz_to_dist_and_angles(vec_points)
+        _xyz_to_dist_and_angles!(vec_dist_p2p1, vec_angle_xy, vec_angle_xz, vec_points)
 
         vec_dist_p2p1[1] = zero(eltype(vec_dist_p2p1))
         vec_angle_xy[1] = vec_angle_xy[2]
         vec_angle_xz[1] = vec_angle_xz[2]
 
         # Flexion: linear bending forces and linear interpolation
-        v_force = v_poids_flexion .* cos.(vec_angle_xy[i_discret_pts_exp]) .* gravity # Should be in N*m, or kg·m²·s⁻²
+        if iteration_workspace === nothing
+            v_force = v_poids_flexion .* cos.(vec_angle_xy[i_discret_pts_exp]) .* gravity
+        else
+            v_force = iteration_workspace.v_force
+            for iter in 1:npoints_exp
+                v_force[iter] = v_poids_flexion[iter] * cos(vec_angle_xy[i_discret_pts_exp[iter]]) * gravity
+            end
+        end
 
-        vec_force = linear_interpolation(dist_lineique, [v_force[1]; v_force])(vec_dist)
+        if iteration_workspace === nothing
+            vec_force = linear_interpolation(
+                dist_lineique,
+                [v_force[1]; v_force],
+            )(vec_dist)
+        else
+            vec_force = _linear_interpolation_into!(
+                iteration_workspace.vec_force,
+                dist_lineique,
+                [v_force[1]; v_force],
+                vec_dist,
+            )
+        end
 
         # Shear forces and bending moments
-        vec_shear = cumsum(vec_force[nlin:-1:1] .* step)
-        vec_shear = vec_shear[nlin:-1:1]
+        if iteration_workspace === nothing
+            vec_shear = cumsum(vec_force[nlin:-1:1] .* step)
+            vec_shear = vec_shear[nlin:-1:1]
 
-        vec_moment = -cumsum(vec_shear[nlin:-1:1] .* step)
-        vec_moment = vec_moment[nlin:-1:1]
+            vec_moment = -cumsum(vec_shear[nlin:-1:1] .* step)
+            vec_moment = vec_moment[nlin:-1:1]
 
-        # Classic calculation of the deflection (distance delta)
-        fct = vec_moment ./ (vec_moe .* vec_inertie_flex)
+            # Classic calculation of the deflection (distance delta)
+            fct = vec_moment ./ (vec_moe .* vec_inertie_flex)
 
-        vec_angle_flexion = cumsum(fct[nlin:-1:1] .* step)
-        vec_angle_flexion = vec_angle_flexion[nlin:-1:1]
+            vec_angle_flexion = cumsum(fct[nlin:-1:1] .* step)
+            vec_angle_flexion = vec_angle_flexion[nlin:-1:1]
+        else
+            shear_input = iteration_workspace.shear_input
+            shear_cumulative = iteration_workspace.shear_cumulative
+            vec_shear = iteration_workspace.vec_shear
+            for iter in 1:nlin
+                shear_input[iter] = vec_force[nlin - iter + 1] * step
+            end
+            cumsum!(shear_cumulative, shear_input)
+            for iter in 1:nlin
+                vec_shear[iter] = shear_cumulative[nlin - iter + 1]
+            end
+
+            moment_input = iteration_workspace.moment_input
+            moment_cumulative = iteration_workspace.moment_cumulative
+            vec_moment = iteration_workspace.vec_moment
+            for iter in 1:nlin
+                moment_input[iter] = vec_shear[nlin - iter + 1] * step
+            end
+            cumsum!(moment_cumulative, moment_input)
+            for iter in 1:nlin
+                vec_moment[iter] = -moment_cumulative[nlin - iter + 1]
+            end
+
+            fct = iteration_workspace.fct
+            for iter in 1:nlin
+                fct[iter] = vec_moment[iter] / (vec_moe[iter] * vec_inertie_flex[iter])
+            end
+
+            flexion_input = iteration_workspace.flexion_input
+            flexion_cumulative = iteration_workspace.flexion_cumulative
+            vec_angle_flexion = iteration_workspace.vec_angle_flexion
+            for iter in 1:nlin
+                flexion_input[iter] = fct[nlin - iter + 1] * step
+            end
+            cumsum!(flexion_cumulative, flexion_input)
+            for iter in 1:nlin
+                vec_angle_flexion[iter] = flexion_cumulative[nlin - iter + 1]
+            end
+        end
 
         # Embedded condition (derivative 1 = 0)
-        vec_angle_flexion = vec_angle_flexion[1] .- vec_angle_flexion
+        if iteration_workspace === nothing
+            vec_angle_flexion = vec_angle_flexion[1] .- vec_angle_flexion
+        else
+            embedded_angle = vec_angle_flexion[1]
+            for iter in 1:nlin
+                vec_angle_flexion[iter] = embedded_angle - vec_angle_flexion[iter]
+            end
+        end
 
         # Test of the small displacement hypothesis
-        if verbose && maximum(abs.(vec_angle_flexion)) > angle_max
-            @warn string("Maximum bending angle: ", rad2deg(maximum(abs.(vec_angle_flexion))), "°. Hypothesis of small displacements not verified for bending.")
-            force && (vec_angle_flexion[abs.(vec_angle_flexion).>angle_max] .= angle_max)
+        maximum_flexion = maximum(abs, vec_angle_flexion)
+        if maximum_flexion > angle_max
+            if verbose
+                @warn string("Maximum bending angle: ", rad2deg(maximum_flexion), "°. Hypothesis of small displacements not verified for bending.")
+            end
+            if force
+                for i in eachindex(vec_angle_flexion)
+                    vec_angle_flexion[i] = clamp(vec_angle_flexion[i], -angle_max, angle_max)
+                end
+            end
         end
 
         # Torsion
         zero_force = 0.0u"N"
         zero_torque = 0.0u"N*m"
-        v_m_tor = fill(zero_torque, npoints_exp) # should be in kg·m²·s⁻² == N·m
+        v_m_tor = iteration_workspace === nothing ?
+                  fill(zero_torque, npoints_exp) :
+                  iteration_workspace.v_m_tor # should be in kg·m²·s⁻² == N·m
 
         for iter in 1:npoints_exp
             # Calculate forces with explicit units
@@ -224,15 +496,44 @@ function bend(type, width_bend, height_bend, init_torsion, x, y, z, mass_rachis,
             v_m_tor[iter] = md + mg
         end
 
-        vec_m_tor = linear_interpolation(dist_lineique, [v_m_tor[1]; v_m_tor])(vec_dist)
+        if iteration_workspace === nothing
+            vec_m_tor = linear_interpolation(
+                dist_lineique,
+                [v_m_tor[1]; v_m_tor],
+            )(vec_dist)
+        else
+            vec_m_tor = _linear_interpolation_into!(
+                iteration_workspace.vec_m_tor,
+                dist_lineique,
+                [v_m_tor[1]; v_m_tor],
+                vec_dist,
+            )
+        end
 
-        vec_deriv_agl_tor = vec_m_tor ./ (vec_g .* vec_inertie_tor)
+        if iteration_workspace === nothing
+            vec_deriv_agl_tor = vec_m_tor ./ (vec_g .* vec_inertie_tor)
+            vec_angle_torsion = cumsum(vec_deriv_agl_tor .* step)
+        else
+            vec_deriv_agl_tor = iteration_workspace.vec_deriv_agl_tor
+            torsion_input = iteration_workspace.torsion_input
+            vec_angle_torsion = iteration_workspace.vec_angle_torsion
+            for iter in 1:nlin
+                vec_deriv_agl_tor[iter] = vec_m_tor[iter] / (vec_g[iter] * vec_inertie_tor[iter])
+                torsion_input[iter] = vec_deriv_agl_tor[iter] * step
+            end
+            cumsum!(vec_angle_torsion, torsion_input)
+        end
 
-        vec_angle_torsion = cumsum(vec_deriv_agl_tor .* step)  # integration along the stem
-
-        if verbose && maximum(abs.(vec_angle_torsion)) > angle_max
-            @warn string("Maximum torsion angle: ", rad2deg(maximum(abs.(vec_angle_torsion))), "°. Hypothesis of small displacements not verified for torsion.")
-            force && (vec_angle_torsion[abs.(vec_angle_torsion).>angle_max] .= angle_max)
+        maximum_torsion = maximum(abs, vec_angle_torsion)
+        if maximum_torsion > angle_max
+            if verbose
+                @warn string("Maximum torsion angle: ", rad2deg(maximum_torsion), "°. Hypothesis of small displacements not verified for torsion.")
+            end
+            if force
+                for i in eachindex(vec_angle_torsion)
+                    vec_angle_torsion[i] = clamp(vec_angle_torsion[i], -angle_max, angle_max)
+                end
+            end
         end
 
         som_cum_vec_agl_tor .+= vec_angle_torsion  # cumulative by weight increment
@@ -242,13 +543,11 @@ function bend(type, width_bend, height_bend, init_torsion, x, y, z, mass_rachis,
         end
 
         # New coordinates of the points
-        neo_points = fill(Meshes.Point(0.0u"m", 0.0u"m", 0.0u"m"), nlin)
-
         for iter in 1:nlin
             # Origin P1
             p2 = vec_points[iter]
             if iter == 1
-                p1 = Meshes.Point(0.0u"m", 0.0u"m", 0.0u"m")
+                p1 = zero_point
             else
                 p1 = vec_points[iter-1]
             end
@@ -257,38 +556,38 @@ function bend(type, width_bend, height_bend, init_torsion, x, y, z, mass_rachis,
 
             # Change of basis
             # Segment becomes collinear to the OX axis
-            p2_rot = Meshes.Rotate(RotYZ(vec_angle_xy[iter], -vec_angle_xz[iter]))(p2p1_vec)
+            p2_rot = RotYZ(vec_angle_xy[iter], -vec_angle_xz[iter]) * p2p1_vec
 
             # Flexion equivalent to a rotation around OY
             # Rotation around OY: The rotation is wrong for strong angles
-            flex_point = Meshes.Point(p2_rot[1], p2_rot[2], step * vec_angle_flexion[iter])
+            flex_point = GeometryBasics.Vec{3,typeof(step)}(p2_rot[1], p2_rot[2], step * vec_angle_flexion[iter])
             # Torsion
             # Equivalent to a rotation around OX, initially the section is rotated but without torsion
             agl_tor_geom = som_cum_vec_agl_tor[iter] - vec_agl_tor[iter]
-            # point_rot = Meshes.Rotate(RotXYZ(agl_tor_geom, -vec_angle_xy[iter], -vec_angle_xz[iter]))(flex_point)
-            point_rot = Meshes.Rotate(Rotations.RotZYX(vec_angle_xz[iter], -vec_angle_xy[iter], agl_tor_geom))(flex_point)
-            # point_rot = Meshes.Rotate(Rotations.RotZY(vec_angle_xz[iter], agl_tor_geom))(flex_point)
+            # point_rot = RotXYZ(agl_tor_geom, -vec_angle_xy[iter], -vec_angle_xz[iter]) * flex_point
+            point_rot = Rotations.RotZYX(vec_angle_xz[iter], -vec_angle_xy[iter], agl_tor_geom) * flex_point
+            # point_rot = Rotations.RotZY(vec_angle_xz[iter], agl_tor_geom) * flex_point
 
             # Re-writing the points:
             if iter == 1
-                neo_points[iter] = point_rot
+                neo_points[iter] = point_type(point_rot[1], point_rot[2], point_rot[3])
             else
-                neo_points[iter] = neo_points[iter-1] + Meshes.to(point_rot)
+                neo_points[iter] = neo_points[iter-1] + point_rot
             end
         end
 
         # Conservation of distances
-        XYZangles = xyz_to_dist_and_angles(neo_points)
-        vec_points .= dist_and_angles_to_xyz([zero(step); fill(step, nlin - 1)], XYZangles.vangle_xy, XYZangles.vangle_xz) # Assuming this function is defined elsewhere
+        _xyz_to_dist_and_angles!(vec_dist_p2p1, vec_angle_xy, vec_angle_xz, neo_points)
+        _dist_and_angles_to_xyz!(vec_points, conserved_segment_lengths, vec_angle_xy, vec_angle_xz)
 
         # Calculation of the distances of the experimental points
         # Between before and after deformation
         for i in 1:npoints_exp
-            vec_p = Meshes.coords(vec_points[i_discret_pts_exp[i]])
-            p = Meshes.coords(points[i])
-            c1 = (p.x - vec_p.x)^2
-            c2 = (p.y - vec_p.y)^2
-            c3 = (p.z - vec_p.z)^2
+            vec_p = vec_points[i_discret_pts_exp[i]]
+            p = points[i]
+            c1 = (p[1] - vec_p[1])^2
+            c2 = (p[2] - vec_p[2])^2
+            c3 = (p[3] - vec_p[3])^2
 
             mat_dist_pts_exp[iter_poids, i] = sqrt(c1 + c2 + c3)
         end

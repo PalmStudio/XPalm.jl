@@ -1,16 +1,46 @@
 
 
-function leaf(unique_mtg_id, index, rank, rachis_fresh_biomass, rachis_final_length, leaf_node=Node(NodeMTG("+", "Leaf", index, 4)), parameters=default_parameters(); rng)
+function leaf(
+    unique_mtg_id,
+    index,
+    rank,
+    rachis_fresh_biomass,
+    rachis_final_length,
+    leaf_node=Node(NodeMTG(:+, :Leaf, index, 4)),
+    parameters=default_parameters();
+    leaflet_allometry_rachis_length=nothing,
+    rng,
+)
     leaf_node.rank = rank
 
     compute_properties_leaf!(leaf_node, leaf_node.rank, rachis_final_length, parameters, rng)
 
-    petiole_node = petiole(unique_mtg_id, index, 5, leaf_node.rachis_length, leaf_node.zenithal_insertion_angle, leaf_node.zenithal_cpoint_angle, parameters; rng=rng)
-    addchild!(leaf_node, petiole_node)
+    petiole_node = petiole(unique_mtg_id, leaf_node, index, 5, leaf_node.rachis_length, leaf_node.zenithal_insertion_angle, leaf_node.zenithal_cpoint_angle, parameters; rng=rng)
 
-    rachis_node = rachis(unique_mtg_id, index, 5, leaf_node.rank, leaf_node.rachis_length, petiole_node.height_cpoint, petiole_node.width_cpoint, leaf_node.zenithal_cpoint_angle, rachis_fresh_biomass, parameters; rng=rng)
-    addchild!(petiole_node, rachis_node)
+    rachis_node = rachis(unique_mtg_id, petiole_node, index, 5, leaf_node.rank, leaf_node.rachis_length, petiole_node.height_cpoint, petiole_node.width_cpoint, leaf_node.zenithal_cpoint_angle, rachis_fresh_biomass, parameters; rng=rng)
 
-    # Add the leaflets to the rachis:
-    leaflets!(unique_mtg_id, rachis_node, 5, leaf_node.rank, leaf_node.rachis_length, parameters; rng=rng)
+    # Standalone VPalm keeps its historical current-length allometry unless the
+    # caller explicitly supplies the future rachis length. XPalm uses that
+    # opt-in path so a newly visible spear receives its final leaflet topology
+    # and dimensions immediately.
+    leaflet_allometry_length = if isnothing(leaflet_allometry_rachis_length)
+        leaf_node.rachis_length
+    else
+        leaflet_allometry_rachis_length
+    end
+    leaflets!(
+        unique_mtg_id,
+        rachis_node,
+        5,
+        leaf_node.rank,
+        leaf_node.rachis_length,
+        parameters;
+        rachis_final_length=leaflet_allometry_length,
+        rng=rng,
+    )
+
+    # Keep the deployment state on every VPalm leaf, including standalone
+    # mockups. GeometryModel uses the same attribute to skip later mature
+    # traversals without missing a coarse transition to rank 3 or above.
+    leaf_node.leaflets_fully_unfolded = leaf_node.rank >= 2
 end

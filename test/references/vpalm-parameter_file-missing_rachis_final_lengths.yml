@@ -151,7 +151,8 @@ nbInflorescences: 0
 leaf_base_width: 0.3 # Width of the leaf base (m)
 cpoint_width_intercept: 0.00978257818097089 # Rachis width at the c-point intercept for linear interpolation (m)
 cpoint_width_slope: 0.0119703143572554 # Rachis width at the c-point slope for linear interpolation
-rachis_width_tip: 0.03 # Width at the tip of the rachis (m)
+# SMSE terminal-section measurements are 3 mm wide.
+rachis_width_tip: 0.003 # Width at the tip of the rachis (m)
 leaf_base_height: 0.1 # Height of the leaf base (m)
 cpoint_height_width_ratio: 0.567956652697377 # Height to width ratio at the C point
 height_rachis_tappering: -0.934263209088339 # tappering factor for the rachis height

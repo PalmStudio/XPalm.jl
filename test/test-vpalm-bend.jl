@@ -11,16 +11,112 @@ shear_modulus = 400.0u"MPa"
 
 atol_length = 1e-3u"m" # mm tolerance
 
+function _run_bend_fixture(df, elastic_modulus, shear_modulus, step, npoints, nsegments; all_points=false)
+    return VPalm.bend(
+        df.type, df.width * u"m", df.height * u"m", df.torsion * u"°",
+        df.x * u"m", df.y * u"m", df.z * u"m", df.mass * u"kg",
+        df.mass_right * u"kg", df.mass_left * u"kg", df.distance_application * u"m",
+        elastic_modulus, shear_modulus, step, npoints, nsegments;
+        verbose=false,
+        all_points=all_points,
+    )
+end
+
+function _bend_fixture_points(df)
+    point_type = GeometryBasics.Point{3,typeof(1.0u"m")}
+    return [
+        point_type(row.x * u"m", row.y * u"m", row.z * u"m")
+        for row in eachrow(df)
+    ]
+end
+
+function _run_bend_points_fixture(df, elastic_modulus, shear_modulus, step, npoints, nsegments; all_points=false)
+    points = _bend_fixture_points(df)
+    return VPalm.bend(
+        df.type, df.width * u"m", df.height * u"m", df.torsion * u"°",
+        points, df.mass * u"kg", df.mass_right * u"kg", df.mass_left * u"kg",
+        df.distance_application * u"m", elastic_modulus, shear_modulus,
+        step, npoints, nsegments;
+        verbose=false,
+        all_points=all_points,
+    )
+end
+
+function _warmed_bend_allocations(df, elastic_modulus, shear_modulus, step, npoints, nsegments)
+    _run_bend_fixture(df, elastic_modulus, shear_modulus, step, npoints, nsegments)
+    return @allocated _run_bend_fixture(df, elastic_modulus, shear_modulus, step, npoints, nsegments)
+end
+
+function _run_forced_angle_limit_fixture(; verbose)
+    npoints_exp = 5
+    initial_torsion = -0.1u"°"
+    return VPalm.bend(
+        fill(5, npoints_exp),
+        fill(0.02u"m", npoints_exp),
+        fill(0.02u"m", npoints_exp),
+        fill(initial_torsion, npoints_exp),
+        collect(range(0.2u"m", 1.0u"m"; length=npoints_exp)),
+        fill(0.0u"m", npoints_exp),
+        fill(0.0u"m", npoints_exp),
+        fill(20.0u"kg", npoints_exp),
+        fill(20.0u"kg", npoints_exp),
+        fill(0.0u"kg", npoints_exp),
+        fill(0.1u"m", npoints_exp),
+        0.01u"MPa",
+        0.01u"MPa",
+        0.05u"m",
+        20,
+        1;
+        all_points=true,
+        angle_max=deg2rad(0.5u"°"),
+        force=true,
+        verbose=verbose,
+    )
+end
+
 ref = CSV.read(joinpath(@__DIR__, "references/6_EW01.22_17_kanan_unbent_bend.csv"), DataFrame)
 @testset "bend works" begin
     # Dummy input data for bend function
     # Test the input data
     @test length(df.type) == length(df.width) == length(df.height) == length(df.torsion) == length(df.x) == length(df.y) == length(df.z) == length(df.mass) == length(df.mass_right) == length(df.mass_left) == length(df.distance_application)
     # Call the function
-    out = VPalm.bend(
-        df.type, df.width * u"m", df.height * u"m", df.torsion * u"°", df.x * u"m", df.y * u"m", df.z * u"m", df.mass * u"kg", df.mass_right * u"kg", df.mass_left * u"kg",
-        df.distance_application * u"m", elastic_modulus, shear_modulus, pas, Ncalc, Nboucle;
-        verbose=false
+    out = _run_bend_fixture(df, elastic_modulus, shear_modulus, pas, Ncalc, Nboucle)
+    out_from_points = _run_bend_points_fixture(
+        df,
+        elastic_modulus,
+        shear_modulus,
+        pas,
+        Ncalc,
+        Nboucle,
+    )
+    @test out_from_points == out
+
+    all_coordinates = _run_bend_fixture(
+        df,
+        elastic_modulus,
+        shear_modulus,
+        pas,
+        Ncalc,
+        Nboucle;
+        all_points=true,
+    )
+    all_from_points = _run_bend_points_fixture(
+        df,
+        elastic_modulus,
+        shear_modulus,
+        pas,
+        Ncalc,
+        Nboucle;
+        all_points=true,
+    )
+    @test all_from_points == all_coordinates
+
+    @test_throws AssertionError VPalm.bend(
+        df.type, df.width * u"m", df.height * u"m", df.torsion * u"°",
+        df.x[1:end-1] * u"m", df.y * u"m", df.z * u"m", df.mass * u"kg",
+        df.mass_right * u"kg", df.mass_left * u"kg", df.distance_application * u"m",
+        elastic_modulus, shear_modulus, pas, Ncalc, Nboucle;
+        verbose=false,
     )
 
     # Test length of elastic_modulus and shear_modulus
@@ -36,15 +132,31 @@ ref = CSV.read(joinpath(@__DIR__, "references/6_EW01.22_17_kanan_unbent_bend.csv
     )
 
     # CSV.write(joinpath(@__DIR__, "references/6_EW01.22_17_kanan_unbent_bend.csv"), DataFrame(out))
-    ref_points = [Meshes.Point(row.x, row.y, row.z) for row in eachrow(ref)]
+    ref_points = [GeometryBasics.Point{3,typeof(1.0u"m")}(row.x * u"m", row.y * u"m", row.z * u"m") for row in eachrow(ref)]
     for (ref_p, p) in zip(ref_points, out.points)
         @test isapprox(ref_p, p, atol=atol_length)
     end
-    @test only(unique(unit.(out.length))) == u"m"
     @test ref.length * u"m" ≈ out.length atol = atol_length
     @test [ref.angle_xy[2]; ref.angle_xy[2:end]] * u"°" ≈ out.angle_xy atol = 1e-2
     @test [ref.angle_xz[2]; ref.angle_xz[2:end]] * u"°" ≈ out.angle_xz atol = 1e-2
     @test [ref.torsion[2]; ref.torsion[2:end]] * u"°" ≈ out.torsion atol = 1e-2
+    # Function-scoped warmup keeps this gate stable across Julia versions.
+    @test _warmed_bend_allocations(df, elastic_modulus, shear_modulus, pas, Ncalc, Nboucle) <= 900_000
+end
+
+@testset "forced bend angle limit is signed and independent of verbosity" begin
+    quiet = _run_forced_angle_limit_fixture(verbose=false)
+    loud = _run_forced_angle_limit_fixture(verbose=true)
+    angle_limit = 0.5u"°"
+    angle_tolerance = 1.0e-10u"°"
+    initial_torsion = -0.1u"°"
+    torsion_increment = loud.torsion .- initial_torsion
+
+    @test quiet == loud
+    @test maximum(abs, quiet.angle_xy) <= angle_limit + angle_tolerance
+    @test minimum(quiet.angle_xy) < 0.0u"°"
+    @test maximum(abs, torsion_increment) <= angle_limit + angle_tolerance
+    @test minimum(torsion_increment) < 0.0u"°"
 end
 
 @testset "unbend" begin
@@ -55,7 +167,7 @@ end
     )
 
     ref_points_data = CSV.read(joinpath(@__DIR__, "references/6_EW01.22_17_kanan_unbent.csv"), DataFrame)
-    ref_points = [Meshes.Point(row.x, row.y, row.z) for row in eachrow(ref_points_data)]
+    ref_points = [GeometryBasics.Point{3,typeof(1.0u"m")}(row.x * u"m", row.y * u"m", row.z * u"m") for row in eachrow(ref_points_data)]
 
     @test length(ref_points) == length(unbent_points)
     @test all(isapprox(ref, unbent, atol=atol_length) for (ref, unbent) in zip(ref_points, unbent_points))

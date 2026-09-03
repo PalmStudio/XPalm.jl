@@ -7,15 +7,17 @@ Compute male biomass  from daily carbon allocation
 
 # Arguments
 
-- `respiration_cost`: respiration cost  (g g-1)
+- `respiration_cost`: construction cost
+  (g CH2O-equivalent allocated gDM⁻¹ produced)
 
 # inputs
-- `carbon_allocation`: carbon allocated to female inflo
+- `carbon_allocation`: assimilate allocated to the male inflorescence
+  (g CH2O-equivalent)
 - `state`: state of the inflorescence 
 
 # outputs
-- `biomass`: inflo biomass
-- `litter_male`: biomass of senescent inflorescent that goes to the litter 
+- `biomass`: male-inflorescence dry mass (gDM)
+- `litter_male`: senescent male-inflorescence dry mass transferred to litter (gDM)
 """
 struct MaleBiomass{T} <: AbstractBiomassModel
     respiration_cost::T
@@ -23,18 +25,26 @@ end
 
 MaleBiomass(; respiration_cost=1.44) = MaleBiomass(respiration_cost)
 
-PlantSimEngine.inputs_(::MaleBiomass) = (carbon_allocation=-Inf, state="undetermined")
+PlantSimEngine.inputs_(::MaleBiomass) = (
+    carbon_allocation=PlantSimEngine.Default(0.0),
+    state=PlantSimEngine.Required(Symbol),
+)
 PlantSimEngine.outputs_(::MaleBiomass) = (biomass=0.0, litter_male=0.0,)
+PlantSimEngine.variable_contracts_(::MaleBiomass) = (
+    carbon_allocation=_DAILY_CH2O_EQUIVALENT_FLOW,
+    biomass=_STRUCTURAL_DRY_MASS,
+    litter_male=_STRUCTURAL_DRY_MASS,
+)
 
 # Applied at the male inflorescence scale:
-function PlantSimEngine.run!(m::MaleBiomass, models, st, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::MaleBiomass, st, environment, constants, context=nothing)
 
-    if st.state == "Aborted"
+    if st.state == :aborted
         st.biomass = 0.0
         return # if it is aborted, no biomass, because it is done before flowering
     end
 
-    if st.state == "Harvested" || st.state == "Senescent"
+    if st.state == :harvested || st.state == :senescent
         st.litter_male = copy(st.biomass)
         st.biomass = 0.0
         return # if it is aborted, no biomass

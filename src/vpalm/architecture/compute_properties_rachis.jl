@@ -1,3 +1,89 @@
+const _RACHIS_SECTION_TYPES = (1, 2, 3, 4, 5)
+const _RACHIS_REMARKABLE_POINT_POSITIONS = (
+    0.0000001,
+    0.336231351023383,
+    0.672462702046766,
+    0.836231351023383,
+    1.0,
+)
+const _RACHIS_SEGMENT_MIDPOINTS = (
+    0.1681157,
+    0.504347,
+    0.672462702046766,
+    0.754347,
+    0.9181157,
+)
+const _RACHIS_SEGMENT_MASS_DISTRIBUTION = (
+    0.0,
+    0.648524097435024,
+    0.277401814695433,
+    0.0601164171693578,
+    0.0139576707001849,
+)
+const _RACHIS_LEAFLET_MASS_DISTRIBUTION = (
+    0.0,
+    0.0658151279405379,
+    0.201957451540734,
+    0.105263443497354,
+    0.0475385258600695,
+)
+const _RACHIS_HEIGHT_TO_WIDTH_RATIO_C = 0.5220
+
+function _biomechanical_cpoint_width(
+    rachis_length,
+    height_cpoint,
+    width_cpoint,
+    parameters,
+)
+    juvenile_max_key =
+        "cpoint_dimensions_juvenile_max_rachis_length"
+    adult_min_key = "cpoint_dimensions_adult_min_rachis_length"
+    haskey(parameters, juvenile_max_key) || return nothing
+    haskey(parameters, adult_min_key) || return nothing
+
+    juvenile_max = parameters[juvenile_max_key]
+    adult_min = parameters[adult_min_key]
+    rachis_length <= juvenile_max && return width_cpoint
+    rachis_length >= adult_min && return nothing
+
+    transition = (rachis_length - juvenile_max) / (adult_min - juvenile_max)
+    smoothstep = transition^2 * (3.0 - 2.0 * transition)
+    historical_width = height_cpoint / _RACHIS_HEIGHT_TO_WIDTH_RATIO_C
+    return (1.0 - smoothstep) * width_cpoint +
+           smoothstep * historical_width
+end
+
+function _biomechanical_rachis_width(
+    relative_position,
+    height_cpoint,
+    height_rachis_tappering,
+    width_cpoint,
+    ratio_point_c,
+    ratio_point_a,
+    position_ratio_max,
+    ratio_max,
+)
+    height = rachis_height(
+        relative_position,
+        height_cpoint,
+        height_rachis_tappering,
+    )
+    local_ratio = height_to_width_ratio(
+        relative_position,
+        ratio_point_c,
+        ratio_point_a,
+        position_ratio_max,
+        ratio_max,
+    )
+    isnothing(width_cpoint) && return height / local_ratio
+
+    # Use the analytical, dimensionless height profile instead of dividing by
+    # height_cpoint. This is equivalent for positive dimensions and remains
+    # well-defined for a zero-width/zero-height boundary case.
+    height_profile = 1.0 + height_rachis_tappering * relative_position^3
+    return width_cpoint * height_profile * ratio_point_c / local_ratio
+end
+
 """
     biomechanical_properties_rachis(
         rachis_twist_initial_angle, rachis_twist_initial_angle_sdp,
@@ -7,7 +93,7 @@
         rachis_fresh_weight, rank, height_cpoint, zenithal_cpoint_angle, nb_sections,
         height_rachis_tappering,
         points, iterations, angle_max;
-        verbose, rng
+        verbose, rng, width_cpoint
     )
 
 Use of the biomechanical model to compute the properties of the rachis.
@@ -26,8 +112,14 @@ Use of the biomechanical model to compute the properties of the rachis.
 - `relative_length_last_leaflet`: relative length of the last leaflet on the rachis (0 to 1)
 - `relative_position_leaflet_max_length`: relative position of the longest leaflet on the rachis (0.111 to 0.999)
 - `rachis_fresh_weight`: fresh weight of the rachis (kg)
+- `leaflet_fresh_weight`: optional total fresh weight of all leaflets (kg).
+  When omitted, standalone VPalm keeps its historical fixed leaflet-to-rachis
+  load ratio.
 - `rank`: rank of the rachis
 - `height_cpoint`: height of the C point (m)
+- `width_cpoint`: optional measured or allometric width of the C point (m).
+  When supplied, the biomechanical width profile is normalized to this value;
+  when omitted, the historical height-derived width profile is retained.
 - `zenithal_cpoint_angle`: zenithal angle of the C point (°)
 - `nb_sections`: number of sections to compute the bending
 - `height_rachis_tappering`: tappering factor for the rachis height
@@ -61,7 +153,13 @@ function biomechanical_properties_rachis(
     relative_position_bpoint_sd, relative_length_first_leaflet, relative_length_last_leaflet, relative_position_leaflet_max_length,
     rachis_fresh_weight, rank, height_cpoint, zenithal_cpoint_angle, nb_sections,
     height_rachis_tappering, npoints_computed, iterations, angle_max;
-    verbose, rng
+    verbose,
+    rng,
+    workspace=nothing,
+    leaflet_fresh_weight=nothing,
+    width_cpoint=nothing,
+    leaflet_length_juvenile_transition=nothing,
+    leaflet_length_juvenile_exponent=nothing,
 )
 
     rachis_twist_initial_angle = @check_unit rachis_twist_initial_angle u"°" verbose
@@ -71,12 +169,21 @@ function biomechanical_properties_rachis(
     rachis_length = @check_unit rachis_length u"m" verbose
     leaflet_length_at_b_intercept = @check_unit leaflet_length_at_b_intercept u"m" verbose
     rachis_fresh_weight = @check_unit rachis_fresh_weight u"kg" verbose
+    if !isnothing(leaflet_fresh_weight)
+        leaflet_fresh_weight = @check_unit leaflet_fresh_weight u"kg" verbose
+    end
+    if !isnothing(width_cpoint)
+        width_cpoint = @check_unit width_cpoint u"m" verbose
+    end
+    if !isnothing(leaflet_length_juvenile_transition)
+        leaflet_length_juvenile_transition = @check_unit leaflet_length_juvenile_transition u"m" verbose
+    end
     height_cpoint = @check_unit height_cpoint u"m" verbose
     zenithal_cpoint_angle = @check_unit zenithal_cpoint_angle u"°" verbose
     angle_max = @check_unit angle_max u"°" verbose
 
     # Frond section types (e.g., rectangle, ellipsoid, etc.)
-    type = [1, 2, 3, 4, 5]
+    type = _RACHIS_SECTION_TYPES
     npoints = length(type)
 
     # Compute initial torsion (using prms and rnd assumed to be defined)
@@ -84,18 +191,18 @@ function biomechanical_properties_rachis(
 
     initial_torsion_vec = fill(initial_torsion_sdp, npoints)
     # Relative position of the remarkable points (C, C-B, B, B-A, A) on the rachis:
-    relative_position_remarkable_points = [0.0000001, 0.336231351023383, 0.672462702046766, 0.836231351023383, 1.0]
+    relative_position_remarkable_points = _RACHIS_REMARKABLE_POINT_POSITIONS
     # Note: we use those positions as remarkable points along the rachis, and each segment (or section) is defined by two consecutive points.
     # Each segment has a particular shape, a mass, and the leaflets on both sides of the rachis have a mass.
 
     # Relative position at the middle of each segment:
-    relative_position_mid_segment = [0.1681157, 0.504347, 0.672462702046766, 0.754347, 0.9181157]
+    relative_position_mid_segment = _RACHIS_SEGMENT_MIDPOINTS
 
     # Distribution of the mass for each segment relative to the total rachis mass:
-    mass_distribution_segment_rachis = [0.0, 0.648524097435024, 0.277401814695433, 0.0601164171693578, 0.0139576707001849]
+    mass_distribution_segment_rachis = _RACHIS_SEGMENT_MASS_DISTRIBUTION
 
     # Distribution of the mass for each leaflet relative to the total rachis mass:
-    mass_distribution_segment_leaflet = [0.0, 0.0658151279405379, 0.201957451540734, 0.105263443497354, 0.0475385258600695]
+    mass_distribution_segment_leaflet = _RACHIS_LEAFLET_MASS_DISTRIBUTION
 
     # Initialization of data computed for each of the 5 remarkable points:
     mass = fill(0.0u"kg", npoints)               # Mass of each segment represented by the points
@@ -106,11 +213,17 @@ function biomechanical_properties_rachis(
     distances = fill(0.0u"m", npoints)           # Distance between the points projected on the X axis
     distance_application = fill(0.0u"m", npoints) # Application distance for forces (if needed)
 
-    leaflet_length_at_b = leaflet_length_at_bpoint(rachis_length, leaflet_length_at_b_intercept, leaflet_length_at_b_slope)
+    leaflet_length_at_b = leaflet_length_at_bpoint(
+        rachis_length,
+        leaflet_length_at_b_intercept,
+        leaflet_length_at_b_slope;
+        juvenile_transition=leaflet_length_juvenile_transition,
+        juvenile_exponent=leaflet_length_juvenile_exponent,
+    )
     leaflet_max_length = leaflet_length_max(leaflet_length_at_b, relative_position_bpoint, relative_length_first_leaflet, relative_length_last_leaflet, relative_position_leaflet_max_length, relative_position_bpoint_sd, rng)
 
     # Parameters to compute rachis width from rachis height:
-    ratioPointC = 0.5220
+    ratioPointC = _RACHIS_HEIGHT_TO_WIDTH_RATIO_C
     ratioPointA = 1.0053
     posRatioMax = 0.6636
     ratioMax = 1.5789
@@ -118,9 +231,20 @@ function biomechanical_properties_rachis(
     for i in 1:npoints
         distances[i] = rachis_length * relative_position_remarkable_points[i]
         mass[i] = mass_distribution_segment_rachis[i] * rachis_fresh_weight
-        # we consider that the leaflets on both sides of the rachis have the same mass:
-        mass_right[i] = mass_distribution_segment_leaflet[i] * rachis_fresh_weight
-        mass_left[i] = mass_distribution_segment_leaflet[i] * rachis_fresh_weight
+        # We consider that the leaflets on both sides of the rachis have the
+        # same mass. Standalone VPalm keeps its historical load ratio; the
+        # XPalm coupling supplies the simulated total leaflet fresh mass and
+        # the same distribution is then normalized to that explicit total.
+        if isnothing(leaflet_fresh_weight)
+            mass_right[i] = mass_distribution_segment_leaflet[i] * rachis_fresh_weight
+            mass_left[i] = mass_distribution_segment_leaflet[i] * rachis_fresh_weight
+        else
+            side_total = sum(mass_distribution_segment_leaflet)
+            mass_right[i] =
+                mass_distribution_segment_leaflet[i] * leaflet_fresh_weight /
+                (2.0 * side_total)
+            mass_left[i] = mass_right[i]
+        end
 
         # leaflet length at the middle of the segment (in m):
         length_leaflets_segment = leaflet_max_length * relative_leaflet_length(
@@ -136,43 +260,55 @@ function biomechanical_properties_rachis(
             initial_torsion_vec[i] = 0.0u"°"
         end
 
-        height_bend[i] = rachis_height(relative_position_remarkable_points[i], height_cpoint, height_rachis_tappering)
-        width_bend[i] = height_bend[i] / height_to_width_ratio(relative_position_remarkable_points[i], ratioPointC, ratioPointA, posRatioMax, ratioMax)
+        relative_position = relative_position_remarkable_points[i]
+        height_bend[i] = rachis_height(
+            relative_position,
+            height_cpoint,
+            height_rachis_tappering,
+        )
+        # The first remarkable point is at 1e-7 rather than zero so the
+        # bending solver never receives the origin. The normalized width
+        # profile nevertheless starts at the exact observed C-point width.
+        width_relative_position =
+            !isnothing(width_cpoint) && i == firstindex(width_bend) ?
+            zero(relative_position) : relative_position
+        width_bend[i] = _biomechanical_rachis_width(
+            width_relative_position,
+            height_cpoint,
+            height_rachis_tappering,
+            width_cpoint,
+            ratioPointC,
+            ratioPointA,
+            posRatioMax,
+            ratioMax,
+        )
     end
 
-    # Un-bent coordinates (take the leaf as a straight line in x and z)
-    x = fill(0.0u"m", 5)
-    y = fill(0.0u"m", 5)
-    z = fill(0.0u"m", 5)
-
-    points = Vector{typeof(Meshes.Point(0.0, 0.0, 0.0))}(undef, npoints)
+    point_type = GeometryBasics.Point{3,typeof(distances[1])}
+    points = Vector{point_type}(undef, npoints)
     for n in eachindex(distances)
         # zenithal_cpoint_angle is at 0° when vertical (along the Z axis), or 90° when horizontal (along the X axis)
-        position_ref = Meshes.Point(0.0u"m", 0.0u"m", distances[n])
-        points[n] = Meshes.Rotate(RotY(deg2rad(zenithal_cpoint_angle)))(position_ref)
+        position_ref = point_type(zero(distances[n]), zero(distances[n]), distances[n])
+        rotated = RotY(deg2rad(zenithal_cpoint_angle)) * GeometryBasics.Vec{3,typeof(distances[n])}(position_ref[1], position_ref[2], position_ref[3])
+        points[n] = point_type(rotated[1], rotated[2], rotated[3])
     end
 
     step = rachis_length / (nb_sections - 1)
 
-    # extract the points coordinates to give to bend:
-    x = [Meshes.coords(p).x for p in points]
-    y = [Meshes.coords(p).y for p in points]
-    z = [Meshes.coords(p).z for p in points]
-    #! Update bend so we can pass the points directly
-
     # Call the bend function, which returns a vector of arrays:
     # bending -> { PtsX, PtsY, PtsZ, PtsDist, PtsAglXY, PtsAglXZ, PtsAglTor }
-    bending = bend(
-        type, width_bend, height_bend, initial_torsion_vec, x, y, z, mass, mass_right, mass_left,
+    bending = _bend_points(
+        workspace,
+        type, width_bend, height_bend, initial_torsion_vec, points, mass, mass_right, mass_left,
         distance_application, elastic_modulus, shear_modulus, step, npoints_computed, iterations;
         verbose=false, all_points=true, angle_max=angle_max
     )
 
     # points_bending = .-bending.angle_xy
     # points_bending[1] = -zenithal_cpoint_angle         # Initialize the first angle as the angle at C point
-    x_coordinates = [Meshes.coords(p).x for p in bending.points]
-    y_coordinates = [Meshes.coords(p).y for p in bending.points]
-    z_coordinates = [Meshes.coords(p).z for p in bending.points]
+    x_coordinates = [p[1] for p in bending.points]
+    y_coordinates = [p[2] for p in bending.points]
+    z_coordinates = [p[3] for p in bending.points]
 
     #! update this function to return the points directly
     return (

@@ -30,9 +30,9 @@ nb_internodes = parameters["nb_leaves_emitted"] + parameters["nb_internodes_befo
 nb_leaves_alive = floor(Int, mean_and_sd(parameters["nb_leaves_mean"], parameters["nb_leaves_sd"], rng))
 nb_leaves_alive = min(nb_leaves_alive, nb_internodes)
 # Plant / Scale 1
-plant = Node(NodeMTG("/", "Plant", 1, 1))
+plant = Node(NodeMTG(:/, :Plant, 1, 1))
 # Stem (& Roots) / Scale 2
-stem = Node(plant, NodeMTG("+", "Stem", 1, 2))
+stem = Node(plant, NodeMTG(:+, :Stem, 1, 2))
 compute_properties_stem!(stem, parameters, 3.0u"m"; rng=rng)
 ```
 """

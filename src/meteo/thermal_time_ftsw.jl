@@ -2,7 +2,7 @@
     DegreeDaysFTSW(TOpt1, TOpt2, TBase, TLim, threshold_ftsw_stress)
     DegreeDaysFTSW(TOpt1=25, TOpt2=30, TBase=15, TLim=40, threshold_ftsw_stress=0.3)
 
-Compute thermal time from daily meteo data, corrected by FTSW
+Compute thermal time from daily environment data, corrected by FTSW
 
 # Arguments
 
@@ -14,6 +14,10 @@ Compute thermal time from daily meteo data, corrected by FTSW
 
 # Inputs
 - `ftsw`: fraction of transpirable soil water (unitless)
+
+# Environment inputs
+
+- `Tmin`, `Tmax`: daily minimum and maximum air temperatures (degree Celsius).
 
 # Ouputs
 - `TEff`: daily efficient temperature for plant growth (degree C days) 
@@ -28,7 +32,14 @@ struct DegreeDaysFTSW{T} <: AbstractThermal_TimeModel
 end
 
 
-PlantSimEngine.inputs_(::DegreeDaysFTSW) = (ftsw=0.3,)
+PlantSimEngine.inputs_(::DegreeDaysFTSW) = (
+    ftsw=PlantSimEngine.Default(0.3),
+)
+
+PlantSimEngine.environment_inputs_(::DegreeDaysFTSW) = (
+    Tmin=0.0,
+    Tmax=0.0,
+)
 
 PlantSimEngine.outputs_(::DegreeDaysFTSW) = (
     TEff=-Inf,
@@ -46,9 +57,9 @@ function DegreeDaysFTSW(;
 end
 
 
-function PlantSimEngine.run!(m::DegreeDaysFTSW, models, st, meteo, constants, extra=nothing)
-    Tmin = meteo.Tmin
-    Tmax = meteo.Tmax
+function PlantSimEngine.run!(m::DegreeDaysFTSW, st, environment, constants, context=nothing)
+    Tmin = environment.Tmin
+    Tmax = environment.Tmax
 
     if (Tmin >= Tmax)
         if (Tmin > m.TOpt1)

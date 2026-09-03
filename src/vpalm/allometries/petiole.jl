@@ -38,6 +38,94 @@ function petiole_azimuthal_angle(; rng=Random.MersenneTwister(1))
     return normal_deviation_draw(5.0u"°", rng) #! this should be a parameter. And we should be able to remove the randomness with an option.
 end
 
+const _LEAF_BASE_JUVENILE_DIMENSION_KEYS = (
+    "leaf_base_width_juvenile",
+    "leaf_base_height_juvenile",
+    "leaf_base_dimensions_juvenile_max_emitted_leaf",
+    "leaf_base_dimensions_adult_min_emitted_leaf",
+)
+
+"""
+    leaf_base_dimensions(emitted_leaf_number, parameters::AbstractDict)
+
+Compute petiole-base dimensions for a leaf emission index. Without the optional
+juvenile parameters, return the historical constant dimensions exactly.
+
+When all juvenile parameters are present, the juvenile dimensions are kept up
+to `leaf_base_dimensions_juvenile_max_emitted_leaf`. A smoothstep interpolation
+in log space then joins them to the historical adult dimensions, which are
+reached at `leaf_base_dimensions_adult_min_emitted_leaf`.
+"""
+function leaf_base_dimensions(emitted_leaf_number, parameters::AbstractDict)
+    adult_dimensions = (
+        width_base=parameters["leaf_base_width"],
+        height_base=parameters["leaf_base_height"],
+    )
+
+    parameters_present = map(
+        key -> haskey(parameters, key),
+        _LEAF_BASE_JUVENILE_DIMENSION_KEYS,
+    )
+    any(parameters_present) || return adult_dimensions
+    all(parameters_present) || throw(
+        ArgumentError(
+            "The juvenile leaf-base dimension parameters must be provided together",
+        ),
+    )
+
+    juvenile_dimensions = (
+        width_base=parameters["leaf_base_width_juvenile"],
+        height_base=parameters["leaf_base_height_juvenile"],
+    )
+    juvenile_max_emitted_leaf =
+        parameters["leaf_base_dimensions_juvenile_max_emitted_leaf"]
+    adult_min_emitted_leaf =
+        parameters["leaf_base_dimensions_adult_min_emitted_leaf"]
+
+    juvenile_max_emitted_leaf < adult_min_emitted_leaf || throw(
+        ArgumentError(
+            "leaf_base_dimensions_juvenile_max_emitted_leaf must be lower than leaf_base_dimensions_adult_min_emitted_leaf",
+        ),
+    )
+    juvenile_max_emitted_leaf >= zero(juvenile_max_emitted_leaf) || throw(
+        ArgumentError(
+            "leaf_base_dimensions_juvenile_max_emitted_leaf must be non-negative",
+        ),
+    )
+    emitted_leaf_number >= zero(emitted_leaf_number) || throw(
+        ArgumentError("emitted_leaf_number must be non-negative"),
+    )
+
+    for (name, value) in (
+        ("leaf_base_width_juvenile", juvenile_dimensions.width_base),
+        ("leaf_base_height_juvenile", juvenile_dimensions.height_base),
+        ("leaf_base_width", adult_dimensions.width_base),
+        ("leaf_base_height", adult_dimensions.height_base),
+    )
+        value > zero(value) || throw(
+            ArgumentError("$name must be strictly positive"),
+        )
+    end
+
+    emitted_leaf_number <= juvenile_max_emitted_leaf &&
+        return juvenile_dimensions
+    emitted_leaf_number >= adult_min_emitted_leaf && return adult_dimensions
+
+    transition =
+        (emitted_leaf_number - juvenile_max_emitted_leaf) /
+        (adult_min_emitted_leaf - juvenile_max_emitted_leaf)
+    smoothstep = transition^2 * (3.0 - 2.0 * transition)
+
+    return (
+        width_base=
+            juvenile_dimensions.width_base *
+            (adult_dimensions.width_base / juvenile_dimensions.width_base)^smoothstep,
+        height_base=
+            juvenile_dimensions.height_base *
+            (adult_dimensions.height_base / juvenile_dimensions.height_base)^smoothstep,
+    )
+end
+
 """
     petiole_dimensions_at_cpoint(rachis_length, cpoint_width_intercept, cpoint_width_slope, cpoint_height_width_ratio)
 
@@ -61,6 +149,87 @@ function petiole_dimensions_at_cpoint(rachis_length, cpoint_width_intercept=0.00
     width_cpoint = width_at_cpoint(rachis_length, cpoint_width_intercept, cpoint_width_slope)
     height_cpoint = cpoint_height_width_ratio * width_cpoint
     return (width_cpoint=width_cpoint, height_cpoint=height_cpoint)
+end
+
+const _CPOINT_JUVENILE_DIMENSION_KEYS = (
+    "cpoint_width_juvenile_coefficient",
+    "cpoint_width_juvenile_exponent",
+    "cpoint_height_juvenile_coefficient",
+    "cpoint_height_juvenile_exponent",
+    "cpoint_dimensions_juvenile_max_rachis_length",
+    "cpoint_dimensions_adult_min_rachis_length",
+)
+
+"""
+    petiole_dimensions_at_cpoint(rachis_length, parameters::AbstractDict)
+
+Compute the petiole/rachis dimensions at C from a parameter dictionary. When
+the optional juvenile section allometry is absent, this delegates exactly to
+the historical linear width allometry and fixed height-to-width ratio.
+
+When all juvenile parameters are present, width and height follow independent
+power laws below the juvenile length limit. Between the juvenile and adult
+length limits, a smoothstep blend connects those laws to the historical adult
+allometry.
+"""
+function petiole_dimensions_at_cpoint(rachis_length, parameters::AbstractDict)
+    adult_dimensions = petiole_dimensions_at_cpoint(
+        rachis_length,
+        parameters["cpoint_width_intercept"],
+        parameters["cpoint_width_slope"],
+        parameters["cpoint_height_width_ratio"],
+    )
+
+    parameters_present = map(
+        key -> haskey(parameters, key),
+        _CPOINT_JUVENILE_DIMENSION_KEYS,
+    )
+    any(parameters_present) || return adult_dimensions
+    all(parameters_present) || throw(
+        ArgumentError(
+            "The juvenile C-point dimension parameters must be provided together",
+        ),
+    )
+
+    juvenile_max_length =
+        parameters["cpoint_dimensions_juvenile_max_rachis_length"]
+    adult_min_length =
+        parameters["cpoint_dimensions_adult_min_rachis_length"]
+    juvenile_max_length < adult_min_length || throw(
+        ArgumentError(
+            "cpoint_dimensions_juvenile_max_rachis_length must be lower than cpoint_dimensions_adult_min_rachis_length",
+        ),
+    )
+    rachis_length >= zero(rachis_length) || throw(
+        ArgumentError("rachis_length must be non-negative"),
+    )
+
+    rachis_length >= adult_min_length && return adult_dimensions
+
+    # The fitted coefficients are the dimensions at a one-metre rachis length;
+    # keeping the predictor dimensionless makes the power exponents unit-safe.
+    relative_rachis_length = rachis_length / (1.0u"m")
+    juvenile_dimensions = (
+        width_cpoint=
+            parameters["cpoint_width_juvenile_coefficient"] *
+            relative_rachis_length^parameters["cpoint_width_juvenile_exponent"],
+        height_cpoint=
+            parameters["cpoint_height_juvenile_coefficient"] *
+            relative_rachis_length^parameters["cpoint_height_juvenile_exponent"],
+    )
+    rachis_length <= juvenile_max_length && return juvenile_dimensions
+
+    transition = (rachis_length - juvenile_max_length) /
+                 (adult_min_length - juvenile_max_length)
+    smoothstep = transition^2 * (3.0 - 2.0 * transition)
+    return (
+        width_cpoint=
+            (1.0 - smoothstep) * juvenile_dimensions.width_cpoint +
+            smoothstep * adult_dimensions.width_cpoint,
+        height_cpoint=
+            (1.0 - smoothstep) * juvenile_dimensions.height_cpoint +
+            smoothstep * adult_dimensions.height_cpoint,
+    )
 end
 
 """

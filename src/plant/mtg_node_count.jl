@@ -26,7 +26,7 @@ PlantSimEngine.inputs_(::GraphNodeCount) = NamedTuple()
 PlantSimEngine.outputs_(m::GraphNodeCount) = (graph_node_count=m.graph_node_count_ini,)
 
 # This model is called by the phytomer emission model at emission only:
-@inline function PlantSimEngine.run!(::GraphNodeCount, models, st, meteo, constants, extra=nothing)
+@inline function PlantSimEngine.run!(::GraphNodeCount, st, environment, constants, context=nothing)
     nothing # This is called only at the emission of a phytomer
 end
 
