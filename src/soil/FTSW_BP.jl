@@ -1,7 +1,16 @@
-#! Do not use, this is a prototype model
-
 """
-    FTSW_BP(H_FC::Float64, H_WP_Z1::Float64,Z1::Float64,H_WP_Z2::Float64,Z2::Float64,H_0::Float64,KC::Float64,TRESH_EVAP::Float64,TRESH_FTSW_TRANSPI::Float64)
+    FTSW_BP(;
+        ini_root_depth,
+        H_FC=0.23,
+        H_WP_Z1=0.05,
+        Z1=200.0,
+        H_WP_Z2=0.05,
+        Z2=2000.0,
+        H_0=0.15,
+        KC=1.0,
+        TRESH_EVAP=0.5,
+        TRESH_FTSW_TRANSPI=0.5,
+    )
 
 Fraction of Transpirable Soil Water model.
 
@@ -17,6 +26,17 @@ Fraction of Transpirable Soil Water model.
 - `KC`: cultural coefficient (unitless)
 - `TRESH_EVAP`: fraction of water content in the evaporative layer below which evaporation is reduced (g[H20] g[Soil])
 - `TRESH_FTSW_TRANSPI`: FTSW treshold below which transpiration is reduced (g[H20] g[Soil])
+
+# Environment inputs
+
+- `Precipitations`: daily precipitation.
+- `Ri_PAR_f`: daily incident PAR energy in MJ m[ground]⁻² d⁻¹, used to
+  estimate transpiration.
+
+# Inputs
+
+- `ET0`: daily reference evapotranspiration.
+- `aPPFD`: absorbed daily PAR in mol[photon] m[ground]⁻² d⁻¹.
 """
 struct FTSW_BP{T} <: AbstractFTSWModel
     ini_root_depth::T   # root depth at initialization (mm)
@@ -43,10 +63,19 @@ struct FTSW_BP{T} <: AbstractFTSWModel
     soil_depth::T
 end
 
-PlantSimEngine.inputs_(::FTSW_BP) = (
-    root_depth=0.0,
-    ET0=-Inf, #potential evapotranspiration
-    aPPFD=-Inf,
+PlantSimEngine.inputs_(m::FTSW_BP) = (
+    root_depth=PlantSimEngine.Default(m.ini_root_depth),
+    ET0=PlantSimEngine.Required(Real), #potential evapotranspiration
+    aPPFD=PlantSimEngine.Required(Real),
+)
+
+PlantSimEngine.environment_inputs_(::FTSW_BP) = (
+    Precipitations=0.0,
+    Ri_PAR_f=0.0,
+)
+
+PlantSimEngine.variable_contracts_(::FTSW_BP) = (
+    aPPFD=_GROUND_DAILY_PAR_PHOTONS,
 )
 
 function FTSW_BP(;
@@ -110,7 +139,7 @@ PlantSimEngine.outputs_(m::FTSW_BP) = (
     transpiration=-Inf,
 )
 
-PlantSimEngine.dep(::FTSW_BP) = (root_growth=AbstractRoot_GrowthModel,)
+PlantSimEngine.dep(::FTSW_BP) = (root_growth=PlantSimEngine.Call(process=:root_growth),)
 
 """
     KS_bp(fillRate, tresh)
@@ -196,7 +225,7 @@ function soil_init_default(m::FTSW_BP)
     @assert m.H_0 <= m.H_FC "H_0 cannot be higher than H_FC"
 
     # init status
-    status = PlantSimEngine.Status(merge(PlantSimEngine.inputs_(m), PlantSimEngine.outputs_(m)))
+    status = PlantSimEngine.Status(PlantSimEngine.init_variables(m))
     ## init compartments size
     status.root_depth = m.ini_root_depth
     compute_compartment_size(m, status)
@@ -231,17 +260,17 @@ function soil_init_default(m::FTSW_BP)
     return status
 end
 
-function PlantSimEngine.run!(m::FTSW_BP, models, st, meteo, constants, extra=nothing)
-    rain = meteo.Precipitations
+function PlantSimEngine.run!(m::FTSW_BP, st, environment, constants, context=nothing)
+    rain = environment.Precipitations
     st.soil_depth = m.soil_depth
 
     # Run the root growth model:
-    PlantSimEngine.run!(models.root_growth, models, st, meteo, constants, extra)
+    PlantSimEngine.run_call!(context, :root_growth; publish=true)
 
     compute_compartment_size(m, st)
 
-    if meteo.Ri_PAR_f > 0.0
-        tree_ei = 1.0 - (meteo.Ri_PAR_f * constants.J_to_umol - st.aPPFD) / (meteo.Ri_PAR_f * constants.J_to_umol)
+    if environment.Ri_PAR_f > 0.0
+        tree_ei = 1.0 - (environment.Ri_PAR_f * constants.J_to_umol - st.aPPFD) / (environment.Ri_PAR_f * constants.J_to_umol)
     else
         tree_ei = 1.0
     end

@@ -24,9 +24,9 @@ Compute internode potential dimensions (height and radius) from the biomass, wit
 """
 
 PlantSimEngine.inputs_(::PotentialInternodeDimensionModel) = (
-    TT_since_init=-Inf,
-    final_potential_height=-Inf,
-    final_potential_radius=-Inf,
+    TT_since_init=PlantSimEngine.Required(Real),
+    final_potential_height=PlantSimEngine.Required(Real),
+    final_potential_radius=PlantSimEngine.Required(Real),
 )
 
 PlantSimEngine.outputs_(::PotentialInternodeDimensionModel) = (
@@ -34,7 +34,7 @@ PlantSimEngine.outputs_(::PotentialInternodeDimensionModel) = (
     potential_radius=-Inf,
 )
 
-function PlantSimEngine.run!(m::PotentialInternodeDimensionModel, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::PotentialInternodeDimensionModel, status, environment, constants, context=nothing)
     status.potential_height =
         status.final_potential_height / (1.0 + exp(-(status.TT_since_init - m.inflexion_point_height) / m.slope_height))
 

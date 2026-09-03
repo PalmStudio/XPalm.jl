@@ -3,24 +3,31 @@
 FemaleBiomass(respiration_cost,respiration_cost_oleosynthesis)
 FemaleBiomass(respiration_cost=1.44,respiration_cost_oleosynthesis=3.2)
 
-Compute female biomass (inflo and bunch) from daily carbon allocation. Allocation to the different components of the bunch (stalk adnd fruit) is proportional to their carbon demand.
+Compute female-inflorescence dry mass from daily CH2O-equivalent allocation. Allocation
+to the different bunch components (stalk and fruit) is proportional to their
+carbon demand.
 
 # Arguments
 
-- `respiration_cost`: respiration cost  (g g-1)
-- `respiration_cost_oleosynthesis`: respiration cost of fruits oil  (g g-1)
+- `respiration_cost`: construction cost of non-oil tissues
+  (g CH2O-equivalent allocated gDM⁻¹ produced)
+- `respiration_cost_oleosynthesis`: oil construction cost
+  (g CH2O-equivalent allocated gDM⁻¹ produced)
 
 # inputs
-- `carbon_allocation`: carbon allocated to female inflo
+- `carbon_allocation`: assimilate allocated to the female inflorescence
+  (g CH2O-equivalent)
 - `carbon_demand_stalk`: carbon demand of the stalk
 - `carbon_demand_non_oil`: carbon demand of non oil components of fruits
 - `carbon_demand_oil`: carbon demand of fruits oil
 - `state`: state of the inflorescence 
 
 # outputs
-- `biomass`: total ifnlo/bunch biomass
-- `biomass_stalk`: stalk biomass
-- `biomass_fruits`: fruits biomass
+- `biomass`: total inflorescence/bunch dry mass (gDM)
+- `biomass_stalk`: stalk dry mass (gDM)
+- `biomass_fruits`: fruit dry mass (gDM)
+- `biomass_oil`: oil dry mass (gDM)
+- `biomass_non_oil`: non-oil fruit dry mass (gDM)
 """
 struct FemaleBiomass{T} <: AbstractBiomassModel
     respiration_cost::T
@@ -29,12 +36,31 @@ end
 
 FemaleBiomass(; respiration_cost=1.44, respiration_cost_oleosynthesis=3.2) = FemaleBiomass(respiration_cost, respiration_cost_oleosynthesis)
 
-PlantSimEngine.inputs_(::FemaleBiomass) = (carbon_allocation=0.0, state=:undetermined, carbon_demand=0.0, carbon_demand_non_oil=0.0, carbon_demand_oil=0.0, carbon_demand_stalk=0.0)
+PlantSimEngine.inputs_(::FemaleBiomass) = (
+    carbon_allocation=PlantSimEngine.Default(0.0),
+    state=PlantSimEngine.Required(Symbol),
+    carbon_demand=PlantSimEngine.Required(Real),
+    carbon_demand_non_oil=PlantSimEngine.Required(Real),
+    carbon_demand_oil=PlantSimEngine.Required(Real),
+    carbon_demand_stalk=PlantSimEngine.Required(Real),
+)
 PlantSimEngine.outputs_(::FemaleBiomass) = (biomass=0.0, biomass_stalk=0.0, biomass_fruits=0.0, biomass_oil=0.0, biomass_non_oil=0.0)
+PlantSimEngine.variable_contracts_(::FemaleBiomass) = (
+    carbon_allocation=_DAILY_CH2O_EQUIVALENT_FLOW,
+    carbon_demand=_DAILY_CH2O_EQUIVALENT_FLOW,
+    carbon_demand_non_oil=_DAILY_CH2O_EQUIVALENT_FLOW,
+    carbon_demand_oil=_DAILY_CH2O_EQUIVALENT_FLOW,
+    carbon_demand_stalk=_DAILY_CH2O_EQUIVALENT_FLOW,
+    biomass=_STRUCTURAL_DRY_MASS,
+    biomass_stalk=_STRUCTURAL_DRY_MASS,
+    biomass_fruits=_STRUCTURAL_DRY_MASS,
+    biomass_oil=_STRUCTURAL_DRY_MASS,
+    biomass_non_oil=_STRUCTURAL_DRY_MASS,
+)
 
 # Applied at the Female inflorescence scale:
-function PlantSimEngine.run!(m::FemaleBiomass, models, st, meteo, constants, extra=nothing)
-    st.state == :aborted || st.state == :harvested && return # if it is aborted, no need to compute 
+function PlantSimEngine.run!(m::FemaleBiomass, st, environment, constants, context=nothing)
+    (st.state == :aborted || st.state == :harvested) && return
 
     st.carbon_allocation == 0.0 && return # no carbon allocation -> no biomass increase
     st.carbon_demand == 0.0 && return # no carbon demand -> no biomass increase

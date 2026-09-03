@@ -24,6 +24,10 @@ YAML = "ddb6d928-2868-570f-bddf-ab3f9cf99eb6"
 [weakdeps]
 Pluto = "c3e4b0f8-55cb-11ea-2926-15256bba5781"
 
+[sources]
+PlantGeom = {rev = "9d682ef1aaebe7ecf5aa8407a8305d6f4aad51c1", url = "https://github.com/VEZY/PlantGeom.jl"}
+PlantSimEngine = {rev = "82786fba91fad644d8068d75afc64d88282400c4", url = "https://github.com/VirtualPlantLab/PlantSimEngine.jl"}
+
 [extensions]
 XPalmPluto = "Pluto"
 
@@ -34,11 +38,11 @@ Dates = "1"
 GeometryBasics = "0.5"
 Interpolations = "0.15.1, 0.16"
 LinearAlgebra = "1"
-MultiScaleTreeGraph = "0.15.1, 0.16"
+MultiScaleTreeGraph = "0.16"
 OrderedCollections = "1.6, 2.0"
 PlantGeom = "0.18.2, 0.19"
 PlantMeteo = "0.8.2, 0.9"
-PlantSimEngine = "0.14.0"
+PlantSimEngine = "0.15"
 Pluto = "0.20, 1.0"
 Random = "1"
 Rotations = "1"

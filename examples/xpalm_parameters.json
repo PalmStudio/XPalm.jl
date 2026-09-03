@@ -26,10 +26,12 @@
     },
     "biomass": {
         "leaf": {
-            "leaflets_biomass_contribution": 0.35
+            "leaflets_biomass_contribution": 0.3,
+            "rachis_biomass_contribution": 0.3,
+            "petiole_biomass_contribution": 0.4
         },
-        :Male: {
-            "max_biomass": 174.852,
+        "Male": {
+            "max_biomass": 360.0,
             "fraction_biomass_first_male": 0.3
         }
     },
@@ -55,20 +57,20 @@
         "Leaf": {
             "Q10": 2.1,
             "T_ref": 25.0,
-            "Mr": 0.003594370860927152,
-            "P_alive": 0.9
+            "Mr": 0.00391,
+            "P_alive": 1.0
         },
-        :Male: {
+        "Male": {
             "Q10": 2.1,
             "T_ref": 25.0,
             "Mr": 0.0121,
-            "P_alive": 0.5
+            "P_alive": 1.0
         },
-        :Female: {
+        "Female": {
             "Q10": 2.1,
             "T_ref": 25.0,
             "Mr": 0.0022,
-            "P_alive": 0.5
+            "P_alive": 1.0
         },
         "RootSystem": {
             "Q10": 2.1,
@@ -78,21 +80,21 @@
             "Mx": 0.005,
             "T_ref": 25.0,
             "Gi": 0.07,
-            "P_alive": 0.8
+            "P_alive": 1.0
         },
         "Internode": {
             "Q10": 1.7,
             "T_ref": 25.0,
-            "Mr": 0.005,
-            "P_alive": 0.21
+            "Mr": 0.0005,
+            "P_alive": 1.0
         }
     },
     "phenology": {
-        :Male: {
+        "Male": {
             "duration_flowering_male": 1800.0,
             "age_mature_male": 2920.0
         },
-        :Female: {
+        "Female": {
             "days_maximum_number_fruits": 6500,
             "days_increase_number_fruits": 2379,
             "duration_fruit_setting": 405.0,
@@ -159,17 +161,16 @@
             "respiration_cost": 1.44
         },
         "internode": {
-            "carbon_concentration": 0.5,
             "apparent_density": 300000.0,
             "respiration_cost": 1.44
         },
         "reserves": {
             "cost_reserve_mobilization": 1.667
         },
-        :Male: {
+        "Male": {
             "respiration_cost": 1.44
         },
-        :Female: {
+        "Female": {
             "respiration_cost_oleosynthesis": 3.2,
             "respiration_cost": 1.44
         }

@@ -260,6 +260,11 @@ function create_single_leaflet(
     )
     leaflet_node["length"] = leaflet_length
     leaflet_node["width"] = width_max
+    # Coupled XPalm leaves can expand these dimensions while they are still in
+    # the spear. Keep the VPalm allometric dimensions as immutable references;
+    # node identity and leaflet topology never change during that expansion.
+    leaflet_node["reference_length"] = leaflet_length
+    leaflet_node["reference_width"] = width_max
 
     # Create the detailed leaflet segments with proper bending
     store_leaflet_segment_profile!(
@@ -274,6 +279,55 @@ function create_single_leaflet(
     )
 
     return leaflet_node
+end
+
+"""
+    update_leaflet_dimensions!(leaf, dimension_scale, parameters)
+
+Scale the existing leaflets of a coupled leaf from their stored VPalm
+allometric dimensions. Dimensions may change only before the leaf opens
+(`rank < 1`); their number, identity, parent segment, and relative position are
+preserved. Return `true` when dimensions were updated.
+"""
+function update_leaflet_dimensions!(
+    leaf,
+    dimension_scale,
+    parameters;
+    update_profiles=true,
+)
+    hasproperty(leaf, :leaflet_dimensions_frozen) &&
+        leaf.leaflet_dimensions_frozen === true && return false
+
+    scale = clamp(dimension_scale, 0.0, 1.0)
+    rachis = only(descendants(leaf; symbol=:Rachis))
+    traverse!(rachis, symbol=:Leaflet) do leaflet
+        reference_length = hasproperty(leaflet, :reference_length) ?
+                           leaflet.reference_length : leaflet.length
+        reference_width = hasproperty(leaflet, :reference_width) ?
+                          leaflet.reference_width : leaflet.width
+        leaflet.reference_length = reference_length
+        leaflet.reference_width = reference_width
+        leaflet.length = reference_length * scale
+        leaflet.width = reference_width * scale
+        if update_profiles
+            store_leaflet_segment_profile!(
+                leaflet,
+                leaflet.length,
+                leaflet.width,
+                leaflet.stiffness,
+                leaflet.tapering,
+                leaflet.relative_position;
+                xm_intercept=parameters["leaflet_xm_intercept"],
+                xm_slope=parameters["leaflet_xm_slope"],
+                ym_intercept=parameters["leaflet_ym_intercept"],
+                ym_slope=parameters["leaflet_ym_slope"],
+            )
+        end
+    end
+
+    leaf.leaflet_dimension_scale = scale
+    leaf.leaflet_dimensions_frozen = leaf.rank >= 1
+    return true
 end
 
 function leaflet_segment_profile(
@@ -423,9 +477,15 @@ end
 
 
 """
-    leaflets!(unique_mtg_id, rachis_node, scale, leaf_rank, rachis_length, parameters; rng=Random.MersenneTwister())
+    leaflets!(unique_mtg_id, rachis_node, scale, leaf_rank, rachis_length,
+              parameters; rachis_final_length=rachis_length,
+              rng=Random.MersenneTwister())
 
-Create leaflets for a given rachis node, computing their positions, types, and dimensions.
+Create leaflets for a given rachis node, computing their positions, types, and
+reference dimensions. Positions use the current `rachis_length`; topology and
+reference dimensions use `rachis_final_length` and are fixed at creation.
+Coupled XPalm leaves may scale the existing dimensions before opening without
+changing that topology or those references.
 
 # Arguments
 
@@ -433,11 +493,10 @@ Create leaflets for a given rachis node, computing their positions, types, and d
 - `rachis_node`: The parent node of the rachis where leaflets will be attached.
 - `scale`: The scale of the leaflets in the MTG.
 - `leaf_rank`: The rank of the leaf associated with the rachis.
-- `rachis_length`: The total length of the rachis in meters.
-- `height_cpoint`: The height of the central point of the rachis in meters.
-- `width_cpoint`: The width of the central point of the rachis in meters.
-- `zenithal_cpoint_angle`: The zenithal angle of the central point of the rachis in degrees.
+- `rachis_length`: The current length of the rachis in meters, used for placement.
 - `parameters`: A dictionary containing biomechanical parameters for the leaflets.
+- `rachis_final_length`: The final rachis length used by leaflet number, length,
+  and width allometries. It defaults to `rachis_length` for backward compatibility.
 - `rng`: A random number generator for stochastic processes (default is a new MersenneTwister).
 
 # Note
@@ -468,8 +527,20 @@ The `parameters` is a `Dict{String}` containing the following keys:
 - `"relative_position_leaflet_max_width"`: Relative position of the leaflet with maximum width.
 - `"rachis_nb_segments"`: Number of segments in the rachis.
 """
-function leaflets!(unique_mtg_id, rachis_node, scale, leaf_rank, rachis_length, parameters; rng=Random.MersenneTwister())
-    nb_leaflets = compute_number_of_leaflets(rachis_length, parameters["leaflets_nb_max"], parameters["leaflets_nb_min"], parameters["leaflets_nb_slope"], parameters["leaflets_nb_inflexion"], parameters["nbLeaflets_SDP"]; rng=rng)
+function leaflets!(
+    unique_mtg_id,
+    rachis_node,
+    scale,
+    leaf_rank,
+    rachis_length,
+    parameters;
+    rachis_final_length=rachis_length,
+    rng=Random.MersenneTwister(),
+)
+    # The number and reference dimensions of the leaflets are fixed when the
+    # leaf is created. Use the final rachis length for these allometries, even
+    # while the current rachis is still partly expanded in the spear.
+    nb_leaflets = compute_number_of_leaflets(rachis_final_length, parameters["leaflets_nb_max"], parameters["leaflets_nb_min"], parameters["leaflets_nb_slope"], parameters["leaflets_nb_inflexion"], parameters["nbLeaflets_SDP"]; rng=rng)
 
     leaflets_relative_positions = relative_leaflet_position.(collect(1:nb_leaflets) ./ nb_leaflets, parameters["leaflet_position_shape_coefficient"])
     leaflets_position = leaflets_relative_positions .* rachis_length
@@ -484,9 +555,12 @@ function leaflets!(unique_mtg_id, rachis_node, scale, leaf_rank, rachis_length, 
     # Second pass: Normalize to ensure spreading along the full rachis length (from base to tip):
     normalize_positions!(leaflets_position, rachis_length)
 
-    leaflet_length_at_b = leaflet_length_at_bpoint(rachis_length, parameters["leaflet_length_at_b_intercept"], parameters["leaflet_length_at_b_slope"])
+    leaflet_length_at_b = leaflet_length_at_bpoint(
+        rachis_final_length,
+        parameters,
+    )
     leaflet_max_length = leaflet_length_max(leaflet_length_at_b, parameters["relative_position_bpoint"], parameters["relative_length_first_leaflet"], parameters["relative_length_last_leaflet"], parameters["relative_position_leaflet_max_length"], parameters["relative_position_bpoint_sd"], rng)
-    leaflet_width_at_b = leaflet_width_at_bpoint(rachis_length, parameters["leaflet_width_at_b_intercept"], parameters["leaflet_width_at_b_slope"])
+    leaflet_width_at_b = leaflet_width_at_bpoint(rachis_final_length, parameters["leaflet_width_at_b_intercept"], parameters["leaflet_width_at_b_slope"])
     leaflet_max_width = leaflet_width_max(leaflet_width_at_b, parameters["relative_position_bpoint"], parameters["relative_width_first_leaflet"], parameters["relative_width_last_leaflet"], parameters["relative_position_leaflet_max_width"], parameters["relative_position_bpoint_sd"], rng)
 
     # Create leaflets for right side (side = 1)
@@ -508,6 +582,26 @@ function leaflets!(unique_mtg_id, rachis_node, scale, leaf_rank, rachis_length, 
         plane=leaflets.plane,
         position=leaflets_position,
     )
+end
+
+"""
+    update_leaflet_offsets!(rachis_node, rachis_length, nb_rachis_sections)
+
+Move existing leaflet insertion offsets as the rachis elongates, without changing
+their parent segment, identity, number, or dimensions. The relative position of
+each leaflet along the complete rachis is kept constant.
+"""
+function update_leaflet_offsets!(rachis_node, rachis_length, nb_rachis_sections)
+    rachis_segment_length = rachis_length / nb_rachis_sections
+
+    traverse!(rachis_node, symbol=:Leaflet) do leaflet
+        rachis_segment = index(parent(leaflet)) - 1
+        leaflet.offset =
+            leaflet.relative_position * rachis_length -
+            rachis_segment * rachis_segment_length
+    end
+
+    return nothing
 end
 
 """
@@ -937,21 +1031,37 @@ function normalize_positions!(positions, rachis_length)
 end
 
 """
-    leaflet_length_at_bpoint(rachis_length, intercept, slope)
+    leaflet_length_at_bpoint(
+        rachis_length,
+        intercept,
+        slope;
+        juvenile_transition=nothing,
+        juvenile_exponent=nothing,
+    )
 
-Compute the length of leaflets at the B point of the rachis using a linear relationship.
+Compute the length of leaflets at the B point of the rachis. The historical
+linear adult allometry is used by default. When both juvenile parameters are
+provided, a power law is used below the transition and is connected exactly to
+the adult law at the transition.
 
 # Arguments
 
 - `rachis_length`: The total length of the rachis (m).
 - `intercept`: The intercept parameter of the linear function (m).
 - `slope`: The slope parameter of the linear function (dimensionless).
+- `juvenile_transition`: Optional rachis length at which the adult allometry
+  becomes valid (m).
+- `juvenile_exponent`: Optional exponent of the juvenile power law.
 
 # Details
 
-This function uses a linear model to determine leaflet length at the B point:
+The adult model is:
     
-    leaflet_length = intercept + slope * rachis_length
+    adult_length = intercept + slope * rachis_length
+
+Below a configured juvenile transition `Rj`, the juvenile model is:
+
+    leaflet_length = adult_length(Rj) * (rachis_length / Rj)^juvenile_exponent
 
 The B point is a key reference point on the rachis that marks the transition from an oval to a round shape of the 
 rachis. The leaflet length at this point serves as a reference for calculating the distribution of leaflet lengths 
@@ -961,8 +1071,56 @@ along the entire rachis.
 
 The length of leaflets at the B point position (m).
 """
-function leaflet_length_at_bpoint(rachis_length, intercept, slope)
-    return intercept + slope * rachis_length
+function leaflet_length_at_bpoint(
+    rachis_length,
+    intercept,
+    slope;
+    juvenile_transition=nothing,
+    juvenile_exponent=nothing,
+)
+    adult_length = intercept + slope * rachis_length
+    if isnothing(juvenile_transition) && isnothing(juvenile_exponent)
+        return adult_length
+    end
+    if isnothing(juvenile_transition) || isnothing(juvenile_exponent)
+        throw(
+            ArgumentError(
+                "juvenile_transition and juvenile_exponent must be provided together",
+            ),
+        )
+    end
+    rachis_length >= zero(rachis_length) || throw(
+        ArgumentError("rachis_length must be non-negative"),
+    )
+    juvenile_transition > zero(juvenile_transition) || throw(
+        ArgumentError("juvenile_transition must be positive"),
+    )
+    juvenile_exponent > 0.0 || throw(
+        ArgumentError("juvenile_exponent must be positive"),
+    )
+    rachis_length >= juvenile_transition && return adult_length
+
+    adult_length_at_transition = intercept + slope * juvenile_transition
+    return adult_length_at_transition *
+           (rachis_length / juvenile_transition)^juvenile_exponent
+end
+
+function leaflet_length_at_bpoint(rachis_length, parameters::AbstractDict)
+    return leaflet_length_at_bpoint(
+        rachis_length,
+        parameters["leaflet_length_at_b_intercept"],
+        parameters["leaflet_length_at_b_slope"];
+        juvenile_transition=get(
+            parameters,
+            "leaflet_length_juvenile_transition",
+            nothing,
+        ),
+        juvenile_exponent=get(
+            parameters,
+            "leaflet_length_juvenile_exponent",
+            nothing,
+        ),
+    )
 end
 
 """

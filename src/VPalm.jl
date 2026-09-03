@@ -4,7 +4,7 @@ module VPalm
 import Random
 
 # For managing the MTG:
-import MultiScaleTreeGraph: Node, NodeMTG, traverse!, symbol, reparent!, descendants, delete_nodes!, new_child_link, children, new_id, scale, index, node_id
+import MultiScaleTreeGraph: Node, NodeMTG, traverse!, symbol, reparent!, descendants, delete_nodes!, children, new_id, scale, index, node_id
 
 # IO:
 import YAML, OrderedCollections
@@ -26,6 +26,7 @@ import PlantSimEngine
 
 include("vpalm/units.jl")
 include("vpalm/utils.jl")
+include("vpalm/IO/parameter_normalization.jl")
 include("vpalm/IO/parameters_IO.jl")
 
 # Entry point:
@@ -70,7 +71,8 @@ include("vpalm/instance/leaf.jl")
 include("vpalm/build_mockup.jl")
 
 # PlantSimEngine models:
-include("vpalm/plantsimengine_models/LeafGeometryModel.jl")
+include("vpalm/plantsimengine_models/LeafFreshBiomass.jl")
+include("vpalm/plantsimengine_models/GeometryModel.jl")
 
 
 export read_parameters, write_parameters

@@ -1,27 +1,58 @@
 """
     RankLeafPruning(rank)
 
-Function to remove leaf biomass and area when the phytomer has an harvested bunch or when the leaf reaches a treshold rank (below rank of harvested bunches) 
+Function to remove leaf biomass and area when the phytomer has a harvested bunch
+or when the leaf reaches a threshold rank (below the rank of harvested bunches).
 
 # Arguments
-- `rank`: leaf rank treshold below whith the leaf is cutted
+- `rank`: leaf-rank threshold below which the leaf is cut
 
 # Inputs
 - `state`: phytomer state
 
 # Outputs 
-- `litter_leaf`: leaf biomass removed from the plantand going to the litter
+- `litter_leaf`: structural leaf dry mass removed from the plant and transferred
+  to the litter (gDM)
 
 """
 struct RankLeafPruning{T} <: AbstractLeaf_PruningModel
     rank::T
 end
 
-PlantSimEngine.inputs_(::RankLeafPruning) = (rank=-9999, state=:undetermined, biomass=-Inf, leaf_area=-Inf, state_phytomers=[:undetermined])
-PlantSimEngine.outputs_(::RankLeafPruning) = (litter_leaf=-Inf, pruning_decision=:undetermined, is_pruned=false)
+PlantSimEngine.inputs_(::RankLeafPruning) = (
+    rank=PlantSimEngine.Required(Real),
+    state=PlantSimEngine.Required(Symbol),
+    biomass=PlantSimEngine.Required(Real),
+    biomass_leaflets=PlantSimEngine.Required(Real),
+    biomass_rachis=PlantSimEngine.Required(Real),
+    biomass_petiole=PlantSimEngine.Required(Real),
+    leaf_area=PlantSimEngine.Required(Real),
+    reserve=PlantSimEngine.Required(Real),
+    state_phytomers=PlantSimEngine.Required(AbstractVector),
+)
+PlantSimEngine.outputs_(::RankLeafPruning) = (
+    biomass=-Inf,
+    biomass_leaflets=-Inf,
+    biomass_rachis=-Inf,
+    biomass_petiole=-Inf,
+    leaf_area=-Inf,
+    reserve=0.0,
+    state=:undetermined,
+    litter_leaf=-Inf,
+    pruning_decision=:undetermined,
+    is_pruned=false,
+)
+PlantSimEngine.variable_contracts_(::RankLeafPruning) = (
+    biomass=_STRUCTURAL_DRY_MASS,
+    biomass_leaflets=_STRUCTURAL_DRY_MASS,
+    biomass_rachis=_STRUCTURAL_DRY_MASS,
+    biomass_petiole=_STRUCTURAL_DRY_MASS,
+    reserve=_CH2O_EQUIVALENT_STOCK,
+    litter_leaf=_STRUCTURAL_DRY_MASS,
+)
 
 # Applied at the leaf scale:
-function PlantSimEngine.run!(m::RankLeafPruning, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::RankLeafPruning, status, environment, constants, context)
     status.is_pruned && return # if the leaf is already pruned, no need to compute. Note that we don't use the state of the leaf here
     # because it may be pruned set to :pruned by the InfloStateModel, in which case the leaf is not really pruned yet.
 
@@ -33,22 +64,27 @@ function PlantSimEngine.run!(m::RankLeafPruning, models, status, meteo, constant
         status.leaf_area = 0.0
         status.litter_leaf = status.biomass
         status.biomass = 0.0
+        status.biomass_leaflets = 0.0
+        status.biomass_rachis = 0.0
+        status.biomass_petiole = 0.0
         status.reserve = 0.0
         status.state = :pruned # The leaf may not be pruned yet if it has a male inflorescence.
         status.is_pruned = true
 
         # Get the internode node to check if the phytomer is harvested:
-        internode_node = parent(status.node)
+        leaf_node = PlantSimEngine.source_node(context)
+        internode_node = parent(leaf_node)
 
         # If the leaf is pruned but the phytomer is not harvested, then we harvest:
         phytomer_node = parent(internode_node)
-        phytomer_node[:plantsimengine_status].state = :harvested
+        PlantSimEngine.model_status(context, phytomer_node).state = :harvested
 
         # Give the information to the inflorescence if we find one:
         internode_children = MultiScaleTreeGraph.children(internode_node)
         inflo_nodes = filter(x -> MultiScaleTreeGraph.symbol(x) == :Female || MultiScaleTreeGraph.symbol(x) == :Male, internode_children)
         if length(inflo_nodes) == 1
-            inflo_nodes[1][:plantsimengine_status].state = :harvested
+            PlantSimEngine.model_status(context, only(inflo_nodes)).state =
+                :harvested
         end
     end
 end

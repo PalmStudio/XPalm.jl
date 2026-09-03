@@ -68,4 +68,40 @@ rng = Random.MersenneTwister(1)
 
     # The length of all segments in the petiole is equal to the petiole length:
     @test sum(df_petiole_sections.length) ≈ petiole_node.length
+
+    original_section_ids = node_id.(descendants(petiole_node, symbol=:PetioleSegment))
+    original_ratio = petiole_node.petiole_rachis_ratio
+    original_azimuth = petiole_node.azimuthal_angle
+    expanded_rachis_length = 1.25 * rachis_length
+    expanded_insertion_angle = zenithal_insertion_angle + 5.0u"°"
+    expanded_cpoint_angle = zenithal_cpoint_angle + 10.0u"°"
+
+    VPalm.update_petiole!(
+        petiole_node,
+        expanded_rachis_length,
+        expanded_insertion_angle,
+        expanded_cpoint_angle,
+        parameters,
+    )
+
+    updated_sections = descendants(petiole_node, symbol=:PetioleSegment)
+    expected_cpoint = VPalm.petiole_dimensions_at_cpoint(
+        expanded_rachis_length,
+        parameters["cpoint_width_intercept"],
+        parameters["cpoint_width_slope"],
+        parameters["cpoint_height_width_ratio"],
+    )
+
+    @test node_id.(updated_sections) == original_section_ids
+    @test petiole_node.petiole_rachis_ratio == original_ratio
+    @test petiole_node.azimuthal_angle == original_azimuth
+    @test petiole_node.length ≈ original_ratio * expanded_rachis_length
+    @test petiole_node.width_cpoint ≈ expected_cpoint.width_cpoint
+    @test petiole_node.height_cpoint ≈ expected_cpoint.height_cpoint
+    @test first(updated_sections).width == petiole_node.width_base
+    @test first(updated_sections).height == petiole_node.height_base
+    @test last(updated_sections).width ≈ petiole_node.width_cpoint
+    @test last(updated_sections).height ≈ petiole_node.height_cpoint
+    @test all(section.length ≈ petiole_node.section_length for section in updated_sections)
+    @test sum(section.length for section in updated_sections) ≈ petiole_node.length
 end

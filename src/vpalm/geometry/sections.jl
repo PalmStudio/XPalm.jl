@@ -1,6 +1,6 @@
 """
     add_section_geometry!(
-        node, internode_width, internode_height, internode_phyllotaxy, stem_bending, 
+        node, internode_radius, internode_height, internode_phyllotaxy, stem_bending,
         refmesh_cylinder, position_section=Ref(GeometryBasics.Point{3,Float64}(0.0, 0.0, 0.0)), angles=[0.0, 0.0, 0.0],
         type::Symbol,
     )
@@ -11,7 +11,7 @@ Create the petiole/rachis sections geometry based on their dimensions.
 
 - `node`: the MTG node of the petiole/rachis
 - `refmesh_cylinder`: the reference mesh used for a cylinder (`PlantGeom.RefMesh`)
-- `internode_width`: the width of the internode on the stipe (m)
+- `internode_radius`: the radius of the internode on the stipe (m)
 - `internode_height`: the height of the internode on the stipe (m)
 - `internode_phyllotaxy`: the phyllotaxy of the internode on the stipe (°)
 - `stem_bending`: the bending of the stipe (°)
@@ -19,11 +19,11 @@ Create the petiole/rachis sections geometry based on their dimensions.
 - `position_section=Ref(GeometryBasics.Point{3,Float64}(0.0, 0.0, 0.0))`: the position of the section relative to the first one.
 """
 function add_section_geometry!(
-    node, refmesh_cylinder, internode_width=0.0u"m", internode_height=0.0u"m", internode_phyllotaxy=0.0u"°", stem_bending=0.0u"°",
+    node, refmesh_cylinder, internode_radius=0.0u"m", internode_height=0.0u"m", internode_phyllotaxy=0.0u"°", stem_bending=0.0u"°",
     type=nothing, position_section=Ref(_point3(0.0, 0.0, 0.0))
 )
     # Check units and convert to meters and degrees:
-    internode_width = @check_unit internode_width u"m"
+    internode_radius = @check_unit internode_radius u"m"
     internode_height = @check_unit internode_height u"m"
     internode_phyllotaxy = @check_unit internode_phyllotaxy u"°"
     stem_bending = @check_unit stem_bending u"°"
@@ -45,7 +45,7 @@ function add_section_geometry!(
         mesh_transformation =
             _rotate(RotY(deg2rad(stem_bending))) ∘
             _rotate(RotZ(deg2rad(internode_phyllotaxy))) ∘
-            _translate(internode_width, zero(internode_width), internode_height) ∘
+            _translate(internode_radius, zero(internode_radius), internode_height) ∘
             _translate(position_section[]) ∘
             _rotate(rot) ∘
             _rotate(base_orientation) ∘  # Orient cylinder along X first

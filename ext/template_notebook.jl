@@ -146,7 +146,19 @@ end
 
 # ╔═╡ bde1793e-983a-47e4-94a6-fbbe53fe72d6
 @bind variables variables_display(
-    Dict(k => keys(filter(x -> !isa(x, AbstractVector), merge(v...))) for (k, v) in XPalm.PlantSimEngine.variables(XPalm.model_mapping(XPalm.Palm()))),
+    let
+        scene = xpalm_scene(XPalm.Palm())
+        compiled = PlantSimEngine.refresh_bindings!(scene)
+        objects = Dict(object.id.value => object for object in PlantSimEngine.model_objects(scene))
+        available = Dict{Symbol,Set{Symbol}}()
+        for writer in PlantSimEngine.Diagnostics.explain_writers(compiled)
+            object = objects[writer.object_id]
+            value = getproperty(object.status, writer.variable)
+            value isa AbstractVector && continue
+            push!(get!(available, object.scale, Set{Symbol}()), writer.variable)
+        end
+        Dict(scale => sort!(collect(names); by=string) for (scale, names) in available)
+    end,
     default=Dict(:Soil => (:ftsw,), :Scene => (:lai,), :Plant => (:leaf_area, :Rm, :aPPFD, :biomass_bunch_harvested), :Leaf => (:leaf_area,))
 )
 

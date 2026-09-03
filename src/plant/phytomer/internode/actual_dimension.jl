@@ -10,13 +10,13 @@ InternodeDimensionModel(;apparent_density=300000.0)
 Compute internode dimensions (height and radius) from the biomass, with the proportions given by potential dimensions (`potential_height` and `potential_radius`)
 
 # Arguments
-- `apparent_density`: apparent density  (g m-3)
+- `apparent_density`: dry-matter apparent density (gDM m⁻³)
 
 # Inputs
 
 - `potential_height`: potential height of the internode (m)
 - `potential_radius`: potential radius of the internode (m)
-- `biomass`: biomass of the internode (g)
+- `biomass`: structural dry mass of the internode (gDM)
 
 # Outputs
 
@@ -26,17 +26,20 @@ Compute internode dimensions (height and radius) from the biomass, with the prop
 
 
 PlantSimEngine.inputs_(::InternodeDimensionModel) = (
-    potential_height=-Inf,
-    potential_radius=-Inf,
-    biomass=-Inf
+    potential_height=PlantSimEngine.Required(Real),
+    potential_radius=PlantSimEngine.Required(Real),
+    biomass=PlantSimEngine.Required(Real),
 )
 PlantSimEngine.outputs_(::InternodeDimensionModel) = (
     height=-Inf,
     radius=-Inf,
 )
+PlantSimEngine.variable_contracts_(::InternodeDimensionModel) = (
+    biomass=_STRUCTURAL_DRY_MASS,
+)
 
 # Applied at the phytomer scale:
-function PlantSimEngine.run!(m::InternodeDimensionModel, models, status, meteo, constants, extra=nothing)
+function PlantSimEngine.run!(m::InternodeDimensionModel, status, environment, constants, context=nothing)
     if status.potential_radius <= 0.0 || status.potential_height <= 0.0 || status.biomass <= 0.0
         status.height = 0.0
         status.radius = 0.0

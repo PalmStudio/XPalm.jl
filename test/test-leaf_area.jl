@@ -1,59 +1,140 @@
 @testset "FinalPotentialAreaModel" begin
-    m = ModelMapping(
-        leaf_final_potential_area=FinalPotentialAreaModel(8 * 365, 0.0015, 12.0),
-        status=(initiation_age=1825,)
+    scene = test_scene(
+        :Leaf,
+        FinalPotentialAreaModel(8 * 365, 0.0015, 12.0);
+        status=Status(initiation_age=1825),
     )
-    out = run!(m)
-    @test out[:final_potential_area][1] ≈ 7.500562499999999
+    run!(scene)
+    @test test_status(scene, :Leaf).final_potential_area ≈ 7.500562499999999
 end
 
 @testset "PotentialAreaModel" begin
-    m = ModelMapping(
-        leaf_potential_area=PotentialAreaModel(560.0, 100.0),
-        status=(TT_since_init=[1:1:10000;], final_potential_area=fill(8.0, 10000),)
-    )
-    out = run!(m)
-    @test out[:potential_area][3000] ≈ 2.9890383871139807e-6
-    @test out[:potential_area][5520] ≈ 7.999756547544795
-    @test out[:maturity][1] ≈ false
-    @test out[:maturity][9000] ≈ true
+    model = PotentialAreaModel(560.0, 100.0)
+    function potential_area_at(thermal_time)
+        scene = test_scene(
+            :Leaf,
+            model;
+            status=Status(TT_since_init=thermal_time, final_potential_area=8.0),
+        )
+        run!(scene)
+        return test_status(scene, :Leaf)
+    end
+    @test potential_area_at(3000).potential_area ≈ 2.9890383871139807e-6
+    @test potential_area_at(5520).potential_area ≈ 7.999756547544795
+    @test potential_area_at(1).maturity == false
+    @test potential_area_at(9000).maturity == true
 end
 
 @testset "LeafAreaModel" begin
-    m = ModelMapping(
-        leaf_area=LeafAreaModel(80.0, 0.35, 0.0),
-        status=(biomass=2000.0,)
+    scene = test_scene(
+        :Leaf,
+        LeafAreaModel(80.0, 0.30, 0.0);
+        status=Status(biomass=2000.0),
     )
-    out = run!(m)
-    @test out[:leaf_area][1] ≈ 8.75
+    run!(scene)
+    @test test_status(scene, :Leaf).leaf_area ≈ 7.5
+end
+
+@testset "LeafBiomass compartments" begin
+    scene = test_scene(
+        :Leaf,
+        LeafBiomass(
+            initial_biomass=100.0,
+            respiration_cost=1.44,
+            leaflets_biomass_contribution=0.30,
+            rachis_biomass_contribution=0.30,
+            petiole_biomass_contribution=0.40,
+        );
+        status=Status(carbon_allocation=144.0),
+    )
+    run!(scene)
+    status = test_status(scene, :Leaf)
+    @test status.biomass ≈ 200.0
+    @test status.biomass_leaflets ≈ 60.0
+    @test status.biomass_rachis ≈ 60.0
+    @test status.biomass_petiole ≈ 80.0
+    @test status.biomass ≈
+          status.biomass_leaflets + status.biomass_rachis + status.biomass_petiole
+    @test_throws ArgumentError LeafBiomass(
+        leaflets_biomass_contribution=0.30,
+        rachis_biomass_contribution=0.30,
+        petiole_biomass_contribution=0.30,
+    )
+end
+
+@testset "PotentialReserveLeaf CH2O-equivalent units" begin
+    scene = test_scene(
+        :Leaf,
+        PotentialReserveLeaf(80.0, 200.0, 0.30, 0.48);
+        status=Status(leaf_area=2.0, reserve=10.0, state=:opened),
+    )
+    run!(scene)
+    @test test_status(scene, :Leaf).potential_reserve ≈ 790.0
+end
+
+@testset "PotentialReserveInternode CH2O-equivalent units" begin
+    scene = test_scene(
+        :Internode,
+        PotentialReserveInternode(nsc_max=0.30, carbon_concentration=0.50);
+        status=Status(biomass=1000.0, reserve=20.0),
+    )
+    run!(scene)
+    @test test_status(scene, :Internode).potential_reserve ≈ 280.0
+    @test PotentialReserveInternode(0.30, 0.50).nsc_max == 0.30
+end
+
+@testset "Leaf pruning clears biomass compartments" begin
+    parameters = XPalm.default_parameters()
+    parameters["management"]["rank_leaf_pruning"] = 0
+    scene = XPalm.xpalm_scene(
+        Palm(initiation_age=0, parameters=parameters);
+        architecture=false,
+        environment=meteo[1:1, :],
+    )
+    run!(scene; steps=1, outputs=:none)
+    status = only(model_objects(scene; scale=:Leaf)).status
+    @test status.is_pruned
+    @test status.litter_leaf > 0.0
+    @test status.biomass == 0.0
+    @test status.biomass_leaflets == 0.0
+    @test status.biomass_rachis == 0.0
+    @test status.biomass_petiole == 0.0
 end
 
 @testset "LAIModel" begin
-    m = ModelMapping(
-        LAIModel(30.0),
-        status=(leaf_areas=[12.0],)
+    scene = test_scene(
+        :Scene,
+        LAIModel(30.0);
+        status=Status(leaf_areas=[12.0]),
     )
-
-    out = run!(m, executor=SequentialEx())
-    @test out[:lai][1] == 0.4
+    run!(scene)
+    @test test_status(scene, :Scene).lai == 0.4
 end
 
 
 @testset "LAIModel" begin
     mtg = Palm().mtg
-    mapping = ModelMapping(
-        :Leaf => (
-            LeafBiomass(),
-            LeafAreaModel(80.0, 0.35, 0.0),
-            Status(carbon_allocation=10.0),
-        ),
-        :Scene => (
-            MultiScaleModel(LAIModel(30.0), [:leaf_areas => :Leaf => :leaf_area]),
-        )
+    applications = (
+        ModelSpec(LeafBiomass(); name=:leaf_biomass, on=Many(scale=:Leaf)),
+        ModelSpec(LeafAreaModel(80.0, 0.30, 0.0); name=:leaf_area, on=Many(scale=:Leaf)),
+        ModelSpec(LAIModel(30.0); name=:scene_lai, on=One(scale=:Scene), inputs=(:leaf_areas => Many(scale=:Leaf, var=:leaf_area, within=SceneScope()))),
     )
-    vars = Dict{Symbol,Any}(:Scene => (:lai, :leaf_area), :Leaf => (:leaf_area,))
-    out = run!(mtg, mapping, meteo, tracked_outputs=vars, executor=SequentialEx())
-    df = convert_outputs(out, DataFrame)[:Scene]
-    @test df.lai[1] ≈ 0.0010127314814814814
-    @test df.lai[end] ≈ 4.2129629629632985
+    scene = CompositeModel(
+        mtg;
+        applications=applications,
+        environment=meteo,
+        status=node -> Status(node=node, carbon_allocation=10.0),
+    )
+    sim = run!(
+        scene;
+        steps=nrow(meteo),
+        outputs=[
+            OutputRequest(:Scene, :lai),
+            OutputRequest(:Scene, :leaf_area; name=:scene_leaf_area),
+            OutputRequest(:Leaf, :leaf_area; name=:leaf_leaf_area),
+        ],
+    )
+    lai = output_values(sim, :lai)
+    @test lai[1] ≈ 0.0008680555555555555
+    @test lai[end] ≈ 3.611111111111399
 end

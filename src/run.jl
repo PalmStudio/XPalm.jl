@@ -16,7 +16,7 @@ Run the XPalm model with the given meteo data and return the results in a DataFr
 
 # Returns
 
-A simulation output, either as a dictionary of variables per scales (default) or as a `Tables.jl` formatted object.
+A `PlantSimEngine.Simulation`, or collected output rows when `sink` is supplied.
 
 # Example
 
@@ -28,16 +28,133 @@ df = xpalm(meteo, DataFrame; vars=Dict(:Scene => (:lai,)))
 """
 function xpalm(meteo, sink; vars=Dict(:Scene => (:lai,)), architecture=false, palm=Palm(initiation_age=0, parameters=default_parameters(), architecture=architecture))
     meteo_with_duration = _ensure_meteo_duration(meteo)
-    models = model_mapping(palm, architecture=architecture)
-    out = PlantSimEngine.run!(palm.mtg, models, meteo_with_duration, tracked_outputs=vars, executor=PlantSimEngine.SequentialEx(), check=false)
-    return PlantSimEngine.convert_outputs(out, sink, no_value=missing)
+    scene = xpalm_scene(palm; architecture=architecture, environment=meteo_with_duration)
+    sim = PlantSimEngine.run!(
+        scene;
+        steps=_nsteps(meteo_with_duration),
+        outputs=_output_requests(vars),
+    )
+    return _collect_xpalm_outputs(sim, sink, vars)
 end
 
 function xpalm(meteo; vars=Dict(:Scene => (:lai,)), architecture=false, palm=Palm(initiation_age=0, parameters=default_parameters(), architecture=architecture))
     meteo_with_duration = _ensure_meteo_duration(meteo)
-    models = model_mapping(palm, architecture=architecture)
-    out = PlantSimEngine.run!(palm.mtg, models, meteo_with_duration, tracked_outputs=vars, executor=PlantSimEngine.SequentialEx(), check=false)
-    return out
+    scene = xpalm_scene(palm; architecture=architecture, environment=meteo_with_duration)
+    return PlantSimEngine.run!(
+        scene;
+        steps=_nsteps(meteo_with_duration),
+        outputs=_output_requests(vars),
+    )
+end
+
+function xpalm_scene(palm::Palm; architecture=false, environment=nothing)
+    return PlantSimEngine.CompositeModel(
+        palm.mtg;
+        applications=model_applications(palm; architecture=architecture),
+        environment=environment,
+        status=_xpalm_initial_status,
+    )
+end
+
+function _xpalm_initial_status(node)
+    attrs = MultiScaleTreeGraph.node_attributes(node)
+    status_data = Dict{Symbol,Any}()
+    for (key, value) in pairs(attrs)
+        key_symbol = Symbol(key)
+        key_symbol == :plantsimengine_status && error(
+            "XPalm cannot import the legacy `plantsimengine_status` MTG " *
+            "attribute as runtime state. Remove it from the persisted graph " *
+            "and resolve live status with `PlantSimEngine.model_status`.",
+        )
+        status_data[key_symbol] = value
+    end
+    if MultiScaleTreeGraph.symbol(node) in
+       (:Phytomer, :Internode, :Leaf, :Male, :Female)
+        defaults = (
+            plant_age=-9999,
+            initiation_age=0,
+            TT_since_init=0.0,
+            state=:undetermined,
+            sex=:undetermined,
+        )
+        for (key, value) in pairs(defaults)
+            get!(status_data, key, value)
+        end
+    end
+    status_data[:node] = node
+    return PlantSimEngine.Status((; status_data...))
+end
+
+function _output_requests(vars)
+    isnothing(vars) && return :all
+    requests = PlantSimEngine.OutputRequest[]
+    for (scale, variables) in pairs(vars)
+        for variable in variables
+            scale_symbol = Symbol(scale)
+            variable_symbol = Symbol(variable)
+            push!(
+                requests,
+                PlantSimEngine.OutputRequest(
+                    scale_symbol,
+                    variable_symbol;
+                    name=Symbol(scale_symbol, "__", variable_symbol),
+                ),
+            )
+        end
+    end
+    return requests
+end
+
+function _collect_xpalm_outputs(sim, sink, vars)
+    isempty(vars) && return Dict{Symbol,Any}()
+    requested = PlantSimEngine.collect_outputs(sim; sink=nothing)
+    rows_by_scale = Dict{Symbol,Dict{Tuple{Int,Any},Dict{Symbol,Any}}}()
+
+    for rows in values(requested)
+        for row in rows
+            scale_rows = get!(rows_by_scale, row.scale) do
+                Dict{Tuple{Int,Any},Dict{Symbol,Any}}()
+            end
+            row_key = (row.timestep, row.object_id)
+            values_at_step = get!(scale_rows, row_key) do
+                Dict{Symbol,Any}(
+                    :timestep => row.timestep,
+                    :node => row.object_id,
+                )
+            end
+            values_at_step[row.variable] = row.value
+        end
+    end
+
+    outputs = Dict{Symbol,Any}()
+    for (scale, variables) in pairs(vars)
+        scale_symbol = Symbol(scale)
+        variable_names = Tuple(Symbol.(variables))
+        fields = (:timestep, :node, variable_names...)
+        scale_rows = get(
+            rows_by_scale,
+            scale_symbol,
+            Dict{Tuple{Int,Any},Dict{Symbol,Any}}(),
+        )
+        row_keys = sort!(collect(keys(scale_rows)); by=key -> (key[1], string(key[2])))
+        rows = [
+            NamedTuple{fields}(
+                Tuple(get(scale_rows[key], field, missing) for field in fields),
+            )
+            for key in row_keys
+        ]
+        outputs[scale_symbol] = sink(rows)
+    end
+    return outputs
+end
+
+function _nsteps(meteo)
+    rows = Tables.rows(meteo)
+    n = 0
+    for _ in rows
+        n += 1
+    end
+    return n
 end
 
 """

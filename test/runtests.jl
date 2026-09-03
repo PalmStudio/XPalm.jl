@@ -1,6 +1,28 @@
+using Test
+
+const reference_regression_only =
+    length(ARGS) == 1 &&
+    only(ARGS) == "reference-regression"
+
+if reference_regression_only
+using XPalm
+using Test
+using Dates
+using SHA
+using TOML
+using PlantSimEngine
+using CSV
+using DataFrames
+using Statistics
+
+const dirtest = @__DIR__
+include("reference_regression_helpers.jl")
+include("test-reference-regression.jl")
+else
 using XPalm
 using XPalm.Models
-using XPalm.VPalm
+const VPalm = XPalm.load_vpalm!()
+const read_parameters = VPalm.read_parameters
 import XPalm: Palm
 using Aqua
 using JET
@@ -10,8 +32,27 @@ using ReferenceTests
 using Test
 using Dates
 using Random
+using SHA
+using TOML
 import StableRNGs: StableRNG
 using MultiScaleTreeGraph, PlantGeom, PlantMeteo, PlantSimEngine
+import PlantSimEngine:
+    Many,
+    ModelSpec,
+    Object,
+    One,
+    OptionalOne,
+    OutputRequest,
+    PreviousTimeStep,
+    CompositeModel,
+    SceneScope,
+    Self,
+    SelfPlant,
+    Status,
+    collect_outputs,
+    process,
+    run!,
+    model_objects
 using CSV, DataFrames, Statistics, Unitful
 # Import the meteo data once:
 
@@ -22,12 +63,53 @@ end
 
 dirtest = joinpath(dirname(dirname(pathof(XPalm))), "test/")
 
+function test_scene(
+    scale::Symbol,
+    models::PlantSimEngine.AbstractModel...;
+    status=Status(),
+    environment=nothing,
+)
+    applications = Tuple(
+        ModelSpec(model; name=process(model), on=One(scale=scale))
+        for model in models
+    )
+    kind = scale == :Soil ? :soil : :plant
+    return CompositeModel(
+        Object(:test_object; scale=scale, kind=kind, status=status);
+        applications=applications,
+        environment=environment,
+    )
+end
+
+test_status(scene, scale::Symbol) = only(model_objects(scene; scale=scale)).status
+
+function output_values(sim, name::Symbol)
+    return [row.value for row in collect_outputs(sim, name; sink=nothing)]
+end
+
 # VPalm parameters
 vpalm_parameters = read_parameters(joinpath(dirtest, "references", "vpalm-parameter_file.yml"))
 vpalm_parameters2 = read_parameters(joinpath(dirtest, "references", "vpalm-parameter_file-missing_rachis_final_lengths.yml"))
 
 @testset "Code quality (Aqua.jl)" begin
-    Aqua.test_all(XPalm, ambiguities=false)
+    Aqua.test_all(
+        XPalm;
+        ambiguities=false,
+        # Aqua checks persistent tasks in a fresh environment built only from
+        # Project.toml. Julia 1.10 cannot resolve our pinned `[sources]` there.
+        persistent_tasks=VERSION >= v"1.11",
+        # These dependencies belong to the lazily loaded XPalm.VPalm module,
+        # so Aqua cannot observe their use from the main XPalm module.
+        stale_deps=(;
+            ignore=[
+                :CoordinateTransformations,
+                :GeometryBasics,
+                :Interpolations,
+                :PlantGeom,
+                :Rotations,
+            ],
+        ),
+    )
 end
 
 if VERSION >= v"1.10"
@@ -43,15 +125,20 @@ end
 
 @testset "Light" begin
     include(joinpath(dirtest, "test-beer.jl"))
+    include(joinpath(dirtest, "test-radiation-contracts.jl"))
 end
 
 @testset "Micrometeorology" begin
     include(joinpath(dirtest, "test-micrometeo.jl"))
 end
 
-# @testset "Carbon_allocation" begin
-#     include(joinpath(dirtest, "test-carbon_allocation.jl"))
-# end
+@testset "Environment input contracts" begin
+    include(joinpath(dirtest, "test-environment-inputs.jl"))
+end
+
+@testset "Carbon_allocation" begin
+    include(joinpath(dirtest, "test-carbon_allocation.jl"))
+end
 
 @testset "Carbon_assimilation" begin
     include(joinpath(dirtest, "test-rue.jl"))
@@ -59,6 +146,10 @@ end
 
 @testset "Carbon_offer" begin
     include(joinpath(dirtest, "test-carbon_offer.jl"))
+end
+
+@testset "Carbon currency contracts" begin
+    include(joinpath(dirtest, "test-carbon-contracts.jl"))
 end
 
 @testset "Dimensions" begin
@@ -75,6 +166,10 @@ end
 
 @testset "Biomass" begin
     include(joinpath(dirtest, "test-biomass.jl"))
+end
+
+@testset "Maintenance respiration" begin
+    include(joinpath(dirtest, "test-maintenance_respiration.jl"))
 end
 
 @testset "Carbon_demand" begin
@@ -98,6 +193,12 @@ end
     include("test-run.jl")
 end
 
+if lowercase(get(ENV, "XPALM_RUN_REFERENCE_REGRESSION", "false")) in
+   ("1", "true", "yes")
+    include("reference_regression_helpers.jl")
+    include("test-reference-regression.jl")
+end
+
 @testset "VPalm" begin
 
     @testset "Parameters IO" begin
@@ -118,6 +219,9 @@ end
 
     @testset "Geometry" begin
         include(joinpath(dirtest, "test-vpalm-geometry.jl"))
+        include(joinpath(dirtest, "test-vpalm-mesh-merge.jl"))
+        include(joinpath(dirtest, "test-vpalm-geometry-events.jl"))
+        include(joinpath(dirtest, "test-vpalm-geometry-contracts.jl"))
     end
 
     @testset "Biomechanical model" begin
@@ -130,4 +234,5 @@ end
     @testset "Static mockup" begin
         include(joinpath(dirtest, "test-vpalm-static_mockup.jl"))
     end
+end
 end
