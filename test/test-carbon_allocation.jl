@@ -66,21 +66,19 @@ function xpalm_test_allocation_applications(; mismatched_allocations=false)
                 ),
             ),
             outputs_to=(
-                carbon_allocation=PlantSimEngine.OutputTo(
+                PlantSimEngine.OutputTo(
                     Many(
-                        scale=allocation_scales,
+                        scale=(:Plant, (allocation_scales isa Symbol ? (allocation_scales,) : allocation_scales)...),
                         within=PlantSimEngine.Subtree(),
                     );
-                    vars=(
-                        carbon_allocation=PlantSimEngine.Default(0.0),
-                    ),
+                    vars=(:carbon_allocation,),
                 ),
-                reserve=PlantSimEngine.OutputTo(
+                PlantSimEngine.OutputTo(
                     Many(
-                        scale=(:Internode, :Leaf),
+                        scale=(:Plant, :Internode, :Leaf),
                         within=PlantSimEngine.Subtree(),
                     );
-                    vars=(reserve=PlantSimEngine.Default(0.0),),
+                    vars=(:reserve,),
                 ),
             ),
         ),
@@ -102,12 +100,12 @@ function xpalm_test_allocation_applications(; mismatched_allocations=false)
                     var=:reserve,
                 ),
             ),
-            outputs_to=(reserve=PlantSimEngine.OutputTo(
+            outputs_to=(PlantSimEngine.OutputTo(
                 Many(
-                    scale=(:Internode, :Leaf),
+                    scale=(:Plant, :Internode, :Leaf),
                     within=PlantSimEngine.Subtree(),
                 );
-                vars=(reserve=PlantSimEngine.Default(0.0),),
+                vars=(:reserve,),
             ),),
             updates=PlantSimEngine.Updates(
                 :reserve;
@@ -604,6 +602,16 @@ end
             sink=nothing,
         )
         @test only(retained).value == 1.0
+
+        # The same output names retain both plant totals and organ values.
+        retained_plant_allocation = PlantSimEngine.collect_outputs(
+            identified_simulation, 901, :carbon_allocation; sink=nothing,
+        )
+        retained_plant_reserve = PlantSimEngine.collect_outputs(
+            identified_simulation, 207, :reserve; sink=nothing,
+        )
+        @test only(retained_plant_allocation).value == 4.0
+        @test any(row -> row.value == 12.0, retained_plant_reserve)
     end
 
     @testset "ID mismatch fails before mutation" begin

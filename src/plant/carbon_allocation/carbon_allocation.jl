@@ -20,11 +20,11 @@ PlantSimEngine.inputs_(::OrgansCarbonAllocationModel) = (
     previous_reserve_organs=PlantSimEngine.Default(Float64[]),
 )
 PlantSimEngine.outputs_(::OrgansCarbonAllocationModel) = (
-    carbon_allocation=-Inf,
+    carbon_allocation=PlantSimEngine.Distributed(PlantSimEngine.Default(0.0)),
     respiration_reserve_mobilization=0.0,
     carbon_offer_after_allocation=-Inf,
     carbon_demand=0.0,
-    reserve=0.0,
+    reserve=PlantSimEngine.Distributed(PlantSimEngine.Default(0.0)),
 )
 PlantSimEngine.variable_contracts_(::OrgansCarbonAllocationModel) = (
     carbon_offer_after_rm=_DAILY_CH2O_EQUIVALENT_FLOW,
@@ -134,33 +134,35 @@ function PlantSimEngine.run!(
     previous_reserves =
         PlantSimEngine.bound_input(context, :previous_reserve_organs)
     allocation_targets =
-        PlantSimEngine.output_targets(context, :carbon_allocation)
-    reserve_targets = PlantSimEngine.output_targets(context, :reserve)
+        PlantSimEngine.output_targets(context, (:carbon_allocation,))
+    reserve_targets = PlantSimEngine.output_targets(context, (:reserve,))
+    allocation_organs = _organ_output_view(allocation_targets, context, Val(:carbon_allocation))
+    reserve_organs = _organ_output_view(reserve_targets, context, Val(:reserve))
 
     _require_aligned_object_ids(
         :carbon_demand_organs,
         :carbon_allocation,
         PlantSimEngine.object_ids(carbon_demands),
-        PlantSimEngine.object_ids(allocation_targets),
+        allocation_organs.ids,
     )
     _require_aligned_object_ids(
         :previous_reserve_organs,
         :reserve,
         PlantSimEngine.object_ids(previous_reserves),
-        PlantSimEngine.object_ids(reserve_targets),
+        reserve_organs.ids,
     )
 
     result = _allocate_organ_carbon!(
         m,
         carbon_demands,
         previous_reserves,
-        allocation_targets.columns.carbon_allocation,
-        reserve_targets.columns.reserve,
+        allocation_organs.values,
+        reserve_organs.values,
         status.carbon_offer_after_rm,
     )
     status.carbon_demand = result.carbon_demand
-    status.reserve = result.reserve
-    status.carbon_allocation = result.carbon_allocation
+    reserve_targets.columns.reserve[reserve_organs.plant_index] = result.reserve
+    allocation_targets.columns.carbon_allocation[allocation_organs.plant_index] = result.carbon_allocation
     status.respiration_reserve_mobilization =
         result.respiration_reserve_mobilization
     status.carbon_offer_after_allocation =

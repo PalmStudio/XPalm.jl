@@ -39,3 +39,20 @@ Diagnostics.explain_writers(compiled)
 
 These tables are the authoritative representation of XPalm's application
 targets, cross-object inputs, hard calls, rates, and variable writers.
+
+
+## Carbon outputs on plants and organs
+
+`OrgansCarbonAllocationModel` declares `carbon_allocation` and `reserve` with
+`PlantSimEngine.Distributed(PlantSimEngine.Default(0.0))` in `outputs_`.
+`OrganReserveFilling` declares its `reserve` output in the same way.
+Their `OutputTo` selectors include both the execution plant and the relevant
+organs in its subtree. The plant stores the total; each organ stores its own
+allocation or reserve. Variable names, units, and carbon equations are the
+same at each step as before this declaration change.
+
+The kernels retrieve destinations by variable name, for example
+`output_targets(context, (:reserve,))`. They exclude the plant total from the
+organ calculation using an object-ID view, then publish the total to the
+plant's destination column. No particular position of the plant ID is
+assumed, and new organs join these destinations after growth.

@@ -6,7 +6,7 @@ PlantSimEngine.inputs_(::OrganReserveFilling) = (
     reserve_organs=PlantSimEngine.Required(AbstractVector),
 )
 PlantSimEngine.outputs_(::OrganReserveFilling) = (
-    reserve=0.0,
+    reserve=PlantSimEngine.Distributed(PlantSimEngine.Default(0.0)),
     carbon_allocation_reserve=-Inf,
     carbon_offer_after_storage=-Inf,
 )
@@ -85,9 +85,10 @@ function PlantSimEngine.run!(
         PlantSimEngine.bound_input(context, :potential_reserve_organs)
     reserves_before_filling =
         PlantSimEngine.bound_input(context, :reserve_organs)
-    reserve_targets = PlantSimEngine.output_targets(context, :reserve)
+    reserve_targets = PlantSimEngine.output_targets(context, (:reserve,))
+    reserve_organs = _organ_output_view(reserve_targets, context, Val(:reserve))
 
-    reserve_target_ids = PlantSimEngine.object_ids(reserve_targets)
+    reserve_target_ids = reserve_organs.ids
     _require_aligned_object_ids(
         :potential_reserve_organs,
         :reserve,
@@ -104,10 +105,10 @@ function PlantSimEngine.run!(
     result = _fill_organ_reserves!(
         potential_reserves,
         reserves_before_filling,
-        reserve_targets.columns.reserve,
+        reserve_organs.values,
         status.carbon_offer_after_allocation,
     )
-    status.reserve = result.reserve
+    reserve_targets.columns.reserve[reserve_organs.plant_index] = result.reserve
     status.carbon_allocation_reserve = result.carbon_allocation_reserve
     status.carbon_offer_after_storage = result.carbon_offer_after_storage
 

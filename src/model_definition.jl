@@ -4,7 +4,7 @@ function _xpalm_application(
     name=PlantSimEngine.process(model),
     inputs=NamedTuple(),
     calls=NamedTuple(),
-    outputs_to=NamedTuple(),
+    outputs_to=(),
     output_routing=NamedTuple(),
     updates=(),
 )
@@ -395,19 +395,19 @@ function model_applications(p; architecture=false)
                 var=:reserve,
             ),),
             outputs_to=(
-                carbon_allocation=PlantSimEngine.OutputTo(
+                PlantSimEngine.OutputTo(
                     PlantSimEngine.Many(
-                        scale=(:Leaf, :Internode, :Male, :Female),
+                        scale=(:Plant, :Leaf, :Internode, :Male, :Female),
                         within=PlantSimEngine.Subtree(),
                     );
-                    vars=(carbon_allocation=PlantSimEngine.Default(0.0),),
+                    vars=(:carbon_allocation,),
                 ),
-                reserve=PlantSimEngine.OutputTo(
+                PlantSimEngine.OutputTo(
                     PlantSimEngine.Many(
-                        scale=(:Internode, :Leaf),
+                        scale=(:Plant, :Internode, :Leaf),
                         within=PlantSimEngine.Subtree(),
                     );
-                    vars=(reserve=PlantSimEngine.Default(0.0),),
+                    vars=(:reserve,),
                 ),
             ),
         ),
@@ -424,12 +424,12 @@ function model_applications(p; architecture=false)
                 application=:Plant__carbon_allocation,
                 var=:reserve,
             ),),
-            outputs_to=(reserve=PlantSimEngine.OutputTo(
+            outputs_to=(PlantSimEngine.OutputTo(
                 PlantSimEngine.Many(
-                    scale=(:Internode, :Leaf),
+                    scale=(:Plant, :Internode, :Leaf),
                     within=PlantSimEngine.Subtree(),
                 );
-                vars=(reserve=PlantSimEngine.Default(0.0),),
+                vars=(:reserve,),
             ),),
             updates=PlantSimEngine.Updates(
                 :reserve;
