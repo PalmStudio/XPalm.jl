@@ -65,7 +65,7 @@ jobs:
         timeout-minutes: 15
         shell: julia --project=test --color=yes {0}
         run: |
-          include("benchmark/vpalm_geometry_performance.jl")
+          include(joinpath(pwd(), "benchmark", "vpalm_geometry_performance.jl"))
           @info "Starting full-cycle AB benchmark" nsteps=4160 warmup_steps=4160
           run_vpalm_geometry_benchmark(
               joinpath(ENV["XPALM_BENCHMARK_EVIDENCE"], "AB");
@@ -75,7 +75,7 @@ jobs:
         timeout-minutes: 15
         shell: julia --project=test --color=yes {0}
         run: |
-          include("benchmark/vpalm_geometry_performance.jl")
+          include(joinpath(pwd(), "benchmark", "vpalm_geometry_performance.jl"))
           @info "Starting full-cycle BA benchmark" nsteps=4160 warmup_steps=4160
           run_vpalm_geometry_benchmark(
               joinpath(ENV["XPALM_BENCHMARK_EVIDENCE"], "BA");
