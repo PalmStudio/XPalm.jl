@@ -95,17 +95,6 @@ vpalm_parameters2 = read_parameters(joinpath(dirtest, "references", "vpalm-param
     Aqua.test_all(
         XPalm;
         ambiguities=false,
-        # These dependencies belong to the lazily loaded XPalm.VPalm module,
-        # so Aqua cannot observe their use from the main XPalm module.
-        stale_deps=(;
-            ignore=[
-                :CoordinateTransformations,
-                :GeometryBasics,
-                :Interpolations,
-                :PlantGeom,
-                :Rotations,
-            ],
-        ),
     )
 end
 

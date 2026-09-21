@@ -52,6 +52,36 @@ jobs:
       - uses: codecov/codecov-action@v7
         with:
           files: lcov.info
+  fresh-architecture:
+    name: Fresh architecture calls - Julia ${{ matrix.version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ["1.10", "1.12.1", "1"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: ${{ matrix.version }}
+      - uses: julia-actions/cache@v3
+      - name: Configure fresh-call environment
+        timeout-minutes: 30
+        shell: julia --project=test --color=yes {0}
+        run: |
+          using Pkg
+          Pkg.develop(PackageSpec(path=pwd()))
+          Pkg.instantiate()
+          Pkg.status()
+      - name: Exercise each public entry in a separate Julia process
+        timeout-minutes: 12
+        shell: bash
+        run: |
+          for entry in physiology palm applications sink simulation; do
+            julia --startup-file=no --project=test --color=yes test/fresh-architecture.jl "$entry"
+          done
+
   docs:
     name: Documentation
     runs-on: ubuntu-latest

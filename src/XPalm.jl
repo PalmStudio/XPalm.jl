@@ -12,10 +12,12 @@ import OrderedCollections: OrderedDict
 include("vpalm/IO/parameter_normalization.jl")
 include("vpalm_parameters.jl")
 
-function load_vpalm!()
-    isdefined(@__MODULE__, :VPalm) || Base.include(@__MODULE__, joinpath(@__DIR__, "VPalm.jl"))
-    return Base.invokelatest(getfield, @__MODULE__, :VPalm)
-end
+# Define architecture methods before any user function can call them. Including
+# the module inside Palm/model_applications creates methods newer than that caller.
+# VPalm uses declared dependencies and creates no renderer or display window.
+include("VPalm.jl")
+
+load_vpalm!() = VPalm
 
 # Palm structure:
 include("plant/mtg/structs.jl")
