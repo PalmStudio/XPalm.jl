@@ -3,14 +3,28 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: Version to register or component to bump
-        required: true
+        description: Version or component to bump; required only when registering
+        required: false
+      benchmark:
+        description: Run the full numerical and VPalm benchmark gate instead of registering
+        type: boolean
+        default: false
 jobs:
   register:
+    if: ${{ !inputs.benchmark }}
     runs-on: ubuntu-latest
     permissions:
         contents: write
     steps:
+      - name: Require an explicit registration version
+        env:
+          REGISTRATION_VERSION: ${{ inputs.version }}
+        run: test -n "$REGISTRATION_VERSION"
       - uses: julia-actions/RegisterAction@latest
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
+  benchmark:
+    if: ${{ inputs.benchmark }}
+    uses: ./.github/workflows/Benchmark.yml
+    permissions:
+      contents: read

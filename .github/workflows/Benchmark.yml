@@ -1,0 +1,94 @@
+name: Full numerical and VPalm benchmark
+
+on:
+  workflow_dispatch:
+  workflow_call:
+
+permissions:
+  contents: read
+
+jobs:
+  benchmark:
+    name: 4160 days, full warm-up, AB and BA
+    runs-on: ubuntu-latest
+    timeout-minutes: 70
+    env:
+      JULIA_NUM_THREADS: "2"
+      XPALM_BENCHMARK_EVIDENCE: ${{ runner.temp }}/xpalm-benchmark
+    steps:
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: "1.12.1"
+      - uses: julia-actions/cache@v3
+      - name: Instantiate and record the registered environment
+        timeout-minutes: 20
+        shell: julia --project=test --color=yes {0}
+        run: |
+          using Pkg, TOML
+          Pkg.instantiate()
+          using XPalm, PlantSimEngine, PlantGeom, MultiScaleTreeGraph, PlantMeteo
+          @assert realpath(pkgdir(XPalm)) == realpath(pwd())
+          @assert pkgversion(PlantSimEngine) == v"0.15.0"
+          @assert pkgversion(PlantGeom) == v"0.20.0"
+          dependencies = Pkg.dependencies()
+          sources = Dict{String,Any}()
+          for package in (XPalm, PlantSimEngine, PlantGeom, MultiScaleTreeGraph, PlantMeteo)
+              info = dependencies[Base.PkgId(package).uuid]
+              package === XPalm || @assert info.is_tracking_registry
+              sources[string(nameof(package))] = Dict(
+                  "version" => string(pkgversion(package)),
+                  "path" => pkgdir(package),
+                  "registered" => info.is_tracking_registry,
+                  "tree_hash" => something(info.tree_hash, "not-applicable"),
+              )
+          end
+          evidence = ENV["XPALM_BENCHMARK_EVIDENCE"]
+          mkpath(evidence)
+          cp("test/Project.toml", joinpath(evidence, "Project.toml"))
+          cp("test/Manifest.toml", joinpath(evidence, "Manifest.toml"))
+          open(joinpath(evidence, "sources.toml"), "w") do io
+              TOML.print(io, Dict(
+                  "julia_version" => string(VERSION),
+                  "xpalm_commit" => readchomp(`git rev-parse HEAD`),
+                  "packages" => sources,
+              ); sorted=true)
+          end
+          @assert isempty(readchomp(`git status --porcelain`))
+      - name: Verify the unchanged v0.7.0-dev numerical oracle
+        timeout-minutes: 10
+        run: julia --project=test --color=yes test/runtests.jl reference-regression
+      - name: Full warm-up and AB measurement
+        timeout-minutes: 15
+        shell: julia --project=test --color=yes {0}
+        run: |
+          include("benchmark/vpalm_geometry_performance.jl")
+          @info "Starting full-cycle AB benchmark" nsteps=4160 warmup_steps=4160
+          run_vpalm_geometry_benchmark(
+              joinpath(ENV["XPALM_BENCHMARK_EVIDENCE"], "AB");
+              nsteps=4160, warmup_steps=4160, order=(false, true),
+          )
+      - name: Full warm-up and BA measurement in a fresh process
+        timeout-minutes: 15
+        shell: julia --project=test --color=yes {0}
+        run: |
+          include("benchmark/vpalm_geometry_performance.jl")
+          @info "Starting full-cycle BA benchmark" nsteps=4160 warmup_steps=4160
+          run_vpalm_geometry_benchmark(
+              joinpath(ENV["XPALM_BENCHMARK_EVIDENCE"], "BA");
+              nsteps=4160, warmup_steps=4160, order=(true, false),
+          )
+      - name: Verify source and numerical fixtures remain unchanged
+        if: ${{ always() }}
+        run: |
+          git diff --exit-code
+          test -z "$(git status --porcelain)"
+      - name: Preserve numerical and performance evidence
+        if: ${{ always() }}
+        timeout-minutes: 3
+        uses: actions/upload-artifact@v4
+        with:
+          name: xpalm-full-benchmark-${{ github.sha }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/xpalm-benchmark
+          if-no-files-found: error
+          retention-days: 90
