@@ -14,9 +14,12 @@ jobs:
     timeout-minutes: 70
     env:
       JULIA_NUM_THREADS: "2"
-      XPALM_BENCHMARK_EVIDENCE: ${{ runner.temp }}/xpalm-benchmark
     steps:
       - uses: actions/checkout@v7
+      - name: Prepare the evidence directory
+        run: |
+          mkdir -p "$RUNNER_TEMP/xpalm-benchmark"
+          printf 'XPALM_BENCHMARK_EVIDENCE=%s/xpalm-benchmark\n' "$RUNNER_TEMP" >> "$GITHUB_ENV"
       - uses: julia-actions/setup-julia@v3
         with:
           version: "1.12.1"
