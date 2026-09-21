@@ -55,7 +55,7 @@ jobs:
   fresh-architecture:
     name: Fresh architecture calls - Julia ${{ matrix.version }}
     runs-on: ubuntu-latest
-    timeout-minutes: 45
+    timeout-minutes: 60
     strategy:
       fail-fast: false
       matrix:
@@ -75,7 +75,9 @@ jobs:
           Pkg.instantiate()
           Pkg.status()
       - name: Exercise each public entry in a separate Julia process
-        timeout-minutes: 12
+        # Each process compiles its simulation independently; this is a cold-call
+        # correctness gate, separate from the unchanged warmed benchmark limits.
+        timeout-minutes: 25
         shell: bash
         run: |
           for entry in physiology palm applications sink simulation; do
