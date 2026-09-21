@@ -4,12 +4,13 @@
 geometry-performance work. It compares `architecture=false` and
 `architecture=true` in the same Julia session with a fixed VPalm seed.
 
-Including the runner does not load VPalm. The VPalm module is loaded lazily by
-the first `architecture=true` variant. This matters when the architecture-off
-path is benchmarked against another XPalm revision: in each fresh session,
-warm and measure `_run_benchmark_variant(false, ...)` before running any
-architecture-on variant, so VPalm compilation and method-table state cannot
-confound the comparison.
+XPalm defines VPalm when the package loads so a first architecture call from
+compiled user code can use its methods. Package import and compilation are
+outside the warmed simulation timings. For revision comparisons, use fresh
+processes, matching environments, and the same full warm-up and measurement
+order. The historical lazy-loading comparison below records older revisions;
+it does not establish the current import cost or the registered-stack
+cross-revision performance ratio.
 
 The runner separates:
 
@@ -132,7 +133,30 @@ Performance changes must retain:
 The focused suite covers allocation parity, dynamic MTG lifecycle, pruning,
 deterministic reconstruction, generic numeric behavior, and mesh/topology
 invariants. The full 4,160-day benchmark remains a manual regression gate and
-is not run in CI.
+is available as the manually selected **Full numerical and VPalm benchmark**
+GitHub Actions workflow. It does not run on ordinary PR pushes.
+
+The workflow uses Julia 1.12.1 and registered dependencies, first checks the
+unchanged `v0.7.0-dev` numerical oracle, then runs both AB and BA orders on the
+same runner in fresh processes. Each order uses `nsteps=4160` and
+`warmup_steps=4160`; all daily-output and biomass checks remain enabled.
+The artifact retains both sets of CSVs, the resolved Project and Manifest,
+package versions and registered tree hashes for 90 days, including available
+evidence from a failed run. Source and reference files must remain unchanged.
+
+Before the workflow reaches the default branch, select **Register Package**
+on the candidate branch with `benchmark=true`. The `version` input
+is unnecessary in this mode and can be left empty; the registration job is
+unconditionally skipped. Normal registration requires an explicit version.
+After merge, the benchmark workflow can also be dispatched directly.
+
+These runs validate the current dependency stack and measure the cost of
+architecture and retained outputs. They do not reproduce the historical
+cross-revision architecture-off comparison above: that requires clean,
+compatible baseline and candidate environments, identical inputs and output
+requests, and paired measurements on the same machine. Do not compare a new
+GitHub runner's timings directly with the historical Apple M3 results or
+claim the historical 1.02 non-regression gate from a current-stack run alone.
 
 ## Interpretation and deferred work
 

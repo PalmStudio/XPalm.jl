@@ -15,7 +15,7 @@ parameters = VPalm.read_parameters(file)
 
 ## Parameters definition
 
-Here is a list of all necessary parameters to run `VPalm = XPalm.load_vpalm!()`:
+The VPalm geometry parameters are listed below:
 
 The optional juvenile parameters below are enabled by default only in the
 dynamic XPalm–VPalm coupling file. They are intentionally absent from the

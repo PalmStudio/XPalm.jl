@@ -44,25 +44,6 @@ jobs:
           version: ${{ matrix.version }}
           arch: ${{ matrix.arch }}
       - uses: julia-actions/cache@v3
-      # Julia 1.10 does not yet interpret Project.toml [sources]. Bootstrap the
-      # same committed development dependencies used by newer Julia versions.
-      - name: Resolve pinned development dependencies on Julia 1.10
-        if: matrix.version == '1.10'
-        shell: julia --project=. --color=yes {0}
-        run: |
-          using Pkg
-          Pkg.add([
-            PackageSpec(
-              name="PlantSimEngine",
-              url="https://github.com/VirtualPlantLab/PlantSimEngine.jl",
-              rev="82786fba91fad644d8068d75afc64d88282400c4",
-            ),
-            PackageSpec(
-              name="PlantGeom",
-              url="https://github.com/VEZY/PlantGeom.jl",
-              rev="9d682ef1aaebe7ecf5aa8407a8305d6f4aad51c1",
-            ),
-          ])
       - uses: julia-actions/julia-buildpkg@v1
       - uses: julia-actions/julia-runtest@v1
         env:
@@ -71,6 +52,38 @@ jobs:
       - uses: codecov/codecov-action@v7
         with:
           files: lcov.info
+  fresh-architecture:
+    name: Fresh architecture calls - Julia ${{ matrix.version }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ["1.10", "1.12.1", "1"]
+    steps:
+      - uses: actions/checkout@v7
+      - uses: julia-actions/setup-julia@v3
+        with:
+          version: ${{ matrix.version }}
+      - uses: julia-actions/cache@v3
+      - name: Configure fresh-call environment
+        timeout-minutes: 30
+        shell: julia --project=test --color=yes {0}
+        run: |
+          using Pkg
+          Pkg.develop(PackageSpec(path=pwd()))
+          Pkg.instantiate()
+          Pkg.status()
+      - name: Exercise each public entry in a separate Julia process
+        # Each process compiles its simulation independently; this is a cold-call
+        # correctness gate, separate from the unchanged warmed benchmark limits.
+        timeout-minutes: 25
+        shell: bash
+        run: |
+          for entry in physiology palm applications sink simulation; do
+            julia --startup-file=no --project=test --color=yes test/fresh-architecture.jl "$entry"
+          done
+
   docs:
     name: Documentation
     runs-on: ubuntu-latest
