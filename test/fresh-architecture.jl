@@ -15,7 +15,7 @@ function check_direct_palm()
     @test palm isa XPalm.Palm
     @test haskey(MultiScaleTreeGraph.node_attributes(palm.mtg), :vpalm_rng)
     stem = only(MultiScaleTreeGraph.descendants(palm.mtg; symbol=:Stem))
-    @test stem[:stem_height] > 0
+    @test stem[:stem_height] > zero(stem[:stem_height])
     leaf = only(MultiScaleTreeGraph.descendants(palm.mtg; symbol=:Leaf))
     @test leaf[:is_alive]
 end
