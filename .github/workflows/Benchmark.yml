@@ -66,6 +66,8 @@ jobs:
         shell: julia --project=test --color=yes {0}
         run: |
           include(joinpath(pwd(), "benchmark", "vpalm_geometry_performance.jl"))
+          # Load lazy geometry methods at top level before entering the runner.
+          XPalm.load_vpalm!()
           @info "Starting full-cycle AB benchmark" nsteps=4160 warmup_steps=4160
           run_vpalm_geometry_benchmark(
               joinpath(ENV["XPALM_BENCHMARK_EVIDENCE"], "AB");
@@ -76,6 +78,8 @@ jobs:
         shell: julia --project=test --color=yes {0}
         run: |
           include(joinpath(pwd(), "benchmark", "vpalm_geometry_performance.jl"))
+          # Load lazy geometry methods at top level before entering the runner.
+          XPalm.load_vpalm!()
           @info "Starting full-cycle BA benchmark" nsteps=4160 warmup_steps=4160
           run_vpalm_geometry_benchmark(
               joinpath(ENV["XPALM_BENCHMARK_EVIDENCE"], "BA");
