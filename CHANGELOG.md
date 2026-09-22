@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.7.0 (unreleased)
+## 0.7.0
 
 XPalm 0.7.0 moves simulations to PlantSimEngine 0.15, improves dynamic palm
 reconstruction with VPalm, and corrects carbon and biomass accounting. The
