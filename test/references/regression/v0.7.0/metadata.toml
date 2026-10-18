@@ -18,9 +18,9 @@ nsteps = 4160
 start_date = "2012-01-05"
 
 [source]
-baseline_id = "v0.7.0-dev"
+baseline_id = "v0.7.0"
 parameter_source = "XPalm.default_parameters()"
-release_state = "unreleased"
+release_state = "released"
 xpalm_commit = "d4ded8891d03f85bb5691b89572a4e003ac6eb7a"
 xpalm_version = "0.6.1"
 
