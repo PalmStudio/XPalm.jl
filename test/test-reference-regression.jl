@@ -1,4 +1,4 @@
-const REFERENCE_REGRESSION_BASELINE = "v0.7.0-dev"
+const REFERENCE_REGRESSION_BASELINE = "v0.7.0"
 const REFERENCE_REGRESSION_DIR = joinpath(
     dirtest,
     "references",
@@ -46,13 +46,13 @@ function test_reference_float_columns(
     end
 end
 
-@testset "XPalm v0.7.0-dev full-cycle numerical regression" begin
+@testset "XPalm v0.7.0 full-cycle numerical regression" begin
     metadata = TOML.parsefile(joinpath(REFERENCE_REGRESSION_DIR, "metadata.toml"))
     meteo_path = joinpath(dirname(dirname(pathof(XPalm))), "0-data", "meteo.csv")
     current_meteo_sha256 = bytes2hex(SHA.sha256(read(meteo_path)))
 
     @test metadata["source"]["baseline_id"] == REFERENCE_REGRESSION_BASELINE
-    @test metadata["source"]["release_state"] == "unreleased"
+    @test metadata["source"]["release_state"] == "released"
     @test metadata["source"]["xpalm_version"] == "0.6.1"
     @test metadata["source"]["xpalm_commit"] ==
           "d4ded8891d03f85bb5691b89572a4e003ac6eb7a"

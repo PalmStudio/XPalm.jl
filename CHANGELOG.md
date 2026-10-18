@@ -28,7 +28,7 @@ simulation results when upgrading.
   [coupling guidance](docs/src/running.md#assimilate-currency-and-photosynthesis-coupling).
 - Add a versioned numerical reference for the full 4,160-day example, covering
   growth, leaf area index, harvest events, and bunch and oil yield. The
-  [comparison with v0.6.1](test/references/regression/v0.7.0-dev/README.md)
+  [comparison with v0.6.1](test/references/regression/v0.7.0/README.md)
   documents the intentional changes. The v0.6.1 reference remains unchanged.
 
 ### Dynamic architecture with VPalm

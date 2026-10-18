@@ -1,7 +1,8 @@
-# XPalm v0.7.0-dev numerical reference
+# XPalm v0.7.0 numerical reference
 
-These files are the active compact regression oracle and candidate baseline
-for the future XPalm v0.7.0 release. They were generated on Julia 1.12.1 from
+These files are the released compact regression oracle for XPalm v0.7.0.
+Their numerical data were promoted unchanged from the reviewed `v0.7.0-dev`
+candidate. They were generated on Julia 1.12.1 from
 the XPalm model at commit `d4ded8891d03f85bb5691b89572a4e003ac6eb7a` with
 PlantSimEngine 0.15.0 at commit
 `82786fba91fad644d8068d75afc64d88282400c4`.
@@ -16,7 +17,7 @@ oracle.
 
 The reviewed whole-cycle changes from v0.6.1 are:
 
-| Quantity | v0.6.1 | v0.7.0-dev | Change |
+| Quantity | v0.6.1 | v0.7.0 | Change |
 | --- | ---: | ---: | ---: |
 | Harvested bunches | 128 | 118 | -10 |
 | Total bunch yield (gDM) | 336683.0948 | 289035.1660 | -14.15% |
@@ -34,17 +35,11 @@ Run the regression explicitly with:
 julia --project=test test/runtests.jl reference-regression
 ```
 
-Ordinary local tests skip it. CI runs it on one pinned Linux/Julia job. To
-replace this v0.7.0 development fixture intentionally, review the numerical
-differences first, then run the generator with the overwrite guard enabled:
+Ordinary local tests skip it. CI runs it on one pinned Linux/Julia job.
+The source commit, generator package versions, dependency revisions, hashes,
+and generation timestamp remain the original provenance of the numerical data;
+the release promotion changes only the baseline name and release state.
 
-```sh
-XPALM_UPDATE_REFERENCE=true XPALM_REFERENCE_RELEASE_STATE=unreleased \
-  julia --project=test \
-  scripts/generate_reference_regression.jl \
-  test/references/regression/v0.7.0-dev
-```
-
-Record the scientific rationale and exact dependency revisions with every
-accepted update. When v0.7.0 is released, rename the baseline to `v0.7.0` and
-record it with `release_state = "released"`.
+Do not overwrite this released oracle. Generate a new versioned baseline for
+future scientific changes, review the numerical differences, and record the
+scientific rationale and exact dependency revisions with every accepted update.

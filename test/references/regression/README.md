@@ -1,12 +1,11 @@
 # XPalm numerical regression references
 
 The CI regression compares the default 4,160-day simulation with the
-`v0.7.0-dev` candidate baseline. This is the accepted development behavior
-intended for XPalm v0.7.0 after the post-v0.6.1 carbon-unit and respiration
-corrections.
+released `v0.7.0` baseline. This is the accepted XPalm v0.7.0 behavior after
+the post-v0.6.1 carbon-unit and respiration corrections.
 
-- [`v0.7.0-dev`](v0.7.0-dev/README.md) is the active CI oracle and candidate
-  for the future v0.7.0 release.
+- [`v0.7.0`](v0.7.0/README.md) is the active CI oracle. Its numerical data
+  were promoted unchanged from the reviewed `v0.7.0-dev` candidate.
 - [`v0.6.1`](v0.6.1/README.md) is the immutable released oracle retained for
   provenance and historical comparisons.
 
