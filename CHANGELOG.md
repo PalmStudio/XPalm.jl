@@ -2,6 +2,24 @@
 
 ## Unreleased
 
+### Experimental bunch growth recovery
+
+- Add opt-in `CatchUpFemaleCarbonDemandModel`, selected by
+  `carbon_demand/Female/catch_up = true`. The fixed schedule remains the default
+  and old parameter files remain compatible. Unfunded, already scheduled non-oil,
+  oil and stalk growth is requested again before the existing terminal event.
+- Track unique schedules, retries and terminal residuals separately. The model
+  uses native potentials, lagged actual biomass and unchanged construction costs,
+  allocation and growth kernels; it requires no observations or external carbon.
+  Recovery has no separately calibrated physiological rate ceiling and remains
+  an experimental upper-bound hypothesis requiring evaluation/recalibration.
+- Preserve the [hypothesis and evidence](docs/src/catchup_growth.md): observation
+  forcing assumptions, organ-scale carbon deficit, allocation-funded annual
+  measured-cohort growth, historical calibrated bundles, and a matched-protocol
+  countercheck whose later-year yield error does not improve after recalibration.
+  Bundle anonymized plotted tables, source/check provenance and a public Julia
+  renderer; historical figures are not presented as fresh package-port validation.
+
 ### Reproductive lifecycle corrections
 
 - Separate rank-based leaf pruning from reproductive harvest. Pruning a leaf no

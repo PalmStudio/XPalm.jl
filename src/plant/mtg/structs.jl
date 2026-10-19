@@ -177,7 +177,9 @@ function default_parameters()
             "Male" => Dict(
                 "respiration_cost" => 1.44, # g CH2O-equivalent gDM⁻¹
             ),
-            "Female" => Dict(
+            "Female" => Dict{String,Any}(
+                # Experimental recovery of unfunded scheduled growth; opt-in.
+                "catch_up" => false,
                 "respiration_cost" => 1.44, # g CH2O-equivalent gDM⁻¹
                 # Pallas et al. (2013), doi:10.1093/treephys/tpt015.
                 "respiration_cost_oleosynthesis" => 3.2, # g CH2O-equivalent gDM⁻¹ oil

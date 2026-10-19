@@ -92,6 +92,7 @@ include("plant/phytomer/ReproductiveOrgans/Female/final_potential_biomass.jl")
 include("plant/phytomer/ReproductiveOrgans/Female/number_spikelets.jl")
 include("plant/phytomer/ReproductiveOrgans/Female/number_fruits.jl")
 include("plant/phytomer/ReproductiveOrgans/Female/carbon_demand.jl")
+include("plant/phytomer/ReproductiveOrgans/Female/carbon_demand_catchup.jl")
 include("plant/phytomer/ReproductiveOrgans/Female/biomass.jl")
 include("plant/phytomer/ReproductiveOrgans/Female/harvest.jl")
 
@@ -129,6 +130,7 @@ export FemaleFinalPotentialFruits,
     NumberSpikelets,
     NumberFruits,
     FemaleCarbonDemandModel,
+    CatchUpFemaleCarbonDemandModel,
     FemaleBiomass,
     BunchHarvest
 

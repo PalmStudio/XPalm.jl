@@ -1,0 +1,34 @@
+annual_measured_bunches = 50
+drawing_checks_passed = true
+calibration_executed = false
+organ_fixed_deficit_days = 65
+annual_fixed_total_kg = 271.3538453721126
+private_project_required = false
+organ_fixed_funded_kg = 6.4061789975159655
+pixel_identical_to_archives_asserted = false
+organ_observed_target_kg = 8.559230536378074
+observation_color = "#D62728"
+annual_observed_total_kg = 302.59683426221505
+archived_figures_overwritten = false
+organ_catchup_deficit_days = 68
+input_files_unchanged = true
+annual_catchup_total_kg = 300.60753970019255
+simulation_executed = false
+organ_catchup_funded_kg = 8.54954031553524
+
+[output_sha256]
+"organ/02_single_bunch_with_catchup.pdf" = "da66bf42ab3263db90bdb5bfc3f05926d1652c935f7008342c9d69373e7ce704"
+"organ/02_single_bunch_without_catchup.png" = "e60c3b69f93ad9268d9cf57dd6c9a2d7608870d5294ff1eb5156bd46505760c2"
+"organ/02_single_bunch_without_catchup.svg" = "4070606633f4dc40733a5be060bad7169547d4a898f1a75e9f74d70f81b4cbe9"
+"annual_fruit/fruit_dry_mass_red_observations.svg" = "9959bd430d7e9cf0371e06daabde0a9681127492004ef53895a7c65df53cc0bc"
+"annual_fruit/fruit_dry_mass_red_observations.pdf" = "e410aec6e85f918842c702e8bdf397cfbac6aeb44e6f6f19992a81ba5d737ac0"
+"organ/02_single_bunch_with_catchup.png" = "3f7aa19835109874dc38789b2550053bd8cd6ed596f621617023dd22bc455a1d"
+"organ/02_single_bunch_with_catchup.svg" = "d3ac77db5c38353fa537a2b2dc9f7a8bca0807a01c972c82ed8f9a66b9826026"
+"organ/02_single_bunch_without_catchup.pdf" = "b27331165317db0293a449ce013e39a04e6648940def5d6d0447bf6eea02bb4d"
+"annual_fruit/fruit_dry_mass_red_observations.png" = "5c8d04d7e42b29d7a0f76e9803e21b8c9dcb162715eaff3fcb62acb5dc1072ed"
+
+[input_sha256]
+"annual_fruit/plotted_values.csv" = "29eb8c086161076ae882e7972f9aaeaeecb37ddc422fdc225f91dc1f2383e3f4"
+"organ/plotted_values.csv" = "2055b31fadb578d69a0edd7c514d1aa5ebabe1db6415a60efa6c492288c86a1c"
+"sources/render_public_figures.jl" = "029150a01fd4325c095921b3108e0fd199b43b5040747d7685eb21a6bdac09c9"
+"organ/archived_figure_checks.toml" = "9cc31893b156b915250826953fd76154cd155bd69dd7e6b6f569e66393283ae6"
