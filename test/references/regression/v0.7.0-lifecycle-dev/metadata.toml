@@ -146,4 +146,3 @@ xpalm_version = "0.7.0"
 [stochastic_configuration]
 abortion_seed = 1
 sex_determination_seed = 1
-

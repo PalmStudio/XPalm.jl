@@ -124,7 +124,6 @@ function write_reference_regression(output_dir; release_state=nothing)
     )
     open(joinpath(output_dir, "metadata.toml"), "w") do io
         TOML.print(io, metadata; sorted=true)
-        println(io)
     end
 
     return scenario
