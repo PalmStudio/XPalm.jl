@@ -1,0 +1,20 @@
+{
+  "scope": "Archived 2026-10-01 local diagnostic, not a rerun of this branch",
+  "files": [
+    {
+      "file": "reproductive_onset.png",
+      "source": "/Users/rvezy/Documents/dev/XPalm_calibration_new/2-results/reproduction_audit_20261001/reproductive_onset.png",
+      "sha256": "bd881ac30fd871d7d09743fdb76c9d983572bb7a44a519790cfe411e63f0cb20"
+    },
+    {
+      "file": "summary.csv",
+      "source": "/Users/rvezy/Documents/dev/XPalm_calibration_new/2-results/reproduction_audit_20261001/summary.csv",
+      "sha256": "d780b5056a25074c48a92a11d990a70b88f12278d8e88ffd42e2b7c01d81d442"
+    },
+    {
+      "file": "verification.toml",
+      "source": "/Users/rvezy/Documents/dev/XPalm_calibration_new/2-results/reproduction_audit_20261001/verification.toml",
+      "sha256": "e66139a6d8f1d372c23186d4db1813f9955d52bb7548d034eb89dbdea5dfff51"
+    }
+  ]
+}

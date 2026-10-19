@@ -34,7 +34,10 @@ end
         environment=meteo[1:1, :],
     )
     simulation = run!(scene; outputs=:all)
-    @test test_status(scene, :Soil).ftsw ≈ 0.5592225889255592
+    # Rooted infiltration now receives the same effective rainfall as the
+    # overlapping bulk view. This case agrees with the classic FTSW kernel;
+    # the former 0.5592225889255592 encoded the lost-recharge defect.
+    @test test_status(scene, :Soil).ftsw ≈ 0.5819197102523261
     @test any(
         row -> row.application_id == :root_growth && row.variable == :root_depth,
         collect_outputs(simulation; sink=nothing),

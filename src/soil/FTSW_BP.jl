@@ -323,6 +323,11 @@ function PlantSimEngine.run!(m::FTSW_BP, st, environment, constants, context=not
     end
     st.qty_H2O_C = st.qty_H2O_C1minusVap + st.qty_H2O_C2
 
+    # The rooted compartments are an overlapping view of the soil water,
+    # not additional storage. Reapply effective rain to that view: rain_remain
+    # above has already been consumed while updating the bulk compartments.
+    st.rain_remain = st.rain_effective
+
     # compute roots water balance after rain
     if ((st.qty_H2O_Vap_Roots + st.rain_effective) >= st.roots_SizeVap)
         st.rain_remain = st.rain_remain + st.qty_H2O_Vap_Roots - st.roots_SizeVap

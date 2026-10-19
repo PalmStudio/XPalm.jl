@@ -154,6 +154,10 @@ end
     include(joinpath(dirtest, "test-biomass.jl"))
 end
 
+@testset "Reproductive lifecycle" begin
+    include(joinpath(dirtest, "test-reproductive-lifecycle.jl"))
+end
+
 @testset "Maintenance respiration" begin
     include(joinpath(dirtest, "test-maintenance_respiration.jl"))
 end
@@ -165,6 +169,7 @@ end
 
 @testset "Soil" begin
     include(joinpath(dirtest, "test-FTSW.jl"))
+    include(joinpath(dirtest, "test-rooted-recharge.jl"))
 end
 
 @testset "Roots" begin
