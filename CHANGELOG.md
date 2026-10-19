@@ -17,6 +17,9 @@
   management assumptions in the [lifecycle note](docs/src/reproductive_lifecycle.md).
   These corrections intentionally change model behavior; published numerical
   fixtures and physiological defaults are not rewritten or recalibrated here.
+- Add a separately named unreleased full-cycle numerical candidate and protect
+  all released v0.7.0 reference files with checksums. The new candidate is
+  reviewed with these intentional lifecycle and soil changes.
 
 ## 0.7.0
 

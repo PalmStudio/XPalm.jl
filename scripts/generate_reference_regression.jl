@@ -9,7 +9,7 @@ using XPalm
 
 include(joinpath(@__DIR__, "..", "test", "reference_regression_helpers.jl"))
 
-const NEXT_RELEASE_REFERENCE_BASELINE = "v0.7.0-dev"
+const NEXT_RELEASE_REFERENCE_BASELINE = REFERENCE_REGRESSION_CANDIDATE_BASELINE
 
 function git_revision(path)
     try
@@ -36,6 +36,12 @@ function write_reference_regression(output_dir; release_state=nothing)
         "metadata.toml",
     )
     existing = filter(file -> isfile(joinpath(output_dir, file)), expected_files)
+    baseline_id = basename(output_dir)
+    baseline_id in ("v0.6.1", REFERENCE_REGRESSION_RELEASED_BASELINE) &&
+        !isempty(existing) && error(
+            "Released numerical references are immutable. Generate a separately " *
+            "named unreleased candidate instead of overwriting $baseline_id.",
+        )
     allow_update =
         lowercase(get(ENV, "XPALM_UPDATE_REFERENCE", "false")) in
         ("1", "true", "yes")
@@ -45,7 +51,6 @@ function write_reference_regression(output_dir; release_state=nothing)
     )
 
     mkpath(output_dir)
-    baseline_id = basename(output_dir)
     resolved_release_state = isnothing(release_state) ?
         (endswith(baseline_id, "-dev") ? "unreleased" : "released") :
         release_state
@@ -75,6 +80,14 @@ function write_reference_regression(output_dir; release_state=nothing)
             "xpalm_version" => string(Base.pkgversion(XPalm)),
             "xpalm_commit" => git_revision(package_root),
             "parameter_source" => "XPalm.default_parameters()",
+            "predecessor_baseline" => REFERENCE_REGRESSION_RELEASED_BASELINE,
+            "scientific_change_id" => REFERENCE_REGRESSION_SCIENTIFIC_CHANGE,
+            "scientific_sources_sha256" => Dict(
+                relpath(joinpath(directory, filename), package_root) =>
+                    sha256_file(joinpath(directory, filename))
+                for (directory, _, filenames) in walkdir(joinpath(package_root, "src"))
+                for filename in filenames if endswith(filename, ".jl")
+            ),
         ),
         "environment" => Dict(
             "julia_version" => string(VERSION),
@@ -103,6 +116,10 @@ function write_reference_regression(output_dir; release_state=nothing)
                 "first day, every calendar-month first day, and final day",
             "elapsed_seconds" => scenario.elapsed,
             "generated_at" => string(Dates.now()),
+            "csv_sha256" => Dict(
+                file => sha256_file(joinpath(output_dir, file))
+                for file in expected_files if endswith(file, ".csv")
+            ),
         ),
     )
     open(joinpath(output_dir, "metadata.toml"), "w") do io

@@ -102,8 +102,11 @@ The package regression tests in `test/test-reproductive-lifecycle.jl` exercise
 actual leaf-pruning stock removal, preservation of immature female development
 in a compiled palm, abortion precedence, and one-day harvest pulses. They test
 implementation behavior, not field validation. Published v0.7.0 numerical fixtures
-remain unchanged; these intentional lifecycle corrections can change their
-trajectories and require a separately reviewed future numerical reference.
+remain unchanged. The separately named
+`v0.7.0-lifecycle-dev` candidate under `test/references/regression/`
+records the corrected default full-cycle behavior for review; it is not a release
+or field validation. Exact event/count checks, tight continuous tolerances and
+released-file checksums are retained.
 
 `test/test-rooted-recharge.jl` checks rainfall routing, overflow and dry-day
 bookkeeping in both overlapping soil views, with Float32 and Float64 statuses,

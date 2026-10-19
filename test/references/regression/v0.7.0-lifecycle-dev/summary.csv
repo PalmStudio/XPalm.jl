@@ -1,0 +1,2 @@
+nsteps,start_date,end_date,final_lai,maximum_lai,final_leaf_area,final_ftsw,minimum_ftsw,maximum_ftsw,final_root_depth,harvest_event_days,final_bunch_count,total_bunch_yield,final_cumulative_bunch_yield,total_oil_yield,final_cumulative_oil_yield,maximum_daily_bunch_yield,final_phytomer_count
+4160,2012-01-05,2023-05-26,6.005276920547939,6.005276920547939,441.56447945205434,0.9940150763840004,0.6458326682493708,1.0011372012182052,2200.0,220,220,513484.8155947486,513484.8155947486,91993.3157532193,91993.31575321931,4741.772170470631,344
