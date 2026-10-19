@@ -11,13 +11,13 @@ These are the user-requested conference figures and compact data selections, sta
 - `controlled_comparison/`: the newer C/D/E comparison under a common calibration protocol. C is the calibrated production-onset bundle, D adds native-target catch-up/earlier stalk scheduling at the same parameters, and E recalibrates D. This countercheck does not show universal improved prediction: training FFB improves slightly, but later pooled FFB RMSE changes from 84.63 (C) to 83.07 (D) to 87.34 (E) kg fresh/palm/year.
 - `sources/`: exact archived Julia/CairoMakie figure generators retained for provenance, plus the new portable plotting-only driver `render_public_figures.jl`.
 
-The conditional PR example fixes observed targets and dates, uses a retrospective ordinal organ-mapping assumption and retains a signed external endpoint-adjustment ledger. Curves are evaluated *before* external harvest correction. Retry demand has no calibrated maximum catch-up rate in this historical experiment. Conditional target recovery is not independent predictive validation.
+The conditional PR example fixes observed targets and dates, uses a retrospective ordinal organ-mapping assumption and retains a signed external endpoint-adjustment ledger. Curves are evaluated *before* external harvest correction. Recovery has no separately calibrated maximum rate in this experiment or the new default formulation. Conditional target recovery is not independent predictive validation.
 
 The whole-model figures are unforced with no external biomass adjustment. FFB uses provisional fixed fruit/stalk water fractions 0.2358/0.667. Both early-year calibrations include Towé. Years 2019–2022 had already been inspected during development and constitute temporal evaluation, not untouched validation. Bands describe the range of three stochastic seeds, not confidence intervals or population uncertainty.
 
 ## Historical experiments versus the current package port
 
-The copied figures come from archived application experiments run with XPalm0.7.0/PlantSimEngine0.15.0 and local model alternatives. They were not regenerated from the newly proposed XPalm branches. They explain the hypothesis and diagnostic history; they do not prove numerical equivalence of the port or isolated effects of every PR change. Package regression tests and any new runs must be reported separately. Archived checks establish the recorded historical figure/input checks only.
+The copied figures come from archived application experiments run with XPalm0.7.0/PlantSimEngine0.15.0 and local model alternatives. They were not regenerated from the current XPalm package implementation. They explain the hypothesis and diagnostic history; they do not prove numerical equivalence of the port or isolated effects of every PR change. Package regression tests and any new runs must be reported separately. Archived checks establish the recorded historical figure/input checks only.
 
 ## Reproduction dependencies
 

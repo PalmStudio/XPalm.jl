@@ -6,7 +6,21 @@ import PlantSimEngine as PSE
 import XPalm
 const M = XPalm.Models
 
-function fixture(T=Float64; catch_up=true, initial=(T(0), T(0), T(0)),
+# Kept only as a test reference for the former fixed daily calculation. There
+# is no model-selection switch in XPalm's production demand implementation.
+struct LegacyFixedSchedule{M} <: PSE.AbstractModel
+    model::M
+end
+PSE.process(m::LegacyFixedSchedule) = PSE.process(m.model)
+PSE.inputs_(m::LegacyFixedSchedule) = PSE.inputs_(m.model)
+PSE.outputs_(m::LegacyFixedSchedule) = PSE.outputs_(m.model)
+PSE.variable_contracts_(m::LegacyFixedSchedule) = PSE.variable_contracts_(m.model)
+function PSE.run!(m::LegacyFixedSchedule, st, environment, constants, context=nothing)
+    M._scheduled_female_demand!(m.model, st)
+    return nothing
+end
+
+function fixture(T=Float64; legacy=false, initial=(T(0), T(0), T(0)),
     targets=(T(50), T(25), T(30)))
     native = M.FemaleCarbonDemandModel(;
         respiration_cost=T(1.44), respiration_cost_oleosynthesis=T(3.2),
@@ -14,7 +28,7 @@ function fixture(T=Float64; catch_up=true, initial=(T(0), T(0), T(0)),
         duration_fruit_setting=T(10), fraction_period_oleosynthesis=T(.8),
         fraction_period_stalk=T(.2),
     )
-    demand = catch_up ? M.CatchUpFemaleCarbonDemandModel(native) : native
+    demand = legacy ? LegacyFixedSchedule(native) : native
     biomass = M.FemaleBiomass(T(1.44), T(3.2))
     st = PSE.Status(merge(PSE.outputs_(demand), PSE.outputs_(biomass), (
         final_potential_biomass_non_oil_fruit=targets[1],
@@ -89,7 +103,6 @@ end
 
 function public_female_fixture()
     parameters = XPalm.default_parameters()
-    parameters["carbon_demand"]["Female"]["catch_up"] = true
     parameters["reproduction"]["sex_ratio"]["random_seed"] = 1
     # The native probability remains clamped to 0.9. With this deterministic
     # seed and ample accumulated offer, the first phytomer becomes female.
@@ -113,10 +126,10 @@ function public_female_fixture()
     return (; parameters, scene, simulation, phytomer, female)
 end
 
-@testset "Female catch-up: carbon-funded recovery, caps, and native fallback" begin
+@testset "Default female demand: carbon-funded recovery and component caps" begin
     for T in (Float64, Float32)
         tol = T === Float32 ? 3e-5 : 1e-11
-        native = fixture(T; catch_up=false)
+        native = fixture(T; legacy=true)
         recovery = fixture(T)
         @test PSE.process(recovery.demand) == PSE.process(native.demand)
         @test !any(name -> startswith(String(name), "forcing_"),
@@ -133,9 +146,9 @@ end
             @test abs(new.catchup_retry_requested_gCH2O) <= tol
         end
 
-        # A missed day is unrecoverable under the fixed schedule. The alternative
+        # A missed day was unrecoverable under the fixed schedule. The new model
         # can fund that same scheduled dry matter after its original window.
-        fixed = fixture(T; catch_up=false)
+        fixed = fixture(T; legacy=true)
         delayed = fixture(T)
         step!(fixed; supply=zero(T))
         step!(delayed; supply=zero(T))
@@ -332,23 +345,32 @@ end
         @test first_day.biomass_stalk ≈ T(4 + .5 * 6 * 10 / 42) rtol=tol
     end
 
-    # A default or older parameter dictionary must retain the fixed schedule.
-    # Opt-in wiring must add all three temporal biomass inputs without making
-    # observation forcing part of the package model.
+    # Recovery is the standard model computation, with no parameter flag or
+    # exported alternative type. Older parameter dictionaries need no new keys.
     parameters = deepcopy(XPalm.Palm().parameters)
-    @test parameters["carbon_demand"]["Female"]["catch_up"] === false
-    fixed_application = XPalm._female_carbon_demand_application(parameters)
-    @test fixed_application.model isa M.FemaleCarbonDemandModel
-    delete!(parameters["carbon_demand"]["Female"], "catch_up")
-    @test XPalm._female_carbon_demand_application(parameters).model isa
-        M.FemaleCarbonDemandModel
-    parameters["carbon_demand"]["Female"]["catch_up"] = true
-    alternative_application = XPalm._female_carbon_demand_application(parameters)
-    @test alternative_application.model isa M.CatchUpFemaleCarbonDemandModel
-    @test alternative_application.name == :Female__carbon_demand
-    @test length(alternative_application.inputs) == length(fixed_application.inputs) + 3
-    parameters["carbon_demand"]["Female"]["catch_up"] = "yes"
-    @test_throws ArgumentError XPalm._female_carbon_demand_application(parameters)
+    @test !haskey(parameters["carbon_demand"]["Female"], "catch_up")
+    application = XPalm._female_carbon_demand_application(parameters)
+    @test application.model isa M.FemaleCarbonDemandModel
+    @test application.name == :Female__carbon_demand
+    @test length(application.inputs) == 5
+    @test !isdefined(M, :CatchUpFemaleCarbonDemandModel)
+    for name in (:catchup_previous_non_oil_gDM, :catchup_previous_oil_gDM,
+        :catchup_previous_stalk_gDM)
+        @test haskey(PSE.inputs_(application.model), name)
+    end
+
+    # An obsolete extra key cannot select the former computation. In particular,
+    # reading an older experimental file with false still retains missed growth.
+    legacy_parameters = deepcopy(parameters)
+    legacy_parameters["carbon_demand"]["Female"]["catch_up"] = false
+    legacy_application = XPalm._female_carbon_demand_application(legacy_parameters)
+    @test legacy_application.model isa M.FemaleCarbonDemandModel
+    @test length(legacy_application.inputs) == 5
+    obsolete_key_case = merge(fixture(), (; demand=legacy_application.model))
+    first_request = step!(obsolete_key_case; supply=0.0).carbon_demand
+    @test first_request > 0.0
+    second_request = step!(obsolete_key_case; supply=0.0).carbon_demand
+    @test second_request ≈ 2first_request
 
     # Exercise the public XPalm scene compiler and dynamic female emission,
     # rather than checking only application metadata or a synthetic scene.
@@ -356,7 +378,7 @@ end
     @test public_case.phytomer.status.sex == :Female
     @test length(PSE.model_objects(public_case.scene; scale=:Female)) == 1
     @test only(app.model for app in public_case.scene.applications
-        if app.name == :Female__carbon_demand) isa M.CatchUpFemaleCarbonDemandModel
+        if app.name == :Female__carbon_demand) isa M.FemaleCarbonDemandModel
     for _ in 1:3
         PSE.continue!(public_case.simulation; steps=1)
         female = only(PSE.model_objects(public_case.scene; scale=:Female))

@@ -317,8 +317,8 @@
     },
     {
       "path": "README.md",
-      "bytes": 7412,
-      "sha256": "8f6b7c68afd09f3a4df07b898cb116036bb141d482febf2af54494c35874b03d",
+      "bytes": 7437,
+      "sha256": "d225f607986a2eae9ec67c80aa239744bde4edbbbf2107c2747dd9d831a95461",
       "kind": "authored_documentation_updated_for_public_renderer"
     },
     {
@@ -341,8 +341,8 @@
     },
     {
       "path": "PORT_VALIDATION.json",
-      "bytes": 1402,
-      "sha256": "794d87cf2d5eb85c473447c797e86808da5ba3aebf427bb9d735a891d02a9f9e",
+      "bytes": 1717,
+      "sha256": "66790ea64db45e336c05e8428c1470859af039ea3fa2a15db0b64f1d3781d7a9",
       "kind": "fresh_port_validation_receipt"
     }
   ],

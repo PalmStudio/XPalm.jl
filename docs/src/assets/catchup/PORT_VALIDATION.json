@@ -5,10 +5,6 @@
   "xpalm_source": "isolated PR checkout, XPalm0.7.0",
   "plantsimengine_source": "local development checkout,0.15.0",
   "plantsimengine_git_head_observed": "deca45a12a54867fbe856da4f078a58019bc07e6",
-  "focused_adjacent_assertions_passed": 721,
-  "new_catchup_assertions_passed": 440,
-  "default_disabled_fullcycle_steps": 4160,
-  "default_disabled_numerical_assertions_passed": 84,
   "released_reference_hash_assertions_passed": 5,
   "public_figure_exports_regenerated": 9,
   "full_crossplatform_suite": "GitHub CI pending; not claimed locally complete",
@@ -16,9 +12,19 @@
   "new_calibration": false,
   "scope": "Implementation tests and drawing replay; historical figures remain conditional studies and model-bundle comparisons, not fresh empirical validation of this port",
   "source_sha256": {
-    "src/plant/phytomer/ReproductiveOrgans/Female/carbon_demand_catchup.jl": "b7869f3a542e552899a1a4acb701db51e7a4fc8d8398a899a4d67f7a6c7e1d4f",
-    "src/model_definition.jl": "99b3d629578f9dbeba6dbc7e8213b01ba26f380123af8194c2236940987e4e73",
-    "src/plant/mtg/structs.jl": "c7d8da9986c1ff533932d4a94bf12e03ef97d2e016281684bec676047f33d552",
-    "test/test-female-catchup.jl": "b03a5aeaec9d7c73ba2a5b0b494796e1bbfa18f5ff6b31d0a1ea484f7a3d81b1"
-  }
+    "src/plant/phytomer/ReproductiveOrgans/Female/carbon_demand.jl": "f73ec7cc3fbfd3fb2896d7d0f220a5aeed653719cd38185b91b46c6dc362a34e",
+    "src/model_definition.jl": "a73c74569bdf8e5fd785d1caa460471f5f22e20f9788f799bf693b4cd4a41ba8",
+    "src/plant/mtg/structs.jl": "bd5e3e3278972b22929255b15a05337e5cabdba80ff3beee5efb372c4f01dead",
+    "src/XPalmModels.jl": "185dfae405dade5c82d267fda116ab4c1d1466d89aa2ca176d4d479d2faef1bc",
+    "test/test-female-catchup.jl": "a3b3836ccfad9d49c367ea5e2e4d205b6673f8028b8c50cf8664927b464c8530"
+  },
+  "implementation": "FemaleCarbonDemandModel now carries unfinished growth forward by default; no model-selection switch or wrapper",
+  "focused_scientific_and_catchup_assertions_passed": 1166,
+  "default_fullcycle_steps": 4160,
+  "default_numerical_assertions_passed": 84,
+  "default_numerical_reference": "v0.7.0-catchup-dev",
+  "previous_references_preserved": [
+    "v0.7.0",
+    "v0.7.0-lifecycle-dev"
+  ]
 }

@@ -22,10 +22,7 @@ end
 
 function _female_carbon_demand_application(parameters)
     costs = parameters["carbon_demand"]["Female"]
-    catch_up = get(costs, "catch_up", false)
-    catch_up isa Bool || throw(ArgumentError(
-        "carbon_demand/Female/catch_up must be true or false"))
-    baseline = FemaleCarbonDemandModel(
+    demand = FemaleCarbonDemandModel(
         respiration_cost=costs["respiration_cost"],
         respiration_cost_oleosynthesis=costs["respiration_cost_oleosynthesis"],
         TT_flowering=parameters["phenology"]["inflorescence"]["TT_flowering"],
@@ -46,22 +43,16 @@ function _female_carbon_demand_application(parameters)
             application=:Female__number_fruits,
             var=:fruits_number,
         ),
+        PreviousTimeStep(:catchup_previous_non_oil_gDM) => PlantSimEngine.One(
+            within=PlantSimEngine.Self(), application=:Female__biomass,
+            var=:biomass_non_oil),
+        PreviousTimeStep(:catchup_previous_oil_gDM) => PlantSimEngine.One(
+            within=PlantSimEngine.Self(), application=:Female__biomass,
+            var=:biomass_oil),
+        PreviousTimeStep(:catchup_previous_stalk_gDM) => PlantSimEngine.One(
+            within=PlantSimEngine.Self(), application=:Female__biomass,
+            var=:biomass_stalk),
     )
-    demand = baseline
-    if catch_up
-        demand = CatchUpFemaleCarbonDemandModel(baseline)
-        inputs = (inputs...,
-            PreviousTimeStep(:catchup_previous_non_oil_gDM) => PlantSimEngine.One(
-                within=PlantSimEngine.Self(), application=:Female__biomass,
-                var=:biomass_non_oil),
-            PreviousTimeStep(:catchup_previous_oil_gDM) => PlantSimEngine.One(
-                within=PlantSimEngine.Self(), application=:Female__biomass,
-                var=:biomass_oil),
-            PreviousTimeStep(:catchup_previous_stalk_gDM) => PlantSimEngine.One(
-                within=PlantSimEngine.Self(), application=:Female__biomass,
-                var=:biomass_stalk),
-        )
-    end
     return _xpalm_application(:Female, demand; inputs)
 end
 

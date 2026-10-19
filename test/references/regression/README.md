@@ -1,12 +1,14 @@
 # XPalm numerical regression references
 
-On the reproductive-lifecycle development branch, CI compares the default
-4,160-day simulation with the separately named `v0.7.0-lifecycle-dev` candidate.
+On the bunch-growth development branch, CI compares the default
+4,160-day simulation with the separately named `v0.7.0-catchup-dev` candidate.
 Its intentional changes and source fingerprints are reviewed with the PR;
 it is not a new release or an empirical validation.
 
-- [`v0.7.0-lifecycle-dev`](v0.7.0-lifecycle-dev/README.md) is the unreleased
-  lifecycle/rooted-recharge candidate used by this branch.
+- [`v0.7.0-catchup-dev`](v0.7.0-catchup-dev/README.md) records the new default
+  female demand computation, together with the preceding lifecycle and water fixes.
+- [`v0.7.0-lifecycle-dev`](v0.7.0-lifecycle-dev/README.md) preserves the preceding
+  lifecycle/rooted-recharge candidate before demand recovery was introduced.
 - [`v0.7.0`](v0.7.0/README.md) remains the immutable released reference. Its numerical data
   were promoted unchanged from the reviewed `v0.7.0-dev` candidate.
 - [`v0.6.1`](v0.6.1/README.md) is the immutable released oracle retained for

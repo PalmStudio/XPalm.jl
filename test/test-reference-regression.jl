@@ -64,7 +64,7 @@ end
     end
 end
 
-@testset "XPalm lifecycle candidate full-cycle numerical regression" begin
+@testset "XPalm revised-demand candidate full-cycle numerical regression" begin
     metadata = TOML.parsefile(joinpath(REFERENCE_REGRESSION_DIR, "metadata.toml"))
     meteo_path = joinpath(dirname(dirname(pathof(XPalm))), "0-data", "meteo.csv")
     current_meteo_sha256 = bytes2hex(SHA.sha256(read(meteo_path)))

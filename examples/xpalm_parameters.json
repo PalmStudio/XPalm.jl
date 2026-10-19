@@ -171,7 +171,6 @@
             "respiration_cost": 1.44
         },
         "Female": {
-            "catch_up": false,
             "respiration_cost_oleosynthesis": 3.2,
             "respiration_cost": 1.44
         }
