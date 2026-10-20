@@ -2,6 +2,26 @@
 
 ## Unreleased
 
+### Recover unfinished bunch growth
+
+- Replace the fixed daily calculation in `FemaleCarbonDemandModel` with a demand
+  that carries unfinished non-oil fruit, oil and stalk growth forward. Previously,
+  growth missed during a carbon deficit was lost from subsequent requests. A
+  bunch can now compete for the carbon needed to recover that growth before
+  harvest. Existing parameter files use the revised calculation automatically.
+- Keep native potential masses, construction costs, allocation and biomass
+  conversion. Catch-up creates no carbon and does not postpone harvest or
+  guarantee final potential under persistent shortage. Track newly scheduled
+  growth separately from repeated requests and retain the residual at harvest
+  or abortion. No observation database or external biomass correction is needed.
+- Explain the [hypothesis and its evidence](docs/src/catchup_growth.md), from one
+  carbon-limited bunch to annual measured cohorts and whole-model recalibration.
+  The archived organ comparison substantially reduces the unexplained harvest
+  correction; matched whole-model fits do not yet show better later-year yield
+  prediction. Recovery has no additional physiological rate ceiling, an assumption
+  that still needs intermediate growth measurements. Bundled tables and Julia
+  drawing code make the figures inspectable and reproducible.
+
 ### Reproductive lifecycle corrections
 
 - Separate rank-based leaf pruning from reproductive harvest. Pruning a leaf no

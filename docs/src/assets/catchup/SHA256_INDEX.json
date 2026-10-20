@@ -1,0 +1,358 @@
+{
+  "schema": "xpalm-pr-evidence-v1",
+  "staged_date": "2026-10-19",
+  "new_julia_execution": true,
+  "new_simulation": false,
+  "new_calibration": false,
+  "raw_palm_identifiers_excluded": true,
+  "source_prefixes": {
+    "presentation": "presentation workspace",
+    "XPalm_calibration_new": "private application project"
+  },
+  "files": [
+    {
+      "path": "organ/02_single_bunch_with_catchup.png",
+      "bytes": 404866,
+      "sha256": "3f7aa19835109874dc38789b2550053bd8cd6ed596f621617023dd22bc455a1d",
+      "source": "assets/catchup_explanation_20261010/single_bunch/02_single_bunch_with_catchup.png",
+      "source_sha256": "3f7aa19835109874dc38789b2550053bd8cd6ed596f621617023dd22bc455a1d",
+      "kind": "exact_copy"
+    },
+    {
+      "path": "organ/archived_figure_checks.toml",
+      "bytes": 996,
+      "sha256": "9cc31893b156b915250826953fd76154cd155bd69dd7e6b6f569e66393283ae6",
+      "source": "assets/catchup_explanation_20261010/single_bunch/02_single_bunch_with_catchup_CHECKS.toml",
+      "source_sha256": "9cc31893b156b915250826953fd76154cd155bd69dd7e6b6f569e66393283ae6",
+      "kind": "exact_copy"
+    },
+    {
+      "path": "organ/plotted_values.csv",
+      "bytes": 36286,
+      "sha256": "2055b31fadb578d69a0edd7c514d1aa5ebabe1db6415a60efa6c492288c86a1c",
+      "source": "assets/catchup_explanation_20261010/single_bunch/plotted_daily_values.csv",
+      "source_sha256": "4263edd740bf8a744fc04ddcd81c38b055413ca97bc5e16320315cbbb152f658",
+      "kind": "column_or_row_selection_without_recomputation",
+      "rows": 426,
+      "columns": [
+        "case",
+        "days_before_harvest",
+        "state",
+        "demand_gCH2O",
+        "allocation_gCH2O",
+        "allocation_shortfall",
+        "fruit_mass_kg"
+      ],
+      "line_ending_normalization": "CRLF to LF only; numeric text unchanged"
+    },
+    {
+      "path": "annual_fruit/fruit_dry_mass_red_observations.png",
+      "bytes": 104257,
+      "sha256": "5c8d04d7e42b29d7a0f76e9803e21b8c9dcb162715eaff3fcb62acb5dc1072ed",
+      "source": "assets/catchup_explanation_20261010/annual_fruit/fruit_dry_mass_red_observations.png",
+      "source_sha256": "5c8d04d7e42b29d7a0f76e9803e21b8c9dcb162715eaff3fcb62acb5dc1072ed",
+      "kind": "exact_copy"
+    },
+    {
+      "path": "annual_fruit/plotted_values.csv",
+      "bytes": 1026,
+      "sha256": "29eb8c086161076ae882e7972f9aaeaeecb37ddc422fdc225f91dc1f2383e3f4",
+      "source": "assets/catchup_explanation_20261010/annual_fruit/annual_fruit_dry_mass_values.csv",
+      "source_sha256": "29eb8c086161076ae882e7972f9aaeaeecb37ddc422fdc225f91dc1f2383e3f4",
+      "kind": "exact_copy"
+    },
+    {
+      "path": "annual_fruit/archived_figure_checks.toml",
+      "bytes": 2840,
+      "sha256": "55e0be6890871ebf361618019ae6bf415a9727610e12491869e5a16b54cbb842",
+      "source": "assets/catchup_explanation_20261010/annual_fruit/FIGURE_CHECKS.toml",
+      "source_sha256": "55e0be6890871ebf361618019ae6bf415a9727610e12491869e5a16b54cbb842",
+      "kind": "exact_copy"
+    },
+    {
+      "path": "annual_cohorts/catchup_presentation.png",
+      "bytes": 185171,
+      "sha256": "8c7070279916742aa019aedfdae2240b0300d7b719cf4fd0e55dbd3f073405a9",
+      "source": "XPalm_calibration_new/2-results/catchup_demand_20261004/catchup_presentation.png",
+      "source_sha256": "8c7070279916742aa019aedfdae2240b0300d7b719cf4fd0e55dbd3f073405a9",
+      "kind": "exact_copy"
+    },
+    {
+      "path": "annual_cohorts/annual_fruit_stalk_values.csv",
+      "bytes": 2489,
+      "sha256": "92a3db0dc6b7973fe12f655adffd32bdff04900b558496c023b25dddf60aeb2e",
+      "source": "XPalm_calibration_new/2-results/catchup_demand_20261004/annual_fruit_stalk_comparison.csv",
+      "source_sha256": "92a3db0dc6b7973fe12f655adffd32bdff04900b558496c023b25dddf60aeb2e",
+      "kind": "exact_copy"
+    },
+    {
+      "path": "annual_cohorts/cumulative_correction_values.csv",
+      "bytes": 6028,
+      "sha256": "01745ae36b98c1c7592753e46540a262d3e223597681d9e47dc25508ea50291a",
+      "source": "XPalm_calibration_new/2-results/catchup_demand_20261004/cumulative_external_mass_comparison.csv",
+      "source_sha256": "a56615665c8c714364a185aa8590ff9e57410a3faa4ca68a75b5636fdafe7664",
+      "kind": "column_or_row_selection_without_recomputation",
+      "rows": 100,
+      "columns": [
+        "harvest_date",
+        "treatment",
+        "positive_external_addition_kg",
+        "cumulative_external_addition_kg"
+      ],
+      "line_ending_normalization": "CRLF to LF only; numeric text unchanged"
+    },
+    {
+      "path": "annual_cohorts/sensitivity_summary.csv",
+      "bytes": 1779,
+      "sha256": "55ac3730f7e8ce7f773d85bee3d00305f6a631d722c5e79dd5f7d5b734572257",
+      "source": "XPalm_calibration_new/2-results/catchup_demand_20261004/sensitivity_summary.csv",
+      "source_sha256": "55ac3730f7e8ce7f773d85bee3d00305f6a631d722c5e79dd5f7d5b734572257",
+      "kind": "exact_copy"
+    },
+    {
+      "path": "annual_cohorts/archived_figure_checks.toml",
+      "bytes": 1021,
+      "sha256": "4db50b50544f5e63a299b090d8b971b607f9573f4678e10b81a14001ba629a02",
+      "source": "XPalm_calibration_new/2-results/catchup_demand_20261004/PRESENTATION_FIGURE_CHECKS.toml",
+      "source_sha256": "4db50b50544f5e63a299b090d8b971b607f9573f4678e10b81a14001ba629a02",
+      "kind": "exact_copy"
+    },
+    {
+      "path": "annual_cohorts/archived_experiment_checks.toml",
+      "bytes": 764,
+      "sha256": "3b14796fdd14e3567368784bc0f24c31af443d7bce01190e6ff83abbbadc5039",
+      "source": "XPalm_calibration_new/2-results/catchup_demand_20261004/CHECKS.toml",
+      "source_sha256": "3b14796fdd14e3567368784bc0f24c31af443d7bce01190e6ff83abbbadc5039",
+      "kind": "exact_copy"
+    },
+    {
+      "path": "historical_whole_model/annual_harvest.png",
+      "bytes": 826153,
+      "sha256": "2e8393c8ca08f8c4733463dea5cc9a2e925fabaa2852e2aedfaa385d8a75b645",
+      "source": "XPalm_calibration_new/2-results/calibrated_model_comparison_20261006/figures/annual_harvest.png",
+      "source_sha256": "2e8393c8ca08f8c4733463dea5cc9a2e925fabaa2852e2aedfaa385d8a75b645",
+      "kind": "exact_copy"
+    },
+    {
+      "path": "historical_whole_model/plotted_seed_summary.csv",
+      "bytes": 40180,
+      "sha256": "892719d5acb109849575fcd599b7f51457d952786d847944a03a77c246c95c37",
+      "source": "XPalm_calibration_new/2-results/calibrated_model_comparison_20261006/annual_seed_summary.csv",
+      "source_sha256": "196dc6f17c9008e3c389a3e822b5a33ac94fee717c40a01bcb44a39d6573fdd2",
+      "kind": "column_or_row_selection_without_recomputation",
+      "rows": 225,
+      "columns": [
+        "case",
+        "domain",
+        "bin",
+        "subset",
+        "site",
+        "variable",
+        "unit",
+        "observed",
+        "observed_palm_median",
+        "simulated_mean",
+        "simulated_min",
+        "simulated_max",
+        "n_seeds",
+        "n_seeds_with_prediction",
+        "common_support",
+        "n_observed_palms",
+        "n_observed_records"
+      ],
+      "line_ending_normalization": "CRLF to LF only; numeric text unchanged"
+    },
+    {
+      "path": "historical_whole_model/plotted_observation_summary.csv",
+      "bytes": 8440,
+      "sha256": "0a7e72d1987ce2e58b2efc52cffbda44822dc8116722e963c10876d3ad974ba3",
+      "source": "XPalm_calibration_new/2-results/calibrated_model_comparison_20261006/observation_targets.csv",
+      "source_sha256": "8d1563d77b866e0ba71c447617ac72ab849cff0b2247e08a8f5c245eccbc4695",
+      "kind": "column_or_row_selection_without_recomputation",
+      "rows": 75,
+      "columns": [
+        "domain",
+        "bin",
+        "variable",
+        "unit",
+        "subset",
+        "site",
+        "observed",
+        "palm_p10",
+        "palm_p90",
+        "n_palms",
+        "n_records"
+      ],
+      "line_ending_normalization": "CRLF to LF only; numeric text unchanged"
+    },
+    {
+      "path": "historical_whole_model/archived_comparison_checks.toml",
+      "bytes": 2507,
+      "sha256": "3a56f6e70ebc957bb3626530be297a99148007d56ff0c333c17b20d0f23e6927",
+      "source": "XPalm_calibration_new/2-results/calibrated_model_comparison_20261006/COMPARISON_CHECKS.toml",
+      "source_sha256": "3a56f6e70ebc957bb3626530be297a99148007d56ff0c333c17b20d0f23e6927",
+      "kind": "exact_copy"
+    },
+    {
+      "path": "historical_whole_model/pooled_ffb_metrics.csv",
+      "bytes": 3624,
+      "sha256": "0d0ba4cc495b778336cf75ed16dafcb00363fa47942c3a7fa0d48a2687b1c51b",
+      "source": "XPalm_calibration_new/2-results/calibrated_model_comparison_20261006/metrics/pooled/FFB_metrics_pooled.csv",
+      "source_sha256": "0d0ba4cc495b778336cf75ed16dafcb00363fa47942c3a7fa0d48a2687b1c51b",
+      "kind": "exact_copy"
+    },
+    {
+      "path": "historical_whole_model/archived_pooled_checks.toml",
+      "bytes": 1098,
+      "sha256": "d1bd32aa4c3fe733b80ffc4bab9c6eda99fb2b41a9b87eec063265b4dcdf8776",
+      "source": "XPalm_calibration_new/2-results/calibrated_model_comparison_20261006/metrics/pooled/POOLED_CHECKS.toml",
+      "source_sha256": "d1bd32aa4c3fe733b80ffc4bab9c6eda99fb2b41a9b87eec063265b4dcdf8776",
+      "kind": "exact_copy"
+    },
+    {
+      "path": "controlled_comparison/FFB_06_carbon_recalibrated.png",
+      "bytes": 347218,
+      "sha256": "574a6e914e83e4171903956e93de3e27b795d48f606db2a4abca2cf4df56da22",
+      "source": "assets/cige_ffb_20261007/FFB_06_carbon_recalibrated.png",
+      "source_sha256": "574a6e914e83e4171903956e93de3e27b795d48f606db2a4abca2cf4df56da22",
+      "kind": "exact_copy"
+    },
+    {
+      "path": "controlled_comparison/plotted_values_C_D_E.csv",
+      "bytes": 8944,
+      "sha256": "f7933cfcd19476490ccc1bbab212853cbed2f2230afea0c0e3a65f80ed8cbb70",
+      "source": "assets/cige_ffb_20261007/FFB_plot_data.csv",
+      "source_sha256": "041b3eea3a994ab54f50ed89cedcb1265c4aa3bbfa460cebe83f2931f6f263cc",
+      "kind": "column_or_row_selection_without_recomputation",
+      "rows": 75,
+      "columns": [
+        "version",
+        "site",
+        "year",
+        "observed_FFB",
+        "model_FFB_mean",
+        "model_FFB_min",
+        "model_FFB_max",
+        "n_seeds",
+        "n_observed_palms",
+        "n_observed_records",
+        "window_start",
+        "window_end"
+      ],
+      "line_ending_normalization": "CRLF to LF only; numeric text unchanged"
+    },
+    {
+      "path": "controlled_comparison/ffb_metrics_C_D_E.csv",
+      "bytes": 16610,
+      "sha256": "19a6ce4c87ff10bc419844732c8b0c4747af7c3fd755ce0a2644c76f18e1a6c7",
+      "source": "assets/cige_ffb_20261007/FFB_metrics.csv",
+      "source_sha256": "0c28d4498168b87e9861f4c07de4259d1ea9a16c5e7ca1e852903e448854c8ec",
+      "kind": "column_or_row_selection_without_recomputation",
+      "rows": 36,
+      "columns": [
+        "version",
+        "model",
+        "site",
+        "period",
+        "phase",
+        "prediction",
+        "unit",
+        "weighting",
+        "normalization",
+        "efficiency_baseline",
+        "supported_site_years",
+        "n_site_years",
+        "observed_mean",
+        "simulated_mean",
+        "bias",
+        "RMSE",
+        "MAE",
+        "SSE",
+        "SST",
+        "modeling_efficiency",
+        "normalized_bias_percent",
+        "nRMSE_percent"
+      ],
+      "line_ending_normalization": "CRLF to LF only; numeric text unchanged"
+    },
+    {
+      "path": "controlled_comparison/archived_figure_checks.toml",
+      "bytes": 4224,
+      "sha256": "40b6b67fbe2800342782ff69bb4cacd22b4818df5631292a0ca8f821dbf93633",
+      "source": "XPalm_calibration_new/2-results/controlled_sequence_20261007/presentation/FIGURE_CHECKS.toml",
+      "source_sha256": "40b6b67fbe2800342782ff69bb4cacd22b4818df5631292a0ca8f821dbf93633",
+      "kind": "exact_copy"
+    },
+    {
+      "path": "controlled_comparison/archived_common_calibration_plan.toml",
+      "bytes": 28983,
+      "sha256": "9121203e5a27fae876dcbc7326294c2eeb7f424a0bedfc57def79a6a35784e3e",
+      "source": "XPalm_calibration_new/2-results/controlled_sequence_20261007/common_calibration_plan.toml",
+      "source_sha256": "9121203e5a27fae876dcbc7326294c2eeb7f424a0bedfc57def79a6a35784e3e",
+      "kind": "exact_copy"
+    },
+    {
+      "path": "controlled_comparison/archived_sequence_frozen.toml",
+      "bytes": 1722,
+      "sha256": "9b87239db371d5c21278631de4b7512be85b7d2ec6369c7381e03e59a8813688",
+      "source": "XPalm_calibration_new/2-results/controlled_sequence_20261007/sequence_frozen.toml",
+      "source_sha256": "9b87239db371d5c21278631de4b7512be85b7d2ec6369c7381e03e59a8813688",
+      "kind": "exact_copy"
+    },
+    {
+      "path": "sources/single_bunch_hypotheses.jl",
+      "bytes": 7606,
+      "sha256": "80f5757722644d3be6e221eb1f35a7786750d738167fe44197054a11c35fad46",
+      "source": "work/catchup_explanation_20261010/single_bunch_hypotheses.jl",
+      "source_sha256": "80f5757722644d3be6e221eb1f35a7786750d738167fe44197054a11c35fad46",
+      "kind": "exact_copy"
+    },
+    {
+      "path": "sources/annual_fruit_panel_red.jl",
+      "bytes": 6980,
+      "sha256": "36882050195569e8c35f47f4e447b574de4dc947f4f01583bcdd8ff8a718e309",
+      "source": "work/catchup_explanation_20261010/annual_fruit_panel_red.jl",
+      "source_sha256": "36882050195569e8c35f47f4e447b574de4dc947f4f01583bcdd8ff8a718e309",
+      "kind": "exact_copy"
+    },
+    {
+      "path": "README.md",
+      "bytes": 7437,
+      "sha256": "d225f607986a2eae9ec67c80aa239744bde4edbbbf2107c2747dd9d831a95461",
+      "kind": "authored_documentation_updated_for_public_renderer"
+    },
+    {
+      "path": "sources/render_public_figures.jl",
+      "bytes": 12824,
+      "sha256": "029150a01fd4325c095921b3108e0fd199b43b5040747d7685eb21a6bdac09c9",
+      "kind": "authored_public_table_renderer"
+    },
+    {
+      "path": "public_drawing_checks.toml",
+      "bytes": 2085,
+      "sha256": "731810a5ed807d3d6fca87ef19ae9562b63d9d6ca9932284c92806ebfef20527",
+      "kind": "fresh_public_drawing_validation"
+    },
+    {
+      "path": ".gitignore",
+      "bytes": 20,
+      "sha256": "a81dcc6678178bcf2ac0e3c9fb76a4d7f58c6d0000fe0d28abba449c81616ab7",
+      "kind": "generated_output_exclusion"
+    },
+    {
+      "path": "PORT_VALIDATION.json",
+      "bytes": 1717,
+      "sha256": "66790ea64db45e336c05e8428c1470859af039ea3fa2a15db0b64f1d3781d7a9",
+      "kind": "fresh_port_validation_receipt"
+    }
+  ],
+  "public_drawing_replay": {
+    "date": "2026-10-19",
+    "passed": true,
+    "Julia_execution": "Kaimon session b60beb87, eval16c101cc (exact PR files, LF CSVs)",
+    "new_simulation": false,
+    "new_calibration": false,
+    "checks": "public_drawing_checks.toml"
+  },
+  "execution_scope": "Drawing replay only; historical model simulations and calibrations were not rerun"
+}

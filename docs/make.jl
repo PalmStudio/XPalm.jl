@@ -41,6 +41,7 @@ makedocs(;
             "Running XPalm" => "running.md",
             "Model graph" => "model_graph.md",
             "Reproductive lifecycle corrections" => "reproductive_lifecycle.md",
+            "Bunch growth recovery hypothesis" => "catchup_growth.md",
         ],
         "Vpalm" => [
             "Parameters" => "vpalm/parameters.md",

@@ -1,0 +1,85 @@
+matched_final_seeds = [1, 2, 3]
+common_plan_sha256 = "9121203e5a27fae876dcbc7326294c2eeb7f424a0bedfc57def79a6a35784e3e"
+status = "both_calibrations_frozen_before_temporal_evaluation"
+C_selection_sha256 = "760614a466ca8660c216cde80c9e577ea927164652df9025e141ee9b071bd5a3"
+E_selection_sha256 = "659141c34e138705bab0666391087fe5dbf6474facbc589d43a1f24c99041fc4"
+
+[version_coordinates.D]
+RUE = 3.8
+mature_emission = 1.0
+fruit_gDM = 6.5
+maturity = 1440.0
+sex_ref = 0.5499999999999999
+peak_age = 1095.75
+fruit_number = 2500.0
+area = 9.5
+peak = 2.0
+abort_ref = 0.2
+initial_emission = 1.2
+bunch_full = 3470.0
+stalk = 2600.0
+bunch_start = 2379.0
+
+[version_coordinates.B]
+RUE = 4.8
+mature_emission = 1.0
+fruit_gDM = 6.5
+maturity = 1620.0
+sex_ref = 0.6
+peak_age = 1095.75
+fruit_number = 2000.0
+area = 12.0
+peak = 2.0
+abort_ref = 0.2
+initial_emission = 1.0
+bunch_full = 6500.0
+stalk = 2100.0
+bunch_start = 2379.0
+
+[version_coordinates.A]
+RUE = 4.8
+mature_emission = 1.0
+fruit_gDM = 6.5
+maturity = 1620.0
+sex_ref = 0.6
+peak_age = 1095.75
+fruit_number = 2000.0
+area = 12.0
+peak = 2.0
+abort_ref = 0.2
+initial_emission = 1.0
+bunch_full = 6500.0
+stalk = 2100.0
+bunch_start = 2379.0
+
+[version_coordinates.C]
+RUE = 3.8
+mature_emission = 1.0
+fruit_gDM = 6.5
+maturity = 1440.0
+sex_ref = 0.5499999999999999
+peak_age = 1095.75
+fruit_number = 2500.0
+area = 9.5
+peak = 2.0
+abort_ref = 0.2
+initial_emission = 1.2
+bunch_full = 3470.0
+stalk = 2600.0
+bunch_start = 2379.0
+
+[version_coordinates.E]
+RUE = 3.8
+mature_emission = 1.0
+fruit_gDM = 6.5
+maturity = 1500.0
+sex_ref = 0.5499999999999999
+peak_age = 1095.75
+fruit_number = 2500.0
+area = 10.0
+peak = 2.0
+abort_ref = 0.2
+initial_emission = 1.2
+bunch_full = 3652.5
+stalk = 2750.0
+bunch_start = 2379.0

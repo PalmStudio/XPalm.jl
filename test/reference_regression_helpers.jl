@@ -1,7 +1,7 @@
 const REFERENCE_REGRESSION_RELEASED_BASELINE = "v0.7.0"
-const REFERENCE_REGRESSION_CANDIDATE_BASELINE = "v0.7.0-lifecycle-dev"
+const REFERENCE_REGRESSION_CANDIDATE_BASELINE = "v0.7.0-catchup-dev"
 const REFERENCE_REGRESSION_SCIENTIFIC_CHANGE =
-    "reproductive-lifecycle-and-rooted-recharge"
+    "reproductive-lifecycle-rooted-recharge-and-bunch-growth-recovery"
 
 const REFERENCE_REGRESSION_VARIABLES = Dict{Symbol,Any}(
     :Scene => (:lai, :leaf_area, :aPPFD),

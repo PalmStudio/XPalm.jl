@@ -1,0 +1,22 @@
+simulation_is_three_seed_mean = true
+normalization = "pooled_mean_observed_FFB"
+efficiency_baseline = "grand pooled observed mean"
+reporting_only = true
+equal_site_year_weights = true
+status = "complete"
+sources_preserved = true
+metrics_computed_from_pooled_pairs = true
+same_site_year_support_all_cases_and_seeds = true
+
+[[sources]]
+path = "/Users/rvezy/Documents/dev/XPalm_calibration_new/2-results/calibrated_model_comparison_20261006/annual_seed_summary.csv"
+sha256 = "196dc6f17c9008e3c389a3e822b5a33ac94fee717c40a01bcb44a39d6573fdd2"
+[[sources]]
+path = "/Users/rvezy/Documents/dev/XPalm_calibration_new/2-results/calibrated_model_comparison_20261006/annual_observation_pairs.csv"
+sha256 = "f6e1266fac3f2cdfef8261ccaf354025daaeea0a86c755d937b753b0b351841c"
+[[sources]]
+path = "/Users/rvezy/Documents/dev/XPalm_calibration_new/src/ffb_metrics.jl"
+sha256 = "e8a0bfda1dcb4a07f1b97d118c884812cdc80cabe2753f3a63fbd418a6db3d1c"
+[[sources]]
+path = "/Users/rvezy/Documents/dev/XPalm_calibration_new/src/ffb_metrics_pooled.jl"
+sha256 = "99ea73fa3d94dde7874378fc092f1f68a8c9527cb7c424c11825f427f086bb3d"

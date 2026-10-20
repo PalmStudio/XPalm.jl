@@ -20,6 +20,42 @@ function _xpalm_application(
     )
 end
 
+function _female_carbon_demand_application(parameters)
+    costs = parameters["carbon_demand"]["Female"]
+    demand = FemaleCarbonDemandModel(
+        respiration_cost=costs["respiration_cost"],
+        respiration_cost_oleosynthesis=costs["respiration_cost_oleosynthesis"],
+        TT_flowering=parameters["phenology"]["inflorescence"]["TT_flowering"],
+        duration_bunch_development=parameters["phenology"]["Female"]["duration_bunch_development"],
+        duration_fruit_setting=parameters["phenology"]["Female"]["duration_fruit_setting"],
+        fraction_period_oleosynthesis=parameters["phenology"]["Female"]["fraction_period_oleosynthesis"],
+        fraction_period_stalk=parameters["phenology"]["Female"]["fraction_period_stalk"],
+    )
+    inputs = (
+        :state => PlantSimEngine.One(
+            scale=:Phytomer,
+            within=PlantSimEngine.Ancestor(scale=:Phytomer),
+            application=:Phytomer__state,
+            var=:state,
+        ),
+        :fruits_number => PlantSimEngine.One(
+            within=PlantSimEngine.Self(),
+            application=:Female__number_fruits,
+            var=:fruits_number,
+        ),
+        PreviousTimeStep(:catchup_previous_non_oil_gDM) => PlantSimEngine.One(
+            within=PlantSimEngine.Self(), application=:Female__biomass,
+            var=:biomass_non_oil),
+        PreviousTimeStep(:catchup_previous_oil_gDM) => PlantSimEngine.One(
+            within=PlantSimEngine.Self(), application=:Female__biomass,
+            var=:biomass_oil),
+        PreviousTimeStep(:catchup_previous_stalk_gDM) => PlantSimEngine.One(
+            within=PlantSimEngine.Self(), application=:Female__biomass,
+            var=:biomass_stalk),
+    )
+    return _xpalm_application(:Female, demand; inputs)
+end
+
 function _phytomer_emission_application(mtg)
     return _xpalm_application(
         :Plant, PhytomerEmission(mtg);
@@ -884,29 +920,7 @@ function model_applications(p; architecture=false)
                 var=:carbon_demand,
             ),),
         ),
-        _xpalm_application(
-            :Female,
-            FemaleCarbonDemandModel(
-                respiration_cost=parameters["carbon_demand"]["Female"]["respiration_cost"],
-                respiration_cost_oleosynthesis=parameters["carbon_demand"]["Female"]["respiration_cost_oleosynthesis"],
-                TT_flowering=parameters["phenology"]["inflorescence"]["TT_flowering"],
-                duration_bunch_development=parameters["phenology"]["Female"]["duration_bunch_development"],
-                duration_fruit_setting=parameters["phenology"]["Female"]["duration_fruit_setting"],
-                fraction_period_oleosynthesis=parameters["phenology"]["Female"]["fraction_period_oleosynthesis"],
-                fraction_period_stalk=parameters["phenology"]["Female"]["fraction_period_stalk"],
-            );
-            inputs=(:state => PlantSimEngine.One(
-                scale=:Phytomer,
-                within=PlantSimEngine.Ancestor(scale=:Phytomer),
-                application=:Phytomer__state,
-                var=:state,
-            ),
-            :fruits_number => PlantSimEngine.One(
-                within=PlantSimEngine.Self(),
-                application=:Female__number_fruits,
-                var=:fruits_number,
-            ),),
-        ),
+        _female_carbon_demand_application(parameters),
         _xpalm_application(
             :Female,
             FemaleBiomass(

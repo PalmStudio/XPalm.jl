@@ -164,6 +164,7 @@ end
 
 @testset "Carbon_demand" begin
     include(joinpath(dirtest, "test-carbon_demand.jl"))
+    include(joinpath(dirtest, "test-female-catchup.jl"))
 end
 
 
