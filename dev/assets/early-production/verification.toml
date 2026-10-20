@@ -1,0 +1,6 @@
+active_project = "/Users/rvezy/Documents/dev/XPalm_calibration_new/Project.toml"
+julia = "1.13.1"
+diagnostic_module_sha256 = "673cd0febf43d1e4feefc6b7b6f7d001d7ac606491128f0ca55f058f5ab48dcd"
+results_module_sha256 = "c2ab9d0e7d03bf64b321202fe02195a9091f2ac4402b9d61da5762983a69b486"
+checks = 23
+all_passed = true
