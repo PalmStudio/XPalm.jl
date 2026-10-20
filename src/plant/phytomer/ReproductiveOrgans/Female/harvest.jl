@@ -5,6 +5,11 @@
 Transfer a harvested bunch, or an aborted female inflorescence, out of the
 standing biomass pools. All `biomass*` and `litter` variables are dry mass
 (gDM); fruit counts are dimensionless.
+
+The non-cumulative `*_harvested` outputs and `fruits_number_harvested` are
+one-timestep harvest pulses. Cumulative outputs retain the removed organ's
+harvested mass on subsequent timesteps. An aborted organ contributes to litter,
+not to the harvest pulses.
 """
 struct BunchHarvest <: AbstractHarvestModel end
 
@@ -48,6 +53,16 @@ PlantSimEngine.variable_contracts_(::BunchHarvest) = (
 
 # Applied at the Female inflorescence scale:
 function PlantSimEngine.run!(m::BunchHarvest, st, environment, constants, context=nothing)
+    # Reset every daily harvest pulse together, including the fruit count.
+    # Resetting only the mass pulses left a persistent nonzero count after
+    # harvest and made daily sums count the same fruits repeatedly.
+    st.biomass_bunch_harvested = 0.0
+    st.biomass_stalk_harvested = 0.0
+    st.biomass_fruit_harvested = 0.0
+    st.biomass_oil_harvested = 0.0
+    st.biomass_oil_harvested_potential = 0.0
+    st.fruits_number_harvested = 0
+
     if st.state == :harvested && st.is_harvested == false
         st.biomass_bunch_harvested = st.biomass
         st.biomass_stalk_harvested = st.biomass_stalk
@@ -77,14 +92,8 @@ function PlantSimEngine.run!(m::BunchHarvest, st, environment, constants, contex
         st.biomass_non_oil = 0.0
         st.is_harvested = true
         st.fruits_number = 0
-    else# The biomass harvested should only appear on the day of harvest, otherwise it is 0 (before and after harvest)
-        st.biomass_bunch_harvested = 0.0
-        st.biomass_stalk_harvested = 0.0
-        st.biomass_fruit_harvested = 0.0
-        st.biomass_oil_harvested = 0.0
-        st.biomass_oil_harvested_potential = 0.0
-        # Note: biomass_bunch_harvested_cum is not reset to 0, so that it increases at every harvest
     end
+    return nothing
 end
 
 struct PlantBunchHarvest <: AbstractHarvestModel end

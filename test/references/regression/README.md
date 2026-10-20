@@ -1,10 +1,13 @@
 # XPalm numerical regression references
 
-The CI regression compares the default 4,160-day simulation with the
-released `v0.7.0` baseline. This is the accepted XPalm v0.7.0 behavior after
-the post-v0.6.1 carbon-unit and respiration corrections.
+On the reproductive-lifecycle development branch, CI compares the default
+4,160-day simulation with the separately named `v0.7.0-lifecycle-dev` candidate.
+Its intentional changes and source fingerprints are reviewed with the PR;
+it is not a new release or an empirical validation.
 
-- [`v0.7.0`](v0.7.0/README.md) is the active CI oracle. Its numerical data
+- [`v0.7.0-lifecycle-dev`](v0.7.0-lifecycle-dev/README.md) is the unreleased
+  lifecycle/rooted-recharge candidate used by this branch.
+- [`v0.7.0`](v0.7.0/README.md) remains the immutable released reference. Its numerical data
   were promoted unchanged from the reviewed `v0.7.0-dev` candidate.
 - [`v0.6.1`](v0.6.1/README.md) is the immutable released oracle retained for
   provenance and historical comparisons.

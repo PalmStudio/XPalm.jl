@@ -1,5 +1,26 @@
 # Changelog
 
+## Unreleased
+
+### Reproductive lifecycle corrections
+
+- Separate rank-based leaf pruning from reproductive harvest. Pruning a leaf no
+  longer terminates its immature inflorescence or labels stalk-only removals as
+  mature harvests. This corrects a mechanism that delayed the first fruit-bearing
+  harvest in the CIGE diagnostic; the existing thermal maturity threshold remains.
+- Preserve an abortion decision made during the current phenology step, and reset
+  daily harvested fruit counts and masses after their event day.
+- Restore effective-rainfall recharge of the rooted BP soil view after updating
+  the overlapping bulk view, preventing spurious water stress from consumed
+  rainfall bookkeeping. Soil and drought-response parameters are unchanged.
+- Document the diagnostic sequence, archived early-production comparisons and
+  management assumptions in the [lifecycle note](docs/src/reproductive_lifecycle.md).
+  These corrections intentionally change model behavior; published numerical
+  fixtures and physiological defaults are not rewritten or recalibrated here.
+- Add a separately named unreleased full-cycle numerical candidate and protect
+  all released v0.7.0 reference files with checksums. The new candidate is
+  reviewed with these intentional lifecycle and soil changes.
+
 ## 0.7.0
 
 XPalm 0.7.0 moves simulations to PlantSimEngine 0.15, improves dynamic palm

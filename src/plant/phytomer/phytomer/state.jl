@@ -81,9 +81,14 @@ PlantSimEngine.dep(::InfloStateModel) = (
 # At phytomer scale
 function PlantSimEngine.run!(m::InfloStateModel, status, environment, constants, context)
     status.state == :aborted && return # if the inflo is aborted, no need to compute 
-    status.state == :harvested && return # no need to compute if harvested (can also happen from the leaf side if pruned)
+    status.state == :harvested && return # no need to compute if already harvested
 
     PlantSimEngine.run_call!(context, :abortion; publish=true)
+
+    # The hard call can decide abortion on this timestep and already publishes
+    # it to the reproductive organ. Do not overwrite that terminal decision
+    # with the flowering/fruit-setting state below.
+    status.state == :aborted && return nothing
 
     if status.sex == :Male
         if status.TT_since_init >= m.TT_senescence_male

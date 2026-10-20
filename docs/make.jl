@@ -40,6 +40,7 @@ makedocs(;
             "XPalm notebook" => "notebook.md",
             "Running XPalm" => "running.md",
             "Model graph" => "model_graph.md",
+            "Reproductive lifecycle corrections" => "reproductive_lifecycle.md",
         ],
         "Vpalm" => [
             "Parameters" => "vpalm/parameters.md",

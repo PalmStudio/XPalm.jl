@@ -4,11 +4,16 @@
 Function to remove leaf biomass and area when the phytomer has a harvested bunch
 or when the leaf reaches a threshold rank (below the rank of harvested bunches).
 
+This operation removes the leaf only. Rank pruning does not harvest or abort
+the associated inflorescence: its phenological state and biomass remain under
+the reproductive models. A management operation that removes an immature
+inflorescence must be represented separately from a mature bunch harvest.
+
 # Arguments
 - `rank`: leaf-rank threshold below which the leaf is cut
 
 # Inputs
-- `state`: phytomer state
+- `state`: leaf state
 
 # Outputs 
 - `litter_leaf`: structural leaf dry mass removed from the plant and transferred
@@ -56,9 +61,8 @@ function PlantSimEngine.run!(m::RankLeafPruning, status, environment, constants,
     status.is_pruned && return # if the leaf is already pruned, no need to compute. Note that we don't use the state of the leaf here
     # because it may be pruned set to :pruned by the InfloStateModel, in which case the leaf is not really pruned yet.
 
-    # The rank and state variables are given for the phytomer. We can retrieve the phytomer of the 
-    # leaf by using its index. If the phytomer has a higher rank than m.rank or it is harvested, then
-    # we put the leaf as pruned and define its biomass as litter.
+    # Remove leaf stocks at the rank threshold or after a harvest-triggered
+    # leaf-pruning decision. Reproductive state is deliberately left unchanged.
     if status.rank > m.rank || status.state == :pruned
         status.pruning_decision = status.rank > m.rank ? :pruned_at_rank : :pruned_at_bunch_harvest
         status.leaf_area = 0.0
@@ -70,21 +74,6 @@ function PlantSimEngine.run!(m::RankLeafPruning, status, environment, constants,
         status.reserve = 0.0
         status.state = :pruned # The leaf may not be pruned yet if it has a male inflorescence.
         status.is_pruned = true
-
-        # Get the internode node to check if the phytomer is harvested:
-        leaf_node = PlantSimEngine.source_node(context)
-        internode_node = parent(leaf_node)
-
-        # If the leaf is pruned but the phytomer is not harvested, then we harvest:
-        phytomer_node = parent(internode_node)
-        PlantSimEngine.model_status(context, phytomer_node).state = :harvested
-
-        # Give the information to the inflorescence if we find one:
-        internode_children = MultiScaleTreeGraph.children(internode_node)
-        inflo_nodes = filter(x -> MultiScaleTreeGraph.symbol(x) == :Female || MultiScaleTreeGraph.symbol(x) == :Male, internode_children)
-        if length(inflo_nodes) == 1
-            PlantSimEngine.model_status(context, only(inflo_nodes)).state =
-                :harvested
-        end
     end
+    return nothing
 end

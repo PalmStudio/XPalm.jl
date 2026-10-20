@@ -1,4 +1,4 @@
-const REFERENCE_REGRESSION_BASELINE = "v0.7.0"
+const REFERENCE_REGRESSION_BASELINE = REFERENCE_REGRESSION_CANDIDATE_BASELINE
 const REFERENCE_REGRESSION_DIR = joinpath(
     dirtest,
     "references",
@@ -46,22 +46,51 @@ function test_reference_float_columns(
     end
 end
 
-@testset "XPalm v0.7.0 full-cycle numerical regression" begin
+@testset "Released v0.7.0 numerical reference is preserved" begin
+    # Protect the complete released oracle, including its historical metadata
+    # and README. The candidate must not make an intentional behavior change
+    # disappear by replacing or relabeling released numerical evidence.
+    released = joinpath(dirtest, "references", "regression",
+        REFERENCE_REGRESSION_RELEASED_BASELINE)
+    expected_hashes = Dict(
+        "README.md" => "65f6cf67091042019ef6a7eeac7b92e778daab4cd5fd6e0a937dc74c86d28e3b",
+        "harvest_events.csv" => "c887048a8530f5c7834964ace71e2660b8b1a189b275787172da348116522b77",
+        "metadata.toml" => "5ae064dc9a20f861b980c2610ce1c95840e7c088d61a71b290503cf1d39eb0c0",
+        "summary.csv" => "ea1d0e929b13f379e9924f35d058bd7f895695268004b6603ec1101255df50e0",
+        "trajectory_checkpoints.csv" => "5b4b6cdd2bddcf63393810a5bfb825c8081b221517ad8f97decfb3a8edad0b95",
+    )
+    for (file, expected) in expected_hashes
+        @test bytes2hex(SHA.sha256(read(joinpath(released, file)))) == expected
+    end
+end
+
+@testset "XPalm lifecycle candidate full-cycle numerical regression" begin
     metadata = TOML.parsefile(joinpath(REFERENCE_REGRESSION_DIR, "metadata.toml"))
     meteo_path = joinpath(dirname(dirname(pathof(XPalm))), "0-data", "meteo.csv")
     current_meteo_sha256 = bytes2hex(SHA.sha256(read(meteo_path)))
 
     @test metadata["source"]["baseline_id"] == REFERENCE_REGRESSION_BASELINE
-    @test metadata["source"]["release_state"] == "released"
-    @test metadata["source"]["xpalm_version"] == "0.6.1"
-    @test metadata["source"]["xpalm_commit"] ==
-          "d4ded8891d03f85bb5691b89572a4e003ac6eb7a"
-    @test metadata["environment"]["julia_version"] == "1.12.1"
+    @test metadata["source"]["release_state"] == "unreleased"
+    @test metadata["source"]["xpalm_version"] == "0.7.0"
+    @test metadata["source"]["predecessor_baseline"] == REFERENCE_REGRESSION_RELEASED_BASELINE
+    @test metadata["source"]["scientific_change_id"] == REFERENCE_REGRESSION_SCIENTIFIC_CHANGE
+    @test metadata["source"]["parameter_source"] == "XPalm.default_parameters()"
+    @test occursin(r"^[0-9a-f]{40}$", metadata["source"]["xpalm_commit"])
+    @test !isempty(metadata["source"]["scientific_sources_sha256"])
+    @test all(value -> occursin(r"^[0-9a-f]{64}$", value),
+        values(metadata["source"]["scientific_sources_sha256"]))
+    @test VersionNumber(metadata["environment"]["julia_version"]) >= v"1.10"
     @test metadata["environment"]["plantsimengine_version"] == "0.15.0"
-    @test metadata["environment"]["plantsimengine_commit"] ==
-          "82786fba91fad644d8068d75afc64d88282400c4"
+    @test metadata["stochastic_configuration"]["sex_determination_seed"] == 1
+    @test metadata["stochastic_configuration"]["abortion_seed"] == 1
     @test metadata["inputs"]["meteo_sha256"] == current_meteo_sha256
     @test metadata["inputs"]["nsteps"] == 4160
+    @test Set(keys(metadata["fixture"]["csv_sha256"])) == Set(
+        ("trajectory_checkpoints.csv", "harvest_events.csv", "summary.csv"),
+    )
+    for (file, expected) in metadata["fixture"]["csv_sha256"]
+        @test bytes2hex(SHA.sha256(read(joinpath(REFERENCE_REGRESSION_DIR, file)))) == expected
+    end
 
     scenario = run_reference_regression_scenario(; meteo_path=meteo_path)
     @test nrow(scenario.meteo) == 4160
