@@ -1,0 +1,26 @@
+figure_size_px = [1200, 940]
+same_observed_targets_and_harvest_dates = true
+measured_bunches = 50
+scope = "Conditional PR diagnostic; 50 measured bunches only; fruit growth before external harvest correction; observed targets and dates fixed; RUE unchanged"
+years = [2014, 2015, 2016, 2017, 2018, 2019, 2020, 2021, 2022]
+reference_allocated_fruit_dry_mass_total_kg = 271.3538453721126
+catchup_allocated_fruit_dry_mass_total_kg = 300.60753970019255
+archived_annual_values_reproduced = true
+passed = true
+observed_marker_color = "#D62728"
+saved_inputs_unchanged = true
+observed_fruit_dry_mass_total_kg = 302.59683426221505
+
+[source_hashes]
+"/Users/rvezy/Documents/dev/XPalm_calibration_new/2-results/catchup_demand_20261004/CHECKS.toml" = "3b14796fdd14e3567368784bc0f24c31af443d7bce01190e6ff83abbbadc5039"
+"/Users/rvezy/Documents/dev/XPalm_calibration_new/2-results/catchup_demand_20261004/annual_fruit_stalk_comparison.csv" = "92a3db0dc6b7973fe12f655adffd32bdff04900b558496c023b25dddf60aeb2e"
+"/Users/rvezy/Documents/dev/XPalm_calibration_new/src/presentation_panels.jl" = "3fd4e70cd4b59b4601637d9365ebd99d9479333309f988ba851a6d8fce500a43"
+"/Users/rvezy/Documents/cirad/Articles_Rapports_Communications/Conférences/2026_fspm/vezy_digital_twins/presentation/work/catchup_explanation_20261010/annual_fruit_panel_red.jl" = "36882050195569e8c35f47f4e447b574de4dc947f4f01583bcdd8ff8a718e309"
+"/Users/rvezy/Documents/dev/XPalm_calibration_new/2-results/catchup_demand_20261004/catchup/cohorts.csv" = "9463ea113873b0fe91e9ac583bb03ac0df12af36321710aed8f56fcc4488d02f"
+"/Users/rvezy/Documents/dev/XPalm_calibration_new/2-results/catchup_demand_20261004/reference/cohorts.csv" = "3aab9b0568f2da7fbab9eccf3c5e4eb9ff8f11950ca071d543599d5174a13a75"
+
+[output_hashes]
+"/Users/rvezy/Documents/cirad/Articles_Rapports_Communications/Conférences/2026_fspm/vezy_digital_twins/presentation/work/catchup_explanation_20261010/annual_fruit/fruit_dry_mass_red_observations.pdf" = "4f3d701edb53e476eeec1f7a1c19f01d0423200b9f4a2fd2fcc08fd65a8902be"
+"/Users/rvezy/Documents/cirad/Articles_Rapports_Communications/Conférences/2026_fspm/vezy_digital_twins/presentation/work/catchup_explanation_20261010/annual_fruit/fruit_dry_mass_red_observations.png" = "5c8d04d7e42b29d7a0f76e9803e21b8c9dcb162715eaff3fcb62acb5dc1072ed"
+"/Users/rvezy/Documents/cirad/Articles_Rapports_Communications/Conférences/2026_fspm/vezy_digital_twins/presentation/work/catchup_explanation_20261010/annual_fruit/fruit_dry_mass_red_observations.svg" = "9959bd430d7e9cf0371e06daabde0a9681127492004ef53895a7c65df53cc0bc"
+"/Users/rvezy/Documents/cirad/Articles_Rapports_Communications/Conférences/2026_fspm/vezy_digital_twins/presentation/work/catchup_explanation_20261010/annual_fruit/annual_fruit_dry_mass_values.csv" = "29eb8c086161076ae882e7972f9aaeaeecb37ddc422fdc225f91dc1f2383e3f4"

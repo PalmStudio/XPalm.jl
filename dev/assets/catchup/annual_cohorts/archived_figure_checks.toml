@@ -1,0 +1,14 @@
+measured_cohorts = 50
+figure_size_px = [1620, 650]
+same_targets_and_dates = true
+scope = "Conditional PR diagnostic; measured cohorts only; pre-correction dry mass"
+catchup_external_addition_kg = 1.9892945620225069
+reference_external_addition_kg = 34.69137392334244
+passed = true
+source_files_unchanged = true
+
+[source_hashes]
+"/Users/rvezy/Documents/dev/XPalm_calibration_new/2-results/catchup_demand_20261004/CHECKS.toml" = "3b14796fdd14e3567368784bc0f24c31af443d7bce01190e6ff83abbbadc5039"
+"/Users/rvezy/Documents/dev/XPalm_calibration_new/2-results/catchup_demand_20261004/sensitivity_summary.csv" = "55ac3730f7e8ce7f773d85bee3d00305f6a631d722c5e79dd5f7d5b734572257"
+"/Users/rvezy/Documents/dev/XPalm_calibration_new/2-results/catchup_demand_20261004/catchup/cohorts.csv" = "9463ea113873b0fe91e9ac583bb03ac0df12af36321710aed8f56fcc4488d02f"
+"/Users/rvezy/Documents/dev/XPalm_calibration_new/2-results/catchup_demand_20261004/reference/cohorts.csv" = "3aab9b0568f2da7fbab9eccf3c5e4eb9ff8f11950ca071d543599d5174a13a75"

@@ -1,0 +1,22 @@
+own_run_deficits = true
+catchup_deficit_days = 68
+observed_fruit_kg = 8.559230536378074
+harvest_date = "2018-11-05"
+fixed_funded_fruit_kg = 6.4061789975159655
+catchup_funded_fruit_kg = 8.54954031553524
+fixed_deficit_days = 65
+input_sha256 = "542be940752f8ab4958b9ea79f2fe2bde9fb04274842ca31ce43780b8c910ab7"
+complete_legend_retained = true
+observation_color = "#D62728"
+new_simulation = false
+catchup_max_demand_gCH2O_day = 837.0565918263445
+external_harvest_correction_excluded = true
+lower_catchup_curve_visible = true
+field_phytomer = 146
+source_sha256 = "80f5757722644d3be6e221eb1f35a7786750d738167fe44197054a11c35fad46"
+fixed_max_demand_gCH2O_day = 141.68009251641348
+
+[outputs]
+"02_single_bunch_with_catchup.svg" = "d3ac77db5c38353fa537a2b2dc9f7a8bca0807a01c972c82ed8f9a66b9826026"
+"02_single_bunch_with_catchup.png" = "3f7aa19835109874dc38789b2550053bd8cd6ed596f621617023dd22bc455a1d"
+"02_single_bunch_with_catchup.pdf" = "af474012e349a895f93ec009f5a5b3fe2029f0666e48b0fbcc04de924a958aaa"
