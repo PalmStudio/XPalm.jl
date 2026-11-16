@@ -9,6 +9,7 @@
 
 # Inputs
 
+- `sex`: determined sex supplied when the organ is created (`:Male` or `:Female`).
 - `initiation_age`: age of the plant when the organ was initiated (days)
 
 # Outputs
@@ -23,6 +24,7 @@ end
 
 PlantSimEngine.inputs_(::MaleFinalPotentialBiomass) = (
     initiation_age=PlantSimEngine.Required(Real),
+    sex=PlantSimEngine.Required(Symbol),
 )
 PlantSimEngine.outputs_(::MaleFinalPotentialBiomass) = (final_potential_biomass=-Inf,)
 PlantSimEngine.variable_contracts_(::MaleFinalPotentialBiomass) = (

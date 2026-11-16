@@ -92,3 +92,31 @@ end
     @test status.biomass_oil ≈ 2.34375
     @test status.biomass ≈ status.biomass_stalk + status.biomass_fruits
 end
+
+
+@testset "MaleFinalPotentialBiomass keeps the initialized sex" begin
+    source = Status(initiation_age=50.0, sex=:Male)
+    sex_reference = PlantSimEngine.refvalue(source, :sex)
+    scene = test_scene(:Male, MaleFinalPotentialBiomass(1000.0, 100.0, 0.1);
+        status=source)
+    run!(scene)
+    status = test_status(scene, :Male)
+    @test status.sex === :Male
+    @test PlantSimEngine.refvalue(status, :sex) === sex_reference
+    @test status.final_potential_biomass ≈ 550.0
+end
+
+@testset "FemaleFinalPotentialFruits keeps the initialized sex" begin
+    source = Status(initiation_age=6500.0, sex=:Female)
+    sex_reference = PlantSimEngine.refvalue(source, :sex)
+    scene = test_scene(:Female, FemaleFinalPotentialFruits(); status=source)
+    run!(scene)
+    status = test_status(scene, :Female)
+    @test status.sex === :Female
+    @test PlantSimEngine.refvalue(status, :sex) === sex_reference
+    @test status.potential_fruits_number == 2000
+    @test status.final_potential_fruit_biomass ≈ 6.5
+    @test status.final_potential_biomass_stalk ≈ 2100.0
+    @test status.final_potential_oil_biomass ≈ 3250.0
+    @test status.final_potential_non_oil_biomass ≈ 9750.0
+end
