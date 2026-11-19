@@ -22,6 +22,7 @@ at maturity (dimensionless)
 
 # Inputs
 
+- `sex`: determined sex supplied when the organ is created (`:Male` or `:Female`).
 - `initiation_age`: age at which the palm starts to make bunches (days)
 
 # Outputs
@@ -43,7 +44,7 @@ model = FemaleFinalPotentialFruits()
 scene = CompositeModel(
     model;
     scale=:Female,
-    status=(initiation_age=5000.0,),
+    status=(initiation_age=5000.0, sex=:Female),
 )
 run!(scene)
 only(model_objects(scene; scale=:Female)).status.potential_fruits_number
@@ -86,6 +87,7 @@ end
 
 PlantSimEngine.inputs_(::FemaleFinalPotentialFruits) = (
     initiation_age=PlantSimEngine.Required(Real),
+    sex=PlantSimEngine.Required(Symbol),
 )
 PlantSimEngine.outputs_(::FemaleFinalPotentialFruits) = (potential_fruits_number=-9999, final_potential_fruit_biomass=-Inf, final_potential_biomass_stalk=-Inf, final_potential_biomass_oil_fruit=-Inf, final_potential_biomass_non_oil_fruit=-Inf, final_potential_oil_biomass=-Inf, final_potential_non_oil_biomass=-Inf)
 PlantSimEngine.variable_contracts_(::FemaleFinalPotentialFruits) = (

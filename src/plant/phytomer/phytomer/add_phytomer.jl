@@ -81,8 +81,13 @@ function PlantSimEngine.run!(m::PhytomerEmission, status, environment, constants
         3;
         index=status.phytomer_count,
         id=status.graph_node_count,
-        attributes=Dict{Symbol,Any}(),
-        initial_status=(plant_age=plant_age, initiation_age=plant_age),
+        initial_status=(
+            plant_age=plant_age,
+            initiation_age=plant_age,
+            TT_since_init=0.0,
+            state=:undetermined,
+            sex=:undetermined,
+        ),
     )
 
     phytomer_id = PlantSimEngine.object_id(context, st_phyto)
@@ -98,8 +103,13 @@ function PlantSimEngine.run!(m::PhytomerEmission, status, environment, constants
         4;
         index=status.phytomer_count,
         id=status.graph_node_count,
-        attributes=Dict{Symbol,Any}(),
-        initial_status=(plant_age=plant_age, initiation_age=plant_age),
+        initial_status=(
+            plant_age=plant_age,
+            initiation_age=plant_age,
+            TT_since_init=0.0,
+            state=:undetermined,
+            sex=:undetermined,
+        ),
     )
     internode_id = PlantSimEngine.object_id(context, st_internode)
 
@@ -114,8 +124,13 @@ function PlantSimEngine.run!(m::PhytomerEmission, status, environment, constants
         4;
         index=status.phytomer_count,
         id=status.graph_node_count,
-        attributes=Dict{Symbol,Any}(),
-        initial_status=(plant_age=plant_age, initiation_age=plant_age),
+        initial_status=(
+            plant_age=plant_age,
+            initiation_age=plant_age,
+            TT_since_init=0.0,
+            state=:undetermined,
+            sex=:undetermined,
+        ),
     )
     leaf_id = PlantSimEngine.object_id(context, st_leaf)
 

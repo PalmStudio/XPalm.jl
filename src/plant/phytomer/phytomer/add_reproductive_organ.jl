@@ -49,8 +49,8 @@ function PlantSimEngine.run!(m::ReproductiveOrganEmission, status, environment, 
         4;
         index=status.phytomer_count,
         id=status.graph_node_count,
-        attributes=Dict{Symbol,Any}(),
         initial_status=(
+            plant_age=-9999,
             initiation_age=copy(status.plant_age),
             TT_since_init=copy(status.TT_since_init),
             state=status.state,
