@@ -112,11 +112,20 @@ PlantSimEngine.object_id(context::XPalmTestOutputContext) = context.id
 struct XPalmTestDisplayedId
     value::Int
 end
+xpalm_test_display_position(io::IO) = position(io)
+xpalm_test_display_position(io::IOContext) =
+    xpalm_test_display_position(getfield(io, :io))
+
 function Base.show(io::IO, value::XPalmTestDisplayedId)
     # The original ID interpolation starts its own buffer before ObjectId(...).
-    print(io, "Shown(", value.value, ",position=", position(io), ")")
+    print(io, "Shown(", value.value, ",position=", xpalm_test_display_position(io), ")")
 end
 @testset "distributed output error keeps exact identity rendering" begin
+    buffer = IOBuffer()
+    write(buffer, "origin:")
+    wrapped = IOContext(IOContext(buffer, :compact => true), :limit => true)
+    show(wrapped, XPalmTestDisplayedId(9))
+    @test String(take!(buffer)) == "origin:Shown(9,position=7)"
     suffix=" as well as its organs so that its plant total is published."
     prefix="XPalm distributed output `reserve` must include the execution plant "
     for raw in (7, :plant, Symbol("a b"), (:tree,:plant,1), (Symbol("a b"),1), XPalmTestDisplayedId(9))
