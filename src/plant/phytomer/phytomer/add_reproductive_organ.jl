@@ -36,7 +36,9 @@ Add a new reproductive organ to a phytomer.
 function PlantSimEngine.run!(m::ReproductiveOrganEmission, status, environment, constants, context)
     status.emit_reproductive_organ || return nothing
     phytomer = PlantSimEngine.source_node(context)
-    @assert symbol(phytomer) == m.phytomer_symbol "The function should be applied to a $(m.phytomer_symbol), but is applied to a $(symbol(phytomer))"
+    symbol(phytomer) == m.phytomer_symbol || throw(AssertionError(
+        "The function should be applied to a $(m.phytomer_symbol), but is applied to a $(symbol(phytomer))",
+    ))
     @assert status.sex in (m.male_symbol, m.female_symbol)
     status.graph_node_count += 1
 

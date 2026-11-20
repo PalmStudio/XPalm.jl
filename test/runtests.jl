@@ -156,6 +156,7 @@ end
 
 @testset "Reproductive lifecycle" begin
     include(joinpath(dirtest, "test-reproductive-lifecycle.jl"))
+    include(joinpath(dirtest, "test-native-model-boundaries.jl"))
 end
 
 @testset "Maintenance respiration" begin

@@ -87,13 +87,21 @@ end
     return value
 end
 
+# Preserve print/show semantics without Base.string's heterogeneous varargs loop.
+function _organ_output_plant_text(plant_id)
+    io = IOBuffer()
+    print(io, plant_id)
+    return String(take!(io))
+end
+
 @inline function _organ_output_view(targets, context, ::Val{variable}) where {variable}
     ids = PlantSimEngine.object_ids(targets)
     plant_id = PlantSimEngine.object_id(context)
     plant_index = findfirst(==(plant_id), ids)
     isnothing(plant_index) && throw(ArgumentError(
         "XPalm distributed output `$(variable)` must include the execution plant " *
-        "$(plant_id) as well as its organs so that its plant total is published.",
+        _organ_output_plant_text(plant_id) *
+        " as well as its organs so that its plant total is published.",
     ))
     return (
         ids=_WithoutIndex(ids, plant_index),

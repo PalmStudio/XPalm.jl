@@ -19,12 +19,20 @@ PlantSimEngine.variable_contracts_(::OrganReserveFilling) = (
     carbon_offer_after_storage=_DAILY_CH2O_EQUIVALENT_FLOW,
 )
 
+# The public model caller has already aligned its bound views by object ID.
+@inline _aligned_reserve_indices(_potential, _previous, current) = eachindex(current)
+@inline _aligned_reserve_indices(_previous, current) = eachindex(current)
+
+@inline _fill_organ_reserves!(potential, previous, current, offer) =
+    _fill_organ_reserves!(eachindex, potential, previous, current, offer)
+
 @inline function _fill_organ_reserves!(
+    indices::F,
     potential_reserves,
     reserves_before_filling,
     current_reserves,
     carbon_offer_after_allocation,
-)
+) where {F}
     total_reserve_potential_organ = _sum_with_initial(
         potential_reserves,
         zero(carbon_offer_after_allocation),
@@ -43,7 +51,7 @@ PlantSimEngine.variable_contracts_(::OrganReserveFilling) = (
             total_reserve_potential_organ,
             carbon_offer,
         )
-        @inbounds for index in eachindex(
+        @inbounds for index in indices(
             potential_reserves,
             reserves_before_filling,
             current_reserves,
@@ -54,7 +62,7 @@ PlantSimEngine.variable_contracts_(::OrganReserveFilling) = (
         end
     else
         carbon_allocation_reserve = zero(carbon_offer)
-        @inbounds for index in eachindex(
+        @inbounds for index in indices(
             reserves_before_filling,
             current_reserves,
         )
@@ -103,6 +111,7 @@ function PlantSimEngine.run!(
     )
 
     result = _fill_organ_reserves!(
+        _aligned_reserve_indices,
         potential_reserves,
         reserves_before_filling,
         reserve_organs.values,
