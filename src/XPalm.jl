@@ -33,6 +33,7 @@ include("model_definition.jl")
 
 include("run.jl")
 include("notebook.jl")
+include("precompile.jl")
 
 export xpalm, xpalm_scene, model_applications, load_vpalm!
 end
